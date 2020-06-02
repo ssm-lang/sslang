@@ -67,11 +67,11 @@ enter(size_t bytes, stepf_t *step, rar_t *parent,
   return rar;
 }
 
-// Execute a routine (for an instant)
-inline void invoke(rar_t *rar) { (*(rar->step))(rar); }
+// Execute a routine immediately
+inline void call(rar_t *rar) { (*(rar->step))(rar); }
 
 // Schedule a routine for the current instant
-extern void schedule(rar_t *);
+extern void fork(rar_t *);
 
 // Deallocate an activation record; return to caller if we were the last child
 inline void leave(rar_t *rar, size_t bytes)
@@ -82,7 +82,7 @@ inline void leave(rar_t *rar, size_t bytes)
   rar_t *caller = rar->caller;
   free(rar);   // Free the whole activation record, not just the start
   if ((--caller->children) == 0) // Were we the last child?
-    invoke(caller);              // If so, run our parent
+    call(caller);                // If so, run our parent
 }
 
 

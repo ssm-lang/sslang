@@ -305,23 +305,23 @@ void step_main(rar_t *cont)
       pdepth_t new_depth = act->priority_depth - 3; // 8 children
       priority_t new_priority = act->priority;
       priority_t pinc = 1 << new_depth;             // increment for each thread
-      schedule((rar_t *)              // clock clk
+      fork((rar_t *)              // clock clk
 		    enter_clock((rar_t *) act, new_priority, new_depth,
 				&act->clk ));
       new_priority += pinc;
-      schedule((rar_t *)              // dff clk d1 q1
+      fork((rar_t *)              // dff clk d1 q1
 		    enter_dff((rar_t *) act, new_priority, new_depth,
 			      &act->clk, &act->d1, &act->q1 ));
       new_priority += pinc;
-      schedule((rar_t *)              // dff clk d2 q2
+      fork((rar_t *)              // dff clk d2 q2
 		    enter_dff((rar_t *) act, new_priority, new_depth,
 			      &act->clk, &act->d2, &act->q2 ));
       new_priority += pinc;
-      schedule((rar_t *)              // inc q2 d2
+      fork((rar_t *)              // inc q2 d2
 		    enter_inc((rar_t *) act, new_priority, new_depth,
 			      &act->q2, &act->d2 ));
       new_priority += pinc;
-      schedule((rar_t *)              // adder q1 d2 d1
+      fork((rar_t *)              // adder q1 d2 d1
 		    enter_adder((rar_t *) act, new_priority, new_depth,
 				&act->q1, &act->d2, &act->d1 ));
       // new_priority += pinc;
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
   
   rar_t top = { .step = main_return };  
   act_main_t *act = enter_main(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT);  
-  schedule((rar_t *) act);
+  fork((rar_t *) act);
 
   tick();
 

@@ -6,6 +6,10 @@
 *.ko
 *.obj
 *.elf
+counter
+counter2
+clock
+fib
 
 # Linker output
 *.ilk

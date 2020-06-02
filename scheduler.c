@@ -14,7 +14,7 @@ ssm_time_t now;
 extern inline void leave(rar_t *, size_t);
 extern inline rar_t *enter(size_t, stepf_t *,
 				    rar_t *, priority_t, pdepth_t);
-extern inline void invoke(rar_t *);
+extern inline void call(rar_t *);
 extern inline bool event_on(cv_t *);
 
 
@@ -70,15 +70,7 @@ void later_event(cv_t *var, ssm_time_t then)
 
 }
 
-void schedule_sensitive(cv_t *var, priority_t priority)
-{
-  assert(var);
-  for (trigger_t *trigger = var->triggers ; trigger ; trigger = trigger->next)
-    if (trigger->rar->priority > priority)
-      schedule( trigger->rar );
-}
-
-void schedule(rar_t *cont)
+void enqueue(rar_t *cont)
 {
   assert(cont);
   if (cont->scheduled) return; // Don't add a continuation twice
@@ -100,6 +92,22 @@ void schedule(rar_t *cont)
     printf("%08x ", cont_queue[i]->priority );
   printf("\n");
   */
+}
+
+void schedule_sensitive(cv_t *var, priority_t priority)
+{
+  assert(var);
+  for (trigger_t *trigger = var->triggers ; trigger ; trigger = trigger->next)
+    if (trigger->rar->priority > priority)
+      enqueue( trigger->rar );
+}
+
+void fork(rar_t *rar)
+{
+  assert(rar);
+  assert(rar->caller);
+  rar->caller->children++;
+  enqueue(rar);
 }
 
 void update_int(cv_t *var)
@@ -208,7 +216,7 @@ void tick()
     var->last_updated = now; // Remember that it was updated
     // Schedule all sensitive continuations
     for (trigger_t *trigger = var->triggers ; trigger ; trigger = trigger->next)
-      schedule(trigger->rar);
+      enqueue(trigger->rar);
 
     // Remove the earliest event from the queue
     var->event_time = NO_EVENT_SCHEDULED;
@@ -259,7 +267,7 @@ void tick()
 
     // printf("Invoking %08x\n", to_run->priority);
 
-    invoke(to_run);
+    call(to_run);
   }
   
 }

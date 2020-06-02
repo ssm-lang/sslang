@@ -315,15 +315,15 @@ void step_main(rar_t *cont)
     new_depth = act->priority_depth - 3; // Make space for 8 children
     pinc = 1 << new_depth;    // priority increment for each thread
     
-    schedule((rar_t *) enter_clk((rar_t *) act,
+    fork((rar_t *) enter_clk((rar_t *) act,
 				 act->priority + 0 * pinc, new_depth, act));
-    schedule((rar_t *) enter_dff1((rar_t *) act,
+    fork((rar_t *) enter_dff1((rar_t *) act,
 				  act->priority + 1 * pinc, new_depth, act));
-    schedule((rar_t *) enter_dff2((rar_t *) act,
+    fork((rar_t *) enter_dff2((rar_t *) act,
 				  act->priority + 2 * pinc, new_depth, act));
-    schedule((rar_t *) enter_inc((rar_t *) act,
+    fork((rar_t *) enter_inc((rar_t *) act,
 				 act->priority + 3 * pinc, new_depth, act));
-    schedule((rar_t *) enter_adder((rar_t *) act,
+    fork((rar_t *) enter_adder((rar_t *) act,
 				   act->priority + 4 * pinc, new_depth, act));
     act->pc = 1;
     return;
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
   
   rar_t top = { .step = main_return };  
   act_main_t *act = enter_main(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT);  
-  schedule((rar_t *) act);
+  fork((rar_t *) act);
 
   tick();
 

@@ -55,7 +55,7 @@ void step_fib(rar_t *cont)
   L1:
     act->tmp1 = act->n - 1;                  // tmp1 = n - 1
     act->pc = 1;			     // tmp2 = fib(tmp1)
-    invoke((rar_t *)
+    call((rar_t *)
 	   enter_fib((rar_t *) act, act->priority, act->priority_depth,
 		     &act->tmp2, act->tmp1));
     return;
@@ -63,7 +63,7 @@ void step_fib(rar_t *cont)
   case 1: // L2:
     act->tmp1 = act->n - 2;                  // tmp1 = n - 2
     act->pc = 2;  			     // tmp3 = fib(tmp1)
-    invoke((rar_t *)
+    call((rar_t *)
 	   enter_fib((rar_t *) act, act->priority, act->priority_depth,
 		     &act->tmp3, act->tmp1));
     return;
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
   int n = argc > 1 ? atoi(argv[1]) : 3;
 
   rar_t top = { .step = top_return };
-  invoke((rar_t *) enter_fib(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT,
-				      &result, n));
+  call((rar_t *) enter_fib(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT,
+			   &result, n));
 
   printf("%d\n", result);
 
