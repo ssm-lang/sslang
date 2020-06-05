@@ -1,6 +1,6 @@
 CFLAGS = -g -Wall -pedantic -std=c99
 
-EXE = fib fib2 fib3 counter counter2 clock
+EXE = fib fib2 fib3 counter counter2 clock onetwo
 
 all : $(EXE)
 
@@ -22,6 +22,9 @@ counter2 : counter2.o scheduler.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 clock : clock.o scheduler.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+onetwo : onetwo.o scheduler.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY : clean

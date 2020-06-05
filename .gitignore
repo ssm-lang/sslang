@@ -12,6 +12,7 @@ clock
 fib
 fib2
 fib3
+onetwo
 
 # Linker output
 *.ilk

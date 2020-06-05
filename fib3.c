@@ -135,19 +135,19 @@ void step_fib(rar_t *act)
     { depth_t new_depth = rar->depth - 2; // 4 children
       priority_t new_priority = rar->priority;
       priority_t pinc = 1 << new_depth;
-      fork((rar_t *) enter_sum( (rar_t *) rar, new_priority, new_depth,
-				&rar->r1, &rar->r2, rar->r));
-      new_priority += pinc;
       fork((rar_t *) enter_fib( (rar_t *) rar, new_priority, new_depth,
 				rar->n.value - 1, &rar->r1));
       new_priority += pinc;
       fork((rar_t *) enter_fib( (rar_t *) rar, new_priority, new_depth,
 				rar->n.value - 2, &rar->r2));  
+      new_priority += pinc;
+      fork((rar_t *) enter_sum( (rar_t *) rar, new_priority, new_depth,
+				&rar->r1, &rar->r2, rar->r));
+
     }
     rar->pc = 1;
     return;
   case 1:
-    assign_int(rar->r, rar->priority, rar->r->value + rar->r2.value );
     leave((rar_t *) rar, sizeof(rar_fib_t));
     return;
   }
