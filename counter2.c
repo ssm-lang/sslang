@@ -82,13 +82,13 @@ typedef struct {
 stepf_t step_clock;
 
 act_clock_t *enter_clock(rar_t *parent, priority_t priority,
-			 pdepth_t priority_depth, cv_bool_t *clk)
+			 depth_t depth, cv_bool_t *clk)
 {
   assert(parent);
   assert(clk);
 
   act_clock_t *act = (act_clock_t *) enter(sizeof(act_clock_t), step_clock,
-					   parent, priority, priority_depth);
+					   parent, priority, depth);
   act->clk = clk;
   initialize_event( &(act->timer) );
   act->trigger1.rar = (rar_t *) act;
@@ -137,7 +137,7 @@ void step_clock(rar_t *cont)
 stepf_t step_dff;
 
 act_dff_t *enter_dff(rar_t *parent, priority_t priority,
-		     pdepth_t priority_depth,
+		     depth_t depth,
 		     cv_bool_t *clk, cv_int_t *d, cv_int_t *q)
 {
   assert(parent);
@@ -146,7 +146,7 @@ act_dff_t *enter_dff(rar_t *parent, priority_t priority,
   assert(q);
   
   act_dff_t *act = (act_dff_t *) enter(sizeof(act_dff_t), step_dff, parent,
-				       priority, priority_depth);
+				       priority, depth);
 
   act->clk = clk;
   act->d = d;
@@ -187,7 +187,7 @@ void step_dff(rar_t *cont)
 stepf_t step_inc;
 
 act_inc_t *enter_inc(rar_t *parent, priority_t priority,
-		     pdepth_t priority_depth,
+		     depth_t depth,
 		     cv_int_t *a, cv_int_t *y)
 {
   assert(parent);
@@ -195,7 +195,7 @@ act_inc_t *enter_inc(rar_t *parent, priority_t priority,
   assert(y);
   
   act_inc_t *act = (act_inc_t *) enter(sizeof(act_inc_t), step_inc, parent,
-				       priority, priority_depth);
+				       priority, depth);
 
   act->a = a;
   act->y = y;
@@ -230,7 +230,7 @@ void step_inc(rar_t *cont)
 stepf_t step_adder;
 
 act_adder_t *enter_adder(rar_t *parent, priority_t priority,
-			 pdepth_t priority_depth,
+			 depth_t depth,
 			 cv_int_t *a, cv_int_t *b, cv_int_t *y)
 {
   assert(parent);
@@ -240,7 +240,7 @@ act_adder_t *enter_adder(rar_t *parent, priority_t priority,
   
   act_adder_t *act = (act_adder_t *) enter(sizeof(act_adder_t),
 					   step_adder, parent,
-					   priority, priority_depth);
+					   priority, depth);
 
   act->a = a;
   act->b = b;
@@ -280,10 +280,10 @@ stepf_t step_main;
 
 // Create a new activation record for main
 act_main_t *enter_main(rar_t *parent, priority_t priority,
-		       pdepth_t priority_depth)
+		       depth_t depth)
 {
   act_main_t *act = (act_main_t *) enter(sizeof(act_main_t), step_main, parent,
-					 priority, priority_depth);
+					 priority, depth);
   
   // Initialize managed variables
   initialize_bool(&act->clk, false);
@@ -302,7 +302,7 @@ void step_main(rar_t *cont)
   switch (act->pc) {
   case 0:
     {                                               // fork
-      pdepth_t new_depth = act->priority_depth - 3; // 8 children
+      depth_t new_depth = act->depth - 3; // 8 children
       priority_t new_priority = act->priority;
       priority_t pinc = 1 << new_depth;             // increment for each thread
       fork((rar_t *)              // clock clk

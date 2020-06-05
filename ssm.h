@@ -23,7 +23,7 @@ extern ssm_time_t now;               // Name of current instant
 
 // Thread priority types
 typedef uint32_t priority_t; // 32-bit thread priority
-typedef uint8_t  pdepth_t;   // Index of least significant priority bit
+typedef uint8_t  depth_t;   // Index of least significant priority bit
 #define PRIORITY_AT_ROOT 0
 #define DEPTH_AT_ROOT 32
 
@@ -39,7 +39,7 @@ typedef void stepf_t(rar_t *); // Type of a step function
   uint16_t pc;	            /* Stored "program counter" for the function */\
   uint16_t children;        /* Number of running child threads */\
   priority_t priority;	    /* Execution priority */\
-  pdepth_t priority_depth;  /* Index of the LSB in our priority */\
+  depth_t depth;  /* Index of the LSB in our priority */\
   bool scheduled            /* True when in the schedule queue */
   
 struct rar {  // Start of every function activation record
@@ -50,7 +50,7 @@ struct rar {  // Start of every function activation record
 // function and program counter value, and remember the caller
 inline rar_t *
 enter(size_t bytes, stepf_t *step, rar_t *parent,
-      priority_t priority, pdepth_t priority_depth)
+      priority_t priority, depth_t depth)
 {
   assert(bytes > 0);
   assert(step);
@@ -62,7 +62,7 @@ enter(size_t bytes, stepf_t *step, rar_t *parent,
 		   .pc = 0,
 		   .children = 0,
 		   .priority = priority,
-		   .priority_depth = priority_depth,
+		   .depth = depth,
 		   .scheduled = false };
   return rar;
 }
@@ -148,7 +148,7 @@ struct trigger {
 
 
 // Event queue: variable updates scheduled for the future
-typedef uint8_t event_queue_index_t; // Number in the queue/highest index
+typedef uint16_t event_queue_index_t; // Number in the queue/highest index
 extern event_queue_index_t event_queue_len;
 extern cv_t *event_queue[];
 
@@ -157,7 +157,7 @@ extern void desensitize(trigger_t *);      // Remove a trigger from its variable
 
 
 // Continuation queue: scheduled for current instant
-typedef uint8_t cont_queue_index_t;  // Number in the queue/highest index
+typedef uint16_t cont_queue_index_t;  // Number in the queue/highest index
 extern cont_queue_index_t cont_queue_len;
 extern rar_t *cont_queue[];
 

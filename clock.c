@@ -46,14 +46,14 @@ stepf_t step_second_clock;
 
 act_second_clock_t *
 enter_second_clock(rar_t *parent, priority_t priority,
-		   pdepth_t priority_depth, cv_event_t *second_event)
+		   depth_t depth, cv_event_t *second_event)
 {
   assert(parent);
   assert(second_event);
 
   act_second_clock_t *act = (act_second_clock_t *)
     enter(sizeof(act_second_clock_t), step_second_clock,
-	  parent, priority, priority_depth);
+	  parent, priority, depth);
   act->second_event = second_event;
   initialize_event( &(act->timer) );
   act->trigger1.rar = (rar_t *) act;
@@ -89,14 +89,14 @@ stepf_t step_report_seconds;
 
 act_report_seconds_t *
 enter_report_seconds(rar_t *parent, priority_t priority,
-		   pdepth_t priority_depth, cv_event_t *second_event)
+		   depth_t depth, cv_event_t *second_event)
 {
   assert(parent);
   assert(second_event);
 
   act_report_seconds_t *act = (act_report_seconds_t *)
     enter(sizeof(act_report_seconds_t), step_report_seconds,
-	  parent, priority, priority_depth);
+	  parent, priority, depth);
   act->second_event = second_event;
   initialize_int(&act->seconds, 0);
   act->trigger1.rar = (rar_t *) act;
@@ -133,10 +133,10 @@ stepf_t step_main;
 
 // Create a new activation record for main
 act_main_t *enter_main(rar_t *parent, priority_t priority,
-		       pdepth_t priority_depth)
+		       depth_t depth)
 {
   act_main_t *act = (act_main_t *) enter(sizeof(act_main_t), step_main, parent,
-					 priority, priority_depth);
+					 priority, depth);
   
   // Initialize managed variables
   initialize_event(&act->second);
@@ -150,7 +150,7 @@ void step_main(rar_t *cont)
   switch (act->pc) {
   case 0:
     {                                               // fork
-      pdepth_t new_depth = act->priority_depth - 1; // 2 children
+      depth_t new_depth = act->depth - 1; // 2 children
       priority_t new_priority = act->priority;
       priority_t pinc = 1 << new_depth;             // increment for each thread
       fork((rar_t *)              // clock clk

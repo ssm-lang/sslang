@@ -101,13 +101,13 @@ stepf_t step_clk;
 
 // Create a new activation for clk
 act_clk_t *enter_clk(rar_t *parent, priority_t priority,
-		     pdepth_t priority_depth, act_main_t *static_link)
+		     depth_t depth, act_main_t *static_link)
 {
   assert(parent);
   assert(static_link);
   
   act_clk_t *act = (act_clk_t *) enter(sizeof(act_clk_t), step_clk, parent,
-				       priority, priority_depth);
+				       priority, depth);
   
   act->static_link = static_link;
   
@@ -144,13 +144,13 @@ void step_clk(rar_t *cont)
 stepf_t step_dff1;
 
 act_dff1_t *enter_dff1(rar_t *parent, priority_t priority,
-		     pdepth_t priority_depth, act_main_t *static_link)
+		     depth_t depth, act_main_t *static_link)
 {
   assert(parent);
   assert(static_link);
   
   act_dff1_t *act = (act_dff1_t *) enter(sizeof(act_dff1_t), step_dff1, parent,
-					 priority, priority_depth);
+					 priority, depth);
   
   act->static_link = static_link;
   
@@ -184,13 +184,13 @@ void step_dff1(rar_t *cont)
 stepf_t step_dff2;
 
 act_dff2_t *enter_dff2(rar_t *parent, priority_t priority,
-		       pdepth_t priority_depth, act_main_t *static_link)
+		       depth_t depth, act_main_t *static_link)
 {
   assert(parent);
   assert(static_link);
   
   act_dff2_t *act = (act_dff2_t *) enter(sizeof(act_dff2_t), step_dff2, parent,
-					 priority, priority_depth);
+					 priority, depth);
   
   act->static_link = static_link;
   
@@ -224,13 +224,13 @@ void step_dff2(rar_t *cont)
 stepf_t step_inc;
 
 act_inc_t *enter_inc(rar_t *parent, priority_t priority,
-		     pdepth_t priority_depth, act_main_t *static_link)
+		     depth_t depth, act_main_t *static_link)
 {
   assert(parent);
   assert(static_link);
 
   act_inc_t *act = (act_inc_t *) enter(sizeof(act_inc_t), step_inc, parent,
-				       priority, priority_depth);
+				       priority, depth);
   act->static_link = static_link;
   act->trigger1.rar = (rar_t *) act;
 
@@ -254,13 +254,13 @@ void step_inc(rar_t *cont)
 stepf_t step_adder;
 
 act_adder_t *enter_adder(rar_t *parent, priority_t priority,
-			 pdepth_t priority_depth, act_main_t *static_link)
+			 depth_t depth, act_main_t *static_link)
 {
   assert(parent);
   assert(static_link);
 
   act_adder_t *act = (act_adder_t *) enter(sizeof(act_adder_t), step_adder,
-					   parent, priority, priority_depth);
+					   parent, priority, depth);
   act->static_link = static_link;
   
   act->trigger1.rar = act->trigger2.rar = (rar_t *) act;
@@ -287,10 +287,10 @@ stepf_t step_main;
 
 // Create a new activation record for main
 act_main_t *enter_main(rar_t *parent, priority_t priority,
-		       pdepth_t priority_depth)
+		       depth_t depth)
 {
   act_main_t *act = (act_main_t *) enter(sizeof(act_main_t), step_main, parent,
-					 priority, priority_depth);
+					 priority, depth);
   
   // Initialize managed variables
   initialize_int(&(act->clk), 0);
@@ -305,14 +305,14 @@ act_main_t *enter_main(rar_t *parent, priority_t priority,
 void step_main(rar_t *cont)
 {
   act_main_t *act = (act_main_t *) cont;
-  pdepth_t new_depth;
+  depth_t new_depth;
   priority_t pinc;
 
   // printf("step_main @%d\n", act->pc);
   
   switch (act->pc) {
   case 0:
-    new_depth = act->priority_depth - 3; // Make space for 8 children
+    new_depth = act->depth - 3; // Make space for 8 children
     pinc = 1 << new_depth;    // priority increment for each thread
     
     fork((rar_t *) enter_clk((rar_t *) act,

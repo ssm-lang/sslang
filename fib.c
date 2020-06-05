@@ -31,10 +31,10 @@ typedef struct {
 stepf_t step_fib;
 
 fib_act_t *enter_fib(rar_t *cont, priority_t priority,
-		     pdepth_t priority_depth, int *result, int n)
+		     depth_t depth, int *result, int n)
 {
   fib_act_t *act = (fib_act_t *) enter(sizeof(fib_act_t), step_fib, cont,
-				       priority, priority_depth);
+				       priority, depth);
   act->n = n;
   act->result = result;
   return act;
@@ -56,7 +56,7 @@ void step_fib(rar_t *cont)
     act->tmp1 = act->n - 1;                  // tmp1 = n - 1
     act->pc = 1;			     // tmp2 = fib(tmp1)
     call((rar_t *)
-	   enter_fib((rar_t *) act, act->priority, act->priority_depth,
+	   enter_fib((rar_t *) act, act->priority, act->depth,
 		     &act->tmp2, act->tmp1));
     return;
 
@@ -64,7 +64,7 @@ void step_fib(rar_t *cont)
     act->tmp1 = act->n - 2;                  // tmp1 = n - 2
     act->pc = 2;  			     // tmp3 = fib(tmp1)
     call((rar_t *)
-	   enter_fib((rar_t *) act, act->priority, act->priority_depth,
+	   enter_fib((rar_t *) act, act->priority, act->depth,
 		     &act->tmp3, act->tmp1));
     return;
 

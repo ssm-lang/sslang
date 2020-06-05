@@ -10,6 +10,8 @@ counter
 counter2
 clock
 fib
+fib2
+fib3
 
 # Linker output
 *.ilk

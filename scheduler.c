@@ -13,16 +13,16 @@ ssm_time_t now;
 
 extern inline void leave(rar_t *, size_t);
 extern inline rar_t *enter(size_t, stepf_t *,
-				    rar_t *, priority_t, pdepth_t);
+				    rar_t *, priority_t, depth_t);
 extern inline void call(rar_t *);
 extern inline bool event_on(cv_t *);
 
 
-#define CONT_QUEUE_SIZE 64
+#define CONT_QUEUE_SIZE 1024
 cont_queue_index_t cont_queue_len = 0;
 rar_t *cont_queue[CONT_QUEUE_SIZE+1];
 
-#define EVENT_QUEUE_SIZE 255
+#define EVENT_QUEUE_SIZE 1024
 event_queue_index_t event_queue_len = 0;
 cv_t *event_queue[EVENT_QUEUE_SIZE+1];
 
@@ -106,7 +106,6 @@ void fork(rar_t *rar)
 {
   assert(rar);
   assert(rar->caller);
-  rar->caller->children++;
   enqueue(rar);
 }
 
