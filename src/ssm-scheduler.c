@@ -64,7 +64,10 @@ ssm_time_t next_event_time() {
 
 void ssm_tick()
 {
-  while (event_queue_len > 0 && event_queue[SSM_QUEUE_HEAD]->later_time == now) {
+  /* Update every variable in the event queue */
+  
+  while (event_queue_len > 0 &&
+	 event_queue[SSM_QUEUE_HEAD]->later_time == now) {
     
     struct ssm_sv *sv = event_queue[SSM_QUEUE_HEAD];
     (*sv->update)(sv);  // Update the scheduled variable
@@ -95,6 +98,8 @@ void ssm_tick()
     }
     event_queue[parent] = to_insert;    
   }
+
+  // TODO: execute all the activations in the queue
 
 }
 

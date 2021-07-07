@@ -79,6 +79,7 @@ struct ssm_trigger {
 
 /** \brief Indicate writing to a variable should trigger a routine
  *
+ * Add a trigger to a variable's list of triggers.
  * When the scheduled variable is written, the scheduler
  * will run the trigger's routine routine
  */
@@ -86,6 +87,8 @@ extern void ssm_sensitize(struct ssm_sv *, struct ssm_trigger *);
 
 /** \brief Disable a sensitized routine
  *
+ * Remove the trigger from its variable.  Only call this on
+ * a previously-sensitized trigger.
  */
 extern void ssm_desensitize(struct ssm_trigger *);
 
