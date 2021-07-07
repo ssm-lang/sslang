@@ -57,3 +57,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Doxygen-generated documentation
+doc/html/*
+doc/latex/*
