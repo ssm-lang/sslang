@@ -1,7 +1,7 @@
 CFLAGS = -Iinclude -g -Wall -pedantic -std=c99
 
 SOURCES = $(wildcard src/*.c)
-INCLUDE = $(wildcard include/*.h)
+INCLUDES = $(wildcard include/*.h)
 OBJECTS = $(patsubst src/%.c, build/%.o, $(SOURCES))
 
 ARFLAGS = -crU
@@ -22,7 +22,7 @@ build/%.o : src/%.c
 
 documentation : doc/html/index.html
 
-doc/html/index.html : doc/Doxyfile
+doc/html/index.html : doc/Doxyfile $(SOURCES) $(INCLUDES)
 	rm -rf doc/html doc/latex
 	cd doc && doxygen
 
