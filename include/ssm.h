@@ -1,13 +1,11 @@
 #ifndef _SSM_H
 #define _SSM_H
 
-/* For uint16_t, UINT64_MAX etc. */
-#include <stdint.h>
-/* For bool, true, false */
-#include <stdbool.h>
-/* For size_t */
-#include <stdlib.h>
+#include <stdint.h>   /* For uint16_t, UINT64_MAX etc. */
+#include <stdbool.h>  /* For bool, true, false */
+#include <stdlib.h>   /* For size_t */
 #include <assert.h>
+#include <stddef.h>   /* For offsetof */
 
 #ifndef SSM_ACT_MALLOC
 /** \brief Allocation function for activation records
@@ -208,6 +206,13 @@ struct ssm_sv {
  */
 bool ssm_event_on(struct ssm_sv *var /**< Variable: must be non-NULL */ );
 
+/** \brief Initialize a scheduled variable
+ *
+ * Call this to initialize the contents of a newly allocated scheduled
+ * variable, e.g., after ssm_enter()
+ */
+void ssm_initialize(struct ssm_sv *var,
+		    void (*update)(struct ssm_sv *));
 
 /** \brief Schedule a future update to a variable
  *
@@ -239,6 +244,9 @@ void ssm_trigger(struct ssm_sv *var, /**< Variable being assigned */
  */
 ssm_time_t ssm_next_event_time(void);
 
+/** \brief Return the current model time */
+ssm_time_t ssm_now(void);
+
 /** \brief Run the system for the next scheduled instant
  *
  * Typically run by the platform code, not the SSM program per se.
@@ -255,20 +263,72 @@ ssm_time_t ssm_next_event_time(void);
  */
 void ssm_tick();
 
-/* Initializing, assign, update type stuff */
 
-/* set_now; get_now */
 
-/* requeue an event, e.g., when there's already an existing one */
+/**
+ * Implementation of container_of that falls back to ISO C99 when GNU C is not
+ * available (from https://stackoverflow.com/a/10269925/10497710)
+ */
+#ifdef __GNUC__
+#define member_type(type, member) __typeof__(((type *)0)->member)
+#else
+#define member_type(type, member) const void
+#endif
+#define container_of(ptr, type, member)                                        \
+  ((type *)((char *)(member_type(type, member) *){ptr} -                       \
+            offsetof(type, member)))
 
-/* What can fail?
 
-ssm_enter (allocation failed)
 
-ssm_activate (act queue is full)
+#define SSM_DECLARE_SV_SCALAR(payload_t)                                       \
+  typedef struct {                                                             \
+    struct ssm_sv sv;                                                          \
+    payload_t value;       /* Current value */                                 \
+    payload_t later_value; /* Buffered value */                                \
+  } payload_t##_svt;                                                           \
+  void ssm_assign_##payload_t(payload_t##_svt *sv, ssm_priority_t prio,        \
+                          const payload_t value);                              \
+  void ssm_later_##payload_t(payload_t##_svt *sv, ssm_time_t then,             \
+                         const payload_t value);                               \
+  void ssm_initialize_##payload_t(payload_t##_svt *v);
 
-ssm_later_event (event queue is full)
+#define SSM_DEFINE_SV_SCALAR(payload_t)                                        \
+  static void ssm_update_##payload_t(struct ssm_sv *sv) {                      \
+    payload_t##_svt *v = container_of(sv, payload_t##_svt, sv);                \
+    v->value = v->later_value;                                                 \
+  }                                                                            \
+  void ssm_assign_##payload_t(payload_t##_svt *v, ssm_priority_t prio,         \
+                          const payload_t value) {                             \
+    v->value = value;                                                          \
+    ssm_trigger(&v->sv, prio);                                                 \
+  }                                                                            \
+  void later_##payload_t(payload_t##_svt *v, ssm_time_t then,                  \
+                         const payload_t value) {                              \
+    v->later_value = value;                                                    \
+    ssm_schedule(&v->sv, then);					               \
+  }		 	 						       \
+  void initialize_##payload_t(payload_t##_svt *v) {                            \
+    ssm_initialize(&v->sv, ssm_update_##payload_t);	     	               \
+  }
+ 
+typedef int8_t   i8;
+typedef int16_t  i16;
+typedef int32_t  i32;
+typedef int64_t  i64;
+typedef uint8_t  u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
-*/
+SSM_DECLARE_SV_SCALAR(bool)
+SSM_DECLARE_SV_SCALAR(i8)
+SSM_DECLARE_SV_SCALAR(i16)
+SSM_DECLARE_SV_SCALAR(i32)
+SSM_DECLARE_SV_SCALAR(i64)
+SSM_DECLARE_SV_SCALAR(u8)
+SSM_DECLARE_SV_SCALAR(u16)
+SSM_DECLARE_SV_SCALAR(u32)
+SSM_DECLARE_SV_SCALAR(u64)
 
 #endif
+

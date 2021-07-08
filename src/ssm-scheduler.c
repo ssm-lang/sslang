@@ -84,6 +84,8 @@ ssm_time_t next_event_time() {
     SSM_NEVER;
 }
 
+ssm_time_t ssm_now() { return now; }
+
 /** \brief Determine the index of an already scheduled event
  *
  * This is an inefficient linear search, so it's not meant to be
@@ -100,6 +102,17 @@ static q_idx_t find_queued_event(struct ssm_sv *var /**< must be non-NULL */)
     if (event_queue[i] == var) return i;
   assert(0); // Should have found the variable if it was marked as queued
   return 0;
+}
+
+void ssm_initialize(struct ssm_sv *var, void (*update)(struct ssm_sv *))
+{
+  assert(var);
+  *var = (struct ssm_sv){
+    .update = update,
+    .triggers = 0,
+    .later_time = SSM_NEVER,
+    .last_updated = now
+  };
 }
 
 void ssm_schedule(struct ssm_sv *var, ssm_time_t later)
