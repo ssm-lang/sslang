@@ -1,12 +1,6 @@
 #ifndef _SSM_H
 #define _SSM_H
 
-/**
- *
- * Main SSM API: user-visible types and functions
- *
- */
-
 /* For uint16_t, UINT64_MAX etc. */
 #include <stdint.h>
 /* For bool, true, false */
@@ -16,25 +10,29 @@
 #include <assert.h>
 
 #ifndef SSM_ACT_MALLOC
-/** \brief Allocation function for activation records */
+/** \brief Allocation function for activation records
+ *
+ * Given a number of bytes, return a void pointer to the base
+ * of newly allocated space or 0 if no additional space is available */
 #define SSM_ACT_MALLOC(size) malloc(size)
 #endif
 
 #ifndef SSM_ACT_FREE
 /** \brief Free function for activation records.
  *
- * The size of the activation record being freed will be provided.
+ * The first argument is a pointer to the base of the activation record
+ * being freed; the second is the size in bytes of the record being freed.
  */
 #define SSM_ACT_FREE(ptr, size) free(ptr)
 #endif
 
-#ifndef SSM_FAIL
-/** \brief Invoked when there is a serious failure (running of memory,
- *  exhasting queue space, etc.)  Not expected to return.
+#ifndef SSM_RESOURCES_EXHAUSTED
+/** \brief Invoked when limited resources are exhausted, e.g., unable to
+ *  allocate memory, no more queue space.  Not expected to return
  *
  * Argument passed is a string indicating where the failure occurred.
  */
-#define SSM_FAIL(err) exit(1)
+#define SSM_RESOURCES_EXHAUSTED(string) exit(1)
 #endif
 
 #define SSM_NANOSECOND(x)  (x)
@@ -124,6 +122,8 @@ extern void ssm_desensitize(struct ssm_trigger *);
  * records.  This is idempotent: it may be called multiple times on
  * the same activation record within an instant; only the first call
  * has any effect.
+ *
+ * Invokes #SSM_RESOURCES_EXHAUSTED("ssm_activate") if the activation record queue is full.
  */
 extern void ssm_activate(struct ssm_act *);
 
@@ -134,21 +134,25 @@ static inline void ssm_call(struct ssm_act *act) { (*(act->step))(act); }
 
 /** \brief Enter a routine
  *
- * Enter a function: allocate the activation record, set up the function and
+ * Enter a function: allocate the activation record by invoking
+ * #SSM_ACT_MALLOC, set up the function and
  * program counter value, and remember the caller.
  *
+ * Invokes #SSM_RESOURCES_EXHAUSTED("ssm_enter") if allocation fails.
+ *
  */
-static inline struct ssm_act *ssm_enter(size_t bytes,
-					ssm_stepf_t *step,
-					struct ssm_act *parent,
-					ssm_priority_t priority,
-					ssm_depth_t depth) {
+static inline struct ssm_act *ssm_enter(size_t bytes, /**< size of the activation record, >0 */
+					ssm_stepf_t *step, /**< Pointer to "step" function, non-NULL */
+					struct ssm_act *parent, /**< Activation record of caller, non-NULL */
+					ssm_priority_t priority, /**< Priority: must be no less than parent's */
+					ssm_depth_t depth /**< Depth; used if this routine has children */
+							     ) {
   assert(bytes > 0);
   assert(step);
   assert(parent);
   ++parent->children;
   struct ssm_act *act = (struct ssm_act *)SSM_ACT_MALLOC(bytes);
-  if (act == NULL) SSM_FAIL("ssm_enter");
+  if (!act) SSM_RESOURCES_EXHAUSTED("ssm_enter");
   *act = (struct ssm_act){
       .step = step,
       .caller = parent,
@@ -189,6 +193,9 @@ static inline void ssm_leave(struct ssm_act *act, size_t bytes) {
  * variable with a payload. In this case, the payload should also be embedded
  * in that wrapper class, and the vtable should have update/assign/later
  * methods specialized to be aware of the size and layout of the wrapper class.
+ *
+ * An invariant:
+ * #later_time != #SSM_NEVER if and only if this variable in the event queue.
  */
 struct ssm_sv {
   void (*update)(struct ssm_sv *); /**< Update "virtual method" */
@@ -197,34 +204,60 @@ struct ssm_sv {
   ssm_time_t last_updated;     /**< When the variable was last updated */
 };
 
-/** \brief Return the time of the next event in the queue or SSM_NEVER
+/** \brief Return true if there is an event on the given variable in the current instant
+ */
+bool ssm_event_on(struct ssm_sv *var /**< Variable: must be non-NULL */ );
+
+
+/** \brief Schedule a future update to a variable
  *
- * Typically used by the platform code that ultimately invokes tick().
+ * Add an event to the global event queue for the given variable,
+ * replacing any pending event.
+ */
+void ssm_schedule(struct ssm_sv *var, /**< Variable to schedule: non-NULL */
+		  ssm_time_t later
+		  /**< Event time; must be in the future (greater than #now) */);
+
+
+/** \brief Activate routines triggered by a variable
+ *
+ * Call this when a scheduled variable is assigned in the current instant
+ * (i.e., not scheduled)
+ *
+ * The given priority should be that of the routine doing the update.
+ * Instantaneous assignment can only activate lower-priority (i.e., later)
+ * routines in the same instant.
+ */
+void ssm_trigger(struct ssm_sv *var, /**< Variable being assigned */
+		 ssm_priority_t priority
+		 /**< Priority of the routine doing the assignment. */
+		 );
+
+/** \brief Return the time of the next event in the queue or #SSM_NEVER
+ *
+ * Typically used by the platform code that ultimately invokes ssm_tick().
  */
 ssm_time_t ssm_next_event_time(void);
 
-/** \brief Update variables of pending events; run every routine so triggered
+/** \brief Run the system for the next scheduled instant
  *
  * Typically run by the platform code, not the SSM program per se.
  *
+ * Advance #now to the time of the earliest event in the queue, if any.
+ *
  * Remove every event at the head of the event queue scheduled for
- * now, update the variable's current value by calling its
+ * #now, update the variable's current value by calling its
  * (type-specific) update function, and schedule all the triggers in
  * the activation queue.
  *
  * Remove the activation record in the activation record queue with the
- * lowest priority number and execute its step function.
+ * lowest priority number and execute its "step" function.
  */
 void ssm_tick();
-
-/* The ssm_event_on test */
 
 /* Initializing, assign, update type stuff */
 
 /* set_now; get_now */
-
-/* Enter an event in the queue */
-
 
 /* requeue an event, e.g., when there's already an existing one */
 

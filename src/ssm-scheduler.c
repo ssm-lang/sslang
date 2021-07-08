@@ -1,4 +1,4 @@
-#include "ssm-internal.h"
+#include "ssm.h"
 
 #ifndef SSM_EVENT_QUEUE_SIZE
 /** Size of the event queue; override as necessary */
@@ -20,6 +20,10 @@ typedef uint16_t q_idx_t;
  * \brief Event queue, used to track and schedule events between instants.
  *
  * Managed as a binary heap sorted by e->later_time
+ *
+ * Since the first element (QUEUE_HEAD) is unusued,
+ * event_queue[event_queue_len] is the last element in the queue
+ * provided event_queue_len is non-zero
  */
 static struct ssm_sv *event_queue[SSM_EVENT_QUEUE_SIZE + SSM_QUEUE_HEAD];
 static q_idx_t event_queue_len = 0;
@@ -39,6 +43,20 @@ static q_idx_t act_queue_len = 0;
  */
 static ssm_time_t now;
 
+bool ssm_event_on(struct ssm_sv *var)
+{
+  assert(var);
+  return var->last_updated == now;
+}
+
+void ssm_trigger(struct ssm_sv *var, ssm_priority_t priority)
+{
+  assert(var);
+  for (struct ssm_trigger *trig = var->triggers ; trig ; trig = trig->next)
+    if (trig->act->priority > priority)
+      ssm_activate(trig->act);       
+}
+
 void ssm_activate(struct ssm_act *act)
 {
   assert(act);
@@ -48,9 +66,11 @@ void ssm_activate(struct ssm_act *act)
 
   q_idx_t hole = ++act_queue_len;
 
-  if (act_queue_len == SSM_ACT_QUEUE_SIZE) SSM_FAIL("ssm_activate");
+  if (act_queue_len > SSM_ACT_QUEUE_SIZE)
+    SSM_RESOURCES_EXHAUSTED("ssm_activate");
 
-  // Copy parent to child until we find where we can put the new one
+  // Walk toward the root of the tree, copying parent to child until we find
+  // where we can put the activation record
   for ( ; hole > SSM_QUEUE_HEAD && priority < act_queue[hole >> 1]->priority ;
 	hole >>= 1 )
     act_queue[hole] = act_queue[hole >> 1];
@@ -64,10 +84,86 @@ ssm_time_t next_event_time() {
     SSM_NEVER;
 }
 
+/** \brief Determine the index of an already scheduled event
+ *
+ * This is an inefficient linear search, so it's not meant to be
+ * used often.  This is in preparation for either removing or rescheduling
+ * an event in the queue.  The function should only be called
+ * on a variable that is in the queue.
+ *
+ */
+static q_idx_t find_queued_event(struct ssm_sv *var /**< must be non-NULL */)
+{
+  assert(var); // Should be a real variable
+  assert(var->later_time != SSM_NEVER); // Should be in the queue
+  for (q_idx_t i = SSM_QUEUE_HEAD ; i <= event_queue_len ; i++)
+    if (event_queue[i] == var) return i;
+  assert(0); // Should have found the variable if it was marked as queued
+  return 0;
+}
+
+void ssm_schedule(struct ssm_sv *var, ssm_time_t later)
+{
+  assert(var);        // A real variable
+  assert(later > now); // Must be in the future
+
+  if (var->later_time == SSM_NEVER) {
+    // Variable does not have a pending event: add it to the queue
+    q_idx_t hole = ++event_queue_len;
+    if (event_queue_len > SSM_EVENT_QUEUE_SIZE)
+      SSM_RESOURCES_EXHAUSTED("ssm_schedule");
+
+    // Walk toward the root of the tree, copying parent to child until we find
+    // where we can put the activation record
+    for ( ; hole > SSM_QUEUE_HEAD &&
+	    later < event_queue[hole >> 1]->later_time ; hole >>= 1 )
+      event_queue[hole] = event_queue[hole >> 1];
+    event_queue[hole] = var;
+    var->later_time = later;
+    
+  } else {
+    // Variable has a pending event: reposition the event in the queue
+    // as appropriate
+
+    q_idx_t hole = find_queued_event(var);
+
+    if (hole == SSM_QUEUE_HEAD || event_queue[hole >> 1]->later_time < later) {
+      // We are at the head of the queue or our parent's event is
+      // earlier; percolate us toward the leaves
+      for (;;) {
+	q_idx_t child = hole << 1;	
+	if (child > SSM_EVENT_QUEUE_SIZE) break;
+	if (child + 1 <= SSM_EVENT_QUEUE_SIZE &&
+	    event_queue[child]->later_time >
+	    event_queue[child+1]->later_time)
+	  child++; // right child is earlier
+	if (event_queue[child]->later_time < later)
+	  break; // We are earlier than the earlier child, so we can stop here
+	
+	event_queue[hole] = event_queue[child];
+	hole = child;
+      }
+    } else {
+      // While we're farther from the root than we should be, percolate
+      // us toward the root
+      for ( ; hole > SSM_QUEUE_HEAD &&
+	      later < event_queue[hole >> 1]->later_time ; hole >>= 1)
+	event_queue[hole] = event_queue[hole >> 1];
+    }
+    event_queue[hole] = var;
+    var->later_time = later;    
+  }
+}
+
 void ssm_tick()
 {
-  /* Update every variable in the event queue */
-  
+  // Advance time to the earliest event in the queue
+  if (event_queue_len > 0) {
+    assert(now < event_queue[SSM_QUEUE_HEAD]->later_time); // No time-traveling!
+    now = event_queue[SSM_QUEUE_HEAD]->later_time;
+  }
+    
+  /* Update every variable in the event queue at the current time */
   while (event_queue_len > 0 &&
 	 event_queue[SSM_QUEUE_HEAD]->later_time == now) {
     
@@ -84,7 +180,7 @@ void ssm_tick()
     /* Remove the top event from the queue by inserting the last
        element in the queue at the front and percolating it down */
     struct ssm_sv *to_insert = event_queue[event_queue_len--]; // get last
-    ssm_time_t then = to_insert->later_time;
+    ssm_time_t later = to_insert->later_time;
 
     q_idx_t parent = 1;
     for (;;) {
@@ -93,7 +189,7 @@ void ssm_tick()
       if ( child + 1 <= event_queue_len &&
 	   event_queue[child+1]->later_time < event_queue[child]->later_time )
 	child++; // Right child is earlier
-      if (then < event_queue[child]->later_time) break; // to_insert is earlier
+      if (later < event_queue[child]->later_time) break; // to_insert is earlier
       event_queue[parent] = event_queue[child];
       parent = child;
     }
