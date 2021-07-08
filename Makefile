@@ -6,7 +6,7 @@ OBJECTS = $(patsubst src/%.c, build/%.o, $(SOURCES))
 
 ARFLAGS = -crU
 
-libssm.a : libssm.a($(OBJECTS))
+build/libssm.a : build/libssm.a($(OBJECTS))
 
 $(OBJECTS) : build
 
