@@ -1,4 +1,4 @@
-#include "ssm-int.h"
+#include "ssm-internal.h"
 
 #ifndef SSM_EVENT_QUEUE_SIZE
 /** Size of the event queue; override as necessary */
@@ -48,6 +48,8 @@ void ssm_activate(struct ssm_act *act)
 
   q_idx_t hole = ++act_queue_len;
 
+  if (act_queue_len == SSM_ACT_QUEUE_SIZE) SSM_FAIL("ssm_activate");
+
   // Copy parent to child until we find where we can put the new one
   for ( ; hole > SSM_QUEUE_HEAD && priority < act_queue[hole >> 1]->priority ;
 	hole >>= 1 )
@@ -77,8 +79,7 @@ void ssm_tick()
     /* Schedule all sensitive triggers */
     for (struct ssm_trigger *trigger = sv->triggers ; trigger ;
 	 trigger = trigger->next)
-      if (!trigger->act->scheduled) // FIXME: when is this test necessary?
-	ssm_activate(trigger->act);
+      ssm_activate(trigger->act);
 
     /* Remove the top event from the queue by inserting the last
        element in the queue at the front and percolating it down */
@@ -96,10 +97,39 @@ void ssm_tick()
       event_queue[parent] = event_queue[child];
       parent = child;
     }
-    event_queue[parent] = to_insert;    
+    event_queue[parent] = to_insert;
+    /* End of remove-the-top-element from the event queue */
   }
 
-  // TODO: execute all the activations in the queue
+  while (act_queue_len > 0) {
+    struct ssm_act *to_run = act_queue[SSM_QUEUE_HEAD];
+    to_run->scheduled = false;
 
+    /* Remove the top activation record from the queue by inserting the
+       last element in the queue at the from and percolating it down */
+    struct ssm_act *to_insert = act_queue[act_queue_len--];
+    ssm_priority_t priority = to_insert->priority;
+
+    q_idx_t parent = 1;
+    for (;;) {
+      q_idx_t child = parent << 1; // Left child
+      if (child > act_queue_len) break;
+      if (child +1 <= act_queue_len &&
+	  act_queue[child+1]->priority < act_queue[child]->priority)
+	child++;
+      if (priority < act_queue[child]->priority) break;
+      act_queue[parent] = act_queue[child];
+      parent = child;
+    }
+    act_queue[parent] = to_insert;
+    /* End of remove-the-top-element from the activation record queue */
+
+    to_run->step(to_run); // Execute the step function
+  }
 }
+
+/*
+ * Look for John's ssm-test-queue or something in his test/ directory:
+ * test harness for the binary heaps
+ */
 

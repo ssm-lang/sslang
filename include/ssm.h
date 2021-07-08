@@ -7,15 +7,35 @@
  *
  */
 
-/* For uint16_t, etc. */
+/* For uint16_t, UINT64_MAX etc. */
 #include <stdint.h>
 /* For bool, true, false */
 #include <stdbool.h>
 /* For size_t */
 #include <stdlib.h>
-/* For ULONG_MAX */
-#include <limits.h>
 #include <assert.h>
+
+#ifndef SSM_ACT_MALLOC
+/** \brief Allocation function for activation records */
+#define SSM_ACT_MALLOC(size) malloc(size)
+#endif
+
+#ifndef SSM_ACT_FREE
+/** \brief Free function for activation records.
+ *
+ * The size of the activation record being freed will be provided.
+ */
+#define SSM_ACT_FREE(ptr, size) free(ptr)
+#endif
+
+#ifndef SSM_FAIL
+/** \brief Invoked when there is a serious failure (running of memory,
+ *  exhasting queue space, etc.)  Not expected to return.
+ *
+ * Argument passed is a string indicating where the failure occurred.
+ */
+#define SSM_FAIL(err) exit(1)
+#endif
 
 #define SSM_NANOSECOND(x)  (x)
 #define SSM_MICROSECOND(x) ((x) *          1000L)
@@ -27,8 +47,11 @@
 /** \brief Absolute time; never to overflow. */
 typedef uint64_t ssm_time_t;
 
-/** \brief Time used to indicate something will never happen */
-#define SSM_NEVER ULONG_MAX
+/** \brief Time used to indicate something will never happen.
+ *
+ * The value of this must be derived from the type of ssm_time_t
+ */
+#define SSM_NEVER UINT64_MAX
 
 /** \brief Thread priority.  Lower numbers execute first */
 typedef uint32_t ssm_priority_t;
@@ -36,11 +59,14 @@ typedef uint32_t ssm_priority_t;
 /** \brief The priority for the entry point of an SSM program. */
 #define SSM_ROOT_PRIORITY 0
 
-/** \brief Index of least significant bit in a group of priorities */
+/** \brief Index of least significant bit in a group of priorities
+ *
+ * This only needs to represent the number of bits in the ssm_priority_t type.
+ */
 typedef uint8_t ssm_depth_t;
 
 /** \brief The depth at the entry point of an SSM program. */
-#define SSM_ROOT_DEPTH 32
+#define SSM_ROOT_DEPTH (sizeof(ssm_priority_t) * 8)
 
 struct ssm_sv;
 struct ssm_trigger;
@@ -53,14 +79,14 @@ typedef void ssm_stepf_t(struct ssm_act *);
 
     Routine activation record "base class." A struct for a particular
     routine must start with this type but then may be followed by
-    routine-specific fields 
+    routine-specific fields
 */
 struct ssm_act {
   ssm_stepf_t *step;       /**< C function for running this continuation */
   struct ssm_act *caller;  /**< Activation record of caller */
   uint16_t pc;             /**< Stored "program counter" for the function */
   uint16_t children;       /**< Number of running child threads */
-  ssm_priority_t priority; /**< Execution priority */
+  ssm_priority_t priority; /**< Execution priority; lower goes first */
   ssm_depth_t depth;       /**< Index of the LSB in our priority */
   bool scheduled;          /**< True when in the schedule queue */
 };
@@ -95,8 +121,9 @@ extern void ssm_desensitize(struct ssm_trigger *);
 /** \brief Schedule a routine to run in the current instant
  *
  * Enter the given activation record into the queue of activation
- * records.  This may be called multiple times on the same activation
- * record within an instant; only the first call has any effect.
+ * records.  This is idempotent: it may be called multiple times on
+ * the same activation record within an instant; only the first call
+ * has any effect.
  */
 extern void ssm_activate(struct ssm_act *);
 
@@ -120,7 +147,8 @@ static inline struct ssm_act *ssm_enter(size_t bytes,
   assert(step);
   assert(parent);
   ++parent->children;
-  struct ssm_act *act = (struct ssm_act *)malloc(bytes);
+  struct ssm_act *act = (struct ssm_act *)SSM_ACT_MALLOC(bytes);
+  if (act == NULL) SSM_FAIL("ssm_enter");
   *act = (struct ssm_act){
       .step = step,
       .caller = parent,
@@ -141,7 +169,7 @@ static inline void ssm_leave(struct ssm_act *act, size_t bytes) {
   assert(act->caller);
   assert(act->caller->step);
   struct ssm_act *caller = act->caller;
-  free(act); /* Free the whole activation record, not just the start */
+  SSM_ACT_FREE(act, bytes); /* Free the whole activation record, not just the start */
   if ((--caller->children) == 0)
     ssm_call(caller); /* If we were the last child, run our parent */
 }
@@ -163,17 +191,51 @@ static inline void ssm_leave(struct ssm_act *act, size_t bytes) {
  * methods specialized to be aware of the size and layout of the wrapper class.
  */
 struct ssm_sv {
-  void (*update)(struct ssm_sv *); /**< Update virtual method */
+  void (*update)(struct ssm_sv *); /**< Update "virtual method" */
   struct ssm_trigger *triggers;    /**< List of sensitive continuations */
   ssm_time_t later_time;       /**< When the variable should be next updated */
   ssm_time_t last_updated;     /**< When the variable was last updated */
 };
 
-/** \brief Return the time of the next event in the queue or SSM_NEVER */
+/** \brief Return the time of the next event in the queue or SSM_NEVER
+ *
+ * Typically used by the platform code that ultimately invokes tick().
+ */
 ssm_time_t ssm_next_event_time(void);
 
 /** \brief Update variables of pending events; run every routine so triggered
+ *
+ * Typically run by the platform code, not the SSM program per se.
+ *
+ * Remove every event at the head of the event queue scheduled for
+ * now, update the variable's current value by calling its
+ * (type-specific) update function, and schedule all the triggers in
+ * the activation queue.
+ *
+ * Remove the activation record in the activation record queue with the
+ * lowest priority number and execute its step function.
  */
 void ssm_tick();
+
+/* The ssm_event_on test */
+
+/* Initializing, assign, update type stuff */
+
+/* set_now; get_now */
+
+/* Enter an event in the queue */
+
+
+/* requeue an event, e.g., when there's already an existing one */
+
+/* What can fail?
+
+ssm_enter (allocation failed)
+
+ssm_activate (act queue is full)
+
+ssm_later_event (event queue is full)
+
+*/
 
 #endif
