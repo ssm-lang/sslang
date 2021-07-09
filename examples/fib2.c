@@ -7,7 +7,7 @@
 fib n &r
   var r2 = 0
   if n < 2 then r = 1 else
-    fork fib(n-1, r) fib(n-2, r2)
+    ssm_activate fib(n-1, r) fib(n-2, r2)
     r = r + r2
 
 0 1 2 3 4 5  6  7  8  9 10  11  12  13
@@ -24,63 +24,65 @@ typedef struct {
 
 ssm_stepf_t step_fib;
 
-rar_fib_t *enter_fib(rar_t *cont, priority_t priority,
-		     depth_t depth, int n, cv_int_t *r)
+rar_fib_t *ssm_enter_fib(struct ssm_act *cont, ssm_priority_t priority,
+		     ssm_depth_t depth, int n, ssm_i32_t *r)
 {
-  rar_fib_t *rar = (rar_fib_t *) enter(sizeof(rar_fib_t), step_fib, cont,
+  rar_fib_t *rar = (rar_fib_t *) ssm_enter(sizeof(rar_fib_t), step_fib, cont,
 				       priority, depth);
-  initialize_int(&rar->n, n);
+  ssm_initialize_i32(&rar->n);
+  rar->n.value = n;
   rar->r = r;
-  initialize_int(&rar->r2, 0);
+  ssm_initialize_i32(&rar->r2);
+  rar->r2.value = 0;
 
   return rar;
 }
 
-void step_fib(rar_t *act)  
+void step_fib(struct ssm_act *act)  
 {
   rar_fib_t *rar = (rar_fib_t *) act;
   switch (rar->pc) {    
   case 0:
     if (rar->n.value < 2) {
-      assign_int(rar->r, rar->priority, 1);
-      leave((rar_t *) rar, sizeof(rar_fib_t));
+      ssm_assign_i32(rar->r, rar->priority, 1);
+      ssm_leave((struct ssm_act *) rar, sizeof(rar_fib_t));
       return;
     }
-    { depth_t new_depth = rar->depth - 1; // 2 children
-      priority_t new_priority = rar->priority;
-      priority_t pinc = 1 << new_depth;
-      fork((rar_t *) enter_fib( (rar_t *) rar, new_priority, new_depth,
+    { ssm_depth_t new_depth = rar->depth - 1; // 2 children
+      ssm_priority_t new_priority = rar->priority;
+      ssm_priority_t pinc = 1 << new_depth;
+      ssm_activate((struct ssm_act *) ssm_enter_fib( (struct ssm_act *) rar, new_priority, new_depth,
 				rar->n.value - 1, rar->r));
       new_priority += pinc;
-      fork((rar_t *) enter_fib( (rar_t *) rar, new_priority, new_depth,
+      ssm_activate((struct ssm_act *) ssm_enter_fib( (struct ssm_act *) rar, new_priority, new_depth,
 				rar->n.value - 2, &rar->r2));  
     }
     rar->pc = 1;
     return;
   case 1:
-    assign_int(rar->r, rar->priority, rar->r->value + rar->r2.value );
-    leave((rar_t *) rar, sizeof(rar_fib_t));
+    ssm_assign_i32(rar->r, rar->priority, rar->r->value + rar->r2.value );
+    ssm_leave((struct ssm_act *) rar, sizeof(rar_fib_t));
     return;
   }
 }
 
-void top_return(rar_t *cont)
+void top_return(struct ssm_act *cont)
 {
   return;
 }
 
 int main(int argc, char *argv[])
 {  
-  cv_int_t result;
-  initialize_int(&result, 0);
+  ssm_i32_t result;
+  ssm_initialize_i32(&result);
+  result.value = 0;
   int n = argc > 1 ? atoi(argv[1]) : 3;
 
-  rar_t top = { .step = top_return };
-  fork((rar_t *) enter_fib(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT,
+  struct ssm_act top = { .step = top_return };
+  ssm_activate((struct ssm_act *) ssm_enter_fib(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH,
 			   n, &result));
 
-  now = 0;
-  tick();
+  ssm_tick();
 
   printf("%d\n", result.value);
 

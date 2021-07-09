@@ -49,6 +49,38 @@ bool ssm_event_on(struct ssm_sv *var)
   return var->last_updated == now;
 }
 
+void ssm_sensitize(struct ssm_sv *var, struct ssm_trigger *trigger)
+{
+  assert(var);
+  assert(trigger);
+
+  /* Point us to the first element */
+  trigger->next = var->triggers;
+
+  if (var->triggers)
+    /* Make first element point to us */
+    var->triggers->prev_ptr = &trigger->next;
+
+  /* Insert us at the beginning */
+  var->triggers = trigger;
+
+  /* Our previous is the variable */
+  trigger->prev_ptr = &var->triggers;
+}
+
+void ssm_desensitize(struct ssm_trigger *trigger)
+{
+  assert(trigger);
+  assert(trigger->prev_ptr);
+
+  /* Tell predecessor to skip us */
+  *trigger->prev_ptr = trigger->next;
+
+  if (trigger->next)
+    /* Tell successor its predecessor is our predecessor */
+    trigger->next->prev_ptr = trigger->prev_ptr;
+} 
+
 void ssm_trigger(struct ssm_sv *var, ssm_priority_t priority)
 {
   assert(var);
@@ -78,7 +110,7 @@ void ssm_activate(struct ssm_act *act)
   act->scheduled = true;
 }
 
-ssm_time_t next_event_time() {
+ssm_time_t ssm_next_event_time() {
   return event_queue_len ?
     event_queue[SSM_QUEUE_HEAD]->later_time :
     SSM_NEVER;

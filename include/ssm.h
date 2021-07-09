@@ -311,12 +311,12 @@ void ssm_tick();
     v->value = value;                                                          \
     ssm_trigger(&v->sv, prio);                                                 \
   }                                                                            \
-  void later_##payload_t(ssm_##payload_t##_t *v, ssm_time_t then,     	       \
+  void ssm_later_##payload_t(ssm_##payload_t##_t *v, ssm_time_t then,          \
                          const payload_t value) {                              \
     v->later_value = value;                                                    \
     ssm_schedule(&v->sv, then);					               \
   }		 	 						       \
-  void initialize_##payload_t(ssm_##payload_t##_t *v) {                        \
+  void ssm_initialize_##payload_t(ssm_##payload_t##_t *v) {                    \
     ssm_initialize(&v->sv, ssm_update_##payload_t);	     	               \
   }
  
