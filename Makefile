@@ -30,10 +30,9 @@ build/% : examples/%.c build/libssm.a
 documentation : doc/html/index.html
 
 doc/html/index.html : doc/Doxyfile $(SOURCES) $(INCLUDES)
-	rm -rf doc/html doc/latex
 	cd doc && doxygen
 
 
 .PHONY : clean
 clean :
-	rm -rf *.gch build/* doc/html doc/latexq libssm.a
+	rm -rf *.gch build/* libssm.a
