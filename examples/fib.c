@@ -22,25 +22,25 @@ L3: tmp1 = tmp2 + tmp3;
 
  */
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
+  SSM_ACT_FIELDS;
   
   int *result;               // Where we should write our result
   int n, tmp1, tmp2, tmp3;   // Local variables
 } fib_act_t;
 
-stepf_t step_fib;
+ssm_stepf_t step_fib;
 
-fib_act_t *enter_fib(rar_t *cont, priority_t priority,
-		     depth_t depth, int *result, int n)
+fib_act_t *enter_fib(struct ssm_act *cont, ssm_priority_t priority,
+		     ssm_depth_t depth, int *result, int n)
 {
-  fib_act_t *act = (fib_act_t *) enter(sizeof(fib_act_t), step_fib, cont,
-				       priority, depth);
+  fib_act_t *act = (fib_act_t *) ssm_enter(sizeof(fib_act_t), step_fib, cont,
+					   priority, depth);
   act->n = n;
   act->result = result;
   return act;
 }
 
-void step_fib(rar_t *cont)  
+void step_fib(struct ssm_act *cont)  
 {
   fib_act_t *act = (fib_act_t *) cont;
   //  printf("fib_step @%d n=%d\n", cont->pc, act->n);
@@ -49,34 +49,34 @@ void step_fib(rar_t *cont)
     act->tmp1 = act->n < 2;    // tmp1 = n < 2
     if (!act->tmp1) goto L1;   // if (!tmp) goto L1
     *(act->result) = 1;        // return 1
-    leave((rar_t *) act, sizeof(fib_act_t));
+    ssm_leave((struct ssm_act *) act, sizeof(fib_act_t));
     return;
     
   L1:
     act->tmp1 = act->n - 1;                  // tmp1 = n - 1
     act->pc = 1;			     // tmp2 = fib(tmp1)
-    call((rar_t *)
-	   enter_fib((rar_t *) act, act->priority, act->depth,
-		     &act->tmp2, act->tmp1));
+    ssm_call((struct ssm_act *)
+	     enter_fib((struct ssm_act *) act, act->priority, act->depth,
+		       &act->tmp2, act->tmp1));
     return;
 
   case 1: // L2:
     act->tmp1 = act->n - 2;                  // tmp1 = n - 2
     act->pc = 2;  			     // tmp3 = fib(tmp1)
-    call((rar_t *)
-	   enter_fib((rar_t *) act, act->priority, act->depth,
+    ssm_call((struct ssm_act *)
+	     enter_fib((struct ssm_act *) act, act->priority, act->depth,
 		     &act->tmp3, act->tmp1));
     return;
 
   case 2: // L3:
     act->tmp1 = act->tmp2 + act->tmp3;
     *(act->result) = act->tmp1;
-    leave((rar_t *) act, sizeof(fib_act_t));
+    ssm_leave((struct ssm_act *) act, sizeof(fib_act_t));
     return;
   }
 }
 
-void top_return(rar_t *cont)
+void top_return(struct ssm_act *cont)
 {
   return;
 }
@@ -86,9 +86,9 @@ int main(int argc, char *argv[])
   int result;
   int n = argc > 1 ? atoi(argv[1]) : 3;
 
-  rar_t top = { .step = top_return };
-  call((rar_t *) enter_fib(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT,
-			   &result, n));
+  struct ssm_act top = { .step = top_return };
+  ssm_call((struct ssm_act *) enter_fib(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH,
+					&result, n));
 
   printf("%d\n", result);
 

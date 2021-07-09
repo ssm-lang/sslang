@@ -41,7 +41,7 @@ static q_idx_t act_queue_len = 0;
  * Note that this starts out uninitialized. It is the responsibility of the
  * runtime to do so.
  */
-static ssm_time_t now;
+static ssm_time_t now = 0L;
 
 bool ssm_event_on(struct ssm_sv *var)
 {

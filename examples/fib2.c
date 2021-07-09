@@ -15,14 +15,14 @@ fib n &r
 
  */
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
+  SSM_ACT_FIELDS;
 
-  cv_int_t n;       // Local variable
-  cv_int_t *r;      // Where we should write our result
-  cv_int_t r2;
+  ssm_i32_t n;       // Local variable
+  ssm_i32_t *r;      // Where we should write our result
+  ssm_i32_t r2;
 } rar_fib_t;
 
-stepf_t step_fib;
+ssm_stepf_t step_fib;
 
 rar_fib_t *enter_fib(rar_t *cont, priority_t priority,
 		     depth_t depth, int n, cv_int_t *r)

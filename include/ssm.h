@@ -87,6 +87,15 @@ struct ssm_act {
   bool scheduled;          /**< True when in the schedule queue */
 };
 
+#define SSM_ACT_FIELDS     \
+  ssm_stepf_t *step;       \
+  struct ssm_act *caller;  \
+  uint16_t pc;             \
+  uint16_t children;       \
+  ssm_priority_t priority; \
+  ssm_depth_t depth;       \
+  bool scheduled          
+
 /** \brief  Indicates a routine should run when a scheduled variable is written
  *
  * Node in linked list of activation records, maintained by each scheduled
@@ -285,29 +294,29 @@ void ssm_tick();
     struct ssm_sv sv;                                                          \
     payload_t value;       /* Current value */                                 \
     payload_t later_value; /* Buffered value */                                \
-  } payload_t##_svt;                                                           \
-  void ssm_assign_##payload_t(payload_t##_svt *sv, ssm_priority_t prio,        \
+  } ssm_##payload_t##_t;                                                       \
+  void ssm_assign_##payload_t(ssm_##payload_t##_t *sv, ssm_priority_t prio,    \
                           const payload_t value);                              \
-  void ssm_later_##payload_t(payload_t##_svt *sv, ssm_time_t then,             \
+  void ssm_later_##payload_t(ssm_##payload_t##_t *sv, ssm_time_t then,         \
                          const payload_t value);                               \
-  void ssm_initialize_##payload_t(payload_t##_svt *v);
+  void ssm_initialize_##payload_t(ssm_##payload_t##_t *v);
 
 #define SSM_DEFINE_SV_SCALAR(payload_t)                                        \
   static void ssm_update_##payload_t(struct ssm_sv *sv) {                      \
-    payload_t##_svt *v = container_of(sv, payload_t##_svt, sv);                \
+    ssm_##payload_t##_t *v = container_of(sv, ssm_##payload_t##_t, sv);        \
     v->value = v->later_value;                                                 \
   }                                                                            \
-  void ssm_assign_##payload_t(payload_t##_svt *v, ssm_priority_t prio,         \
-                          const payload_t value) {                             \
+  void ssm_assign_##payload_t(ssm_##payload_t##_t *v, ssm_priority_t prio,     \
+                              const payload_t value) {                         \
     v->value = value;                                                          \
     ssm_trigger(&v->sv, prio);                                                 \
   }                                                                            \
-  void later_##payload_t(payload_t##_svt *v, ssm_time_t then,                  \
+  void later_##payload_t(ssm_##payload_t##_t *v, ssm_time_t then,     	       \
                          const payload_t value) {                              \
     v->later_value = value;                                                    \
     ssm_schedule(&v->sv, then);					               \
   }		 	 						       \
-  void initialize_##payload_t(payload_t##_svt *v) {                            \
+  void initialize_##payload_t(ssm_##payload_t##_t *v) {                        \
     ssm_initialize(&v->sv, ssm_update_##payload_t);	     	               \
   }
  
