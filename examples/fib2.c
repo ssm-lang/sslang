@@ -7,7 +7,7 @@
 fib n &r
   var r2 = 0
   if n < 2 then r = 1 else
-    ssm_activate fib(n-1, r) fib(n-2, r2)
+    fork fib(n-1, r) fib(n-2, r2)
     r = r + r2
 
 0 1 2 3 4 5  6  7  8  9 10  11  12  13

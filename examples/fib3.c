@@ -7,14 +7,14 @@ mywait &r
   wait r
 
 sum &r1 &r2 &r
-  ssm_activate mywait(r1) mywait(r2)
+  fork mywait(r1) mywait(r2)
   after 1s r = r1 + r2
 
 fib n &r
   var r1 = 0  
   var r2 = 0
   if n < 2 then after 1s r = 1 else
-    ssm_activate sum(r1, r2, r)  fib(n-1, r1)  fib(n-2, r2)
+    fork sum(r1, r2, r)  fib(n-1, r1)  fib(n-2, r2)
 
 0 1 2 3 4 5  6  7  8  9 10  11  12  13
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
@@ -100,7 +100,7 @@ void step_sum(struct ssm_act *act)
     rar->pc = 1;
     return;
   case 1:
-    ssm_later_i32(rar->r, ssm_now() + 1,  rar->r1->value + rar->r2->value);
+    ssm_later_i32(rar->r, ssm_now() + SSM_SECOND,  rar->r1->value + rar->r2->value);
     ssm_leave((struct ssm_act *) rar, sizeof(rar_sum_t));
     return;
   }
@@ -131,7 +131,7 @@ void step_fib(struct ssm_act *act)
   switch (rar->pc) {    
   case 0:
     if (rar->n.value < 2) {
-      ssm_later_i32(rar->r, ssm_now() + 1, 1);
+      ssm_later_i32(rar->r, ssm_now() + SSM_SECOND, 1);
       ssm_leave((struct ssm_act *) rar, sizeof(rar_fib_t));
       return;
     }
@@ -175,10 +175,10 @@ int main(int argc, char *argv[])
   ssm_tick();
   
   while (ssm_next_event_time() != SSM_NEVER) {
-    printf("ssm_now() %lu\n", ssm_now());
     ssm_tick();
   }
 
+  printf("simulated %lu seconds\n", ssm_now() / SSM_SECOND);
   printf("%d\n", result.value);
 
   return 0;

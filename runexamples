@@ -1,0 +1,45 @@
+#!/bin/sh
+
+Report () {
+    echo ""
+    echo $*
+    eval "./build/$*"
+}
+
+echo "Running examples"
+
+if [ ! -f build/fib ]
+then
+    echo "build/fib not found.  Did you \"make examples\"?"
+    exit 1
+fi
+
+echo ""
+echo "Recursive single-instant Fibonacci"
+Report fib
+Report fib 4
+Report fib 5
+Report fib 13
+Report fib 15
+
+echo ""
+echo "Recursive single-instant parallel Fibonacci"
+Report fib2
+Report fib2 4
+Report fib2 5
+Report fib2 13
+Report fib2 15
+
+echo ""
+echo "Recursive parallel Fibonacci with delays"
+Report fib3
+Report fib3 4
+Report fib3 5
+Report fib3 13
+Report fib3 15
+
+
+
+
+
+

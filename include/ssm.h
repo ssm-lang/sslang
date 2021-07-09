@@ -1,11 +1,55 @@
 #ifndef _SSM_H
 #define _SSM_H
 
+/** \mainpage A Runtime Library for the Sparse Synchronous Model
+
+\section intro_sec Introduction
+
+The operation of this library was first described in
+
+> Stephen A. Edwards and John Hui.
+> The Sparse Synchronous Model.
+> In Forum on Specification and Design Languages (FDL),
+> Kiel, Germany, September 2020.
+> http://www.cs.columbia.edu/~sedwards/papers/edwards2020sparse.pdf
+
+\section usage_sec Usage
+
+See \ref all the detailed documentation
+
+\section example Example
+
+
+    #include "ssm.h"
+
+    typedef struct {
+      SSM_ACT_FIELDS;
+      ssm_event_t second;
+    } main_act_t;
+
+    ssm_stepf_t main_step;
+
+    main_act_t *enter_main(struct ssm_act *parent,
+                           ssm_priority_t priority,
+                           ssm_depth_t depth) {
+      main_act_t * act =
+        (main_act_t *) ssm_enter(sizeof(main_act_t),
+                                 main_step, parent, priority, depth);
+      ssm_initialize_event(&act->second);
+    }
+
+*/
+
 #include <stdint.h>   /* For uint16_t, UINT64_MAX etc. */
 #include <stdbool.h>  /* For bool, true, false */
 #include <stdlib.h>   /* For size_t */
 #include <assert.h>
 #include <stddef.h>   /* For offsetof */
+
+/** \defgroup all 
+ * \addtogroup all
+ * @{
+ */
 
 #ifndef SSM_ACT_MALLOC
 /** \brief Allocation function for activation records
@@ -87,7 +131,7 @@ typedef void ssm_stepf_t(struct ssm_act *);
 
     Routine activation record "base class." A struct for a particular
     routine must start with this type but then may be followed by
-    routine-specific fields
+    routine-specific fields.   See SSM_ACT_FIELDS
 */
 struct ssm_act {
   ssm_stepf_t *step;       /**< C function for running this continuation */
@@ -98,6 +142,20 @@ struct ssm_act {
   ssm_depth_t depth;       /**< Index of the LSB in our priority */
   bool scheduled;          /**< True when in the schedule queue */
 };
+
+/** \brief "Base class" fields for user-defined activation records
+ *
+ * The same fields as struct ssm_act.
+ *
+ * Define your own activation record types like this:
+ *
+ *     typedef struct {
+ *        SSM_ACT_FIELDS;
+ *        struct ssm_trigger trigger1;
+ *        ssm_int8_t mysv;
+ *     } myact_t;
+ *
+ */
 
 #define SSM_ACT_FIELDS     \
   ssm_stepf_t *step;       \
@@ -284,8 +342,6 @@ ssm_time_t ssm_now(void);
  */
 void ssm_tick();
 
-
-
 /**
  * Implementation of container_of that falls back to ISO C99 when GNU C is not
  * available (from https://stackoverflow.com/a/10269925/10497710)
@@ -298,7 +354,6 @@ void ssm_tick();
 #define container_of(ptr, type, member)                                        \
   ((type *)((char *)(member_type(type, member) *){ptr} -                       \
             offsetof(type, member)))
-
 
 typedef struct ssm_sv ssm_event_t;
 #define ssm_later_event(var, then) ssm_schedule((var), (then))
@@ -337,14 +392,33 @@ extern void ssm_initialize_event(ssm_event_t *);
     ssm_initialize(&v->sv, ssm_update_##payload_t);	     	               \
   }
  
-typedef int8_t   i8;
-typedef int16_t  i16;
-typedef int32_t  i32;
-typedef int64_t  i64;
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+typedef int8_t   i8;   /**< \brief 8-bit Signed Integer */
+typedef int16_t  i16;  /**< \brief 16-bit Signed Integer */
+typedef int32_t  i32;  /**< \brief 32-bit Signed Integer */
+typedef int64_t  i64;  /**< \brief 64-bit Signed Integer */
+typedef uint8_t  u8;   /**< \brief 8-bit Unsigned Integer */
+typedef uint16_t u16;  /**< \brief 16-bit Unsigned Integer */
+typedef uint32_t u32;  /**< \brief 32-bit Unsigned Integer */
+typedef uint64_t u64;  /**< \brief 64-bit Unsigned Integer */
+
+/** \struct ssm_bool_t
+    \brief Scheduled Boolean variable */
+/** \struct ssm_i8_t
+    \brief Scheduled 8-bit Signed Integer variable */
+/** \struct ssm_i16_t
+    \brief Scheduled 16-bit Signed Integer variable */
+/** \struct ssm_i32_t
+    \brief Scheduled 32-bit Signed Integer variable */
+/** \struct ssm_i64_t
+    \brief Scheduled 64-bit Signed Integer variable */
+/** \struct ssm_u8_t
+    \brief Scheduled 8-bit Unsigned Integer variable */
+/** \struct ssm_u16_t
+    \brief Scheduled 16-bit Unsigned Integer variable */
+/** \struct ssm_u32_t
+    \brief Scheduled 32-bit Unsigned Integer variable */
+/** \struct ssm_u64_t
+    \brief Scheduled 64-bit Unsigned Integer variable */
 
 SSM_DECLARE_SV_SCALAR(bool)
 SSM_DECLARE_SV_SCALAR(i8)
@@ -355,6 +429,9 @@ SSM_DECLARE_SV_SCALAR(u8)
 SSM_DECLARE_SV_SCALAR(u16)
 SSM_DECLARE_SV_SCALAR(u32)
 SSM_DECLARE_SV_SCALAR(u64)
+
+/** @} */
+
 
 #endif
 
