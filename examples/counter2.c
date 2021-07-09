@@ -47,56 +47,56 @@ def main : void =         // priority 0000....
  */
 
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
-  cv_bool_t clk;
-  cv_int_t q1, d1, q2, d2;  
+  SSM_ACT_FIELDS;
+  ssm_bool_t clk;
+  ssm_i32_t q1, d1, q2, d2;  
 } act_main_t;
 
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
-  cv_bool_t *clk;
-  cv_event_t timer;
-  trigger_t trigger1;
+  SSM_ACT_FIELDS;
+  ssm_bool_t *clk;
+  ssm_event_t timer;
+  struct ssm_trigger trigger1;
 } act_clock_t;
 
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
-  cv_bool_t *clk;
-  cv_int_t *d, *q;
-  trigger_t trigger1;
+  SSM_ACT_FIELDS;
+  ssm_bool_t *clk;
+  ssm_i32_t *d, *q;
+  struct ssm_trigger trigger1;
 } act_dff_t;
 
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
-  cv_int_t *a, *y;
-  trigger_t trigger1;
+  SSM_ACT_FIELDS;
+  ssm_i32_t *a, *y;
+  struct ssm_trigger trigger1;
 } act_inc_t;
 
 typedef struct {
-  ACTIVATION_RECORD_FIELDS;
-  cv_int_t *a, *b, *y;
-  trigger_t trigger1, trigger2;
+  SSM_ACT_FIELDS;
+  ssm_i32_t *a, *b, *y;
+  struct ssm_trigger trigger1, trigger2;
 } act_adder_t;
 
 
-stepf_t step_clock;
+ssm_stepf_t step_clock;
 
-act_clock_t *enter_clock(rar_t *parent, priority_t priority,
-			 depth_t depth, cv_bool_t *clk)
+act_clock_t *ssm_enter_clock(struct ssm_act *parent, ssm_priority_t priority,
+			 ssm_depth_t depth, ssm_bool_t *clk)
 {
   assert(parent);
   assert(clk);
 
-  act_clock_t *act = (act_clock_t *) enter(sizeof(act_clock_t), step_clock,
+  act_clock_t *act = (act_clock_t *) ssm_enter(sizeof(act_clock_t), step_clock,
 					   parent, priority, depth);
   act->clk = clk;
-  initialize_event( &(act->timer) );
-  act->trigger1.rar = (rar_t *) act;
+  ssm_initialize_event( &(act->timer) );
+  act->trigger1.act = (struct ssm_act *) act;
 
   return act;
 }
 
-void step_clock(rar_t *cont)
+void step_clock(struct ssm_act *cont)
 {
   act_clock_t *act = (act_clock_t *) cont;
 
@@ -105,58 +105,58 @@ void step_clock(rar_t *cont)
   switch (act->pc) {
   case 0:
     for (;;) { // loop
-      later_event(&act->timer, now + 100); // after 100 timer = Event
+      ssm_later_event(&act->timer, ssm_now() + 100); // after 100 timer = Event
 
-      sensitize((cv_t *) &act->timer, &act->trigger1); // await @timer
+      ssm_sensitize((struct ssm_sv *) &act->timer, &act->trigger1); // await @timer
       act->pc = 1;
       return;
     case 1:
-      if (event_on((cv_t *) &act->timer)) { // @timer
-	desensitize(&act->trigger1);
+      if (ssm_event_on((struct ssm_sv *) &act->timer)) { // @timer
+	ssm_desensitize(&act->trigger1);
       }	else return;
 
-      assign_bool(act->clk, act->priority, true); // clk = True
+      ssm_assign_bool(act->clk, act->priority, true); // clk = True
       
-      later_event(&act->timer, now + 100); // after 100 timer = Event
+      ssm_later_event(&act->timer, ssm_now() + 100); // after 100 timer = Event
       
-      sensitize((cv_t *) &act->timer, &act->trigger1); // await @timer
+      ssm_sensitize((struct ssm_sv *) &act->timer, &act->trigger1); // await @timer
       act->pc = 2;
       return;
     case 2:
-      if (event_on((cv_t *) &act->timer)) { // @timer
-	desensitize(&act->trigger1);
+      if (ssm_event_on((struct ssm_sv *) &act->timer)) { // @timer
+	ssm_desensitize(&act->trigger1);
       } else return;
 
-      assign_bool(act->clk, act->priority, false); // clk = False
+      ssm_assign_bool(act->clk, act->priority, false); // clk = False
     }
   }
-  leave((rar_t *) act, sizeof(act_clock_t));
+  ssm_leave((struct ssm_act *) act, sizeof(act_clock_t));
 }
 
 
-stepf_t step_dff;
+ssm_stepf_t step_dff;
 
-act_dff_t *enter_dff(rar_t *parent, priority_t priority,
-		     depth_t depth,
-		     cv_bool_t *clk, cv_int_t *d, cv_int_t *q)
+act_dff_t *ssm_enter_dff(struct ssm_act *parent, ssm_priority_t priority,
+		     ssm_depth_t depth,
+		     ssm_bool_t *clk, ssm_i32_t *d, ssm_i32_t *q)
 {
   assert(parent);
   assert(clk);
   assert(d);
   assert(q);
   
-  act_dff_t *act = (act_dff_t *) enter(sizeof(act_dff_t), step_dff, parent,
+  act_dff_t *act = (act_dff_t *) ssm_enter(sizeof(act_dff_t), step_dff, parent,
 				       priority, depth);
 
   act->clk = clk;
   act->d = d;
   act->q = q;
-  act->trigger1.rar = (rar_t *) act;
+  act->trigger1.act = (struct ssm_act *) act;
 
   return act;
 }
 
-void step_dff(rar_t *cont)
+void step_dff(struct ssm_act *cont)
 {
   act_dff_t *act = (act_dff_t *) cont;
 
@@ -168,43 +168,43 @@ void step_dff(rar_t *cont)
   case 0:
     for (;;) { // loop
       // await clk == True
-      sensitize((cv_t *) act->clk, &act->trigger1);
+      ssm_sensitize((struct ssm_sv *) act->clk, &act->trigger1);
       act->pc = 1;
       return;
     case 1:
-      if (event_on((cv_t *)(act->clk)) && act->clk->value ) {  // clk == true
-	desensitize(&act->trigger1);
+      if (ssm_event_on((struct ssm_sv *)(act->clk)) && act->clk->value ) {  // clk == true
+	ssm_desensitize(&act->trigger1);
       } else return;
       
-      assign_int(act->q, act->priority, act->d->value); // q = d
+      ssm_assign_i32(act->q, act->priority, act->d->value); // q = d
     }
 
   }
-  leave((rar_t *) act, sizeof(act_dff_t)); 
+  ssm_leave((struct ssm_act *) act, sizeof(act_dff_t)); 
 }
 
 
-stepf_t step_inc;
+ssm_stepf_t step_inc;
 
-act_inc_t *enter_inc(rar_t *parent, priority_t priority,
-		     depth_t depth,
-		     cv_int_t *a, cv_int_t *y)
+act_inc_t *ssm_enter_inc(struct ssm_act *parent, ssm_priority_t priority,
+		     ssm_depth_t depth,
+		     ssm_i32_t *a, ssm_i32_t *y)
 {
   assert(parent);
   assert(a);
   assert(y);
   
-  act_inc_t *act = (act_inc_t *) enter(sizeof(act_inc_t), step_inc, parent,
+  act_inc_t *act = (act_inc_t *) ssm_enter(sizeof(act_inc_t), step_inc, parent,
 				       priority, depth);
 
   act->a = a;
   act->y = y;
-  act->trigger1.rar = (rar_t *) act;
+  act->trigger1.act = (struct ssm_act *) act;
 
   return act;
 }
 
-void step_inc(rar_t *cont)
+void step_inc(struct ssm_act *cont)
 {
   act_inc_t *act = (act_inc_t *) cont;
 
@@ -212,45 +212,45 @@ void step_inc(rar_t *cont)
   case 0:
     for (;;) { // loop
       // await @a
-      sensitize((cv_t *) act->a, &act->trigger1);
+      ssm_sensitize((struct ssm_sv *) act->a, &act->trigger1);
       act->pc = 1;
       return;
     case 1:
-      if (event_on((cv_t *)(act->a))) {  // @a
-	desensitize(&act->trigger1);
-	assign_int(act->y, act->priority, act->a->value + 1);
+      if (ssm_event_on((struct ssm_sv *)(act->a))) {  // @a
+	ssm_desensitize(&act->trigger1);
+	ssm_assign_i32(act->y, act->priority, act->a->value + 1);
       } else return;     
     }
 
   }
-  leave((rar_t *) act, sizeof(act_inc_t)); 
+  ssm_leave((struct ssm_act *) act, sizeof(act_inc_t)); 
 }
 
 
-stepf_t step_adder;
+ssm_stepf_t step_adder;
 
-act_adder_t *enter_adder(rar_t *parent, priority_t priority,
-			 depth_t depth,
-			 cv_int_t *a, cv_int_t *b, cv_int_t *y)
+act_adder_t *ssm_enter_adder(struct ssm_act *parent, ssm_priority_t priority,
+			 ssm_depth_t depth,
+			 ssm_i32_t *a, ssm_i32_t *b, ssm_i32_t *y)
 {
   assert(parent);
   assert(a);
   assert(b);
   assert(y);
   
-  act_adder_t *act = (act_adder_t *) enter(sizeof(act_adder_t),
+  act_adder_t *act = (act_adder_t *) ssm_enter(sizeof(act_adder_t),
 					   step_adder, parent,
 					   priority, depth);
 
   act->a = a;
   act->b = b;
   act->y = y;
-  act->trigger1.rar = act->trigger2.rar = (rar_t *) act;
+  act->trigger1.act = act->trigger2.act = (struct ssm_act *) act;
 
   return act;
 }
 
-void step_adder(rar_t *cont)
+void step_adder(struct ssm_act *cont)
 {
   act_adder_t *act = (act_adder_t *) cont;
 
@@ -258,83 +258,88 @@ void step_adder(rar_t *cont)
   case 0:
     for (;;) { // loop
       // await @a or @b
-      sensitize((cv_t *) act->a, &act->trigger1);
-      sensitize((cv_t *) act->b, &act->trigger2);
+      ssm_sensitize((struct ssm_sv *) act->a, &act->trigger1);
+      ssm_sensitize((struct ssm_sv *) act->b, &act->trigger2);
       act->pc = 1;
       return;
     case 1:
-      if (event_on((cv_t *)(act->a)) ||
-	  event_on((cv_t *)(act->b))) {  // @a or @b
-	desensitize(&act->trigger1);
-	desensitize(&act->trigger2);
-	assign_int(act->y, act->priority, act->a->value + act->b->value);
+      if (ssm_event_on((struct ssm_sv *)(act->a)) ||
+	  ssm_event_on((struct ssm_sv *)(act->b))) {  // @a or @b
+	ssm_desensitize(&act->trigger1);
+	ssm_desensitize(&act->trigger2);
+	ssm_assign_i32(act->y, act->priority, act->a->value + act->b->value);
       } else return;     
     }
   }
-  leave((rar_t *) act, sizeof(act_adder_t)); 
+  ssm_leave((struct ssm_act *) act, sizeof(act_adder_t)); 
 }
 
 
 
-stepf_t step_main;
+ssm_stepf_t step_main;
 
 // Create a new activation record for main
-act_main_t *enter_main(rar_t *parent, priority_t priority,
-		       depth_t depth)
+act_main_t *ssm_enter_main(struct ssm_act *parent, ssm_priority_t priority,
+		       ssm_depth_t depth)
 {
-  act_main_t *act = (act_main_t *) enter(sizeof(act_main_t), step_main, parent,
+  act_main_t *act = (act_main_t *) ssm_enter(sizeof(act_main_t), step_main, parent,
 					 priority, depth);
   
   // Initialize managed variables
-  initialize_bool(&act->clk, false);
-  initialize_int(&act->d1, 0);
-  initialize_int(&act->q1, 0);
-  initialize_int(&act->d2, 0);
-  initialize_int(&act->q2, 0);
+  ssm_initialize_bool(&act->clk);
+  act->clk.value = false;
+  ssm_initialize_i32(&(act->d1));
+  act->d1.value = 0;
+  ssm_initialize_i32(&(act->q1));
+  act->q1.value = 0;
+  ssm_initialize_i32(&(act->d2));
+  act->d2.value = 0;
+  ssm_initialize_i32(&(act->q2));
+  act->q2.value = 0;
   
   return act;
 }
 
-void step_main(rar_t *cont)
+void step_main(struct ssm_act *cont)
 {
   act_main_t *act = (act_main_t *) cont;
 
   switch (act->pc) {
   case 0:
-    {                                               // fork
-      depth_t new_depth = act->depth - 3; // 8 children
-      priority_t new_priority = act->priority;
-      priority_t pinc = 1 << new_depth;             // increment for each thread
-      fork((rar_t *)              // clock clk
-		    enter_clock((rar_t *) act, new_priority, new_depth,
+    {                                               // ssm_activate
+      ssm_depth_t new_depth = act->depth - 3; // 8 children
+      ssm_priority_t new_priority = act->priority;
+      ssm_priority_t pinc = 1 << new_depth;             // increment for each thread
+      ssm_activate((struct ssm_act *)              // clock clk
+		    ssm_enter_clock((struct ssm_act *) act, new_priority, new_depth,
 				&act->clk ));
       new_priority += pinc;
-      fork((rar_t *)              // dff clk d1 q1
-		    enter_dff((rar_t *) act, new_priority, new_depth,
+      ssm_activate((struct ssm_act *)              // dff clk d1 q1
+		    ssm_enter_dff((struct ssm_act *) act, new_priority, new_depth,
 			      &act->clk, &act->d1, &act->q1 ));
       new_priority += pinc;
-      fork((rar_t *)              // dff clk d2 q2
-		    enter_dff((rar_t *) act, new_priority, new_depth,
+      ssm_activate((struct ssm_act *)              // dff clk d2 q2
+		    ssm_enter_dff((struct ssm_act *) act, new_priority, new_depth,
 			      &act->clk, &act->d2, &act->q2 ));
       new_priority += pinc;
-      fork((rar_t *)              // inc q2 d2
-		    enter_inc((rar_t *) act, new_priority, new_depth,
+      ssm_activate((struct ssm_act *)              // inc q2 d2
+		    ssm_enter_inc((struct ssm_act *) act, new_priority, new_depth,
 			      &act->q2, &act->d2 ));
       new_priority += pinc;
-      fork((rar_t *)              // adder q1 d2 d1
-		    enter_adder((rar_t *) act, new_priority, new_depth,
+      ssm_activate((struct ssm_act *)              // adder q1 d2 d1
+		    ssm_enter_adder((struct ssm_act *) act, new_priority, new_depth,
 				&act->q1, &act->d2, &act->d1 ));
       // new_priority += pinc;
     }
     act->pc = 1;
     return;
   case 1:
-    leave((rar_t *) act, sizeof(act_adder_t));
+    ssm_leave((struct ssm_act *) act, sizeof(act_adder_t));
     return;
   }
 }
 
-void main_return(rar_t *cont)
+void main_return(struct ssm_act *cont)
 {
   return;
 }
@@ -343,16 +348,15 @@ int main(int argc, char *argv[])
 {
   ssm_time_t stop_at = argc > 1 ? atoi(argv[1]) : 1000;
   
-  rar_t top = { .step = main_return };  
-  act_main_t *act = enter_main(&top, PRIORITY_AT_ROOT, DEPTH_AT_ROOT);  
-  fork((rar_t *) act);
+  struct ssm_act top = { .step = main_return };  
+  act_main_t *act = ssm_enter_main(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH);  
+  ssm_activate((struct ssm_act *) act);
 
-  tick();
+  ssm_tick();
 
-  while (event_queue_len > 0 && now < stop_at) {
-    now = event_queue[1]->event_time;
-    printf("now %lu\n", now);
-    tick();
+  while (ssm_next_event_time() != SSM_NEVER && ssm_now() < stop_at) {
+    ssm_tick();
+    printf("ssm_now() %lu\n", ssm_now());
   }
   
   return 0;

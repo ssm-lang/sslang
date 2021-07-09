@@ -33,12 +33,24 @@
 #define SSM_RESOURCES_EXHAUSTED(string) exit(1)
 #endif
 
-#define SSM_NANOSECOND(x)  (x)
-#define SSM_MICROSECOND(x) ((x) *          1000L)
-#define SSM_MILLISECOND(x) ((x) *       1000000L)
-#define SSM_SECOND(x)      ((x) *    1000000000L)
-#define SSM_MINUTE(x)      ((x) *   60000000000L)
-#define SSM_HOUR(x)        ((x) * 3600000000000L)
+#ifndef SSM_SECOND
+/** \brief Ticks in a second
+ *
+ * Override this according to your platform
+ */
+#define SSM_SECOND 1000000000L
+#endif
+
+/** \brief Ticks per nanosecond */
+#define SSM_NANOSECOND  (SSM_SECOND/1000000000L)
+/** \brief Ticks per microsecond */
+#define SSM_MICROSECOND (SSM_SECOND/1000000L)
+/** \brief Ticks per millisecond */
+#define SSM_MILLISECOND (SSM_SECOND/1000L)
+/** \brief Ticks per minute */
+#define SSM_MINUTE      (SSM_SECOND*60L)
+/** \brief Ticks per hour */
+#define SSM_HOUR        (SSM_SECOND*3600L)
 
 /** \brief Absolute time; never to overflow. */
 typedef uint64_t ssm_time_t;
@@ -287,6 +299,11 @@ void ssm_tick();
   ((type *)((char *)(member_type(type, member) *){ptr} -                       \
             offsetof(type, member)))
 
+
+typedef struct ssm_sv ssm_event_t;
+#define ssm_later_event(var, then) ssm_schedule((var), (then))
+#define ssm_assign_event(var, prio) ssm_trigger(var, prio)
+extern void ssm_initialize_event(ssm_event_t *);
 
 
 #define SSM_DECLARE_SV_SCALAR(payload_t)                                       \

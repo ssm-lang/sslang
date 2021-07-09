@@ -1,7 +1,7 @@
 {
     "name": "ssm",
     "version": "0.1",
-    "description": "A lightweight runtime system for the sparse synchronous model, a deterministic real-time system",
+    "description": "A lightweight runtime system for the sparse synchronous model, a deterministic real-time system model",
     "repository":
     {
 	"type":"git",
