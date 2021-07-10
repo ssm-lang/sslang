@@ -11,8 +11,7 @@ ARFLAGS = -crU
 
 test-examples : examples
 	./runexamples > build/examples.out
-	diff test/examples.out build/examples.out || echo "DIFFERS"
-
+	(diff test/examples.out build/examples.out && echo "EXAMPLES PASSED") || echo "EXAMPLE OUTPUT DIFFERS"
 
 build/libssm.a : $(INCLUDES) $(OBJECTS)
 	rm -f build/libssm.a

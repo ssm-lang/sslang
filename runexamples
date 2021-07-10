@@ -15,6 +15,10 @@ then
 fi
 
 echo ""
+echo "The classic"
+Report hello
+
+echo ""
 echo "Recursive single-instant Fibonacci"
 Report fib
 Report fib 4
