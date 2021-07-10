@@ -7,7 +7,12 @@ OBJECTS = $(patsubst src/%.c, build/%.o, $(SOURCES))
 EXAMPLES = $(wildcard examples/*.c)
 EXAMPLEEXES = $(patsubst examples/%.c, build/%, $(EXAMPLES))
 
-ARFLAGS = -crU 
+ARFLAGS = -crU
+
+test-examples : examples
+	./runexamples > build/examples.out
+	diff test/examples.out build/examples.out || echo "DIFFERS"
+
 
 build/libssm.a : $(INCLUDES) $(OBJECTS)
 	rm -f build/libssm.a
@@ -17,8 +22,6 @@ $(OBJECTS) : $(INCLUDES) $(SOURCES)
 
 build/%.o : src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-
 
 examples : $(EXAMPLEEXES)
 

@@ -61,7 +61,7 @@ void step_one(struct ssm_act *act)
     return;
   case 1:
     ssm_desensitize(&rar->trigger1);
-    ssm_assign_i32(rar->a, rar->priority, rar->a->value + 4);
+    ssm_assign_i32(rar->a, rar->priority, rar->a->value + 1);
     ssm_leave((struct ssm_act *) rar, sizeof(rar_one_t));
     return;
   }
@@ -118,7 +118,7 @@ void step_main(struct ssm_act *act)
   rar_main_t *rar = (rar_main_t *) act;
   switch (rar->pc) {    
   case 0:
-    ssm_later_i32(&rar->a, ssm_now() + 1, 1);
+    ssm_later_i32(&rar->a, ssm_now() + 100, 10);
     { ssm_depth_t new_depth = rar->depth - 1; // 2 children
       ssm_priority_t new_priority = rar->priority;
       ssm_priority_t pinc = 1 << new_depth;
@@ -149,7 +149,7 @@ int main()
 
   do {
     ssm_tick();
-    printf("ssm_now() %lu\n", ssm_now());
+    printf("finished time %lu\n", ssm_now());
   } while (ssm_next_event_time() != SSM_NEVER);
   
   return 0;

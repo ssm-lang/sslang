@@ -352,12 +352,10 @@ int main(int argc, char *argv[])
   act_main_t *act = ssm_enter_main(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH);  
   ssm_activate((struct ssm_act *) act);
 
-  ssm_tick();
-
-  while (ssm_next_event_time() != SSM_NEVER && ssm_now() < stop_at) {
+  do {
     ssm_tick();
-    printf("ssm_now() %lu\n", ssm_now());
-  }
+    printf("finished time %lu\n", ssm_now());
+  } while (ssm_next_event_time() != SSM_NEVER && ssm_now() < stop_at);
   
   return 0;
 }
