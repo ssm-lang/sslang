@@ -85,9 +85,9 @@ int main(int argc, char *argv[])
 {  
   int result;
   int n = argc > 1 ? atoi(argv[1]) : 3;
-
-  struct ssm_act top = { .step = top_return };
-  ssm_call((struct ssm_act *) enter_fib(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH,
+  
+  ssm_call((struct ssm_act *) enter_fib(&ssm_top_parent,
+					SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH,
 					&result, n));
 
   printf("%d\n", result);

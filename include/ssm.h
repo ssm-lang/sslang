@@ -347,6 +347,29 @@ ssm_time_t ssm_now(void);
  */
 void ssm_tick();
 
+/** An activation record for the parent of the topmost routine
+ *
+ * When you are starting up your SSM system, pass a pointer to this as
+ * the parent of your topmost function.  E.g., if `main` is your topmost
+ * function and your `enter_main()` function takes its parent as the first
+ * argument,
+ *
+ * ~~~{.c}
+ * main_act_t *enter_main(ssm_act_t *, ssm_priority_t, ssm_depth_t);
+ * void step_main(ssm_act_t *act);
+ *
+ * enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
+ * ~~~
+ *
+ * Here, `enter_main()` should cause ssm_enter() to be called with
+ *
+ * ~~~{.c}
+ * ssm_enter(sizeof(main_act_t), step_main, &ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
+ * ~~~
+ */
+extern ssm_act_t ssm_top_parent;
+
+
 /**
  * Implementation of container_of that falls back to ISO C99 when GNU C is not
  * available (from https://stackoverflow.com/a/10269925/10497710)
