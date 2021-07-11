@@ -17,6 +17,7 @@ fi
 echo ""
 echo "The classic"
 Report hello
+Report hello2
 
 echo ""
 echo "Recursive single-instant Fibonacci"

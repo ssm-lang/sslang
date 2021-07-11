@@ -1,4 +1,4 @@
-CFLAGS = -Iinclude -g -Wall -pedantic -std=c99
+CFLAGS = -Iinclude -g -O -Wall -pedantic -std=c99
 
 SOURCES = $(wildcard src/*.c)
 INCLUDES = $(wildcard include/*.h)
