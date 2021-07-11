@@ -307,6 +307,12 @@ void ssm_schedule(ssm_sv_t *var, /**< Variable to schedule: non-NULL */
 		  ssm_time_t later
 		  /**< Event time; must be in the future (greater than #now) */);
 
+/** Unschedule any pending event on a variable
+ *
+ * If there is a pending event on the given variable, remove the event
+ * from the queue.  Nothing happens if there is no such pending event
+ */
+void ssm_unschedule(ssm_sv_t *var);
 
 /** Activate routines triggered by a variable
  *
@@ -461,6 +467,9 @@ SSM_DECLARE_SV_SCALAR(u64)
 
 /** @} */
 
+
+// FIXME!
+#include "ssm-debug.h"
 
 #endif
 

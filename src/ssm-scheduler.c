@@ -200,6 +200,19 @@ void ssm_schedule(struct ssm_sv *var, ssm_time_t later)
   }
 }
 
+void ssm_unschedule(struct ssm_sv *var)
+{
+  assert(var);        // A real variable
+  if (var->later_time != SSM_NEVER) {
+    q_idx_t hole = find_queued_event(var);
+    var->later_time = SSM_NEVER;
+    assert(0); // FIXME!   
+    // Move the last element of the queue into the hole,
+    // then percolate up or down as needed.  Similar to ssm_schedule.
+    // Remove the hole from the event queue    
+  }
+}
+
 void ssm_tick()
 {
   // Advance time to the earliest event in the queue
