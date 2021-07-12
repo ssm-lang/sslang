@@ -46,7 +46,7 @@ See [the detailed documentation](@ref all)
 #include <assert.h>
 #include <stddef.h>   /* For offsetof */
 
-/** \defgroup all 
+/** \defgroup all The SSM Runtime
  * \addtogroup all
  * @{
  */
@@ -186,8 +186,10 @@ typedef struct ssm_trigger {
  *
  * This is the "base class" for other scheduled variable types.
  *
- * On its own, this represents a pure event variable, i.e., a scheduled variable
- * with no data/payload.
+ * On its own, this represents a pure event variable, i.e., a
+ * scheduled variable with no data/payload.  The presence of an event on
+ * such a variable can be tested with ssm_event_on() as well as awaited
+ * with triggers.
  *
  * The update field must point to code that copies the new value of
  * the scheduled variable into its current value.  For pure events,
@@ -199,7 +201,7 @@ typedef struct ssm_trigger {
  * methods specialized to be aware of the size and layout of the wrapper class.
  *
  * An invariant:
- * #later_time != #SSM_NEVER if and only if this variable in the event queue.
+ * `later_time` != #SSM_NEVER if and only if this variable in the event queue.
  */
 typedef struct ssm_sv {
   void (*update)(struct ssm_sv *); /**< Update "virtual method" */
@@ -310,7 +312,8 @@ void ssm_schedule(ssm_sv_t *var, /**< Variable to schedule: non-NULL */
 /** Unschedule any pending event on a variable
  *
  * If there is a pending event on the given variable, remove the event
- * from the queue.  Nothing happens if there is no such pending event
+ * from the queue.  Nothing happens if the variable does not have a
+ * pending event.
  */
 void ssm_unschedule(ssm_sv_t *var);
 

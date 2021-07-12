@@ -1,4 +1,4 @@
-CFLAGS = -Iinclude -g -O -Wall -pedantic -std=c99
+CFLAGS = -Iinclude -g -Wall -pedantic -std=c99 -DSSM_DEBUG
 
 SOURCES = $(wildcard src/*.c)
 INCLUDES = $(wildcard include/*.h)
@@ -12,6 +12,9 @@ ARFLAGS = -crU
 test-examples : examples
 	./runexamples > build/examples.out
 	(diff test/examples.out build/examples.out && echo "EXAMPLES PASSED") || echo "EXAMPLE OUTPUT DIFFERS"
+
+build/test_main : test/test_main.c build/libssm.a
+	$(CC) $(CFLAGS) -o $@ test/test_main.c -Lbuild -lssm
 
 build/libssm.a : $(INCLUDES) $(OBJECTS)
 	rm -f build/libssm.a
