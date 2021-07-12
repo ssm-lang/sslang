@@ -5,6 +5,8 @@
 #error "SSM_DEBUG undefined; it should be defined for the library"
 #endif
 
+#undef NDEBUG
+
 typedef uint16_t q_idx_t;
 extern ssm_sv_t *event_queue[];
 extern q_idx_t event_queue_len;
@@ -42,7 +44,8 @@ void event_queue_basic()
   assert(ssm_next_event_time() == 1);
   event_queue_consistency_check();
   ssm_tick();
-  assert(ssm_event_on(&variables[0]));
+  bool event_on = ssm_event_on(&variables[0]);
+  assert(event_on);
   assert(ssm_now() == 1);
   assert(ssm_next_event_time() == SSM_NEVER);
   assert(event_queue_len == 0);
@@ -148,10 +151,18 @@ void event_queue_unschedule_string(const char *input, int n,
   }
 
   var = variables;
-  for ( ; n ; ++var, --n ) {
+  for ( int j = n ; j ; ++var, --j ) {
     ssm_unschedule(var);
     event_queue_consistency_check();
   }
+
+  // Unschedule them again; it shouldn't matter
+  
+  var = variables;
+  for ( int j = n ; j ; ++var, --j ) {
+    ssm_unschedule(var);
+    event_queue_consistency_check();
+  }  
 
   while (event_queue_len) {
     char c = (char) event_queue[1]->later_time;
@@ -266,11 +277,13 @@ void trigger_basic()
 
   triggers[0].act = &acts[0];
   triggers[1].act = &acts[1];
+  triggers[2].act = &acts[0];
 
   step0ran = step1ran = false;
 
   ssm_sensitize(&variables[0], &triggers[0]);
   ssm_sensitize(&variables[0], &triggers[1]);
+  ssm_sensitize(&variables[0], &triggers[2]);
 
   ssm_schedule(&variables[0], 1);
 
@@ -316,12 +329,27 @@ void trigger_basic()
   printf("\n");
     
   assert(ssm_now() == 4);
-  assert(!step0ran);
+  assert(step0ran);
   assert(!step1ran);
+
 
   assert(ssm_next_event_time() == SSM_NEVER);
 
   ssm_schedule(&variables[0], 5);
+  ssm_desensitize(&triggers[2]);
+
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+    
+  assert(ssm_now() == 5);
+  assert(!step0ran);
+  assert(!step1ran);
+
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_schedule(&variables[0], 6);
   ssm_sensitize(&variables[0], &triggers[1]);
   ssm_sensitize(&variables[0], &triggers[0]);
 
@@ -329,20 +357,20 @@ void trigger_basic()
   ssm_tick();
   printf("\n");
   
-  assert(ssm_now() == 5);
+  assert(ssm_now() == 6);
   assert(step0ran);
   assert(step1ran);
 
   assert(ssm_next_event_time() == SSM_NEVER);
 
   ssm_desensitize(&triggers[0]);
-  ssm_schedule(&variables[0], 6);
+  ssm_schedule(&variables[0], 7);
   
   step0ran = step1ran = false;
   ssm_tick();
   printf("\n");
   
-  assert(ssm_now() == 6);
+  assert(ssm_now() == 7);
   assert(!step0ran);
   assert(step1ran);
 
@@ -355,7 +383,7 @@ void trigger_basic()
   ssm_tick();
   printf("\n");
 
-  assert(ssm_now() == 6);
+  assert(ssm_now() == 7);
   assert(step0ran);
   assert(step1ran);
 
@@ -365,7 +393,7 @@ void trigger_basic()
   ssm_tick();
   printf("\n");
 
-  assert(ssm_now() == 6);
+  assert(ssm_now() == 7);
   assert(!step0ran);
   assert(step1ran);  
 }
@@ -485,5 +513,7 @@ int main()
 		      "        BDFJLOQTTaceeeghhikmnoooprrsuuvwxyz"); 
 
   trigger_basic();
+
+  printf("PASSED\n");
   return 0;
 }

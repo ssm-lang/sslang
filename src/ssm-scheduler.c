@@ -356,21 +356,15 @@ void event_queue_consistency_check()
   assert(event_queue_len <= SSM_EVENT_QUEUE_SIZE); // No overflow
 
   for (q_idx_t i = SSM_QUEUE_HEAD ; i <= event_queue_len ; i++) {
-    ssm_sv_t *var = event_queue[i];    
-    assert(var); // Events should be valid
-    ssm_time_t later = var->later_time;
-    assert(later != SSM_NEVER); // Queue events should have valid time
+    assert(event_queue[i]); // Events should be valid
+    assert(event_queue[i]->later_time != SSM_NEVER); // Queue events should have valid time
     q_idx_t child = i << 1;
     if (child <= event_queue_len) {
-      ssm_sv_t *cvar = event_queue[child];
-      assert(cvar);
-      ssm_time_t clater = cvar->later_time;
-      assert(clater >= later);
+      assert(event_queue[child]);
+      assert(event_queue[child]->later_time >= event_queue[i]->later_time);
       if (++child <= event_queue_len) {
-	ssm_sv_t *cvar = event_queue[child];
-	assert(cvar);
-	ssm_time_t clater = cvar->later_time;
-	assert(clater >= later);
+	assert(event_queue[child]);
+	assert(event_queue[child]->later_time >= event_queue[i]->later_time);
       }
     }
   }
@@ -385,21 +379,15 @@ void act_queue_consistency_check()
   assert(act_queue_len <= SSM_ACT_QUEUE_SIZE); // No overflow
 
   for (q_idx_t i = SSM_QUEUE_HEAD ; i <= act_queue_len ; i++) {
-    ssm_act_t *act = act_queue[i];    
-    assert(act); // Acts should be valid
-    assert(act->scheduled); // If it's in the queue, it should say so
-    ssm_priority_t priority = act->priority;
+    assert(act_queue[i]); // Acts should be valid
+    assert(act_queue[i]->scheduled); // If it's in the queue, it should say so
     q_idx_t child = i << 1;
     if (child <= act_queue_len) {
-      ssm_act_t *cact = act_queue[child];
-      assert(cact);
-      ssm_priority_t cpriority = cact->priority;
-      assert(cpriority >= priority);
+      assert(act_queue[child]);
+      assert(act_queue[child]->priority >= act_queue[i]->priority);
       if (++child <= act_queue_len) {
-	ssm_act_t *cact = act_queue[child];
-	assert(cact);
-	ssm_priority_t cpriority = cact->priority;
-	assert(cpriority >= priority);
+	assert(act_queue[child]);
+	assert(act_queue[child]->priority >= act_queue[i]->priority);
       }
     }
   }

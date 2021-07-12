@@ -1,7 +1,11 @@
+# -DSSM_DEBUG enables whitebox testing of the scheduler
+TEST_CFLAGS = -g -DSSM_DEBUG
 
 # --coverage enables the use of gcov
-# -DSSM_DEBUG enables whitebox testing of the scheduler
-CFLAGS = -Iinclude -g -Wall -pedantic -std=c99 -DSSM_DEBUG --coverage
+# -DNDEBUG disables testing assert coverage, which confuses the coverage tool
+#COVERAGE_CFLAGS = -DSSM_DEBUG --coverage -DNDEBUG
+
+CFLAGS = -Iinclude -O -Wall -pedantic -std=c99 $(TEST_CFLAGS) $(COVERAGE_CFLAGS)
 
 SOURCES = $(wildcard src/*.c)
 INCLUDES = $(wildcard include/*.h)
@@ -10,23 +14,34 @@ OBJECTS = $(patsubst src/%.c, build/%.o, $(SOURCES))
 EXAMPLES = $(wildcard examples/*.c)
 EXAMPLEEXES = $(patsubst examples/%.c, build/%, $(EXAMPLES))
 
+RED = \e[31m
+GREEN = \e[32m
+RESET_COLOR = \e[0m
+
 ARFLAGS = -crU
 
+all : test-examples test_main
+
+test_main : build/test_main
+	./build/test_main > build/test_main.out || echo "${RED}TEST_MAIN FAILED${RESET_COLOR}"
+	@(diff test/test_main.out build/test_main.out && \
+	echo "${GREEN}TEST_MAIN PASSED${RESET_COLOR}") || \
+	echo "${RED}TEST_MAIN OUTPUT DIFFERS${RESET_COLOR}"
 test-examples : examples
 	./runexamples > build/examples.out
-	(diff test/examples.out build/examples.out && echo "EXAMPLES PASSED") || echo "EXAMPLE OUTPUT DIFFERS"
+	@(diff test/examples.out build/examples.out && \
+	echo "${GREEN}EXAMPLES PASSED${RESET_COLOR}") || \
+	echo "${RED}EXAMPLE OUTPUT DIFFERS${RESET_COLOR}"
 
 build/test_main : test/test_main.c build/libssm.a
 	$(CC) $(CFLAGS) -o $@ test/test_main.c -Lbuild -lssm
 
-#	--branch-probabilities
-# Gives branch taken information, but this gets strange for assertions
-# --all-blocks
-#   Considers basic blocks, not just lines
-
+# Requires COVERAGE_CFLAGS to be set
 ssm-scheduler.c.gcov : build/test_main
 	./build/test_main
 	gcov \
+	--branch-probabilities \
+	--all-blocks \
 	--object-directory build ssm-scheduler.c
 
 # With --coverage given, run
