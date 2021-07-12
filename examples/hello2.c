@@ -55,6 +55,7 @@ void step_hello(ssm_act_t *sact)
       ++act->ptr;
     }
     ssm_assign_event(act->done, act->priority);
+    ssm_desensitize(&act->trigger1);
     ssm_leave((ssm_act_t *) act, sizeof(hello_act_t));
     return;
   }
@@ -86,6 +87,8 @@ void step_print(ssm_act_t *sact)
       if (ssm_event_on((ssm_sv_t *) act->stdout))
 	putchar(act->stdout->value);
       if (ssm_event_on(act->done)) {
+	ssm_desensitize(&act->trigger1);
+	ssm_desensitize(&act->trigger2);
 	ssm_leave((ssm_act_t *) act, sizeof(print_act_t));
 	return;
       }
