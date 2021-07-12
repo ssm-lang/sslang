@@ -356,6 +356,14 @@ ssm_time_t ssm_now(void);
  */
 void ssm_tick();
 
+/** Reset the scheduler.
+ *
+ *  Set now to 0; clear the event and activation record queues.  This
+ *  does not need to be called before calling ssm_tick() for the first
+ *  time; the global state automatically starts initialized.
+ */
+void ssm_reset();
+
 /** An activation record for the parent of the topmost routine
  *
  * When you are starting up your SSM system, pass a pointer to this as

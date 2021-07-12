@@ -54,6 +54,13 @@ SSM_STATIC q_idx_t act_queue_len = 0;
  */
 SSM_STATIC ssm_time_t now = 0L;
 
+void ssm_reset()
+{
+  now = 0L;
+  event_queue_len = 0;
+  act_queue_len = 0;
+}
+
 bool ssm_event_on(ssm_sv_t *var)
 {
   assert(var);
@@ -197,7 +204,7 @@ void ssm_initialize(ssm_sv_t *var, void (*update)(ssm_sv_t *))
     .update = update,
     .triggers = 0,
     .later_time = SSM_NEVER,
-    .last_updated = now
+    .last_updated = SSM_NEVER
   };
 }
 
@@ -271,6 +278,7 @@ void ssm_schedule(ssm_sv_t *var, ssm_time_t later)
 
     q_idx_t hole = find_queued_event(var);
 
+    var->later_time = later;
     if (hole == SSM_QUEUE_HEAD || event_queue[hole >> 1]->later_time < later)
       event_queue_percolate_down(hole, var);
     else

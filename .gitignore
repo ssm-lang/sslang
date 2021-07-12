@@ -60,3 +60,8 @@ dkms.conf
 # Doxygen-generated documentation
 doc/html/*
 doc/latex/*
+
+# gcov output
+*.gcov
+*.gcda
+*.gcno
