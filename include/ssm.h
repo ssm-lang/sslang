@@ -215,7 +215,11 @@ typedef struct ssm_sv {
  *
  * Add a trigger to a variable's list of triggers.
  * When the scheduled variable is written, the scheduler
- * will run the trigger's routine routine
+ * will run the trigger's routine routine.
+ *
+ * If a routine calls ssm_sensitize() on a trigger, it must call
+ * ssm_desensitize() on the trigger if it ever calls ssm_leave() to
+ * ensure a terminated routine is never inadvertantly triggered.
  */
 extern void ssm_sensitize(ssm_sv_t *, ssm_trigger_t *);
 
