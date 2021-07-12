@@ -18,13 +18,5 @@
     "license":"BSD-3-Clause",
     "frameworks":"*",
     "platform":"*",
-    "build": {
-	"includeDir": "incude",
-	"srcDir": "src"
-	"src_filter": "+<*> -<examples/*> -<test/*>"
-    }
-    "examples": [
-	"examples/*.c"
-    ]
 }
     
