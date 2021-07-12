@@ -387,8 +387,8 @@ void act_queue_consistency_check()
   for (q_idx_t i = SSM_QUEUE_HEAD ; i <= act_queue_len ; i++) {
     ssm_act_t *act = act_queue[i];    
     assert(act); // Acts should be valid
+    assert(act->scheduled); // If it's in the queue, it should say so
     ssm_priority_t priority = act->priority;
-    assert(priority != SSM_NEVER); // Queue acts should have valid time
     q_idx_t child = i << 1;
     if (child <= act_queue_len) {
       ssm_act_t *cact = act_queue[child];
