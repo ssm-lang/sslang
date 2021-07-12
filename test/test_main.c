@@ -22,6 +22,9 @@ ssm_sv_t variables[NUM_VARIABLES];
 #define NUM_ACTS 1024
 ssm_act_t acts[NUM_ACTS];
 
+#define NUM_TRIGGERS 1024
+ssm_trigger_t triggers[NUM_TRIGGERS];
+
 void check_starts_initialized()
 {
   assert(ssm_now() == 0L);
@@ -245,6 +248,128 @@ void act_queue_sort_tick(const char *input, const char *expected)
     assert(!act->scheduled);
 }
 
+bool step0ran, step1ran;
+
+void step0(ssm_act_t *act) { step0ran = true; printf("step0 "); }
+void step1(ssm_act_t *act) { step1ran = true; printf("step1 "); }
+
+void trigger_basic()
+{
+  ssm_reset();
+
+  acts[0].step = step0;
+  acts[0].priority = 3;
+  assert(!acts[0].scheduled);
+  acts[1].step = step1;
+  acts[1].priority = 4;
+  assert(!acts[1].scheduled);
+
+  triggers[0].act = &acts[0];
+  triggers[1].act = &acts[1];
+
+  step0ran = step1ran = false;
+
+  ssm_sensitize(&variables[0], &triggers[0]);
+  ssm_sensitize(&variables[0], &triggers[1]);
+
+  ssm_schedule(&variables[0], 1);
+
+  ssm_tick();
+  printf("\n");
+  assert(ssm_now() == 1);
+
+  assert(step0ran);
+  assert(step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_schedule(&variables[0], 2);
+  
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+  
+  assert(ssm_now() == 2);
+  assert(step0ran);
+  assert(step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_schedule(&variables[0], 3);
+  ssm_desensitize(&triggers[1]);
+
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+  
+  assert(ssm_now() == 3);
+  assert(step0ran);
+  assert(!step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_schedule(&variables[0], 4);
+  ssm_desensitize(&triggers[0]);
+
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+    
+  assert(ssm_now() == 4);
+  assert(!step0ran);
+  assert(!step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_schedule(&variables[0], 5);
+  ssm_sensitize(&variables[0], &triggers[1]);
+  ssm_sensitize(&variables[0], &triggers[0]);
+
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+  
+  assert(ssm_now() == 5);
+  assert(step0ran);
+  assert(step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_desensitize(&triggers[0]);
+  ssm_schedule(&variables[0], 6);
+  
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+  
+  assert(ssm_now() == 6);
+  assert(!step0ran);
+  assert(step1ran);
+
+  assert(ssm_next_event_time() == SSM_NEVER);
+
+  ssm_sensitize(&variables[0], &triggers[0]);
+
+  ssm_trigger(&variables[0], 0);
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+
+  assert(ssm_now() == 6);
+  assert(step0ran);
+  assert(step1ran);
+
+
+  ssm_trigger(&variables[0], 3); // This priority should skip act[0]
+  step0ran = step1ran = false;
+  ssm_tick();
+  printf("\n");
+
+  assert(ssm_now() == 6);
+  assert(!step0ran);
+  assert(step1ran);  
+}
+
 void vacuous_update(ssm_sv_t *var)
 {
 }
@@ -359,5 +484,6 @@ int main()
   act_queue_sort_tick("The Quick Brown Fox Jumps Over The Lazy Dog",
 		      "        BDFJLOQTTaceeeghhikmnoooprrsuuvwxyz"); 
 
+  trigger_basic();
   return 0;
 }
