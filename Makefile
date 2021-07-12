@@ -1,9 +1,18 @@
+# FIXME: How best to handle release build, debug build, coverage builds?
+# Have separate build directories for each version; different CFLAGS for each
+#
+# make coverage   into build-coverage
+# make debug      into build-debug
+# make            into build
+
 # -DSSM_DEBUG enables whitebox testing of the scheduler
 TEST_CFLAGS = -g -DSSM_DEBUG
 
 # --coverage enables the use of gcov
 # -DNDEBUG disables testing assert coverage, which confuses the coverage tool
 #COVERAGE_CFLAGS = -DSSM_DEBUG --coverage -DNDEBUG
+# FIXME: use our own assert for unit testing that decays into a call of
+# of a vacuous function when we're doing coverage testing.
 
 CFLAGS = -Iinclude -O -Wall -pedantic -std=c99 $(TEST_CFLAGS) $(COVERAGE_CFLAGS)
 
