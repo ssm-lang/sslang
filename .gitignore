@@ -58,6 +58,7 @@ Mkfile.old
 dkms.conf
 
 # Doxygen-generated documentation
+doc/html
 doc/html/*
 doc/latex/*
 
@@ -65,3 +66,7 @@ doc/latex/*
 *.gcov
 *.gcda
 *.gcno
+
+build/
+
+.pio
