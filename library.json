@@ -17,6 +17,6 @@
     ],
     "license":"BSD-3-Clause",
     "frameworks":"*",
-    "platform":"*",
+    "platform":"*"
 }
     
