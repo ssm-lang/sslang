@@ -55,24 +55,26 @@ blink_act_t *enter_blink(ssm_act_t *parent,
     ssm_enter(sizeof(blink_act_t), step_blink, parent, priority, depth);
   act->led = led;
   act->trigger.act = (ssm_act_t *) act;
+  /*
   printk("act->led %d act->led->sv.triggers %d\r\n", (int) act->led, (int) act->led->sv.triggers);
   printk("act->led->sv %d %d %d %d %d\r\n",
 	 (int) act->led,
 	 (int) act->led->sv.update,
 	 (int) act->led->sv.triggers,
 	 (int) act->led->sv.later_time,
-	 (int) act->led->sv.last_updated);
+	 (int) act->led->sv.last_updated); */
 
   return act;
 }
 
 void step_blink(ssm_act_t *sact)
 {
-  printk("step_blink\r\n");
+  //printk("step_blink\r\n");
   blink_act_t *act = (blink_act_t *)sact;
   switch (act->pc) {
   case 0:
-    
+
+    /*
     printk("step_blink act->led %d act->led->sv.triggers %d\r\n", (int) act->led, (int) act->led->sv.triggers);
     printk("act->led->sv %d %d %d %d %d\r\n",
 	   (int) act->led,
@@ -80,17 +82,18 @@ void step_blink(ssm_act_t *sact)
 	   (int) act->led->sv.triggers,
 	   (int) act->led->sv.later_time,
 	   (int) act->led->sv.last_updated);
+    */
 
     ssm_sensitize(&(act->led->sv), &act->trigger);
-    printk("ssm_sensitize\r\n");
+    // printk("ssm_sensitize\r\n");
 
     for (;;) {
-      ssm_later_bool(act->led, ssm_now() + 1, true);
+      ssm_later_bool(act->led, ssm_now() + SSM_MILLISECOND * 100, true);
       act->pc = 1;
-      printk("step_blink return\r\n");
+      //printk("step_blink return\r\n");
       return;
     case 1:
-      ssm_later_bool(act->led, ssm_now() + 1, false);
+      ssm_later_bool(act->led, ssm_now() + SSM_MILLISECOND * 100, false);
       act->pc = 2;
       return;
     case 2:
@@ -139,7 +142,7 @@ led_handler_act_t *enter_led_handler_(ssm_act_t *parent,
 
 void step_led_handler(ssm_act_t *sact)
 {
-  printk("step_led_handler\r\n");
+  //printk("step_led_handler\r\n");
   led_handler_act_t *act = (led_handler_act_t *) sact;
   switch (act->pc) {
   case 0:
@@ -150,6 +153,7 @@ void step_led_handler(ssm_act_t *sact)
 
   case 1:
     gpio_pin_set(act->port, act->pin, act->led->value);
+    printk("led: %d\r\n", act->led->value ? 1 : 0);
     return;
   }
   ssm_leave((ssm_act_t *) act, sizeof(led_handler_act_t));
@@ -171,7 +175,7 @@ K_MSGQ_DEFINE(ssm_env_queue, sizeof(ssm_env_event_t), 100, 1);
 void send_timeout_event(const struct device *dev, uint8_t chan, uint32_t ticks,
 			void *user_data)
 {
-  printk("send_timeout_event\r\n");
+  //printk("send_timeout_event\r\n");
   static ssm_env_event_t timeout_msg = { .type = SSM_TIMEOUT };
 
   k_msgq_put(&ssm_env_queue, &timeout_msg, K_NO_WAIT);
@@ -184,24 +188,24 @@ void send_timeout_event(const struct device *dev, uint8_t chan, uint32_t ticks,
 
 void tick_thread_body(void *p1, void *p2, void *p3)
 {
-  printk("tick_thread_body\r\n");
+  //printk("tick_thread_body\r\n");
   ssm_env_event_t msg;
   
   for (;;) {
     k_msgq_get(&ssm_env_queue, &msg, K_FOREVER);
-    printk("got a message\r\n");
+    //printk("got a message\r\n");
     switch( msg.type ) {
     case SSM_TIMEOUT:
       break;      
     }
 
-    printk("Running ssm_tick\r\n");
+    //printk("Running ssm_tick\r\n");
     ssm_tick();
 
-    printk("now updated to %d\r\n", (int) ssm_now());
+    printk("now %d\r\n", (int) ssm_now());
 
     ssm_time_t wake = ssm_next_event_time();
-    printk("ssm_next_event_time = %d\r\n", (int) wake);
+    //printk("ssm_next_event_time = %d\r\n", (int) wake);
     if (wake != SSM_NEVER) {
       ssm_timer_cfg.ticks = wake;
       int r = counter_set_channel_alarm(ssm_timer_dev, 0, &ssm_timer_cfg);
@@ -251,6 +255,7 @@ void main()
 	   counter_get_frequency(ssm_timer_dev));
     ssm_timer_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE |
                           COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+    ssm_timer_cfg.ticks = SSM_MILLISECOND * 200;
     ssm_timer_cfg.callback = send_timeout_event;
     ssm_timer_cfg.user_data = &ssm_timer_cfg;
 
@@ -267,8 +272,7 @@ void main()
   
   ssm_initialize_bool(&led);
 
-  printk("led triggers: %d\r\n", (int) led.sv.triggers);
-
+  // printk("led triggers: %d\r\n", (int) led.sv.triggers);
   
   {
     ssm_depth_t new_depth = SSM_ROOT_DEPTH - 1;
@@ -292,7 +296,7 @@ void main()
   /*
   do {
     ssm_tick();
-    k_sleep(K_SECONDS(0.5)); // FIXME
+    k_sleep(K_SECONDS(0.5));
   } while (ssm_next_event_time() != SSM_NEVER);
   */
 }
