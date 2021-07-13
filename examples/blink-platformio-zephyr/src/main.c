@@ -10,8 +10,8 @@
 #error "led0 device alias not defined"
 #endif
 
-#if !DT_NODE_EXISTS(DT_ALIAS(ssm_timer))
-#error "ssm-timer device alias not defined, e.g., in the device tree overlay"
+#if !DT_NODE_HAS_STATUS(DT_ALIAS(ssm_timer), okay)
+#error "ssm-timer device is not supported on this board"
 #endif
 
 #define SSM_TICK_STACKSIZE 4096
@@ -218,7 +218,6 @@ void tick_thread_body(void *p1, void *p2, void *p3)
       case -EBUSY:
 	printk("counter_set_channel_alarm failed: EBUSY\r\n");
 	break;
-	// FIXME: it's returning this; not clear the counter is right.
       default:
 	printk("counter_set_channel_alarm failed: %d\r\n", r);
 	break;
@@ -242,9 +241,10 @@ void main()
   k_sleep(K_SECONDS(1));
   printk("Starting...\r\n");
 
+
+      //  if (!(ssm_timer_dev = device_get_binding(DT_LABEL(DT_INST(0, st_stm32_rtc))))) {
   
-  //  if (!(ssm_timer_dev = device_get_binding(DT_LABEL(DT_ALIAS(ssm_timer))))) {
-  if (!(ssm_timer_dev = device_get_binding(DT_LABEL(DT_INST(0, st_stm32_rtc))))) {
+  if (!(ssm_timer_dev = device_get_binding(DT_LABEL(DT_ALIAS(ssm_timer))))) {
     printk("device_get_binding failed with ssm-timer\r\n");
   } else {
     printk("ssm-timer running at %d Hz\r\n",
@@ -257,12 +257,10 @@ void main()
     if (counter_set_channel_alarm(ssm_timer_dev, 0, &ssm_timer_cfg)) {
       printk("counter_set_channel_alarm failed\r\n");
     } else {
-      /*
       if (counter_set_guard_period(ssm_timer_dev, UINT_MAX/2,
 				   COUNTER_GUARD_PERIOD_LATE_TO_SET)) {
 	printk("counter_set_guard_period failed\r\n");
       }
-      */
       counter_start(ssm_timer_dev);
     }    
   }
@@ -284,17 +282,17 @@ void main()
 						 DT_ALIAS(led0)));
   }
 
-  /*
   k_thread_create(&ssm_tick_thread, ssm_tick_thread_stack,
 		  K_THREAD_STACK_SIZEOF(ssm_tick_thread_stack),
 		  tick_thread_body, 0, 0, 0,		  
 		  SSM_TICK_PRIORITY, 0, K_NO_WAIT);
 
   send_timeout_event(ssm_timer_dev, 0, 0, 0);
-  */
- 
+
+  /*
   do {
     ssm_tick();
     k_sleep(K_SECONDS(0.5)); // FIXME
   } while (ssm_next_event_time() != SSM_NEVER);
+  */
 }
