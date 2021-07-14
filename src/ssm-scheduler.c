@@ -49,8 +49,11 @@ SSM_STATIC ssm_act_t *act_queue[SSM_ACT_QUEUE_SIZE + SSM_QUEUE_HEAD];
 SSM_STATIC q_idx_t act_queue_len = 0;
 
 /**
- * Note that this starts out uninitialized. It is the responsibility of the
- * runtime to do so.
+ * The current model time.  Read with ssm_now(); user programs should not
+ * manipuate this directly.
+ *
+ * This starts out initialized to 0; can be reset by ssm_reset().  ssm_tick()
+ * advances it monotonically.
  */
 SSM_STATIC ssm_time_t now = 0L;
 
