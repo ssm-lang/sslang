@@ -83,14 +83,14 @@ void step_fun1(struct ssm_act *actg)
         ;
         while (true) {
             SSM_DEBUG_MICROTICK();
-            ssm_later_u64(acts->ref2, ssm_now() + (u64) 2, (u64) 0);
+            ssm_later_u64(acts->ref2, ssm_now() + 100 * SSM_MILLISECOND, (u64) 0);
             ssm_sensitize(&acts->ref2->sv, &acts->trig1);
             actg->pc = 1;
             return;
           case 1:
             ;
             ssm_desensitize(&acts->trig1);
-            ssm_later_u64(acts->ref2, ssm_now() + (u64) 2, (u64) 1);
+            ssm_later_u64(acts->ref2, ssm_now() + 100 * SSM_MILLISECOND, (u64) 1);
             ssm_sensitize(&acts->ref2->sv, &acts->trig1);
             actg->pc = 2;
             return;

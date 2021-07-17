@@ -44,50 +44,44 @@
 const struct device *ssm_timer_dev = 0;
 struct counter_alarm_cfg ssm_timer_cfg;
 
-/* blink(bool &led) =
- * loop
- *   500 ms later led <- true
- *   wait led
- *   500 ms later led <- false
- *   wait led
- */
+extern ssm_act_t *enter_fun1(ssm_act_t *, ssm_priority_t,
+			     ssm_depth_t, ssm_u64_t *);
+
+
 typedef struct {
   SSM_ACT_FIELDS;
   ssm_trigger_t trigger;
+  ssm_u64_t *ref2;
   ssm_bool_t *led;
-} blink_act_t;
+} u64bool_act_t;
 
-ssm_stepf_t step_blink;
+ssm_stepf_t step_u64bool;
 
-blink_act_t *enter_blink(ssm_act_t *parent,
-			 ssm_priority_t priority,
-			 ssm_depth_t depth,
-			 ssm_bool_t *led)
+u64bool_act_t *enter_u64bool(ssm_act_t *parent,
+			     ssm_priority_t priority,
+			     ssm_depth_t depth,
+			     ssm_u64_t *ref2,
+			     ssm_bool_t *led)
 {
-  blink_act_t *act = (blink_act_t *)
-    ssm_enter(sizeof(blink_act_t), step_blink, parent, priority, depth);
+  u64bool_act_t *act = (u64bool_act_t *)
+    ssm_enter(sizeof(u64bool_act_t), step_u64bool, parent, priority, depth);
+  act->ref2 = ref2;
   act->led = led;
   act->trigger.act = (ssm_act_t *) act;
   return act;
 }
 
-void step_blink(ssm_act_t *sact)
+void step_u64bool(ssm_act_t *sact)
 {
-  blink_act_t *act = (blink_act_t *)sact;
+  u64bool_act_t *act = (u64bool_act_t *)sact;
   switch (act->pc) {
   case 0:
-    ssm_sensitize(&(act->led->sv), &act->trigger);
-    for (;;) {
-      ssm_later_bool(act->led, ssm_now() + SSM_MILLISECOND * 500, true);
-      act->pc = 1;
-      return;
-    case 1:
-      ssm_later_bool(act->led, ssm_now() + SSM_MILLISECOND * 500, false);
-      act->pc = 2;
-      return;
-    case 2:
-      ;
-    }
+    ssm_sensitize(&(act->ref2->sv), &act->trigger);
+    act->pc = 1;
+    return;
+  case 1:
+    ssm_assign_bool(act->led, act->priority, act->ref2->value ? true : false);
+    return;
   }
 }
 
@@ -228,9 +222,12 @@ struct k_thread ssm_tick_thread;
 // main() terminates, so this variable can't be local to it
 ssm_bool_t led;
 
+ssm_u64_t ref2;
+
 /* main() =
+ * U64 ref2
  * bool led
- * blink(led) || led_handler(led, "led0")
+ * fun1(ref2) || u64bool(ref2, led) || led_handler(led, "led0")
  */
 void main()
 {
@@ -257,14 +254,18 @@ void main()
   }
   
   ssm_initialize_bool(&led);
+  ssm_initialize_u64(&ref2);
 
-  // Fork the blink and led_handler routines
+  // Fork the fun1, u64bool, and led_handler routines
   {
-    ssm_depth_t new_depth = SSM_ROOT_DEPTH - 1;
+    ssm_depth_t new_depth = SSM_ROOT_DEPTH - 2;
     ssm_priority_t new_priority = SSM_ROOT_PRIORITY;
     ssm_priority_t pinc = 1 << new_depth;
-    ssm_activate((ssm_act_t *) enter_blink(&ssm_top_parent, new_priority,
-					   new_depth, &led));
+    ssm_activate((ssm_act_t *) enter_fun1(&ssm_top_parent, new_priority,
+					  new_depth, &ref2));
+    new_priority += pinc;
+    ssm_activate((ssm_act_t *) enter_u64bool(&ssm_top_parent, new_priority,
+					     new_depth, &ref2, &led));
     new_priority += pinc;
     ssm_activate((ssm_act_t *) enter_led_handler(&ssm_top_parent,
 						 new_priority, new_depth, &led,
