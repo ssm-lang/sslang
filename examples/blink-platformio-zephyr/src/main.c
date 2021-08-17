@@ -12,7 +12,7 @@
  * the ssm_tick_thread.
  *
  * The LED is modeled as a schedule variable of standard bool type.
- * 
+ *
  * The blink routine schedules the led variable to toggle in 500 ms,
  * then waits on the variable and repeats.
  *
@@ -29,6 +29,15 @@
 #include <drivers/counter.h>
 
 #include <ssm.h>
+
+
+// This should be in drivers/gpio.h, but it was missing from earlier versions
+// of Zephyr 2.6.  Remove this function once it causes an error.
+static inline int gpio_pin_set_dt(const struct gpio_dt_spec *spec, int value)
+{
+  return gpio_pin_set(spec->port, spec->pin, value);
+}
+
 
 #if !DT_NODE_HAS_STATUS(DT_ALIAS(led0), okay)
 #error "led0 device alias not defined"
@@ -91,52 +100,36 @@ void step_blink(ssm_act_t *sact)
   }
 }
 
-/* led_handler(bool &led, string label) =
+/* led_handler(bool &led, gpio_spec &spec) =
  *
- * port = device_get_binding(label)
- * pin = DT_GPIO_PINS(label, gpios)
- * flags = GPIO_OUTPUT_ACTIVE | DT_GPIO_FLAGS(label, gpios)
- * gpio_pin_configure(port, pin, flags)
- *
+ * gpio_pin_configure(spec, GPIO_OUTPUT_ACTIVE)
  * loop
  *   wait led
- *   gpio_pin_set(port, pin, led)
+ *   gpio_pin_set(spec, led)
  */
 typedef struct {
   SSM_ACT_FIELDS;
   ssm_trigger_t trigger;
   ssm_bool_t *led;
-  const struct device *port;
-  gpio_pin_t pin;
+  const struct gpio_dt_spec *spec;
 } led_handler_act_t;
-
-#define enter_led_handler(parent, priority, depth, var, id) \
-  enter_led_handler_(parent, priority, depth, var,          \
-		     DT_GPIO_LABEL(id, gpios),	            \
-		     DT_GPIO_PIN(id, gpios),	            \
-		     DT_GPIO_FLAGS(id, gpios))
 
 ssm_stepf_t step_led_handler;
 
-led_handler_act_t *enter_led_handler_(ssm_act_t *parent,
-				      ssm_priority_t priority,
-				      ssm_depth_t depth,
-				      ssm_bool_t *led_var,
-				      const char *label,
-				      gpio_pin_t pin,
-				      gpio_flags_t flags)
+led_handler_act_t *enter_led_handler(ssm_act_t *parent,
+				     ssm_priority_t priority,
+				     ssm_depth_t depth,
+				     ssm_bool_t *led_var,
+				     const struct gpio_dt_spec *led_spec)
 {
   led_handler_act_t *act = (led_handler_act_t *)
     ssm_enter(sizeof(led_handler_act_t), step_led_handler, parent,
 	      priority, depth);
   act->led = led_var;
+  act->spec = led_spec;
+
   act->trigger.act = (ssm_act_t *) act;
 
-  if (0 != (act->port = device_get_binding(label))) {
-    act->pin = pin;
-    if (0 > gpio_pin_configure(act->port, act->pin, GPIO_OUTPUT_ACTIVE | flags))
-      act->port = 0;
-  }
   return act;
 }
 
@@ -145,13 +138,13 @@ void step_led_handler(ssm_act_t *sact)
   led_handler_act_t *act = (led_handler_act_t *) sact;
   switch (act->pc) {
   case 0:
-    if (act->port == NULL) break;
+    gpio_pin_configure_dt(act->spec, GPIO_OUTPUT_ACTIVE);
     ssm_sensitize(&(act->led->sv), &act->trigger);
     act->pc = 1;
     return;
 
   case 1:
-    gpio_pin_set(act->port, act->pin, act->led->value);
+    gpio_pin_set_dt(act->spec, act->led->value);
     printk("led: %d\r\n", act->led->value ? 1 : 0);
     return;
   }
@@ -228,15 +221,33 @@ struct k_thread ssm_tick_thread;
 // main() terminates, so this variable can't be local to it
 ssm_bool_t led;
 
+// The devicetree spec for the GPIO pin, which is passed to enter_led_handler.
+// GPIO_DT_SPEC_GET is a macro that expands to a static initializer,
+// so it may only be used to initialize a variable such as this global.
+//
+// This requires the devicetree to have in it something like
+//
+//         aliases {
+//                led0 = &led0;
+//         };
+//
+//         led0: led_0 {
+//                gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+//         };
+//
+// See, e.g., boards/arm/nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts
+const struct gpio_dt_spec led_spec = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+
 /* main() =
  * bool led
- * blink(led) || led_handler(led, "led0")
+ * gpio_dt_spec led_spec <- GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios)
+ * blink(led) || led_handler(led, led_spec)
  */
 void main()
 {
   printk("Sleeping for a second for you to start a terminal\r\n");
   k_sleep(K_SECONDS(1));
-  printk("Starting...\r\n");
+  printk("Blink example starting...\r\n");
 
   // Initialize the counter device
   if (!(ssm_timer_dev = device_get_binding(DT_LABEL(DT_ALIAS(ssm_timer))))) {
@@ -255,7 +266,7 @@ void main()
     if (counter_start(ssm_timer_dev))
       printk("counter_start failed\r\n");
   }
-  
+
   ssm_initialize_bool(&led);
 
   // Fork the blink and led_handler routines
@@ -268,7 +279,7 @@ void main()
     new_priority += pinc;
     ssm_activate((ssm_act_t *) enter_led_handler(&ssm_top_parent,
 						 new_priority, new_depth, &led,
-						 DT_ALIAS(led0)));
+						 &led_spec));
   }
 
   // Spin up the ssm_tick_thread
