@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{times}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
+
+\title{SSLANG Language Reference Manual}
+\author{Hans Montero, John Hui, and Stephen A. Edwards}
+\date{2021}
+
+\lstdefinelanguage{sslang}{
+  morekeywords={let,if,then,else,while,after,wait,pipe},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  columns=flexible,
+}
+
+\lstset{language=sslang,
+  columns=flexible,
+  commentstyle={\itshape\color{red}},
+  backgroundcolor=\color{listingbackground},
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+
+\begin{lstlisting}
+main(led : Ref (Sched Bool) ) =
+  loop
+    after 50 ms, led <- True
+    wait led
+    after 50 ms, led <- False
+    wait led
+\end{lstlisting}
+
+\begin{lstlisting}
+toggle(led : Ref (Sched Bool)) =
+  led <- not led
+
+slow(led : Ref (Sched Bool)) =
+  let e1 = Occur : Sched Event
+  loop
+    toggle led
+    after 30 ms, e1 <- Occur
+    wait e1
+
+fast(led : Ref (Sched Bool)) =
+  let e2 = Occur : Sched Event
+  loop
+    toggle led
+    after 20 ms, e2 <- Occur
+    wait e2
+    
+main(led : Ref (Sched Bool)) =
+  pipe slow led
+       fast led
+\end{lstlisting}
+
+\section{Lexical Conventions}
+
+\subsection{Comments}
+
+Single line comments start with \lstinline!//! and end at a newline.
+
+Multi-line comments start with \lstinline!/*! and end at a matching
+\lstinline!*/!.  Multi-line comments nest and may also include
+single-line comments.
+
+\subsection{Indentation and Grouping}
+
+\subsection{Lexer States}
+
+\begin{itemize}
+
+\item Freeform: The scanner discards whitespace and does not insert
+  grouping tokens
+  
+\item InBlock: The scanner is in a block; a separator is inserted in
+  front of each line that starts at the current indentation level.  A
+  line that starts to the left of the current indentation level causes
+  a close-block token to be inserted (i.e., \lstinline!}!) and the
+    current state to be popped.
+    
+\item StartBlock: The scanner will start a block (insert a
+  \lstinline!{!) at the start of the next token and enter the InBlock
+    state
+    
+\item StartBlockNL: The scanner will start a block (insert a
+  \lstinline!{!) at the token that starts the next line and enter the InBlock
+    state
+
+\end{itemize}
+
+\section{Types}
+
+\section{Expressions}
+
+\end{document}
