@@ -169,7 +169,7 @@ void ssm_activate(ssm_act_t *act)
   q_idx_t hole = ++act_queue_len;
 
   if (act_queue_len > SSM_ACT_QUEUE_SIZE)
-    SSM_RESOURCES_EXHAUSTED("ssm_activate");
+    SSM_THROW(SSM_EXHAUSTED_ACT_QUEUE);
 
   act_queue_percolate_up(hole, act);
 }
@@ -263,18 +263,19 @@ SSM_STATIC_INLINE void event_queue_percolate_down(q_idx_t hole,
 
 void ssm_schedule(ssm_sv_t *var, ssm_time_t later)
 {
-  assert(var);        // A real variable
-  assert(later > now); // Must be in the future
+  assert(var);      // A real variable
+  if (later <= now) // "later" must be in the future
+    SSM_THROW(SSM_INVALID_TIME);
 
   if (var->later_time == SSM_NEVER) {
     // Variable does not have a pending event: add it to the queue
     q_idx_t hole = ++event_queue_len;
     if (event_queue_len > SSM_EVENT_QUEUE_SIZE)
-      SSM_RESOURCES_EXHAUSTED("ssm_schedule");
+      SSM_THROW(SSM_EXHAUSTED_EVENT_QUEUE);
 
     var->later_time = later;
     event_queue_percolate_up(hole, var);
-        
+
   } else {
     // Variable has a pending event: reposition the event in the queue
     // as appropriate
@@ -296,11 +297,14 @@ void ssm_unschedule(ssm_sv_t *var)
     q_idx_t hole = find_queued_event(var);
     var->later_time = SSM_NEVER;
     ssm_sv_t *moved_var = event_queue[event_queue_len--];
-    if (hole == SSM_QUEUE_HEAD ||
-	event_queue[hole >> 1]->later_time < moved_var->later_time)
-      event_queue_percolate_down(hole, moved_var);
-    else
-      event_queue_percolate_up(hole, moved_var);
+    if (hole < SSM_QUEUE_HEAD + event_queue_len) {
+      // Percolate if removal led to hole in the queue.
+      if (hole == SSM_QUEUE_HEAD ||
+          event_queue[hole >> 1]->later_time < moved_var->later_time)
+        event_queue_percolate_down(hole, moved_var);
+      else
+        event_queue_percolate_up(hole, moved_var);
+    }
   }
 }
 

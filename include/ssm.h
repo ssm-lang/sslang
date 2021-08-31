@@ -68,14 +68,47 @@ See [the detailed documentation](@ref all)
 #define SSM_ACT_FREE(ptr, size) free(ptr)
 #endif
 
-#ifndef SSM_RESOURCES_EXHAUSTED
-/** Invoked when limited resources are exhausted, e.g., unable to
- *  allocate memory, no more queue space.  Not expected to return
+/** Invoked when a process must terminate, e.g., when memory or queue space is
+ * exhausted. Not expected to return.
  *
- * Argument passed is a string indicating where the failure occurred.
+ * Argument passed is an ssm_error_t indicating why the failure occurred.
+ * Default behavior is to exit with reason as the exit code, but can be
+ * overridden by defining ssm_throw.
  */
-#define SSM_RESOURCES_EXHAUSTED(string) exit(1)
-#endif
+#define SSM_THROW(reason) \
+  ssm_throw ? \
+    ssm_throw(reason, __FILE__, __LINE__, __func__) : \
+    exit(reason)
+
+/** Underlying crash handler; can be overriden. */
+void ssm_throw(int reason, const char *file, int line, const char *func)
+  __attribute__((weak));
+
+/** Error codes, indicating reason for failure.
+ *
+ * Platforms may extend the list of errors using SSM_PLATFORM_ERROR like this:
+ *
+ *      enum {
+ *        SSM_CUSTOM_ERROR1 = SSM_PLATFORM_ERROR,
+ *        // etc.
+ *      };
+ */
+enum ssm_error_t {
+  /** Reserved for unforeseen, non-user-facing errors. */
+  SSM_INTERNAL_ERROR = 1,
+  /** Tried to insert into full activation record queue. */
+  SSM_EXHAUSTED_ACT_QUEUE,
+  /** Tried to insert into full event queue. */
+  SSM_EXHAUSTED_EVENT_QUEUE,
+  /** Could not allocate more memory. */
+  SSM_EXHAUSTED_MEMORY,
+  /** Tried to exceed available recursion depth. */
+  SSM_EXHAUSTED_PRIORITY,
+  /** Invalid time, e.g., scheduled delayed assignment at an earlier time. */
+  SSM_INVALID_TIME,
+  /** Start of platform-specific error code range. */
+  SSM_PLATFORM_ERROR
+};
 
 #ifndef SSM_SECOND
 /** Ticks in a second
@@ -266,7 +299,7 @@ static inline ssm_act_t *ssm_enter(size_t bytes, /**< size of the activation rec
   assert(parent);
   ++parent->children;
   ssm_act_t *act = (ssm_act_t *)SSM_ACT_MALLOC(bytes);
-  if (!act) SSM_RESOURCES_EXHAUSTED("ssm_enter");
+  if (!act) SSM_THROW(SSM_EXHAUSTED_MEMORY);
   *act = (ssm_act_t){
       .step = step,
       .caller = parent,
@@ -404,8 +437,8 @@ extern ssm_act_t ssm_top_parent;
   ((type *)((char *)(member_type(type, member) *){ptr} -                       \
             offsetof(type, member)))
 
-typedef ssm_sv_t ssm_event_t;
-#define ssm_later_event(var, then) ssm_schedule((var), (then))
+typedef struct { ssm_sv_t sv; } ssm_event_t;
+#define ssm_later_event(var, then) ssm_schedule(&(var)->sv, (then))
 extern void ssm_assign_event(ssm_event_t *var, ssm_priority_t prio);
 extern void ssm_initialize_event(ssm_event_t *);
 
@@ -482,9 +515,4 @@ SSM_DECLARE_SV_SCALAR(u64)
 
 /** @} */
 
-
-// FIXME!
-#include "ssm-debug.h"
-
 #endif
-
