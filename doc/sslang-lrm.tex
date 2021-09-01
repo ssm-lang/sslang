@@ -27,6 +27,53 @@
 
 \maketitle
 
+\section{Wish List}
+
+Minimal punctuation (e.g., print ``hello'' vs. print(``hello''))
+
+What should function definitions (type signatures) look like?  Haskell-style or OCaml-style?  Look at the Nim language.  Named arguments?  Make it look like data constructors?
+
+Nested comments
+
+Indentation-sensitive nesting; keywords start blocks (Haskell-style)
+
+Compile-time allocation of all data (exception: activation records)
+
+Type expressions
+
+Statically sized arrays passable through abstract array arguments, e.g., so you can write a sort that's polymorphic in the size of the array; implies array size is a runtime value, not (just) compile-time.
+
+Array slices (``safe'' references to parts of arrays that play well with
+parallelism)
+
+Algebraic data types
+
+Pattern matching on algebraic types
+
+Pass-by-value and pass-by-reference values
+
+Typeclasses at least for arithmetic operators
+
+User-defined binary operators and precedence levels
+
+Type inference at least for local variables
+
+Wait on variables
+
+Immediate assignment ``primitive''
+
+Delayed assignment ``primitive''
+
+Parametric polymorphism, likely eliminated by whole-program monomorphisation (type variables)
+
+A notion of constants (assign once) versus variables (assign multiple times)
+
+Parallel function calls
+
+Facility for efficient code generation with compile-time constants (should this be syntactically different?)
+
+Partial application?  Or do we prohibit it?
+
 \section{Overview}
 
 \begin{lstlisting}
