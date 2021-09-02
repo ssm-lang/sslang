@@ -86,7 +86,7 @@ void step_print(ssm_act_t *sact)
     case 1:
       if (ssm_event_on((ssm_sv_t *) act->stdout))
 	putchar(act->stdout->value);
-      if (ssm_event_on(act->done)) {
+      if (ssm_event_on(&act->done->sv)) {
 	ssm_desensitize(&act->trigger1);
 	ssm_desensitize(&act->trigger2);
 	ssm_leave((ssm_act_t *) act, sizeof(print_act_t));
