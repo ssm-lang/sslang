@@ -78,7 +78,7 @@ See [the detailed documentation](@ref all)
 #define SSM_THROW(reason) \
   ssm_throw ? \
     ssm_throw(reason, __FILE__, __LINE__, __func__) : \
-    exit(reason)
+    for(;;)
 
 /** Underlying crash handler; can be overriden. */
 void ssm_throw(int reason, const char *file, int line, const char *func)
