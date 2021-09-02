@@ -85,9 +85,12 @@ void ssm_throw(int reason, const char *file, int line, const char *func)
  * overridden by defining ssm_throw.
  */
 #define SSM_THROW(reason) \
-  ssm_throw ? \
-    ssm_throw(reason, __FILE__, __LINE__, __func__) : \
-    for(;;)
+    do \
+      if (ssm_throw) \
+        ssm_throw(reason, __FILE__, __LINE__, __func__); \
+      else \
+        for(;;); \
+    while (0)
 
 /** Error codes, indicating reason for failure.
  *
