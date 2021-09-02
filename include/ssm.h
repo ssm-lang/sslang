@@ -68,6 +68,15 @@ See [the detailed documentation](@ref all)
 #define SSM_ACT_FREE(ptr, size) free(ptr)
 #endif
 
+/** Underlying exception handler; can be overridden by each platform
+ *
+ * ssm_throw is declared as a weak symbol, meaning it will be left a null
+ * pointer if the linker does not find a definition for this symbol in any
+ * object file.
+ */
+void ssm_throw(int reason, const char *file, int line, const char *func)
+  __attribute__((weak));
+
 /** Invoked when a process must terminate, e.g., when memory or queue space is
  * exhausted. Not expected to return.
  *
@@ -79,10 +88,6 @@ See [the detailed documentation](@ref all)
   ssm_throw ? \
     ssm_throw(reason, __FILE__, __LINE__, __func__) : \
     for(;;)
-
-/** Underlying crash handler; can be overriden. */
-void ssm_throw(int reason, const char *file, int line, const char *func)
-  __attribute__((weak));
 
 /** Error codes, indicating reason for failure.
  *
