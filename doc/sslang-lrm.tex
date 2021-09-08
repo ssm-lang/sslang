@@ -3,6 +3,7 @@
 
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{hyperref}
 
 \definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
 
@@ -29,6 +30,16 @@
 
 \section{Wish List}
 
+\subsection{Philosphy}
+
+\textit{SE:} Make the IR, especially, as simple as possible (a la
+GHC). Take a Reynolds-like approach where the larger language has more
+features that boil down into simpler primitives.  E.g., typeclasses
+can be expressed as dictionaries with function pointers and completely
+evaporate.  I'm inspired by the make-it-explicit approach to garbage
+collection operations in the Perceus tech report (Reinking et al.,
+MSR-TR-2020-42).
+
 \subsection{Syntax}
 
 \textit{SE:} Minimal punctuation (e.g., print ``hello'' vs. print(``hello'')).
@@ -52,6 +63,18 @@ stack-allocate, maybe-unused. Should be less hacky than Haskell's
 \verb|{-# LANGUAGE ... #-}| and C/C++'s \verb|#pragma ..| and
 \verb|__attribute__((..))|.
 
+\textit{SE:} C\# has an elaborate attributes mechanism.
+Most declarations allow attributes to be placed in square brackets before.  \url{https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/}
+
+\begin{lstlisting}{language=[Sharp]C}
+  
+[Serializable]
+public class SampleClass
+{
+    // Objects of this type can be serialized.
+} 
+\end{lstlisting}
+
 \subsubsection{Discussions}
 
 \textit{SE:} What should function definitions (type signatures) look like?
@@ -63,18 +86,24 @@ so ugly. Whatever syntax we use, declaration for follow invocation.
 \begin{itemize}
   \item OCaml uses something like: \verb|f (a: int) (b: int) = ..|. Too many
     parentheses.
-  \item In our meeting, we threw around the idea of something like: \verb|f a:
-    Int, b: Int = ..|. \textit{JH:} seems fine, but looks weird because comma
+  \item In our meeting, we threw around the idea of something like:
+    \verb|f a: Int, b: Int = ..|. \textit{JH:} seems fine, but looks weird because comma
     precedence is not widely understood.
   \item Rust, Go, Javascript, and other recent languages use: \verb|f(a: Int, b: Int) .. |.
     \textit{JH:} I don't love it, but I don't hate it either, and it's familiar.
+
+  \item SML allows tuple syntax for function arguments:
+    \verb|fun mult x y = x * y| has type
+    \verb|int -> int -> int|,
+    but \verb|fun mult (x, y) = x * y| has type
+    \verb|int * int -> int|.
 \end{itemize}
 
 \subsection{Types and expressions}
 
 \textit{SE, JH:} Type expressions.
 
-\textit{SE, JH:} Algebraic data types + patter-matching.
+\textit{SE, JH:} Algebraic data types + pattern-matching.
 
 Statically sized arrays passable through abstract array arguments, e.g., so you
 can write a sort that's polymorphic in the size of the array; implies array size
@@ -122,6 +151,15 @@ reference-sharing otherwise).
 
 \textit{SE, JH:} Facility for efficient code generation with compile-time
 constants (should this be syntactically different?).
+
+\subsection{IR}
+
+\begin{itemize}
+\item Variables and literals
+\item Lambda abstractions
+\item Function application
+\item Pattern matching
+\end{itemize}
 
 \section{Overview}
 
