@@ -139,11 +139,13 @@ reference-sharing otherwise).
 
 \textit{SE, JH:} Parallel function calls.
 
-\textit{JH:} Some sort of exception handling.
-
 \textit{SE, JH:} Wait on variables
 
-\textit{SE, JH:} Immediate and delayed assignment ``primitives''
+\textit{SE, JH:} Immediate and delayed assignment ``primitives''.
+
+\textit{JH:} Some sort of exception handling, which supports missed deadlines.
+
+\textit{SE, JH:} combinators to derive "wait until" and "wait both" and "wait either".
 
 \subsection{Generated code}
 
@@ -151,6 +153,11 @@ reference-sharing otherwise).
 
 \textit{SE, JH:} Facility for efficient code generation with compile-time
 constants (should this be syntactically different?).
+
+\textit{JH:} provide some FFI that supports callback, to interface with both
+blocking and non-blocking functions.
+
+\textit{JH:} provide some kind of immediately effectful print statement.
 
 \subsection{IR}
 
