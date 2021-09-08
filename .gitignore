@@ -1,3 +1,9 @@
+*.log
+
+# Created by https://www.toptal.com/developers/gitignore/api/haskell
+# Edit at https://www.toptal.com/developers/gitignore?templates=haskell
+
+### Haskell ###
 dist
 dist-*
 cabal-dev
@@ -21,5 +27,5 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
-*.log
-*.pdf
+
+# End of https://www.toptal.com/developers/gitignore/api/haskell
