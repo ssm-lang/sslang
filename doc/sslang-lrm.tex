@@ -29,50 +29,99 @@
 
 \section{Wish List}
 
-Minimal punctuation (e.g., print ``hello'' vs. print(``hello''))
+\subsection{Syntax}
 
-What should function definitions (type signatures) look like?  Haskell-style or OCaml-style?  Look at the Nim language.  Named arguments?  Make it look like data constructors?
+\textit{SE:} Minimal punctuation (e.g., print ``hello'' vs. print(``hello'')).
+\textit{JH:} I would like to have punctuation for types/operations with special
+built-in meaning, e.g., \verb|&| or \verb|*| for references. I'm not opposed to
+using parens for function application, but it depends on whether we can have
+partial application.
 
-Nested comments
+\textit{SE, JH:} Nested comments
 
-Indentation-sensitive nesting; keywords start blocks (Haskell-style)
+\textit{JH:} Single-line comment syntax. I think this makes sense especially for
+a whitespace-sensitive language.
 
-Compile-time allocation of all data (exception: activation records)
+\textit{SE, JH:} Indentation-sensitive nesting; keywords start blocks (Haskell-style).
 
-Type expressions
+\textit{SE, JH:} User-defined binary operators and precedence levels.
 
-Statically sized arrays passable through abstract array arguments, e.g., so you can write a sort that's polymorphic in the size of the array; implies array size is a runtime value, not (just) compile-time.
+\textit{JH:} some kind of readable, forward-thinking syntax for annotations that
+the compiler can take advantage of, e.g., must-inline, dont-inline,
+stack-allocate, maybe-unused. Should be less hacky than Haskell's
+\verb|{-# LANGUAGE ... #-}| and C/C++'s \verb|#pragma ..| and
+\verb|__attribute__((..))|.
 
-Array slices (``safe'' references to parts of arrays that play well with
-parallelism)
+\subsubsection{Discussions}
 
-Algebraic data types
+\textit{SE:} What should function definitions (type signatures) look like?
+Haskell-style or OCaml-style?  Look at the Nim language.  Named arguments?  Make
+it look like data constructors?
+\textit{JH:} Should be OCaml-style, in that it is inline, but it should not look
+so ugly. Whatever syntax we use, declaration for follow invocation.
 
-Pattern matching on algebraic types
+\begin{itemize}
+  \item OCaml uses something like: \verb|f (a: int) (b: int) = ..|. Too many
+    parentheses.
+  \item In our meeting, we threw around the idea of something like: \verb|f a:
+    Int, b: Int = ..|. \textit{JH:} seems fine, but looks weird because comma
+    precedence is not widely understood.
+  \item Rust, Go, Javascript, and other recent languages use: \verb|f(a: Int, b: Int) .. |.
+    \textit{JH:} I don't love it, but I don't hate it either, and it's familiar.
+\end{itemize}
+
+\subsection{Types and expressions}
+
+\textit{SE, JH:} Type expressions.
+
+\textit{SE, JH:} Algebraic data types + patter-matching.
+
+Statically sized arrays passable through abstract array arguments, e.g., so you
+can write a sort that's polymorphic in the size of the array; implies array size
+is a runtime value, not (just) compile-time.
+
+\textit{SE, JH:} Typeclasses at least for arithmetic operators
 
 Pass-by-value and pass-by-reference values
 
-Typeclasses at least for arithmetic operators
+\textit{JH:} References to arrays of T, arrays of arrays of T
 
-User-defined binary operators and precedence levels
+\textit{JH, SE:} Array slices (``safe'' references to parts of arrays that play
+well with parallelism)
 
-Type inference at least for local variables
+\textit{SE, JH:} Type inference at least for local variables
 
-Wait on variables
+\textit{JH:} Type annotations for function arguments
 
-Immediate assignment ``primitive''
+\textit{SE, JH:} Parametric polymorphism, likely eliminated by whole-program
+monomorphisation (type variables)
 
-Delayed assignment ``primitive''
+\textit{SE, JH:} A notion of constants (assign once) versus variables (assign
+multiple times)
 
-Parametric polymorphism, likely eliminated by whole-program monomorphisation (type variables)
+\textit{JH:} a notion of ownership that users can opt into (which reduces to
+reference-sharing otherwise).
 
-A notion of constants (assign once) versus variables (assign multiple times)
+\subsubsection{Discussions}
 
-Parallel function calls
+\textit{SE, JH:} Partial application?  Or do we prohibit it?
 
-Facility for efficient code generation with compile-time constants (should this be syntactically different?)
+\subsection{Control flow}
 
-Partial application?  Or do we prohibit it?
+\textit{SE, JH:} Parallel function calls.
+
+\textit{JH:} Some sort of exception handling.
+
+\textit{SE, JH:} Wait on variables
+
+\textit{SE, JH:} Immediate and delayed assignment ``primitives''
+
+\subsection{Generated code}
+
+\textit{SE, JH:} Compile-time allocation of all data (exception: activation records)
+
+\textit{SE, JH:} Facility for efficient code generation with compile-time
+constants (should this be syntactically different?).
 
 \section{Overview}
 
