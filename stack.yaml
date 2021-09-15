@@ -1,0 +1,7 @@
+resolver: lts-18.10
+
+packages:
+- .
+
+extra-deps:
+- prettyprinter-1.7.0@sha256:6a9569e21fa61163a7f066d23d701e23e917893e8f39733d6e617ec72787ae5f,6007

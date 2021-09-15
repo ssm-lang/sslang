@@ -1,4 +1,11 @@
 *.log
+.stack-work/
+stack.yaml.lock
+*~
+
+Parser.info
+runtests.log
+regression-tests/out
 
 # Created by https://www.toptal.com/developers/gitignore/api/haskell
 # Edit at https://www.toptal.com/developers/gitignore?templates=haskell

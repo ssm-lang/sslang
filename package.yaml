@@ -1,0 +1,66 @@
+name:                sslang
+version:             0.1.0.0
+github:              "sedwards-lab/sslang"
+license:             BSD3
+author:              "Stephen A. Edwards"
+maintainer:          "sedwards@cs.columbia.edu"
+copyright:           "2021 Stephen A. Edwards"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Real-time programming language
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  dependencies:
+  - prettyprinter >= 1.7.0
+  - array
+  - mtl
+  - containers
+
+executables:
+  sslc:
+    main:                Main.hs
+    source-dirs:         app
+
+    ghc-options:
+    - -Wall
+#    - -threaded
+#    - -rtsopts
+#    - -with-rtsopts=-N
+
+    dependencies:
+    - sslang
+
+    build-tools:
+    - happy
+    - alex
+
+tests:
+  scanner-test:
+    main:		unit-tests/ScannerTest.hs
+    dependencies:
+    - sslang
+
+  parser-test:
+    main:		unit-tests/ParserTest.hs
+    dependencies:
+    - sslang
+
+  regression-test:
+    main:		regression-tests/Runtests.hs
+    dependencies:
+    - process
