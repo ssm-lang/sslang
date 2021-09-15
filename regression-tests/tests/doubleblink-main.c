@@ -1,5 +1,5 @@
 #include "doubleblink.h"
-#include "peng-platform.h"
+#include "ssm.h"
 #include <stdio.h>
 
 void top_return(act_t *act)
