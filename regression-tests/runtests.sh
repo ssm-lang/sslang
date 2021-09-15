@@ -2,7 +2,7 @@
 
 SSLC="stack exec sslc --"
 
-SSMDIR="../ssm"
+SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
