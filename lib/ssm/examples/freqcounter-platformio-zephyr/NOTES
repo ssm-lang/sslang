@@ -1,0 +1,2 @@
+Use a 100 ms gate; count input events between gates and print measured frequency.
+Compare against lab instrument.

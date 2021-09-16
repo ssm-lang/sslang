@@ -1,0 +1,194 @@
+Running examples
+
+The classic
+
+hello
+Hello World!
+
+hello2
+Hello World!
+
+Recursive single-instant Fibonacci
+
+fib
+3
+
+fib 4
+5
+
+fib 5
+8
+
+fib 13
+377
+
+fib 15
+987
+
+Recursive single-instant parallel Fibonacci
+
+fib2
+3
+
+fib2 4
+5
+
+fib2 5
+8
+
+fib2 13
+377
+
+fib2 15
+987
+
+Recursive parallel Fibonacci with delays
+
+fib3
+simulated 3 seconds
+3
+
+fib3 4
+simulated 4 seconds
+5
+
+fib3 5
+simulated 5 seconds
+8
+
+fib3 13
+simulated 13 seconds
+377
+
+fib3 15
+simulated 15 seconds
+987
+
+Demonstrate deterministic concurrency
+
+onetwo
+finished time 0
+a = 22
+finished time 100
+
+Count the events on seconds
+
+clock
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+simulated 20 seconds
+
+Simulate a clocked digital circuit with two adders and two registers
+q1 should add q2+1 to itself each time; q2 should increment
+
+counter
+clk = 0
+q1 = 0 d1 = 0
+q2 = 0 d2 = 0
+finished time 0
+clk = 1
+q1 = 0 d1 = 1
+q2 = 0 d2 = 1
+finished time 100
+clk = 0
+q1 = 1 d1 = 3
+q2 = 1 d2 = 2
+finished time 200
+clk = 1
+q1 = 1 d1 = 3
+q2 = 1 d2 = 2
+finished time 300
+clk = 0
+q1 = 3 d1 = 6
+q2 = 2 d2 = 3
+finished time 400
+clk = 1
+q1 = 3 d1 = 6
+q2 = 2 d2 = 3
+finished time 500
+clk = 0
+q1 = 6 d1 = 10
+q2 = 3 d2 = 4
+finished time 600
+clk = 1
+q1 = 6 d1 = 10
+q2 = 3 d2 = 4
+finished time 700
+clk = 0
+q1 = 10 d1 = 15
+q2 = 4 d2 = 5
+finished time 800
+clk = 1
+q1 = 10 d1 = 15
+q2 = 4 d2 = 5
+finished time 900
+clk = 0
+q1 = 15 d1 = 21
+q2 = 5 d2 = 6
+finished time 1000
+
+Simulate a similar circuit, but with a different clock generator
+
+counter2
+clk = 0
+q = 0 d = 0
+q = 0 d = 0
+finished time 0
+clk = 0
+q = 0 d = 0
+q = 0 d = 0
+finished time 100
+clk = 1
+q = 0 d = 1
+q = 0 d = 1
+finished time 200
+clk = 0
+q = 0 d = 1
+q = 0 d = 1
+finished time 300
+clk = 1
+q = 1 d = 3
+q = 1 d = 2
+finished time 400
+clk = 0
+q = 1 d = 3
+q = 1 d = 2
+finished time 500
+clk = 1
+q = 3 d = 6
+q = 2 d = 3
+finished time 600
+clk = 0
+q = 3 d = 6
+q = 2 d = 3
+finished time 700
+clk = 1
+q = 6 d = 10
+q = 3 d = 4
+finished time 800
+clk = 0
+q = 6 d = 10
+q = 3 d = 4
+finished time 900
+clk = 1
+q = 10 d = 15
+q = 4 d = 5
+finished time 1000

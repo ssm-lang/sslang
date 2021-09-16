@@ -2,6 +2,7 @@
 Module:  CGen
 Description: Translates an IR program into a C program
 
+TODO: use language-c-quote library to do this.
 -}
 
 module CGen(
@@ -34,7 +35,7 @@ callLeaveFunction actPtr size = Call (ID "ssm_leave") [actPtr, size]
 
 -- | Expression for calling "initialize" on a scheduled variable
 callInitializeFunction :: I.Ty -> Expression -> Expression
-callInitializeFunction t e = Call (ID $ "initialize_" ++ typeName t) [e]
+callInitializeFunction t e = Call (ID $ "ssm_initialize_" ++ typeName t) [e]
 
 -- | Expression for calling "later" on a scheduled variable
 -- First argument is the time for the update, second argument is
@@ -44,14 +45,14 @@ callInitializeFunction t e = Call (ID $ "initialize_" ++ typeName t) [e]
 callLaterFunction :: I.Ty -> Expression -> Expression -> Expression
                   -> Expression
 callLaterFunction (I.TCon "Event") time var _ =
-  Call (ID $ "later_event") [ var, time ]
+  Call (ID $ "ssm_later_event") [ var, time ]
 callLaterFunction typ time var value =
   Call (ID $ "ssm_later_" ++ typeName typ) [ var, time, value ]
 
 callAssignFunction :: I.Ty -> Expression -> Expression -> Expression
                    -> Expression
 callAssignFunction (I.TCon "Event") lvalue priority _ =
-  Call (ID $ "assign_event") [ lvalue, priority ]                   
+  Call (ID $ "ssm_assign_event") [ lvalue, priority ]                   
 callAssignFunction typ lvalue priority rvalue =
   Call (ID $ "ssm_assign_" ++ typeName typ) [ lvalue, priority, rvalue ]
 
@@ -347,7 +348,7 @@ toFunc (I.Function (I.Bind fname _) formals locals body) =
       pcVal <- getNextPCState
       emitExpr $ assign (actField "pc") pcVal
       enterCall <- genEnterCall (actField priority) (actField depth) (f, a)
-      emitExpr $ Call (ID "call") [Cast (Pointer bare_act_t) enterCall]
+      emitExpr $ Call (ID "ssm_call") [Cast (Pointer bare_act_t) enterCall]
       emit $ Return Nothing
       emit $ Case pcVal
 
@@ -370,7 +371,7 @@ toFunc (I.Function (I.Bind fname _) formals locals body) =
                        Binary (ID localPriority) (AssignOp Add) (ID localInc)
       enterCalls <- mapM (genEnterCall (ID localPriority) (ID localDepth))
                          children
-      let calls = map (\e -> Expr $ Call (ID "fork_routine")
+      let calls = map (\e -> Expr $ Call (ID "ssm_activate")
                                     [Cast (Pointer bare_act_t) e]) enterCalls
       emit $ Compound [ localDepthDecl
                       , localPriorityDecl
