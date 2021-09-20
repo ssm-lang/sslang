@@ -1,5 +1,9 @@
 # sslang
 
+**NOTE: Development for this project has moved to [ssm-lang/sslang](github.com/ssm-lang/sslang).**
+
+----
+
 A language built atop the Sparse Synchronous Model
 
 This depends on the Haskell Stack and the SSM library
