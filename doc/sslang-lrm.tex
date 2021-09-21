@@ -4,6 +4,7 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{syntax}
 
 \definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
 
@@ -105,64 +106,61 @@ so ugly. Whatever syntax we use, declaration for follow invocation.
 
 \begin{verbatim}
 
--- () -> Int
-e () -> Int = ..
-
+foo () -> Int = ..       -- Void function
 ----
-
-f a: Int = ..
-f (a: Int): Int = ..
-
-f(1)
-f 1
-
-f a: Int -> Int = ..   -- PL
-f (a: Int) -> Int = .. -- Python, Rust, Typescript
-
-func f (a int) int {
-}
-
-f a -> Int = ..
-f (a: Int) -> Int = ..
-
+f a: Int -> Int = ..   -- Interpret as '(Int -> Int) is the type of f'
+f (a: Int) -> Int = .. -- Interpret as 'a is of type Int and f returns Int'
 ----
 
 -- g: (Int, Int) -> Int
 
-g (a: Int, b: Int) -> Int = ...
+g (a: Int, b: Int) -> Int = .. -- Looks Pythonic, but g actually takes 1 tuple arg
 
-g ((a, b): (Int, Int)) -> Int = ...
+g ((a, b): (Int, Int)) -> Int = ... -- OCaml-like
 
-g (a, b): (Int, Int) -> Int = ...
-
-g: (Int, Int) -> Int = \(a, b) = ...
+g (a, b): (Int, Int) -> Int = ... -- Interpret as '(Int, Int) -> Int is the type of g'
 
 ----
 
 -- h: Int -> Int -> Int
 
-h a b: Int -> Int -> Int = ...
+h a b: Int -> Int -> Int = ... -- 'Int -> Int -> Int is the type of h'
 
-h: Int -> Int -> Int = \a = \b = ...
+h: Int -> Int -> Int = \a = \b = ...  -- OK, if single ID, then expect colon, like global var
 
-h (a: Int) (b: Int) -> Int = ...
-
-----
-Beginnings of a grammar:
-
-  FUNCDEF ::= ID PATTERN* -> TYPE = { BODY }
-            | ID PATTERN* :  TYPE = { BODY }
-
-  PATTERN ::= ID (: TYPE)?
-
-  TYPE ::= [ TYPE ]
-         | ID
-         | ...
+h (a: Int) (b: Int) -> Int = ... -- OK, should parse, OCaml-like 
 
 ----
+Top Level Definition Grammar
 
-TODO for Hans:
-- syntax for types and top-level name definitions
+  TOPDEF ::= ID() -> TYPE = { BODY }        -- Void function
+           | ID PARAM_T+ -> TYPE = { BODY } -- 'Inline' type signature
+           | ID PARAM_T* : TYPE = { BODY }  -- 'Postfix functional' type signature
+
+  PARAM_T ::= ID               -- Haskell-style, only param name
+            | (PARAM)          -- OCaml-style, param wrapped in parens for typing
+            | (PARAM(,PARAM)+) -- Tuple, think Python
+
+  PARAM ::= (PARAM)          -- Unwrap parens
+          | ID(: TYPE)?                -- Optionally typed identifier
+          | (PARAM(,PARAM)+) (: TYPE)? -- Optionally typed tuple
+
+  TYPE ::= [TYPE]         -- Desugars into List TYPE
+         | TYPE -> TYPE
+         | (TYPE)
+   | (TYPE(,TYPE)+) -- Desugars into (,,) t1 t2 t3 
+         | Int8 | Int16 | Int32 | Int64
+         | UInt8 | UInt16 | UInt32 | UInt64
+         | Bool
+         | Event
+   | &TYPE          -- TODO: Desugars into Ref TYPE
+         | Sched TYPE
+
+---
+
+data Type = TypeID String
+    | TApply Type Type
+    | ...
 
 TODO for Stephen:
 - flesh out the lexer documentation
@@ -305,15 +303,14 @@ of the following:
 \item InBlock: The scanner is in a block; a separator is inserted in
   front of each line that starts at the current indentation level.  A
   line that starts to the left of the current indentation level causes
-  a close-block token to be inserted (i.e., \lstinline!}!) and the
+  a close-block token to be inserted (i.e., \texttt{\}}) and the
     current state to be popped.
 
-\item StartBlock: The scanner will start a block (insert a
-  \lstinline!{!) at the start of the next token and enter the InBlock
-    state
+\item StartBlock: The scanner will start a block (insert a \texttt{\}})
+at the start of the next token and enter the InBlock state
 
 \item StartBlockNL: The scanner will start a block (insert a
-  \lstinline!{!) at the token that starts the next line and enter the InBlock
+  \texttt{\}}) at the token that starts the next line and enter the InBlock
     state
 
 \end{itemize}
@@ -328,6 +325,77 @@ NOTE: Avoid Coq's mess of scope declarations and accompanying plumbing; take
 a look at Agda's user-defined operators.
 
 \section{Types}
+sslang exposes two classes of types. \\
+
+\noindent The first class of types encompasses primitive types: integers, booleans, pure events (i.e. conditional variable), and unit (i.e. void).\\ 
+
+\noindent The second class of types are higher order types that are composed of primitive types:
+\begin{itemize}
+    \item \texttt{[<type>]}: An array containing values of type \texttt{<type>}
+    \item \texttt{(<type>, ...)}: A tuple containing values of type \texttt{<type>}
+    \item \texttt{<type1> $\rightarrow$ <type2>}: A function that takes a   \texttt{<type1>} and returns a  \texttt{<type2>}
+    \item \texttt{\&<type>}: A reference to a variable of type \texttt{<type>}
+    \item \texttt{Sched <type>}: A scheduled variable of type \texttt{<type>}. These variables are scheduled and managed by the SSM runtime and are used to synchronize routines
+\end{itemize}
+
+\noindent This is summarized by the following grammar:
+\setlength{\grammarindent}{5em}
+\begin{grammar}
+<type> ::= [<type>]
+\alt (<type>(, <type>)+)
+\alt <type> $\rightarrow$ <type>
+\alt \&<type>
+\alt Sched <type>
+\alt (<type>)
+\alt Int8 | Int16 | Int32 | Int64
+\alt UInt8 | UInt16 | UInt32 | UInt64
+\alt Bool
+\alt Event
+\alt ()
+\end{grammar}
+
+\section{Routines}
+\noindent Routines are defined at the top-level of a sslang file and consistent of the following components:
+\begin{itemize}
+    \item Routine name
+    \item Zero or more parameters, each of which are optionally typed
+    \item Optionally specified return type
+    \item Routine body
+\end{itemize}
+\noindent The compiler will perform type inference for untyped components and will verify that typed components are correct.
+
+\subsection{Routine Signatures}
+\noindent sslang supports three ways of writing out type signatures for routines.
+\begin{itemize}
+    \item Infix-tuple: Type annotations are written immediately after identifiers.\\\\
+    \texttt{foo (a: Int, b: Bool) $\rightarrow$ Int = \{...\}}\\\\
+    This signature is reminiscent of Python's type signatures, which use colons for individual identifiers and then arrow for the return type.\\
+    
+    However, unlike Python, this type-signature actually indicates that \texttt{foo} only takes one argument, which is a tuple containing two \texttt{Int}s. If we wanted to specify that \texttt{foo} takes two \texttt{Int} arguments, we'd write the following:\\\\
+    \texttt{foo (a: Int) (b: Bool) $\rightarrow$ Int = \{...\}}\\\\
+    ...which is more reminiscent of OCaml type signature syntax.
+    
+    \item Postfix-tuple: Type annotations for tuples are written after the tuple, as in OCaml.\\\\
+    \texttt{foo ((a, b): (Int, Bool)) $\rightarrow$ Int = \{...\}}
+    \item Postfix-functional: Haskell-like type signature expressed after all parameters. For example, a function that takes two integers and returns a boolean:\\\\
+    \texttt{foo x y: Int $\rightarrow$ Int $\rightarrow$ Bool = \{...\}}
+\end{itemize}
+
+\noindent These forms are summarized by the following grammar:
+\setlength{\grammarindent}{5em}
+\begin{grammar}
+<FUNCDEF> ::= ID () $\rightarrow$ <TYPE> = \{ <BODY> \}
+\alt ID <PARAM_T>+ $\rightarrow$ <TYPE> = \{ <BODY> \}
+\alt ID <PARAM_T>+ : <TYPE> = \{ <BODY> \}
+
+<PARAM_T> ::= ID
+\alt ID(: <TYPE>)?
+\alt (<PARAM>(, <PARAM>)+)
+
+<PARAM> ::= (<PARAM>)
+\alt ID(: <TYPE>)?
+\alt (<PARAM>(,<PARAM>)+)(: <TYPE>)?
+\end{grammar}
 
 \section{Expressions}
 
