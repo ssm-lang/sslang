@@ -384,9 +384,9 @@ sslang exposes two classes of types. \\
 \noindent These forms are summarized by the following grammar:
 \setlength{\grammarindent}{5em}
 \begin{grammar}
-<FUNCDEF> ::= ID () $\rightarrow$ <TYPE> = \{ <BODY> \}
-\alt ID <PARAM_T>+ $\rightarrow$ <TYPE> = \{ <BODY> \}
-\alt ID <PARAM_T>+ : <TYPE> = \{ <BODY> \}
+<FUNCDEF> ::= ID () ($\rightarrow$ <TYPE>)? = \{ <BODY> \}
+\alt ID <PARAM_T>+ ($\rightarrow$ <TYPE>)? = \{ <BODY> \}
+\alt ID <PARAM_T>+ (: <TYPE>)? = \{ <BODY> \}
 
 <PARAM_T> ::= ID
 \alt ID(: <TYPE>)?
