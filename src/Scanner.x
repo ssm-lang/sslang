@@ -61,6 +61,7 @@ tokens :-
     \|\|  { keyword TDBar }
     \;    { keyword TSemicolon }
     \:    { keyword TColon }
+    \-\>  { keyword TRarrow }
     \|    { keyword TBar }
     \,    { keyword TComma }
     \_    { keyword TUnderscore }
@@ -262,6 +263,7 @@ data TokenType =
   | TWait
   | TEq
   | TLarrow
+  | TRarrow
   | TDBar
   | TColon
   | TSemicolon

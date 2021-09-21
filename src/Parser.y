@@ -34,6 +34,7 @@ import Ast
   'wait'  { Token _ TWait }
   '='     { Token _ TEq }
   '<-'    { Token _ TLarrow }
+  '->'    { Token _ TRarrow }
   '||'    { Token _ TDBar }
   ':'     { Token _ TColon }
   ';'     { Token _ TSemicolon }
@@ -60,15 +61,33 @@ program : topdecls { Program (reverse $1) }
 topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
-topdecl : id '(' optFormals ')' '=' '{' expr '}' { Function $1 $3 $7 }
+-- topdecl : id '(' optFormals ')' '=' '{' expr '}' { Function $1 $3 $7 }
+topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 }
+        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 } 
 
-optFormals : {- nothing -} { [] }
-           | formals       { reverse $1 }
+optReturnType : ':' typs      {}
+              | '->' typs     {}
+              | {- nothing -} {}
 
-formals : formal             { [$1] }
-        | formals ',' formal { $3 : $1 }
+formals : formalTop             { [$1] }
+        | formalTop formalTop   { $2 : $1 }
 
-formal : ids ':' typs   { Bind (reverse $1) $3 }
+formalTop : id                    {}
+          | '(' formalOrTuple ')' {}
+
+formalOrTuple : formal                  {}
+              | formal ',' tupleFormals {}
+
+-- formal : ids ':' typs   { Bind (reverse $1) $3 }
+formal : '(' formal ')'                          {}
+       | id optType                              {}
+       | '(' formal ',' tupleFormals ')' optType {}
+
+tupleFormals : formal                  {}
+             | formal ',' tupleFormals {}
+
+optType : {- nothing -} {}
+        | ':' typs      {}
 
 ids : id          { [$1] }
     | ids ',' id  { $3 : $1 }
