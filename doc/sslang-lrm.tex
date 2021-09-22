@@ -81,97 +81,6 @@ public class SampleClass
 
 \subsubsection{Discussions}
 
-\textit{SE:} What should function definitions (type signatures) look like?
-Haskell-style or OCaml-style?  Look at the Nim language.  Named arguments?  Make
-it look like data constructors?
-\textit{JH:} Should be OCaml-style, in that it is inline, but it should not look
-so ugly. Whatever syntax we use, declaration for follow invocation.
-
-\begin{itemize}
-  \item OCaml uses something like: \verb|f (a: int) (b: int) = ..|. Too many
-    parentheses.
-
-  \item In our meeting, we threw around the idea of something like:
-    \verb|f a: Int, b: Int = ..|. \textit{JH:} seems fine, but looks weird because comma
-    precedence is not widely understood.
-
-  \item Rust, Go, Javascript, and other recent languages use: \verb|f(a: Int, b: Int) .. |.
-    \textit{JH:} I don't love it, but I don't hate it either, and it's familiar.
-
-  \item SML allows tuple syntax for function arguments:
-    \verb|fun mult x y = x * y| has type
-    \verb|int -> int -> int|,
-    but \verb|fun mult (x, y) = x * y| has type
-    \verb|int * int -> int|.
-
-\begin{verbatim}
-
-foo () -> Int = ..       -- Void function
-----
-f a: Int -> Int = ..   -- Interpret as '(Int -> Int) is the type of f'
-f (a: Int) -> Int = .. -- Interpret as 'a is of type Int and f returns Int'
-----
-
--- g: (Int, Int) -> Int
-
-g (a: Int, b: Int) -> Int = .. -- Looks Pythonic, but g actually takes 1 tuple arg
-
-g ((a, b): (Int, Int)) -> Int = ... -- OCaml-like
-
-g (a, b): (Int, Int) -> Int = ... -- Interpret as '(Int, Int) -> Int is the type of g'
-
-----
-
--- h: Int -> Int -> Int
-
-h a b: Int -> Int -> Int = ... -- 'Int -> Int -> Int is the type of h'
-
-h: Int -> Int -> Int = \a = \b = ...  -- OK, if single ID, then expect colon, like global var
-
-h (a: Int) (b: Int) -> Int = ... -- OK, should parse, OCaml-like 
-
-----
-Top Level Definition Grammar
-
-  TOPDEF ::= ID() -> TYPE = { BODY }        -- Void function
-           | ID PARAM_T+ -> TYPE = { BODY } -- 'Inline' type signature
-           | ID PARAM_T* : TYPE = { BODY }  -- 'Postfix functional' type signature
-
-  PARAM_T ::= ID               -- Haskell-style, only param name
-            | (PARAM)          -- OCaml-style, param wrapped in parens for typing
-            | (PARAM(,PARAM)+) -- Tuple, think Python
-
-  PARAM ::= (PARAM)          -- Unwrap parens
-          | ID(: TYPE)?                -- Optionally typed identifier
-          | (PARAM(,PARAM)+) (: TYPE)? -- Optionally typed tuple
-
-  TYPE ::= [TYPE]         -- Desugars into List TYPE
-         | TYPE -> TYPE
-         | (TYPE)
-   | (TYPE(,TYPE)+) -- Desugars into (,,) t1 t2 t3 
-         | Int8 | Int16 | Int32 | Int64
-         | UInt8 | UInt16 | UInt32 | UInt64
-         | Bool
-         | Event
-   | &TYPE          -- TODO: Desugars into Ref TYPE
-         | Sched TYPE
-
----
-
-data Type = TypeID String
-    | TApply Type Type
-    | ...
-
-TODO for Stephen:
-- flesh out the lexer documentation
-\end{verbatim}
-
-\end{itemize}
-
-Syntax for type expressions: in addition to nullary types, we want to have
-higher-arity type operators, i.e., \verb|( , )|, \verb|->|, \verb|&|, etc.
-Broadly speaking, the things on the right of a colon.
-
 \subsection{Types and expressions}
 
 \textit{SE, JH:} Type expressions.
@@ -308,7 +217,6 @@ of the following:
 
 \item StartBlock: The scanner will start a block (insert a \texttt{\}})
 at the start of the next token and enter the InBlock state
-
 \item StartBlockNL: The scanner will start a block (insert a
   \texttt{\}}) at the token that starts the next line and enter the InBlock
     state
@@ -325,11 +233,13 @@ NOTE: Avoid Coq's mess of scope declarations and accompanying plumbing; take
 a look at Agda's user-defined operators.
 
 \section{Types}
-sslang exposes two classes of types. \\
+\noindent sslang's type system is composed of two fundamental components: type constructors and type application. All types in sslang are a combination of type constructors and applications. \\
 
-\noindent The first class of types encompasses primitive types: integers, booleans, pure events (i.e. conditional variable), and unit (i.e. void).\\ 
+\noindent Type constructors may take zero or more type arguments that, when composed via type application, form a fully-qualified type. \\ 
 
-\noindent The second class of types are higher order types that are composed of primitive types:
+\noindent Constructors that take zero type arguments can be thought of as ``primitive types", such as integers, booleans, pure events (i.e. conditional variable), and unit (i.e. void). \\
+
+\noindent Constructors that take more than type argument can be thought of as ``higher-order types". Here's a summary of sslang's higher-order types:
 \begin{itemize}
     \item \texttt{[<type>]}: An array containing values of type \texttt{<type>}
     \item \texttt{(<type>, ...)}: A tuple containing values of type \texttt{<type>}
@@ -338,22 +248,21 @@ sslang exposes two classes of types. \\
     \item \texttt{Sched <type>}: A scheduled variable of type \texttt{<type>}. These variables are scheduled and managed by the SSM runtime and are used to synchronize routines
 \end{itemize}
 
-\noindent This is summarized by the following grammar:
+\noindent This all is summarized by the following grammar:
 \setlength{\grammarindent}{5em}
 \begin{grammar}
-<type> ::= [<type>]
+<type> ::= (<type>)
+\alt [<type>]
 \alt (<type>(, <type>)+)
 \alt <type> $\rightarrow$ <type>
 \alt \&<type>
-\alt Sched <type>
-\alt (<type>)
-\alt Int8 | Int16 | Int32 | Int64
-\alt UInt8 | UInt16 | UInt32 | UInt64
-\alt Bool
-\alt Event
 \alt ()
+\alt <type-id> <type>*
+
+<type-id> ::= [A-Z][a-zA-Z0-9]* 
 \end{grammar}
 
+\noindent Note the generic definition of type constructors: simply one or more type identifiers. This implementation is meant to facilitate support for user-defined types and to provide a concise interface for sslang's type system to deal with.
 \section{Routines}
 \noindent Routines are defined at the top-level of a sslang file and consistent of the following components:
 \begin{itemize}
@@ -365,36 +274,42 @@ sslang exposes two classes of types. \\
 \noindent The compiler will perform type inference for untyped components and will verify that typed components are correct.
 
 \subsection{Routine Signatures}
-\noindent sslang supports three ways of writing out type signatures for routines.
+\noindent At the core of sslang routine signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
 \begin{itemize}
-    \item Infix-tuple: Type annotations are written immediately after identifiers.\\\\
-    \texttt{foo (a: Int, b: Bool) $\rightarrow$ Int = \{...\}}\\\\
-    This signature is reminiscent of Python's type signatures, which use colons for individual identifiers and then arrow for the return type.\\
-    
-    However, unlike Python, this type-signature actually indicates that \texttt{foo} only takes one argument, which is a tuple containing two \texttt{Int}s. If we wanted to specify that \texttt{foo} takes two \texttt{Int} arguments, we'd write the following:\\\\
-    \texttt{foo (a: Int) (b: Bool) $\rightarrow$ Int = \{...\}}\\\\
-    ...which is more reminiscent of OCaml type signature syntax.
-    
-    \item Postfix-tuple: Type annotations for tuples are written after the tuple, as in OCaml.\\\\
-    \texttt{foo ((a, b): (Int, Bool)) $\rightarrow$ Int = \{...\}}
-    \item Postfix-functional: Haskell-like type signature expressed after all parameters. For example, a function that takes two integers and returns a boolean:\\\\
-    \texttt{foo x y: Int $\rightarrow$ Int $\rightarrow$ Bool = \{...\}}
+    \item \texttt{:} (Colon): ``is of type"
+    \item \texttt{$\rightarrow$} (Right Arrow): ``returns"
 \end{itemize}
 
-\noindent These forms are summarized by the following grammar:
+\noindent When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
+\begin{itemize}
+    \item \texttt{(a: Int, b: Bool)}
+    \item \texttt{(a , b) : (Int, Bool)}
+\end{itemize}
+
+\noindent Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
+
+\noindent As a whole, routine signatures fall into two broad syntactic categories:
+\begin{itemize}
+    \item \texttt{foo <args> $\rightarrow$ <ret-type>}\\
+          Using the ``\texttt{$\rightarrow$}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+    \item \texttt{foo <untyped-args> : <fn-type>}\\
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the arguments individually and the return type separately. This is evocative of Haskell's type signatures.
+\end{itemize}
+
+\noindent Routine definitions can be summarized by the following grammar:
 \setlength{\grammarindent}{5em}
 \begin{grammar}
-<FUNCDEF> ::= ID () ($\rightarrow$ <TYPE>)? = \{ <BODY> \}
-\alt ID <PARAM_T>+ ($\rightarrow$ <TYPE>)? = \{ <BODY> \}
-\alt ID <PARAM_T>+ (: <TYPE>)? = \{ <BODY> \}
+<funcdef> ::= id () ($\rightarrow$ <type>)? = \{ <body> \}
+\alt id <param_t>+ ($\rightarrow$ <type>)? = \{ <body> \}
+\alt id <param_t>+ (: <type>)? = \{ <body> \}
 
-<PARAM_T> ::= ID
-\alt (<PARAM>)
-\alt (<PARAM>(, <PARAM>)+)
+<param_t> ::= id
+\alt (<param>)
+\alt (<param>(, <param>)+)
 
-<PARAM> ::= (<PARAM>)
-\alt ID(: <TYPE>)?
-\alt (<PARAM>(,<PARAM>)+)(: <TYPE>)?
+<param> ::= (<param>)
+\alt id(: <type>)?
+\alt (<param>(,<param>)+)(: <type>)?
 \end{grammar}
 
 \section{Expressions}
