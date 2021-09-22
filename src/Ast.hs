@@ -97,8 +97,9 @@ instance Pretty Declaration where
                  , pretty body ])
 
 instance Pretty Bind where
-  pretty (Bind id (Just t)) = pretty id 
-{-  hsep (punctuate comma $ map pretty ids) <+> pretty ':' <+> pretty t -}
+  pretty (Bind id (Just t)) = pretty id <+> pretty ':' <+> pretty t
+  pretty (TupBind binds _) = hsep (punctuate comma $ map pretty binds)
+  pretty _ = undefined
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id

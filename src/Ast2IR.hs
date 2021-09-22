@@ -55,28 +55,30 @@ astToIR (A.Program decls) = I.Program functions
     bindOfDecl decl@(A.Function name _ _ _) = Just $ I.Bind name $ typeOfDecl decl
     --bindOfDecl _ = Nothing
     
-    typeOfDecl (A.Function _ formals _ _) =
+    typeOfDecl (A.Function _ [singleFormal] _ _) =
       I.functionType (formalTypes ++ [resultType])
       where
         resultType = I.unitTy -- FIXME: the default for now
-        formalTypes = map bindTypes formals
-        bindTypes (A.Bind id (Just t)) = convertTy t
-    --typeOfDecl _ = error "typeOfDecl called on a non-function"
+        formalTypes = bindTypes singleFormal
+        bindTypes (A.TupBind binds _) = map (\(A.Bind _ (Just t)) -> convertTy t) binds
+        bindTypes (A.Bind _ (Just t))  = [convertTy t]
+        bindTypes _ = undefined
+    typeOfDecl _ = undefined
 
-    convertFunction decl@(A.Function fname formalArgs body _) =
+    convertFunction decl@(A.Function fname [singleFormal] body _) =
       Just $ I.Function bind formals locals body'
       where
         functionType = typeOfDecl decl
         bind = I.Bind fname functionType
         formals = zipWith I.Bind formalNames $ I.functionArgsTypes functionType
-        formalNames = map (\(A.Bind id _) -> id) formalArgs
+        formalNames = bindNames singleFormal
+        bindNames (A.TupBind binds _) = map (\(A.Bind id _) -> id) binds
+        bindNames (A.Bind id _) = [id]
 
         locals = collectBinders body
         environment = locals ++ formals ++ topDefs
         body' = generateStatements environment $ emitStmt body
-
-    --convertFunction _ = Nothing        
-
+    convertFunction _ = undefined
 {-    
     convertBind :: A.Bind -> [I.Bind]
     convertBind (A.Bind ids t) = map (\id -> I.Bind id t') ids
