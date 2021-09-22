@@ -62,14 +62,14 @@ topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
 topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
-        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $4 } 
+        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 } 
 
 optReturnType : ':' typs      { Just $2 }
               | '->' typs     { Just $2 }
               | {- nothing -} { Nothing }
 
-formals : formalTop             { [$1] }
-        | formalTop formalTop   { $2 : $1 }
+formals : formalTop         { [$1] }
+        | formalTop formals { $1 : $2 }
 
 formalTop : id                    { Bind $1 Nothing }
           | '(' formalOrTuple ')' { $2 }

@@ -22,9 +22,10 @@ type OperatorId = String
 
 data Program = Program [Declaration]
 
-data Declaration = Function VarId [Bind] Expr
+data Declaration = Function VarId [Bind] Expr (Maybe Ty)
 
-data Bind = Bind [VarId] Ty
+data Bind = Bind VarId (Maybe Ty)
+          | TupBind [Bind] (Maybe Ty)
 
 data Ty = TCon TConId
         | TApp Ty Ty
@@ -91,13 +92,13 @@ instance Show Def where
   show d = show $ pretty d
 
 instance Pretty Declaration where
-  pretty (Function id formals body) =
+  pretty (Function id formals body _) =
     nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> pretty '='
                  , pretty body ])
 
 instance Pretty Bind where
-  pretty (Bind ids t) = hsep (punctuate comma $ map pretty ids) <+>
-                        pretty ':' <+> pretty t
+  pretty (Bind id (Just t)) = pretty id 
+{-  hsep (punctuate comma $ map pretty ids) <+> pretty ':' <+> pretty t -}
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id

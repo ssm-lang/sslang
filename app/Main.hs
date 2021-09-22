@@ -107,7 +107,7 @@ main = do
   -- FIXME: Should take into account fixity definitions in the program
   let A.Program decls = ast
       ast' = A.Program $ map helper decls
-      helper (A.Function s bs e) = A.Function s bs $ parseOperators defaultOps e
+      helper (A.Function s bs e t) = A.Function s bs (parseOperators defaultOps e) t
 
   when (optMode == DumpASTP) $ print ast' >> exitSuccess
 

@@ -52,25 +52,24 @@ astToIR (A.Program decls) = I.Program functions
       I.Bind "Occur" (I.TCon "Event") :  -- FIXME: This is really ugly
       mapMaybe bindOfDecl decls
 
-    bindOfDecl decl@(A.Function name _ _) = Just $ I.Bind name $ typeOfDecl decl
+    bindOfDecl decl@(A.Function name _ _ _) = Just $ I.Bind name $ typeOfDecl decl
     --bindOfDecl _ = Nothing
     
-    typeOfDecl (A.Function _ formals _) =
+    typeOfDecl (A.Function _ formals _ _) =
       I.functionType (formalTypes ++ [resultType])
       where
         resultType = I.unitTy -- FIXME: the default for now
-        formalTypes = concatMap bindTypes formals
-        bindTypes (A.Bind ids t) = map (\_ -> t') ids
-          where t' = convertTy t
+        formalTypes = map bindTypes formals
+        bindTypes (A.Bind id (Just t)) = convertTy t
     --typeOfDecl _ = error "typeOfDecl called on a non-function"
 
-    convertFunction decl@(A.Function fname formalArgs body) =
+    convertFunction decl@(A.Function fname formalArgs body _) =
       Just $ I.Function bind formals locals body'
       where
         functionType = typeOfDecl decl
         bind = I.Bind fname functionType
         formals = zipWith I.Bind formalNames $ I.functionArgsTypes functionType
-        formalNames = concatMap (\(A.Bind ids _) -> ids) formalArgs
+        formalNames = map (\(A.Bind id _) -> id) formalArgs
 
         locals = collectBinders body
         environment = locals ++ formals ++ topDefs
