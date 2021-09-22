@@ -61,36 +61,31 @@ program : topdecls { Program (reverse $1) }
 topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
--- topdecl : id '(' optFormals ')' '=' '{' expr '}' { Function $1 $3 $7 }
-topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 }
-        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 } 
+topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
+        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $4 } 
 
-optReturnType : ':' typs      {}
-              | '->' typs     {}
-              | {- nothing -} {}
+optReturnType : ':' typs      { Just $2 }
+              | '->' typs     { Just $2 }
+              | {- nothing -} { Nothing }
 
 formals : formalTop             { [$1] }
         | formalTop formalTop   { $2 : $1 }
 
-formalTop : id                    {}
-          | '(' formalOrTuple ')' {}
+formalTop : id                    { Bind $1 Nothing }
+          | '(' formalOrTuple ')' { $2 }
 
-formalOrTuple : formal                  {}
-              | formal ',' tupleFormals {}
+formalOrTuple : formal                  { $1 }
+              | formal ',' tupleFormals { TupBind ($1 : $3) Nothing }
 
--- formal : ids ':' typs   { Bind (reverse $1) $3 }
-formal : '(' formal ')'                          {}
-       | id optType                              {}
-       | '(' formal ',' tupleFormals ')' optType {}
+formal : '(' formal ')'                          { $2 }
+       | id optType                              { Bind $1 $2 }
+       | '(' formal ',' tupleFormals ')' optType { TupBind ($2 : $4) $6 }
 
-tupleFormals : formal                  {}
-             | formal ',' tupleFormals {}
+tupleFormals : formal                  { [$1] }
+             | formal ',' tupleFormals { $1 : $3 }
 
-optType : {- nothing -} {}
-        | ':' typs      {}
-
-ids : id          { [$1] }
-    | ids ',' id  { $3 : $1 }
+optType : {- nothing -} { Nothing }
+        | ':' typs      { Just $2 }
 
 typs : typ      { $1 }
      | typs typ { TApp $1 $2 }
@@ -111,6 +106,9 @@ expr0 : 'if' expr 'then' expr0 elseOpt  { IfElse $2 $4 $5 }
       | expr2 '<-' expr0                { Assign (exprToPat $1) $3 }
       | id '@' expr0                    { As $1 $3 }
       | expr1                           { $1 }
+
+ids : id          { [$1] }
+    | ids ',' id  { $3 : $1 }
       
 elseOpt : {- nothing -} %prec NOELSE { NoExpr }
         | ';' 'else' expr1           { $3 }
