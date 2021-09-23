@@ -267,8 +267,8 @@ a look at Agda's user-defined operators.
 \noindent Routines are defined at the top-level of a sslang file and consistent of the following components:
 \begin{itemize}
     \item Routine name
-    \item Zero or more parameters, each of which are optionally typed
-    \item Optionally specified return type
+    \item Zero or more parameters, possibly type annotated
+    \item Annotated return type
     \item Routine body
 \end{itemize}
 \noindent The compiler will perform type inference for untyped components and will verify that typed components are correct.
@@ -280,6 +280,14 @@ a look at Agda's user-defined operators.
     \item \texttt{$\rightarrow$} (Right Arrow): ``returns"
 \end{itemize}
 
+\noindent We use these symbols to separate routine signatures into two broad syntactic categories:
+\begin{itemize}
+    \item \texttt{foo <params> $\rightarrow$ <ret-type>}\\
+          Using the ``\texttt{$\rightarrow$}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+    \item \texttt{foo <untyped-params> : <fn-type>}\\
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures.
+\end{itemize}
+
 \noindent When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
 \begin{itemize}
     \item \texttt{(a: Int, b: Bool)}
@@ -287,14 +295,6 @@ a look at Agda's user-defined operators.
 \end{itemize}
 
 \noindent Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
-
-\noindent As a whole, routine signatures fall into two broad syntactic categories:
-\begin{itemize}
-    \item \texttt{foo <args> $\rightarrow$ <ret-type>}\\
-          Using the ``\texttt{$\rightarrow$}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
-    \item \texttt{foo <untyped-args> : <fn-type>}\\
-          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the arguments individually and the return type separately. This is evocative of Haskell's type signatures.
-\end{itemize}
 
 \noindent Routine definitions can be summarized by the following grammar:
 \setlength{\grammarindent}{5em}
