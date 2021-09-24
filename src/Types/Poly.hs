@@ -27,6 +27,7 @@ import Types.Common (DConId, TConId, TVarId)
 -- | How many arguments a type constructor can take.
 type Arity = Int
 
+
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type = TVar TVarId         -- ^ Type variables, e.g., a
           | TArrow Type Type    -- ^ Function type constructor, e.g., a -> b
@@ -42,9 +43,9 @@ data Type = TVar TVarId         -- ^ Type variables, e.g., a
 --
 --    TConBuiltin 0
 --
--- A definition for `data MyList a = Cons a | Nil` looks like:
+-- A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 --
---   TConUserDef 1 [("Cons", [TVar "a"]), ("Nil", [])]
+--   TConUserDef 1 [("Cons", [TVar "a", TCon "MyList" [TVar "a"]]), ("Nil", [])]
 --
 -- This representation has the field names of a record stripped out, and just
 -- represents them as data constructors. So the definition for a type like
