@@ -42,8 +42,8 @@ For quick reference about Git commands and concepts, see John's
   - If you want to land multiple _clean_ commits onto `main`, make sure to clean
     them up locally, then use "Rebase and Merge".
 
-  - Each commit should point to working tree that is in a sensible state (i.e.,
-    builds, works (partially), no dead code etc.).
+  - Each commit should point to a working tree that is in a sensible state
+    (i.e., builds, works (partially), no dead code etc.).
 
 - Follow the recommended code style.
 
