@@ -30,6 +30,7 @@ library:
   - array
   - mtl
   - containers
+  - language-c-quote
 
 executables:
   sslc:
