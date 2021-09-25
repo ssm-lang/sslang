@@ -26,11 +26,15 @@ For quick reference about Git commands and concepts, see John's
 
 - Write sensible, descriptive commit messages.
 
-  - Follow [this guide][git-style]: summarize in 50 characters or less (but
-    elaborate in the message body), in the imperative tense.
+  - Commit messages on `main` should follow [this guide][git-style]: summarize
+    in 50 characters or less, in the imperative tense, but elaborate in the
+    message body if necessary. For instance, write "Use name mangling to fix
+    name clash" instead of "used name mangling, fixes name clash".
 
   - Quick and dirty commit messages are fine in PRs, but make sure they are
     squashed by the time they are merged into `main` or anyone else's branch.
+    If you squash and merge, GitHub's PR interface should give you an
+    opportunity to edit the squashed commit message.
 
 - Keep the `main` commit history clean.
 
