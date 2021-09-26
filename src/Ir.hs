@@ -12,22 +12,25 @@ data Literal t = Literal String t -- TODO
   declaration
 
    Break : () -> !
-   Loop : (() -> ()) .... -> !
    Return : a -> !
-   Wait : ... -> !
+   Loop : (() -> ()) .... -> ()
+   Wait : ... -> ()
+   Fork : ... -> ()
    Assign : Ref t -> t -> () -- immediate assignment
    Later : Ref t -> t -> Time -> ()
      where Time is stricly greater than 0.
 
    We have a separate Later statement because we can use this to infer causality
    loops etc.
+
+   Break and Return return ! because they terminate sequential control flow
  -}
 
 data PrimFun = Loop
              | Break
              | Return
-             | Fork
-             | Wait
+             | Fork Int -- number of children
+             | Wait Int -- number of SVs
              | Assign
              | Later
              | Arith Arith
@@ -54,3 +57,8 @@ data Expr t = Let [(VarId, Expr t)] (Expr t) -- ^
 data Alt t = AltData DConId [VarId] (Expr t)
            | AltLit (Literal t) (Expr t)
            | AltDefault (Expr t)
+
+-- TODO
+exprType :: Expr t -> t
+exprType (Var _ t) = t
+exprType _ = undefined -- etc
