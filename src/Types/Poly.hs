@@ -22,17 +22,16 @@
 --   the latter undecidable.
 module Types.Poly where
 
-import Types.Common (DConId, TConId, TVarId)
+import Types.Common (DConId, TConId, TVarIdx)
 
 -- | How many arguments a type constructor can take.
 type Arity = Int
 
 
 -- | The language of type expressions, e.g., what appears in a type signature.
-data Type = TVar TVarId         -- ^ Type variables, e.g., a
-          | TArrow Type Type    -- ^ Function type constructor, e.g., a -> b
-          | TTuple [Type]       -- ^ Tuple (product) type, e.g., (a, b)
-          | TCon TConId [Type]  -- ^ Type constructor, e.g., Option a
+data Type = TVar TVarIdx        -- ^ Type variables, e.g., '0
+          | TArrow Type Type    -- ^ Function type constructor, e.g., '0 -> '1
+          | TCon TConId [Type]  -- ^ Type constructor, e.g., Option '0
 
 
 -- | The language of type definitions, e.g., the type definition associated with

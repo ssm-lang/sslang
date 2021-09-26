@@ -27,10 +27,10 @@
 module Types.Common where
 
 -- | Identifier for type variable, e.g., "a".
---
--- Note that if we want to use de Bruijn indices to represent type variables,
--- would change this type alias to Int.
-type TVarId = String
+newtype TVarId = TVarId String
+
+-- | de Bruijn index for type variables, e.g., "'0".
+newtype TVarIdx = TVarIdx Int
 
 -- | Identifier for type constructors, e.g., "Option".
 type TConId = String
