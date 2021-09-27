@@ -67,6 +67,8 @@ For quick reference about Git commands and concepts, see John's
 
 ## Recommended workflow
 
+If you've never made a PR before, here's a basic workflow to follow:
+
 1. Start with the `main` branch (or whatever you intend to PR into later), and
    make sure it is up to date: `git checkout main && git pull`.
 
@@ -80,11 +82,37 @@ For quick reference about Git commands and concepts, see John's
 5. Make changes, add them, commit them. If you notice new commits to `main` that
    might conflict, merge them in. Or rebase, but you may have to force push.
 
-6. Request a review. There should be a menu to select reviewers in the top right
-   of the PR page, with some suggestions.
+6. Create a PR (if you haven't already), and request a review. There should be
+   a menu to select reviewers in the top right of the PR page, with some
+   suggestions.
 
 7. If changes are requested, make those changes, and re-request a review. Try to
    resolve all conversations.
 
 8. After receiving approval, "Squash and Merge". You may need to first resolve
    any merge conflicts with `main`.
+
+Here's a diagram to help you illustrate where everything should take place:
+
+```
+                                                (4) Create Draft PR to main
+                                                (6) Create PR to main
+                                                (7) Respond to reviews
+
+      main <--------- (8) Squash and Merge --------- my-branch
+        |                                               |
+        |                                               |
+        |                                               |    GitHub.com (origin)
+--------|-----------------------------------------------|-----------------------
+        |                                               |             local repo
+        |                                               |
+  (1) git checkout main && git pull            (3) git push -u my-branch
+        |                                      (5) git push
+        |                                               |
+        |                                               |
+        v                                               |
+      main ----- (2) git checkout -b my-branch ----> my-branch
+
+                                                 (5) git add ...
+                                                     git commit ...
+```
