@@ -4,9 +4,8 @@
 
 module Scanner where
 
-import Data.Char ( isDigit )
-import Duration
-import Data.Word ( Word64 )
+--import Data.Char ( isDigit )
+--import Data.Word ( Word64 )
 }
 
 %wrapper "monadUserState"
@@ -73,12 +72,12 @@ tokens :-
     \{    { lDelimeter TLbrace }
     \}    { rDelimeter TRbrace }
 
-    $digit+ $blank* ns { duration             1 }
-    $digit+ $blank* us { duration          1000 }
-    $digit+ $blank* ms { duration       1000000 }
-    $digit+ $blank* s  { duration    1000000000 }
-    $digit+ $blank* m  { duration   60000000000 }
-    $digit+ $blank* h  { duration 3600000000000 }
+--    $digit+ $blank* ns { duration             1 }
+--    $digit+ $blank* us { duration          1000 }
+--    $digit+ $blank* ms { duration       1000000 }
+--    $digit+ $blank* s  { duration    1000000000 }
+--    $digit+ $blank* m  { duration   60000000000 }
+--    $digit+ $blank* h  { duration 3600000000000 }
   
     $digit+ { \ (pos,_,_,s) len ->
                   return $ Token pos $ TInteger $ read $ take len s }
@@ -141,12 +140,6 @@ rDelimeter ttype alexInput _ = do alexPopContext
 doBlock :: AlexInput -> Int -> Alex Token
 doBlock _ _ = do alexPushContext $ StartBlock TSemicolon
                  alexMonadScan
-
--- Duration literals
-duration :: Word64 -> AlexInput -> Int -> Alex Token
-duration mult (pos,_,_,s) _ = return $ Token pos $ TDuration dur
-  where dur = Duration $ mult * (read $ takeWhile isDigit s)
-
 
 data ScannerContext =
     InBlock Int TokenType -- In a block with the given left margin and separator
@@ -279,7 +272,6 @@ data TokenType =
   | TString String
   | TId String
   | TOp String
-  | TDuration Duration
   deriving (Eq, Show)
 
 lexerForHappy :: (Token -> Alex a) -> Alex a

@@ -1,6 +1,8 @@
-module Ir where
-import           Ast                            ( VarId )
+module IR.IR where
+import Ast          ( VarId )
 import Types.Common (DConId)
+
+data Program t = Program [(VarId, Expr t)]
 
 type FfiId = String
 type Arith = String -- "+i32" TODO
@@ -60,5 +62,10 @@ data Alt t = AltData DConId [VarId] (Expr t)
 
 -- TODO
 exprType :: Expr t -> t
+exprType (Let _ e) = exprType e
+exprType (Lambda _ _ _) = undefined -- Need t1 -> exprType e
+exprType (Lit _) = undefined -- litType l
+exprType (App _ _) = undefined -- match exprType e1 with _ -> t = t 
 exprType (Var _ t) = t
-exprType _ = undefined -- etc
+exprType (PrimApp _ _ t) = t
+exprType (Match _ _ _ t) = t

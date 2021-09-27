@@ -10,7 +10,7 @@ import ParseOperators ( parseOperators, Fixity(..) )
 
 --import Ast ( printAST )
 import Ast2IR  ( astToIR )
-import CGen ( cgen, hgen )
+--import CGen ( cgen, hgen )
 
 import qualified Ast as A
 
@@ -21,11 +21,10 @@ import System.IO( hPutStrLn, hPutStr, stderr )
 import System.Exit( exitSuccess, exitFailure )
 import Control.Monad( when, unless )
 
-data Mode = DumpIR
-          | DumpAST
-          | DumpASTP
-          | GenerateC
-          | GenerateH
+data Mode
+      = DumpAST    -- AST before operator parsing
+      | DumpASTP   -- AST after operators are parsed
+      | DumpIR     -- Intermediate representation
   deriving (Eq, Show)
 
 data Options = Options
@@ -35,7 +34,7 @@ data Options = Options
 
 defaultOptions :: Options
 defaultOptions = Options
-  { optMode = GenerateC
+  { optMode = DumpIR
   , modName = "top"
   }
       
@@ -59,18 +58,20 @@ optionDescriptions =
     , Option "" ["dump-ir"]
         (NoArg (\ opt -> return opt { optMode = DumpIR }))
         "Print the IR"
-    , Option "" ["generate-c"]
+{-    , Option "" ["generate-c"]
         (NoArg (\ opt -> return opt { optMode = GenerateC }))
         "Generate C (default)"
     , Option "" ["generate-h"]
         (NoArg (\ opt -> return opt { optMode = GenerateH }))
         "Generate a C header file"
+-}
     , Option "m" ["module-name"]
         (ReqArg (\mn opt -> return opt { modName = mn }) "<module-name>")
         "Set the module name"
     ]
 
-defaultOps :: [Fixity]      -- FIXME
+-- FIXME: These should be defined and included in the standard library
+defaultOps :: [Fixity]
 defaultOps = [Infixl 6 "+"
              ,Infixl 6 "-"
              ,Infixl 7 "*"
@@ -113,10 +114,19 @@ main = do
 
   let ir = astToIR ast'
 
-  when (optMode == DumpIR) $ print ir >> exitSuccess
+  -- FIXME: Pretty printers for the various IRs (mostly types)
 
-  when (optMode == GenerateH) $ print (hgen modName ir) >> exitSuccess
+  -- type inference IR.Ast -> IR.Classes
+  -- Type class desugaring IR.Classes -> IR.Poly
+  -- Monomorphisation IR.Poly -> IR.Mono
+  -- Code generation IR.Mono -> ?
+
+  putStrLn "Hello"
+
+--  when (optMode == DumpIR) $ print ir >> exitSuccess
+
+--  when (optMode == GenerateH) $ print (hgen modName ir) >> exitSuccess
   
-  when (optMode == GenerateC) $ print (cgen modName ir) >> exitSuccess
+--  when (optMode == GenerateC) $ print (cgen modName ir) >> exitSuccess
 
   
