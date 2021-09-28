@@ -45,6 +45,8 @@ import Ast
   ')'     { Token _ TRparen }
   '{'     { Token _ TLbrace }
   '}'     { Token _ TRbrace }
+  '['     { Token _ TLbracket }
+  ']'     { Token _ TRbracket }
   int     { Token _ (TInteger $$) }  
   string  { Token _ (TString $$) }
   op      { Token _ (TOp $$) }
@@ -52,6 +54,7 @@ import Ast
   duration { Token _ (TDuration $$) }
 
 %left ';' -- Helps with if-then-else
+%right '->'
 %nonassoc NOELSE 'else'
 
 %%
@@ -64,8 +67,8 @@ topdecls : topdecl               { [$1] }
 topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
         | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 } 
 
-optReturnType : ':' typs      { Just $2 }
-              | '->' typs     { Just $2 }
+optReturnType : ':' typ       { Just $2 }
+              | '->' typ      { Just $2 }
               | {- nothing -} { Nothing }
 
 formals : formalTop         { [$1] }
@@ -85,13 +88,21 @@ tupleFormals : formal                  { [$1] }
              | formal ',' tupleFormals { $1 : $3 }
 
 optType : {- nothing -} { Nothing }
-        | ':' typs      { Just $2 }
+        | ':' typ       { Just $2 }
 
-typs : typ      { $1 }
-     | typs typ { TApp $1 $2 }
-    
-typ : id           { TCon $1 }
-    | '(' typs ')' { $2 }
+typ : typ1 '->' typ { TApp (TApp (TCon "->") $1) $3 }
+    | typ1          { $1 }
+
+typ1 : typ1 typ2 { TApp $1 $2 }
+     | typ2      { $1 }
+
+typ2 : id                        { TCon $1 }
+     | '[' typ ']'               { TApp (TCon "List") $2 }
+     | '(' typ ')'               { $2 }
+     | '(' typ ',' tupleTyps ')' { tupleType $2 $4 }
+
+tupleTyps : typ               { [$1] }
+          | typ ',' tupleTyps { $1 : $3 }
 
 expr : expr ';' expr0 { Seq $1 $3 }
      | expr0          { $1 }
@@ -113,8 +124,8 @@ ids : id          { [$1] }
 elseOpt : {- nothing -} %prec NOELSE { NoExpr }
         | ';' 'else' expr1           { $3 }
 
-expr1 : expr1 ':' typs                  { Constraint $1 $3 }
-      | expr2                           { $1 }
+expr1 : expr1 ':' typ                  { Constraint $1 $3 }
+      | expr2                          { $1 }
   
 expr2 : apply opregion  { OpRegion $1 $2 }
       | apply           { $1 }
@@ -162,5 +173,11 @@ exprToPat (Apply (Id pc) pats) = PCon pc $ patList pats
    patList (Apply p1 ps) = exprToPat p1 : patList ps
    patList e = [exprToPat e]
 exprToPat e = error $ "syntax error in pattern " ++ show e
+
+tupleType :: Ty -> [Ty] -> Ty
+tupleType fst rst =  sequence (TApp (TCon "(,)") fst) rst
+ where
+   sequence cur []  = cur
+   sequence cur rst = sequence (TApp cur $ head rst) $ tail rst 
 
 }
