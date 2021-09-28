@@ -15,7 +15,7 @@ data Literal t = Literal String t -- TODO
 
    Break : () -> !
    Return : a -> !
-   Loop : (() -> ()) .... -> ()
+   Loop : (() -> ()) -> ()
    Wait : ... -> ()
    Fork : ... -> ()
    Assign : Ref t -> t -> () -- immediate assignment
@@ -31,8 +31,9 @@ data Literal t = Literal String t -- TODO
 data PrimFun = Loop
              | Break
              | Return
-             | Fork Int -- number of children
-             | Wait Int -- number of SVs
+             | Fork
+             | Wait
+             | Deref
              | Assign
              | Later
              | Arith Arith

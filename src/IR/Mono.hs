@@ -12,10 +12,13 @@ module IR.Mono (
   , MIExpr
   , MIAlt
   , MIPrimFun
+  , VarId
   ) where
 
 import IR.IR
 import qualified Types.Mono
+
+import Ast (VarId)
 
 type MIProgram = IR.IR.Program Types.Mono.Type
 type MIExpr = IR.IR.Expr Types.Mono.Type
