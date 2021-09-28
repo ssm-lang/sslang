@@ -99,7 +99,7 @@ typ1 : typ1 typ2 { TApp $1 $2 }
 typ2 : id                        { TCon $1 }
      | '[' typ ']'               { TApp (TCon "List") $2 }
      | '(' typ ')'               { $2 }
-     | '(' typ ',' tupleTyps ')' { tupleType $2 $4 }
+     | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
 
 tupleTyps : typ               { [$1] }
           | typ ',' tupleTyps { $1 : $3 }
@@ -173,11 +173,5 @@ exprToPat (Apply (Id pc) pats) = PCon pc $ patList pats
    patList (Apply p1 ps) = exprToPat p1 : patList ps
    patList e = [exprToPat e]
 exprToPat e = error $ "syntax error in pattern " ++ show e
-
-tupleType :: Ty -> [Ty] -> Ty
-tupleType fst rst =  sequence (TApp (TCon "(,)") fst) rst
- where
-   sequence cur []  = cur
-   sequence cur rst = sequence (TApp cur $ head rst) $ tail rst 
 
 }
