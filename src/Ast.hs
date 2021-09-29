@@ -29,6 +29,7 @@ data Bind = Bind VarId (Maybe Ty)
 
 data Ty = TCon TConId
         | TApp Ty Ty
+        | TTuple [Ty]
 
 data Lit = IntLit Integer
          | StringLit String
@@ -92,8 +93,10 @@ instance Show Def where
   show d = show $ pretty d
 
 instance Pretty Declaration where
-  pretty (Function id formals body _) =
-    nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> pretty '='
+  pretty (Function id formals body r) =
+    let ret = pretty "->" <+> (case r of Just (t) -> pretty t
+                                         Nothing -> pretty "()") in
+    nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> ret <+> pretty '='
                  , pretty body ])
 
 instance Pretty Bind where
@@ -103,8 +106,10 @@ instance Pretty Bind where
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id
+  pretty (TApp (TApp (TCon "->") t1) t2) = pretty t1 <+> pretty "->" <+> pretty t2
   pretty (TApp t (TCon id)) = pretty t <+> pretty id
   pretty (TApp t1 t2) = pretty t1 <+> parens (pretty t2)
+  pretty (TTuple tys) = pretty "(" <> hsep (punctuate comma $ map pretty tys) <> pretty ")"
 
 instance Pretty Lit where
   pretty (IntLit i) = pretty i

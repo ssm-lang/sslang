@@ -88,6 +88,7 @@ astToIR (A.Program decls) = I.Program functions
 
     convertTy (A.TCon t) = I.TCon t
     convertTy (A.TApp t1 t2) = I.TApp (convertTy t1) (convertTy t2)
+    convertTy _ = undefined
 
     emitStmt :: A.Expr -> IRGenMonad ()
     emitStmt (A.Let _) = return () -- FIXME
