@@ -1,4 +1,4 @@
-module Common.IR
+module IR.IR
   ( Program(..)
   , Binder
   , Literal(..)
@@ -13,7 +13,7 @@ import           Common.Identifiers             ( Binder
                                                 , DConId(..)
                                                 , VarId(..)
                                                 )
-import           Common.Types                   ( TypeSystem(..) )
+import           Types.TypeSystem               ( TypeSystem(..) )
 
 -- | Top-level compilation unit.
 data Program t = Program

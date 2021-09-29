@@ -16,7 +16,7 @@ Types.Poly: polymorphic types
 
 Types.Flat: concrete only
 -}
-module Common.Types where
+module Types.TypeSystem where
 
 import           Common.Identifiers             ( FieldId )
 

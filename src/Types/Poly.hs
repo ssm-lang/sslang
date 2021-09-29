@@ -34,7 +34,7 @@ import           Common.Identifiers             ( DConId
                                                 , TConId
                                                 , TVarIdx
                                                 )
-import           Common.Types                   ( Arity
+import           Types.TypeSystem               ( Arity
                                                 , Builtin(..)
                                                 , TypeSystem(..)
                                                 , TypeVariant

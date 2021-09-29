@@ -28,7 +28,7 @@ import qualified Language.C.Syntax             as C
 import           Codegen.Identifiers
 import           Common.Identifiers             ( ident )
 
-import qualified Common.IR                     as L
+import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
 
 -- TODOs: remove hard-coded identifiers.

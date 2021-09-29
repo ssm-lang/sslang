@@ -24,7 +24,7 @@ module Types.Flat
 import           Common.Identifiers             ( DConId
                                                 , TConId
                                                 )
-import           Common.Types                   ( Builtin(..)
+import           Types.TypeSystem               ( Builtin(..)
                                                 , TypeSystem(..)
                                                 , TypeVariant(..)
                                                 )

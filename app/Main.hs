@@ -9,7 +9,7 @@ import Parser  ( parse )
 import ParseOperators ( parseOperators, Fixity(..) )
 
 --import Ast ( printAST )
-import Ast2IR  ( astToIR )
+import IR.Lowering  ( astToIR )
 --import CGen ( cgen, hgen )
 
 import qualified Ast as A
