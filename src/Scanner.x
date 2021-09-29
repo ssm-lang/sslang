@@ -66,6 +66,7 @@ tokens :-
     \,    { keyword TComma }
     \_    { keyword TUnderscore }
     \@    { keyword TAt }
+    \&    { keyword TAmpersand }
 
     \(    { lDelimeter TLparen }
     \)    { rDelimeter TRparen }
@@ -271,6 +272,7 @@ data TokenType =
   | TComma
   | TUnderscore
   | TAt
+  | TAmpersand
   | TLparen
   | TRparen
   | TLbrace

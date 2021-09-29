@@ -41,6 +41,7 @@ import Ast
   ','     { Token _ TComma }
   '_'     { Token _ TUnderscore }
   '@'     { Token _ TAt }
+  '&'     { Token _ TAmpersand }
   '('     { Token _ TLparen }
   ')'     { Token _ TRparen }
   '{'     { Token _ TLbrace }
@@ -101,6 +102,7 @@ typ2 : id                        { TCon $1 }
      | '(' typ ')'               { $2 }
      | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
      | '(' ')'                   { TCon "()" }
+     | '&' typ2                  { TApp (TCon "Ref") $2 }
 
 tupleTyps : typ               { [$1] }
           | typ ',' tupleTyps { $1 : $3 }
