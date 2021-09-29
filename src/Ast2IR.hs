@@ -55,10 +55,11 @@ astToIR (A.Program decls) = I.Program functions
     bindOfDecl decl@(A.Function name _ _ _) = Just $ I.Bind name $ typeOfDecl decl
     --bindOfDecl _ = Nothing
     
-    typeOfDecl (A.Function _ [singleFormal] _ _) =
-      I.functionType (formalTypes ++ [resultType])
+    typeOfDecl (A.Function _ [singleFormal] _ rty) =
+      I.functionType (formalTypes ++ [resultType rty])
       where
-        resultType = I.unitTy -- FIXME: the default for now
+        resultType (A.ReturnType ty) = convertTy ty
+        resultType _ = undefined
         formalTypes = bindTypes singleFormal
         bindTypes (A.TupBind binds _) = map (\(A.Bind _ (Just t)) -> convertTy t) binds
         bindTypes (A.Bind _ (Just t))  = [convertTy t]
@@ -86,6 +87,7 @@ astToIR (A.Program decls) = I.Program functions
         t' = convertTy t
 -}
 
+    convertTy (A.TCon "()") = I.unitTy
     convertTy (A.TCon t) = I.TCon t
     convertTy (A.TApp t1 t2) = I.TApp (convertTy t1) (convertTy t2)
     convertTy (A.TTuple (ty:tys)) = foldl (\tupApps t -> I.TApp tupApps (convertTy t))

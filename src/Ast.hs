@@ -22,7 +22,10 @@ type OperatorId = String
 
 data Program = Program [Declaration]
 
-data Declaration = Function VarId [Bind] Expr (Maybe Ty)
+data FnTyAnnotation = ReturnType Ty
+                    | CurriedType Ty
+
+data Declaration = Function VarId [Bind] Expr FnTyAnnotation
 
 data Bind = Bind VarId (Maybe Ty)
           | TupBind [Bind] (Maybe Ty)
@@ -94,15 +97,18 @@ instance Show Def where
 
 instance Pretty Declaration where
   pretty (Function id formals body r) =
-    let ret = pretty "->" <+> (case r of Just t -> pretty t
-                                         Nothing -> pretty "()") in
+    let ret = (case r of ReturnType t -> pretty "->" <+> pretty t
+                         CurriedType t -> pretty ":" <+> pretty t) in
     nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> ret <+> pretty '='
                  , pretty body ])
 
 instance Pretty Bind where
-  pretty (Bind id (Just t)) = pretty id <+> pretty ':' <+> pretty t
-  pretty (TupBind binds _) = hsep (punctuate comma $ map pretty binds)
-  pretty _ = undefined
+  pretty (Bind id mty) = let prettyId = pretty id in
+                         case mty of Just ty -> prettyId <+> pretty ':' <+> pretty ty
+                                     Nothing -> prettyId
+  pretty (TupBind binds mty) = let prettyTup = hsep (punctuate comma $ map pretty binds) in
+                               case mty of Just ty -> parens prettyTup <+> pretty ':' <+> pretty ty
+                                           Nothing -> prettyTup
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id

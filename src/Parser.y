@@ -67,9 +67,9 @@ topdecls : topdecl               { [$1] }
 topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
         | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 } 
 
-optReturnType : ':' typ       { Just $2 }
-              | '->' typ      { Just $2 }
-              | {- nothing -} { Nothing }
+optReturnType : ':' typ       { CurriedType $2 }
+              | '->' typ      { ReturnType $2 }
+              | {- nothing -} { ReturnType (TCon "()") }
 
 formals : formalTop         { [$1] }
         | formalTop formals { $1 : $2 }
@@ -100,6 +100,7 @@ typ2 : id                        { TCon $1 }
      | '[' typ ']'               { TApp (TCon "List") $2 }
      | '(' typ ')'               { $2 }
      | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
+     | '(' ')'                   { TCon "()" }
 
 tupleTyps : typ               { [$1] }
           | typ ',' tupleTyps { $1 : $3 }
