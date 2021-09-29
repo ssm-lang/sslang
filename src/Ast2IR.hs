@@ -88,6 +88,8 @@ astToIR (A.Program decls) = I.Program functions
 
     convertTy (A.TCon t) = I.TCon t
     convertTy (A.TApp t1 t2) = I.TApp (convertTy t1) (convertTy t2)
+    convertTy (A.TTuple (ty:tys)) = foldl (\tupApps t -> I.TApp tupApps (convertTy t))
+                                          (I.TApp (I.TCon "(,)") (convertTy ty)) tys
     convertTy _ = undefined
 
     emitStmt :: A.Expr -> IRGenMonad ()

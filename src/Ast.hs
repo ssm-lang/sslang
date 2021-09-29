@@ -94,7 +94,7 @@ instance Show Def where
 
 instance Pretty Declaration where
   pretty (Function id formals body r) =
-    let ret = pretty "->" <+> (case r of Just (t) -> pretty t
+    let ret = pretty "->" <+> (case r of Just t -> pretty t
                                          Nothing -> pretty "()") in
     nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> ret <+> pretty '='
                  , pretty body ])
@@ -128,7 +128,7 @@ instance Pretty Expr where
           p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
   pretty (As v e) = pretty v <> pretty '@' <> pretty e
   pretty NoExpr = emptyDoc
-  pretty (Let defs) = pretty "let" <+> (align $ vsep $ map pretty defs)
+  pretty (Let defs) = pretty "let" <+> align (vsep $ map pretty defs)
   pretty (While e1 e2) = nest 2 $ vsep [ pretty "while" <+> pretty e1, pretty e2 ]
   pretty (Loop e) = nest 2 $ vsep [ pretty "loop", pretty e ]
   pretty (Par es) = nest 2 $ vsep $ pretty "par" : map pretty es
