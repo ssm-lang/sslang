@@ -41,6 +41,8 @@ module Codegen.Identifiers
   , enter_
   , trig_
   , pc
+  , depth
+  , priority
 
       -- * Constructing SSM time macros from SSMTimeUnit
   --, units_
@@ -194,6 +196,12 @@ trig_ i = "trig" ++ show i
 
 pc :: CIdent
 pc = "pc"
+
+depth :: CIdent
+depth = "depth"
+
+priority :: CIdent
+priority = "priority"
 
 {---- Type identifiers ----}
 

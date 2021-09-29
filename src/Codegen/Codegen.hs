@@ -16,11 +16,7 @@ import           Control.Monad.State.Lazy       ( State
                                                 , modify
                                                 )
 
-import           Data.Either                    ( rights )
-import           Data.List                      ( sortOn )
-import qualified Data.Map                      as Map
 import           Data.Maybe                     ( fromJust )
-import qualified Data.Set                      as Set
 
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
@@ -31,46 +27,17 @@ import           Common.Identifiers             ( ident )
 import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
 
--- TODOs: remove hard-coded identifiers.
-
--- | Given a 'Program', returns a tuple containing the compiled program and
--- a list of all `include` statements.
--- compile_ :: IR.Program -> ([C.Definition], [C.Definition])
--- compile_ program = (compUnit, includes)
---  where
---   -- | The file to generate, minus include statements
---   compUnit :: [C.Definition]
---   compUnit = concat
---     [globals, declarePeripherals program, preamble, decls, defns, initProg]
-
---   -- | Global reference declarations
---   globals :: [C.Definition]
---   globals = genGlobals (globalReferences program)
-
---   initProg :: [C.Definition]
---   initProg = genInitProgram program
-
---   -- | Preamble, macros etc
---   preamble :: [C.Definition]
---   preamble = genPreamble
-
---   -- | declarations and definitions, prototypes etc
---   decls, defns :: [C.Definition]
---   (decls, defns) =
---     concat2 $ unzip $ map genProcedure $ Map.elems (funs program)
-
---   -- | Utility function to distribute @concat@ over a tuple
---   concat2 :: ([[a]], [[b]]) -> ([a], [b])
---   concat2 (x, y) = (concat x, concat y)
-
 todo :: a
 todo = error "Not yet implemented"
 
 nope :: a
 nope = error "Not yet supported"
 
-type Program = L.Program L.Type
-type Expr = L.Expr L.Type
+type Type = L.Type
+type Program = L.Program Type
+type Expr = L.Expr Type
+type PrimOp = L.PrimOp Expr
+type Literal = L.Literal
 
 {- | State maintained while compiling a 'Procedure'.
 
@@ -80,10 +47,10 @@ struct and enter definitions.
 -}
 data TRState = TRState
   { fnName   :: L.VarId
-  , fnArgs   :: [(L.VarId, L.Type)]
+  , fnArgs   :: [(L.VarId, Type)]
   , fnBody   :: Expr
   , caseNum  :: Int
-  , locals   :: [(L.VarId, L.Type)]
+  , locals   :: [(L.VarId, Type)]
   , maxWaits :: Int
   }
 
@@ -91,7 +58,7 @@ data TRState = TRState
 type TR a = State TRState a
 
 -- | Run a TR computation on a procedure.
-runTR :: L.VarId -> [(L.VarId, L.Type)] -> Expr -> TR a -> a
+runTR :: L.VarId -> [(L.VarId, Type)] -> Expr -> TR a -> a
 runTR name args body tra = evalState tra $ TRState { fnName   = name
                                                    , fnArgs   = args
                                                    , fnBody   = body
@@ -108,32 +75,14 @@ nextCase = do
   return n
 
 -- | Register a local variable for which an sv should be allocated.
-addLocal :: (L.VarId, L.Type) -> TR ()
+addLocal :: (L.VarId, Type) -> TR ()
 addLocal l = modify $ \st -> st { locals = l : locals st }
 
 -- | Register a name to be waited on
 addWait :: Int -> TR ()
 addWait n = modify $ \st -> st { maxWaits = n `max` maxWaits st }
 
-
-{-------- Compilation unit generation --------}
-
--- | Include statements in the generated file
-includes :: [C.Definition]
-includes = [cunit|
-$esc:("#include \"ssm-platform.h\"")
-|]
-
--- | Setup the entry point of the program.
-genInitProgram :: Program -> [C.Definition]
-genInitProgram L.Program { L.programEntry = entry } = [cunit|
-  int $id:initialize_program(void) {
-     $id:activate($id:(enter_ entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
-    return 0;
-  }
-|]
-
-{-------- Function generation --------}
+{-------- Compilation-specific identifiers --------}
 
 -- | Identifier for generic (inner) struct act.
 actg :: CIdent
@@ -150,6 +99,23 @@ actm = "act"
 -- | Per-variable trigger
 trigOf :: Int -> CIdent
 trigOf n = "__trig_" ++ show n
+
+{-------- Compilation --------}
+
+-- | Include statements in the generated file
+includes :: [C.Definition]
+includes = [cunit|
+$esc:("#include \"ssm-platform.h\"")
+|]
+
+-- | Setup the entry point of the program.
+genInitProgram :: Program -> [C.Definition]
+genInitProgram L.Program { L.programEntry = entry } = [cunit|
+  int $id:initialize_program(void) {
+     $id:activate($id:(enter_ entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
+    return 0;
+  }
+|]
 
 {- | Generate definitions for an SSM 'Procedure'.
 
@@ -168,17 +134,17 @@ genTop (_, L.Lit _ _) = todo
 genTop (_, _        ) = error "TODO: arbitrary top-level expressions"
 
 -- | Return the C variant of the base type of a SSM type
-typeIdent :: L.Type -> CIdent
+typeIdent :: Type -> CIdent
 typeIdent (L.TCon     t ) = ident t
 typeIdent (L.TBuiltin tb) = typeBuiltin tb
  where
   typeBuiltin L.Unit        = todo
   typeBuiltin L.Void        = todo
   typeBuiltin (L.Arrow _ _) = nope
-  typeBuiltin (L.Ref   t  ) = "ssm_" ++ typeIdent t ++ "_t" -- TODO: doesn't work well for nested Refs
+  typeBuiltin (L.Ref   t  ) = sv_ $ typeIdent t -- TODO: doesn't work for nested Refs
   typeBuiltin (L.Tuple _  ) = nope
 
-unwrapSV :: L.Type -> L.Type
+unwrapSV :: Type -> Type
 unwrapSV (L.TBuiltin (L.Ref t)) = t
 unwrapSV _                      = error "not SV"
 
@@ -208,13 +174,13 @@ genStruct = do
   |]
  where
   -- SVs are passed by reference, everything else passed by value
-  param :: (L.VarId, L.Type) -> C.FieldGroup
+  param :: (L.VarId, Type) -> C.FieldGroup
   param (n, t@(L.TBuiltin (L.Ref _))) =
     [csdecl|$ty:(ctype $ typeIdent t) *$id:n;|]
   param (n, t) = [csdecl|$ty:(ctype $ typeIdent t) $id:n;|]
 
   -- Declare an SV for each local variable
-  local :: (L.VarId, L.Type) -> C.FieldGroup
+  local :: (L.VarId, Type) -> C.FieldGroup
   local (n, t) = [csdecl|$ty:(ctype $ sv_ $ typeIdent t) $id:n;|]
 
   trig :: Int -> C.FieldGroup
@@ -261,17 +227,17 @@ genEnter = do
     )
  where
   -- SVs are passed by reference, everything else passed by value
-  param :: (L.VarId, L.Type) -> C.Param
+  param :: (L.VarId, Type) -> C.Param
   param (n, t@(L.TBuiltin (L.Ref _))) =
     [cparam|$ty:(ctype $ typeIdent t) *$id:n|]
   param (n, t) = [cparam|$ty:(ctype $ typeIdent t) $id:n|]
 
   -- | Initialize act struct from parameters
-  initParam :: (L.VarId, L.Type) -> [C.Stm]
+  initParam :: (L.VarId, Type) -> [C.Stm]
   initParam (n, _) = [[cstm|acts->$id:n = $id:n;|]]
 
   -- | Initialize locals
-  initLocal :: (L.VarId, L.Type) -> [C.Stm]
+  initLocal :: (L.VarId, Type) -> [C.Stm]
   initLocal (n, t) = [[cstm| $id:(initialize_ $ typeIdent t)(&acts->$id:n);|]]
 
   -- | Initialize a trigger
@@ -282,7 +248,7 @@ genEnter = do
 
 This function just defines the function definition and switch statement that
 wraps the statements of the procedure. The heavy lifting is performed by
-'genCase'.
+'genExpr'.
 -}
 genStep :: TR (C.Definition, C.Definition)
 genStep = do
@@ -296,7 +262,7 @@ genStep = do
       step = step_ actName
 
       -- | Dequeue any outstanding event on a reference
-      dequeue :: (L.VarId, L.Type) -> C.Stm
+      dequeue :: (L.VarId, Type) -> C.Stm
       dequeue (n, _) = [cstm|$id:unsched_event(&$id:acts->$id:n.sv);|]
   return
     ( [cedecl|void $id:step($ty:act_t *$id:actg);|]
@@ -317,10 +283,14 @@ genStep = do
       |]
     )
 
+-- TODO: we currently don't do anything to differentiate between when
+-- a Var is a top-level reference vs when it is a local variable. Here
+-- we're just inferring it from how it's used, i.e., on the LHS of an app vs on
+-- its own.
 genExpr :: Expr -> TR (C.Exp, [C.BlockItem])
 genExpr (L.Var  n             _) = return ([cexp|&$id:acts->$id:(ident n)|], [])
 genExpr (L.Data _             _) = nope
-genExpr (L.Lit  _             _) = todo
+genExpr (L.Lit  l             t) = genLiteral l t
 genExpr (L.Let  [(Just n, v)] b) = do
   addLocal (n, L.typeExpr v)
   (defVal, defStms) <- genExpr v
@@ -333,11 +303,15 @@ genExpr (L.Let  [(Just n, v)] b) = do
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defBlock ++ bodyStms)
 genExpr (L.Let _ _) = error "Cannot handle mutually recursive bindings"
-genExpr L.Lambda{}  = nope
-genExpr L.App{}     = todo
-genExpr L.Match{}   = todo
-genExpr (L.New _)   = nope
-genExpr L.Deref { L.derefArg = _ } = todo
+genExpr L.Lambda{}                 = nope
+genExpr L.App{}                    = nope
+genExpr L.Match{}                  = nope
+genExpr (L.New _)                  = nope
+genExpr L.Deref { L.derefArg = a } = do
+  (val, stms) <- genExpr a
+  -- SSM Refs are all SVs, so we access the value field in order to dereference.
+  -- TODO: handle event type
+  return ([cexp|$exp:val->value|], stms)
 genExpr L.Assign { L.assignLhs = lhs, L.assignRhs = rhs } = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
@@ -362,208 +336,120 @@ genExpr L.Later { L.laterTime = time, L.laterLhs = lhs, L.laterRhs = rhs } = do
           $id:(later_ lhsTy)($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
         |]
   return (unit, laterBlock)
-genExpr (L.Fork _   ) = todo
+genExpr (L.Fork procs) = do
+  yield <- genYield
+  let depthSub =
+        (ceiling $ logBase (2 :: Double) $ fromIntegral $ length procs) :: Int
+      newDepth = [cexp|actg->depth - $int:depthSub|]
+      checkNewDepth = [citems|
+                        if ($id:actg->$id:depth < $int:depthSub)
+                          $id:throw($id:exhausted_priority);
+                      |]
+
+      genActivate :: (Int, Expr) -> TR ([C.BlockItem], C.BlockItem)
+      genActivate (i, L.App (L.Var var _) a _) = do
+        (arg, argStms) <- genExpr a
+        let args =
+              [ [cexp|$id:actg|]
+              , [cexp|$id:actg->$id:priority + $int:i * (1 << $exp:newDepth)|]
+              , arg
+              ]
+        return (argStms, [citem|$id:activate($id:(enter_ var)($args:args));|])
+      -- For now, we only support forking expressions that have a top-level
+      -- application (i.e., no thunks), whose left operand is a var.
+      genActivate _ = nope
+
+  (evals, activates) <- unzip <$> mapM genActivate (zip [0 ..] procs)
+  return (unit, checkNewDepth ++ concat evals ++ activates ++ yield)
+-- For forks, we expect that every argument is some kind of application
 genExpr (L.Wait vars) = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
-  nextPc             <- nextCase
   addWait $ length varVals
+  yield <- genYield
   let trigs = zip [1 :: Int ..] varVals
       sens (i, var) =
         [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
-      waitBlock = [citems|
-          $items:(concat varStms)
-          $items:(map sens trigs)
-          $id:actg->$id:pc = $int:nextPc;
-          return;
-          case $int:nextPc: ;
-          $items:(map desens trigs)
-        |]
-  return (unit, waitBlock)
+  return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
 genExpr (L.Loop b) = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
 genExpr L.Break  = return (undef, [citems|break;|])
 genExpr L.Return = return (undef, [citems|return;|])
-genExpr L.PrimApp { L.primOp = op, L.primArgs = args } = todo
+genExpr L.PrimOp { L.primOp = op, L.primType = t } = genPrimOp op t
 
+genLiteral :: Literal -> Type -> TR (C.Exp, [C.BlockItem])
+genLiteral (L.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
+genLiteral (L.LitBool     True ) _ = return ([cexp|true|], [])
+genLiteral (L.LitBool     False) _ = return ([cexp|false|], [])
+
+genPrimOp :: PrimOp -> Type -> TR (C.Exp, [C.BlockItem])
+genPrimOp (L.PrimAdd lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal + $exp:rhsVal|], stms)
+genPrimOp (L.PrimSub lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal - $exp:rhsVal|], stms)
+genPrimOp (L.PrimMul lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal * $exp:rhsVal|], stms)
+genPrimOp (L.PrimDiv lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal / $exp:rhsVal|], stms)
+genPrimOp (L.PrimMod lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal % $exp:rhsVal|], stms)
+genPrimOp (L.PrimNeg opr) _ = do
+  (val, stms) <- genExpr opr
+  return ([cexp|- $exp:val|], stms)
+genPrimOp (L.PrimBitAnd lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal & $exp:rhsVal|], stms)
+genPrimOp (L.PrimBitOr lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal | $exp:rhsVal|], stms)
+genPrimOp (L.PrimBitNot opr) _ = do
+  (val, stms) <- genExpr opr
+  return ([cexp|~ $exp:val|], stms)
+genPrimOp (L.PrimEq lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal == $exp:rhsVal|], stms)
+genPrimOp (L.PrimNot opr) _ = do
+  (val, stms) <- genExpr opr
+  return ([cexp|! $exp:val|], stms)
+genPrimOp (L.PrimGt lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal < $exp:rhsVal|], stms)
+genPrimOp (L.PrimGe lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
+genPrimOp (L.PrimLt lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal > $exp:rhsVal|], stms)
+genPrimOp (L.PrimLe lhs rhs) _ = do
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
+  return ([cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
+
+-- | Helper for sequencing across binary operations.
+genBinop :: Expr -> Expr -> TR (C.Exp, C.Exp, [C.BlockItem])
+genBinop lhs rhs = do
+  (lhsVal, lhsStms) <- genExpr lhs
+  (rhsVal, rhsStms) <- genExpr rhs
+  return (lhsVal, rhsVal, lhsStms ++ rhsStms)
+
+genYield :: TR [C.BlockItem]
+genYield = do
+  next <- nextCase
+  return [citems|
+    $id:actg->$id:pc = $int:next;
+    return;
+    case $int:next:;
+    |]
+
+-- | The unit value, the singleton inhabitant of the type Unit.
 unit :: C.Exp
 unit = [cexp|0|]
 
+-- | Undefined "value", the fake value used for expressions of type Void.
 undef :: C.Exp
 undef = [cexp|0xdeadbeef|]
-
-  {-
-     OLD
-{- | Generate the list of statements from each 'Stm' in an SSM 'Procedure'.
-
-Note that this compilation scheme might not work if the language were to
-support return statements. This could be fixed by generating a break, and
-moving the leave call to outside of the switch statement in 'genStep'.
--}
-genCase :: L.Expr -> TR [C.Stm]
-genCase (NewRef n t v) = do
-  locs <- gets locals
-  let lvar = identName n
-      lhs  = [cexp|&$id:acts->$id:lvar|]
-      rhs  = genExp locs v
-  addLocal $ makeDynamicRef n (mkReference t)
-  case baseType t of
-    TEvent -> return [[cstm|$id:(assign_ t)($exp:lhs, $id:actg->priority);|]]
-    _ ->
-      return [[cstm|$id:(assign_ t)($exp:lhs, $id:actg->priority, $exp:rhs);|]]
-genCase (SetRef r e) = do
-  locs <- gets locals
-  let lvar = refIdent r
-      t    = refType r
-      lhs  = refPtr r locs
-      rhs  = genExp locs e
-  case baseType t of
-    TEvent -> return [[cstm|$id:(assign_ t)($exp:lhs, $id:actg->priority);|]]
-    _ ->
-      return [[cstm|$id:(assign_ t)($exp:lhs, $id:actg->priority, $exp:rhs);|]]
-genCase (SetLocal n t e) = do
-  locs <- gets locals
-  let lvar = identName n
-      lhs  = [cexp|&$id:acts->$id:lvar|]
-      rhs  = genExp locs e
-  return [[cstm| $id:acts->$id:(identName n) = $exp:rhs;|]]
-genCase (If c t e) = do
-  locs <- gets locals
-  let cnd = genExp locs c
-  thn <- concat <$> mapM genCase t
-  els <- concat <$> mapM genCase e
-  return [[cstm| if ($exp:cnd) { $stms:thn } else { $stms:els }|]]
-genCase (While c b) = do
-  locs <- gets locals
-  let cnd = genExp locs c
-  bod <- concat <$> mapM genCase b
-  return [[cstm| while ($exp:cnd) { $id:debug_microtick(); $stms:bod } |]]
-genCase (After d r v) = do
-  locs <- gets locals
-  let lvar = refIdent r
-      t    = refType r
-      del  = genTimeDelay locs d
-      lhs  = refPtr r locs
-      rhs  = genExp locs v
-  -- Note that the semantics of 'After' and 'later_' differ---the former
-  -- expects a relative time, whereas the latter takes an absolute time.
-  -- Thus we add now() in the code we generate.
-  case baseType t of
-    TEvent -> return [[cstm| $id:(later_ t)($exp:lhs, $id:now() + $exp:del);|]]
-    _      -> return
-      [[cstm| $id:(later_ t)($exp:lhs, $id:now() + $exp:del, $exp:rhs);|]]
-genCase (Wait ts) = do
-  caseNum <- nextCase
-  maxWaits $ length ts
-  locs <- gets locals
-  let trigs = zip [1 ..] $ map (`refSV` locs) ts
-  return
-    $  map getTrace      ts
-    ++ map sensitizeTrig trigs
-    ++ [ [cstm| $id:actg->pc = $int:caseNum; |]
-       , [cstm| return; |]
-       , [cstm| case $int:caseNum: ; |]
-       ]
-    ++ fmap desensitizeTrig trigs
- where
-  sensitizeTrig :: (Int, C.Exp) -> C.Stm
-  sensitizeTrig (i, trig) =
-    [cstm|$id:sensitize($exp:trig, &$id:acts->$id:(trig_ i));|]
-
-  desensitizeTrig :: (Int, C.Exp) -> C.Stm
-  desensitizeTrig (i, _) = [cstm|$id:desensitize(&$id:acts->$id:(trig_ i));|]
-
-  getTrace :: Reference -> C.Stm
-  getTrace r = [cstm|$id:debug_trace($string:event);|]
-    where event = show $ T.ActSensitize $ refName r
-genCase (Fork cs) = do
-  locs    <- gets locals
-  caseNum <- nextCase
-  let
-    genCall :: Int -> (Ident, [Either SSMExp Reference]) -> C.Stm
-    genCall i (r, as) =
-      [cstm|$id:fork($id:(enter_ (identName r))($args:enterArgs));|]
-     where
-      enterArgs =
-        [ [cexp|actg|]
-          , [cexp|actg->priority + $int:i * (1 << $exp:newDepth)|]
-          , newDepth
-          ]
-          ++ map genArg as
-      genArg :: Either SSMExp Reference -> C.Exp
-      genArg (Left  e) = genExp locs e
-      genArg (Right r) = refPtr r locs
-
-    newDepth :: C.Exp
-    newDepth = [cexp|actg->depth - $int:depthSub|]
-
-    depthSub :: Int
-    depthSub =
-      (ceiling $ logBase (2 :: Double) $ fromIntegral $ length cs) :: Int
-
-    checkNewDepth :: C.Stm
-    checkNewDepth = [cstm|
-      if ($id:actg->depth < $int:depthSub)
-         $id:throw($exp:exhausted_priority); |]
-
-    genTrace :: (Ident, [Either SSMExp Reference]) -> C.Stm
-    genTrace (r, _) = [cstm|$id:debug_trace($string:event);|]
-      where event = show $ T.ActActivate $ identName r
-
-  return
-    $  checkNewDepth
-    :  map genTrace cs
-    ++ zipWith genCall [0 :: Int ..] cs
-    ++ [ [cstm| $id:actg->pc = $int:caseNum; |]
-       , [cstm| return; |]
-       , [cstm| case $int:caseNum: ; |]
-       ]
-genCase Skip = return []
-
-  {-
--- | Generate C expression from 'SSMExp' and a list of local variables.
--- genExp :: [Reference] -> SSMExp -> C.Exp
--- genExp _  (Var t n              )
---   | baseType t == TEvent = [cexp|0|]
---   | otherwise            = [cexp|acts->$id:(identName n)|]
--- genExp _  (Lit _ (LInt32  i    )) = [cexp|(typename i32) $int:i|]
--- genExp _  (Lit _ (LUInt8  i    )) = [cexp|(typename u8) $int:i|]
--- genExp _  (Lit _ (LUInt32 i    )) = [cexp|(typename u32) $int:i|]
--- genExp _  (Lit _ (LInt64  i    )) = [cexp|(typename i64) $int:i|]
--- genExp _  (Lit _ (LUInt64 i    )) = [cexp|(typename u64) $int:i|]
--- genExp _  (Lit _ (LBool   True )) = [cexp|true|]
--- genExp _  (Lit _ (LBool   False)) = [cexp|false|]
--- genExp _  (Lit _ (LEvent       )) = [cexp|0|]
--- genExp ls (UOpE _ e op)           = case op of
---   Neg -> [cexp|- $exp:(genExp ls e)|]
---   Not -> [cexp|! $exp:(genExp ls e)|]
--- genExp ls (UOpR t r op) = case op of
---   Changed -> [cexp|$id:event_on($exp:(refSV r ls))|]
---   Deref   -> case t of
---     TEvent -> [cexp|0|]
---     _      -> [cexp|$exp:(refVal r ls)|]
--- -- | Circumvent optimizations that take advantage of C's undefined signed
--- -- integer wraparound behavior. FIXME: remove this hack, which is probably not
--- -- robust anyway if C is aggressive about inlining.
--- genExp ls (BOp ty e1 e2 op)
---   | ty == TInt32 && op == OPlus = [cexp|_add($exp:c1, $exp:c2)|]
---   | otherwise                   = gen op
---  where
---   (c1, c2) = (genExp ls e1, genExp ls e2)
---   gen OPlus  = [cexp|$exp:c1 + $exp:c2|]
---   gen OMinus = [cexp|$exp:c1 - $exp:c2|]
---   gen OTimes = [cexp|$exp:c1 * $exp:c2|]
---   gen ODiv   = [cexp|$exp:c1 / $exp:c2|]
---   gen ORem   = [cexp|$exp:c1 % $exp:c2|]
---   gen OMin   = [cexp|$exp:c1 < $exp:c2 ? $exp:c1 : $exp:c2|]
---   gen OMax   = [cexp|$exp:c1 < $exp:c2 ? $exp:c2 : $exp:c1|]
---   gen OLT    = [cexp|$exp:c1 < $exp:c2|]
---   gen OEQ    = [cexp|$exp:c1 == $exp:c2|]
---   gen OAnd   = [cexp|$exp:c1 && $exp:c2|]
---   gen OOr    = [cexp|$exp:c1 || $exp:c2|]
-
--- genTimeDelay :: [Reference] -> SSMTime -> C.Exp
--- genTimeDelay ls (SSMTime d) = [cexp|$exp:(genExp ls d)|]
--}
-  -}

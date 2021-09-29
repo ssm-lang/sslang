@@ -5,6 +5,7 @@ module IR.IR
   , PrimOp(..)
   , Expr(..)
   , Alt(..)
+  , collectApp
   , typeExpr
   , VarId(..)
   , DConId(..)
@@ -19,6 +20,7 @@ import           Types.TypeSystem               ( TypeSystem(..) )
 data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
+  -- TODO: type defs.
   }
 
 {- | Literal values supported by the language.
@@ -40,22 +42,22 @@ For simplicity and consistency, they should be:
 - Pure (i.e., side-effectful iff operands are side-effectful, i.e., no '=')
 
 -}
-data PrimOp
-  = PrimAdd
-  | PrimSub
-  | PrimMul
-  | PrimDiv
-  | PrimMod
-  | PrimNeg
-  | PrimBitAnd
-  | PrimBitOr
-  | PrimBitNot
-  | PrimEq
-  | PrimNot
-  | PrimGt
-  | PrimGe
-  | PrimLt
-  | PrimLe
+data PrimOp e
+  = PrimAdd e e
+  | PrimSub e e
+  | PrimMul e e
+  | PrimDiv e e
+  | PrimMod e e
+  | PrimNeg e
+  | PrimBitAnd e e
+  | PrimBitOr e e
+  | PrimBitNot e
+  | PrimEq e e
+  | PrimNot e
+  | PrimGt e e
+  | PrimGe e e
+  | PrimLt e e
+  | PrimLe e e
 
 -- | The type of expressions.
 --
@@ -88,28 +90,33 @@ data Expr t
   | Loop (Expr t)
   | Break
   | Return -- TODO: should this take an expression?
-  | PrimApp { primOp :: PrimOp, primArgs :: [Expr t], primType :: t }
+  | PrimOp { primOp :: PrimOp (Expr t), primType :: t }
 
 data Alt t
   = AltData DConId [Binder] (Expr t)
   | AltLit Literal (Expr t)
   | AltDefault (Expr t)
 
+collectApp :: Expr t -> (Expr t, [Expr t])
+collectApp (App lhs rhs _) = (fn, args ++ [rhs])
+  where (fn, args) = collectApp lhs
+collectApp e = (e, [])
+
 typeExpr :: TypeSystem t => Expr t -> t
-typeExpr (Var  _ t)               = t
-typeExpr (Data _ t)               = t
-typeExpr (Lit  _ t)               = t
-typeExpr Let { letBody = b }      = typeExpr b
+typeExpr (Var  _ t)              = t
+typeExpr (Data _ t)              = t
+typeExpr (Lit  _ t)              = t
+typeExpr Let { letBody = b }     = typeExpr b
 typeExpr Lambda { lambdaArgType = a, lambdaBody = b } = a `arrow` typeExpr b
-typeExpr App { appType = t }      = t
-typeExpr (Match _ _ _ t)          = t
-typeExpr Break                    = void
-typeExpr Return                   = void
-typeExpr Loop{}                   = unit
-typeExpr Fork{}                   = unit
-typeExpr Wait{}                   = unit
-typeExpr Assign{}                 = unit
-typeExpr (New e)                  = ref $ typeExpr e
-typeExpr Deref { derefType = t }  = t
-typeExpr Later{}                  = unit
-typeExpr PrimApp { primType = t } = t
+typeExpr App { appType = t }     = t
+typeExpr (Match _ _ _ t)         = t
+typeExpr Break                   = void
+typeExpr Return                  = void
+typeExpr Loop{}                  = unit
+typeExpr Fork{}                  = unit
+typeExpr Wait{}                  = unit
+typeExpr Assign{}                = unit
+typeExpr (New e)                 = ref $ typeExpr e
+typeExpr Deref { derefType = t } = t
+typeExpr Later{}                 = unit
+typeExpr PrimOp { primType = t } = t

@@ -26,18 +26,14 @@ higher-kinded polymorphism. This is due to following restrictions:
 -}
 module Types.Poly
   ( Type(..)
-  , TypeDef(..)
   , Builtin(..)
   ) where
 
-import           Common.Identifiers             ( DConId
-                                                , TConId
+import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
-import           Types.TypeSystem               ( Arity
-                                                , Builtin(..)
+import           Types.TypeSystem               ( Builtin(..)
                                                 , TypeSystem(..)
-                                                , TypeVariant
                                                 )
 
 
@@ -47,23 +43,6 @@ data Type
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
   deriving Eq
-
-{- | The type definition associated with a type constructor.
-
-A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
-
-  TypeDef { arity = 1
-          , [ ("Cons", [VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])]])
-            , (DConId "Nil", [VariantUnnamed []])
-            ]
-          }
-
-(Data constructors for identifiers are omitted for brevity.)
--}
-data TypeDef = TypeDef
-  { arity    :: Arity
-  , variants :: [(DConId, TypeVariant Type)]
-  }
 
 -- | 'Type' is a type system.
 instance TypeSystem Type where

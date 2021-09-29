@@ -17,16 +17,12 @@ easily lower them with a 1:1 encoding.
 -}
 module Types.Flat
   ( Type(..)
-  , TypeDef(..)
   , Builtin(..)
   ) where
 
-import           Common.Identifiers             ( DConId
-                                                , TConId
-                                                )
+import           Common.Identifiers             ( TConId )
 import           Types.TypeSystem               ( Builtin(..)
                                                 , TypeSystem(..)
-                                                , TypeVariant(..)
                                                 )
 
 -- | The language of type expressions, e.g., what appears in a type signature.
@@ -34,11 +30,6 @@ data Type
   = TBuiltin (Builtin Type) -- ^ Builtin types
   | TCon TConId             -- ^ Type constructors
   deriving Eq
-
--- | User-defined type.
-newtype TypeDef = TypeDef
-  { variants :: [(DConId, TypeVariant Type)]
-  }
 
 instance TypeSystem Type where
   unit = TBuiltin Unit

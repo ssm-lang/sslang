@@ -18,7 +18,9 @@ Types.Flat: concrete only
 -}
 module Types.TypeSystem where
 
-import           Common.Identifiers             ( FieldId )
+import           Common.Identifiers             ( DConId
+                                                , FieldId
+                                                )
 
 -- | The number of arguments a type constructor will take.
 type Arity = Int
@@ -41,7 +43,27 @@ data Builtin t
 
 deref :: Builtin t -> Maybe t
 deref (Ref t) = Just t
-deref _ = Nothing
+deref _       = Nothing
+
+{- | The type definition associated with a type constructor.
+
+A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
+
+  TypeDef { arity = 1
+          , [ ("Cons", [VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])]])
+            , (DConId "Nil", [VariantUnnamed []])
+            ]
+          }
+
+(Data constructors for identifiers are omitted for brevity.)
+
+Note that for a flat type system, where all type constructors are nullary, arity
+will just be set to 0.
+-}
+data TypeDef t = TypeDef
+  { variants :: [(DConId, TypeVariant t)]
+  , arity    :: Arity
+  }
 
 data TypeVariant t
   = VariantNamed [(FieldId, t)]
