@@ -1,7 +1,8 @@
 module Ast2IR ( astToIR ) where
 
 import qualified Ast as A
-import IR.Ast as I
+import qualified Types.Ast as A
+import qualified Common.IR as L
 
-astToIR :: A.Program -> I.AIProgram
-astToIR (A.Program decls) = I.Program []
+astToIR :: A.Program -> L.Program A.Type
+astToIR (A.Program _) = error "TODO"

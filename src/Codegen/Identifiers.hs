@@ -72,6 +72,10 @@ module Codegen.Identifiers
 import           Language.C.Quote.GCC           ( cty )
 import qualified Language.C.Syntax             as C
 
+import           Common.Identifiers             ( VarId
+                                                , ident
+                                                )
+
 -- | Use snake_case for c literals
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -173,16 +177,16 @@ act_t :: C.Type
 act_t = [cty|struct ssm_act|]
 
 -- | Obtain the name of the activation record struct for a routine.
-act_ :: String -> CIdent
-act_ routineName = "act_" ++ routineName ++ "_t"
+act_ :: VarId -> CIdent
+act_ routineName = "act_" ++ ident routineName ++ "_t"
 
 -- | Obtain the name of the step function of a routine.
-step_ :: String -> CIdent
-step_ routineName = "step_" ++ routineName
+step_ :: VarId -> CIdent
+step_ routineName = "step_" ++ ident routineName
 
 -- | Obtain the name for the enter function of a routine.
-enter_ :: String -> CIdent
-enter_ routineName = "enter_" ++ routineName
+enter_ :: VarId -> CIdent
+enter_ routineName = "enter_" ++ ident routineName
 
 -- | Obtain the name of each trigger for a routine.
 trig_ :: Int -> CIdent

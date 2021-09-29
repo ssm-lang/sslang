@@ -17,18 +17,19 @@ import           Control.Monad.State.Lazy       ( State
                                                 )
 
 import           Data.Either                    ( rights )
+import           Data.List                      ( sortOn )
 import qualified Data.Map                      as Map
+import           Data.Maybe                     ( fromJust )
 import qualified Data.Set                      as Set
 
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
-import           Data.List                      ( sortOn )
-
 import           Codegen.Identifiers
+import           Common.Identifiers             ( ident )
 
-import qualified IR.Mono                       as L
-import qualified Types.Mono                    as L
+import qualified Common.IR                     as L
+import qualified Types.Flat                    as L
 
 -- TODOs: remove hard-coded identifiers.
 
@@ -62,6 +63,15 @@ import qualified Types.Mono                    as L
 --   concat2 :: ([[a]], [[b]]) -> ([a], [b])
 --   concat2 (x, y) = (concat x, concat y)
 
+todo :: a
+todo = error "Not yet implemented"
+
+nope :: a
+nope = error "Not yet supported"
+
+type Program = L.Program L.Type
+type Expr = L.Expr L.Type
+
 {- | State maintained while compiling a 'Procedure'.
 
 The information here is populated while generating the step function, so that
@@ -71,7 +81,7 @@ struct and enter definitions.
 data TRState = TRState
   { fnName   :: L.VarId
   , fnArgs   :: [(L.VarId, L.Type)]
-  , fnBody   :: L.MIExpr
+  , fnBody   :: Expr
   , caseNum  :: Int
   , locals   :: [(L.VarId, L.Type)]
   , maxWaits :: Int
@@ -81,7 +91,7 @@ data TRState = TRState
 type TR a = State TRState a
 
 -- | Run a TR computation on a procedure.
-runTR :: L.VarId -> [(L.VarId, L.Type)] -> L.MIExpr -> TR a -> a
+runTR :: L.VarId -> [(L.VarId, L.Type)] -> Expr -> TR a -> a
 runTR name args body tra = evalState tra $ TRState { fnName   = name
                                                    , fnArgs   = args
                                                    , fnBody   = body
@@ -115,14 +125,13 @@ $esc:("#include \"ssm-platform.h\"")
 |]
 
 -- | Setup the entry point of the program.
-genInitProgram :: L.MIProgram -> [C.Definition]
-genInitProgram _ = [cunit|
+genInitProgram :: Program -> [C.Definition]
+genInitProgram L.Program { L.programEntry = entry } = [cunit|
   int $id:initialize_program(void) {
-    $id:activate($id:(enter_ "main")(&$id:top_parent, $id:root_priority, $id:root_depth));
+     $id:activate($id:(enter_ entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
     return 0;
   }
 |]
-
 
 {-------- Function generation --------}
 
@@ -139,8 +148,8 @@ actm :: CIdent
 actm = "act"
 
 -- | Per-variable trigger
-trigOf :: L.VarId -> CIdent
-trigOf v = "__trig_" ++ v
+trigOf :: Int -> CIdent
+trigOf n = "__trig_" ++ show n
 
 {- | Generate definitions for an SSM 'Procedure'.
 
@@ -148,24 +157,30 @@ The fst element of the returned tuple contains the struct definition and
 function prototype declarations, while the snd element contains the function
 definitions.
 -}
-genTop :: (L.VarId, L.MIExpr) -> [C.Definition]
-genTop (name, L.Lambda arg argTy body) = runTR name [(arg, argTy)] body $ do
-  (stepDecl , stepDefn ) <- genStep
-  (enterDecl, enterDefn) <- genEnter
-  structDefn             <- genStruct
-  return [structDefn, enterDecl, stepDecl, enterDefn, stepDefn]
-genTop (name, L.Lit l) = error "TODO: literals"
-genTop (name, _      ) = error "TODO: arbitrary top-level expressions"
+genTop :: (L.VarId, Expr) -> [C.Definition]
+genTop (name, L.Lambda arg argTy body) =
+  runTR name [(fromJust arg, argTy)] body $ do
+    (stepDecl , stepDefn ) <- genStep
+    (enterDecl, enterDefn) <- genEnter
+    structDefn             <- genStruct
+    return [structDefn, enterDecl, stepDecl, enterDefn, stepDefn]
+genTop (_, L.Lit _ _) = todo
+genTop (_, _        ) = error "TODO: arbitrary top-level expressions"
 
 -- | Return the C variant of the base type of a SSM type
 typeIdent :: L.Type -> CIdent
-typeIdent (L.TCon t    ) = t
-typeIdent (L.TArrow _ _) = undefined
-typeIdent (L.TSV t     ) = sv_ $ typeIdent t
+typeIdent (L.TCon     t ) = ident t
+typeIdent (L.TBuiltin tb) = typeBuiltin tb
+ where
+  typeBuiltin L.Unit        = todo
+  typeBuiltin L.Void        = todo
+  typeBuiltin (L.Arrow _ _) = nope
+  typeBuiltin (L.Ref   t  ) = "ssm_" ++ typeIdent t ++ "_t" -- TODO: doesn't work well for nested Refs
+  typeBuiltin (L.Tuple _  ) = nope
 
 unwrapSV :: L.Type -> L.Type
-unwrapSV (L.TSV t) = t
-unwrapSV _         = error "not SV"
+unwrapSV (L.TBuiltin (L.Ref t)) = t
+unwrapSV _                      = error "not SV"
 
 
 ctype :: CIdent -> C.Type
@@ -194,15 +209,16 @@ genStruct = do
  where
   -- SVs are passed by reference, everything else passed by value
   param :: (L.VarId, L.Type) -> C.FieldGroup
-  param (n, t@(L.TSV _)) = [csdecl|$ty:(ctype $ typeIdent t) *$id:n;|]
-  param (n, t          ) = [csdecl|$ty:(ctype $ typeIdent t) $id:n;|]
+  param (n, t@(L.TBuiltin (L.Ref _))) =
+    [csdecl|$ty:(ctype $ typeIdent t) *$id:n;|]
+  param (n, t) = [csdecl|$ty:(ctype $ typeIdent t) $id:n;|]
 
   -- Declare an SV for each local variable
   local :: (L.VarId, L.Type) -> C.FieldGroup
   local (n, t) = [csdecl|$ty:(ctype $ sv_ $ typeIdent t) $id:n;|]
 
   trig :: Int -> C.FieldGroup
-  trig i = [csdecl|$ty:trigger_t $id:(trigOf $ show i);|]
+  trig i = [csdecl|$ty:trigger_t $id:(trigOf i);|]
 
 
 {- | Generate the enter function for an SSM 'Procedure'.
@@ -246,8 +262,9 @@ genEnter = do
  where
   -- SVs are passed by reference, everything else passed by value
   param :: (L.VarId, L.Type) -> C.Param
-  param (n, t@(L.TSV _)) = [cparam|$ty:(ctype $ typeIdent t) *$id:n|]
-  param (n, t          ) = [cparam|$ty:(ctype $ typeIdent t) $id:n|]
+  param (n, t@(L.TBuiltin (L.Ref _))) =
+    [cparam|$ty:(ctype $ typeIdent t) *$id:n|]
+  param (n, t) = [cparam|$ty:(ctype $ typeIdent t) $id:n|]
 
   -- | Initialize act struct from parameters
   initParam :: (L.VarId, L.Type) -> [C.Stm]
@@ -259,7 +276,7 @@ genEnter = do
 
   -- | Initialize a trigger
   initTrig :: Int -> C.Stm
-  initTrig i = [cstm| $id:acts->$id:(trigOf $ show i).act = $id:actg;|]
+  initTrig i = [cstm| $id:acts->$id:(trigOf i).act = $id:actg;|]
 
 {- | Generate the step function for an SSM 'Procedure'.
 
@@ -300,88 +317,75 @@ genStep = do
       |]
     )
 
-genExpr :: L.MIExpr -> TR (C.Exp, [C.BlockItem])
-genExpr (L.Var n _             ) = return ([cexp|&$id:acts->$id:n|], [])
-genExpr (L.Lit (L.Literal _s _)) = error "todo"
-genExpr (L.Let [(n, v)] b      ) = do
-  addLocal (n, L.exprType v)
+genExpr :: Expr -> TR (C.Exp, [C.BlockItem])
+genExpr (L.Var  n             _) = return ([cexp|&$id:acts->$id:(ident n)|], [])
+genExpr (L.Data _             _) = nope
+genExpr (L.Lit  _             _) = todo
+genExpr (L.Let  [(Just n, v)] b) = do
+  addLocal (n, L.typeExpr v)
   (defVal, defStms) <- genExpr v
-  let defBlock = [citem|
-    {
-      $items:defStms
-      $id:(initialize_ $ typeIdent $ L.exprType v)(&acts->$id:n);
-      $id:acts->$id:n.$id:value = $exp:defVal;
-    }
-    |]
+  let var = ident n
+      defBlock = [citems|
+          $items:defStms
+          $id:(initialize_ $ typeIdent $ L.typeExpr v)(&acts->$id:var);
+          $id:acts->$id:var.$id:value = $exp:defVal;
+        |]
   (bodyVal, bodyStms) <- genExpr b
-  return (bodyVal, defBlock : bodyStms)
-genExpr (L.Let _ _       ) = error "Cannot handle mutually recursive bindings"
-genExpr (L.PrimApp f es t) = genPrim f es t
-genExpr (L.Match _ _ _ _ ) = error "Not implemented"
-genExpr (L.Lambda  _ _  _) = error "Not implemented"
-genExpr (L.App _ _       ) = error "Not implemented"
-
-genPrim :: L.PrimFun -> [L.MIExpr] -> L.Type -> TR (C.Exp, [C.BlockItem])
-genPrim L.Loop [b] _ = do
-  (_, bodyStms) <- genExpr (L.App b (L.Lit undefined)) -- TODO: need to apply unit literal
-  return (undef, [citems|for (;;) { $items:bodyStms }|])
-genPrim L.Break  []  _ = return (undef, [citems|break;|])
-genPrim L.Return []  _ = return (undef, [citems|return;|])
-genPrim L.Fork   _   _ = error "todo"
-genPrim L.Wait   vs   _ = do
-  (varVals, varStms) <- unzip <$> mapM genExpr vs
-  nextPc <- nextCase
+  return (bodyVal, defBlock ++ bodyStms)
+genExpr (L.Let _ _) = error "Cannot handle mutually recursive bindings"
+genExpr L.Lambda{}  = nope
+genExpr L.App{}     = todo
+genExpr L.Match{}   = todo
+genExpr (L.New _)   = nope
+genExpr L.Deref { L.derefArg = _ } = todo
+genExpr L.Assign { L.assignLhs = lhs, L.assignRhs = rhs } = do
+  (lhsVal, lhsStms) <- genExpr lhs
+  (rhsVal, rhsStms) <- genExpr rhs
+  -- TODO: handle event type
+  let lhsTy = typeIdent $ unwrapSV $ L.typeExpr lhs
+      assignBlock = [citems|
+          $items:lhsStms
+          $items:rhsStms
+          $id:(assign_ lhsTy)($exp:lhsVal, $exp:rhsVal);
+        |]
+  return (unit, assignBlock)
+genExpr L.Later { L.laterTime = time, L.laterLhs = lhs, L.laterRhs = rhs } = do
+  (timeVal, timeStms) <- genExpr time
+  (lhsVal , lhsStms ) <- genExpr lhs
+  (rhsVal , rhsStms ) <- genExpr rhs
+  -- TODO: handle event type
+  let lhsTy = typeIdent $ unwrapSV $ L.typeExpr lhs
+      laterBlock = [citems|
+          $items:timeStms
+          $items:lhsStms
+          $items:rhsStms
+          $id:(later_ lhsTy)($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
+        |]
+  return (unit, laterBlock)
+genExpr (L.Fork _   ) = todo
+genExpr (L.Wait vars) = do
+  (varVals, varStms) <- unzip <$> mapM genExpr vars
+  nextPc             <- nextCase
   addWait $ length varVals
-  let trigs = zip [1::Int ..] varVals
-      sens (i, var) = [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
+  let trigs = zip [1 :: Int ..] varVals
+      sens (i, var) =
+        [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
-      waitBlock =
-        [citem|
-        {
+      waitBlock = [citems|
           $items:(concat varStms)
           $items:(map sens trigs)
           $id:actg->$id:pc = $int:nextPc;
           return;
           case $int:nextPc: ;
           $items:(map desens trigs)
-        }
         |]
-  return (unit, [waitBlock])
-genPrim L.Deref [e] _ = do
-  (val, stms) <- genExpr e
-  return ([cexp|*$exp:val|], stms)
-genPrim L.Assign [lhs, rhs] _ = do
-  (lhsVal, lhsStms) <- genExpr lhs
-  (rhsVal, rhsStms) <- genExpr rhs
-  -- TODO: handle event type
-  let lhsTy = typeIdent $ unwrapSV $ L.exprType lhs
-      assignBlock = [citem|
-        {
-          $items:lhsStms
-          $items:rhsStms
-          $id:(assign_ lhsTy)($exp:lhsVal, $exp:rhsVal);
-        }
-      |]
-  return (unit, [assignBlock])
-
-genPrim L.Later [lhs, rhs, time] _ = do
-  (timeVal, timeStms) <- genExpr time
-  (lhsVal , lhsStms ) <- genExpr lhs
-  (rhsVal , rhsStms ) <- genExpr rhs
-  -- TODO: handle event type
-  let lhsTy = typeIdent $ unwrapSV $ L.exprType lhs
-      laterBlock = [citem|
-        {
-          $items:timeStms
-          $items:lhsStms
-          $items:rhsStms
-          $id:(later_ lhsTy)($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
-        }
-      |]
-  return (unit, [laterBlock])
-genPrim (L.Arith _) _ _ = error "todo"
-genPrim (L.Ffi   _) _ _ = error "unimplemented"
-genPrim _           _ _ = error "Unexpected prim fun"
+  return (unit, waitBlock)
+genExpr (L.Loop b) = do
+  (_, bodyStms) <- genExpr b
+  return (unit, [citems|for (;;) { $items:bodyStms }|])
+genExpr L.Break  = return (undef, [citems|break;|])
+genExpr L.Return = return (undef, [citems|return;|])
+genExpr L.PrimApp { L.primOp = op, L.primArgs = args } = todo
 
 unit :: C.Exp
 unit = [cexp|0|]
