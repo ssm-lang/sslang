@@ -36,7 +36,8 @@ nope = error "Not yet supported"
 type Type = L.Type
 type Program = L.Program Type
 type Expr = L.Expr Type
-type PrimOp = L.PrimOp Expr
+type PrimOp = L.PrimOp
+type Primitive = L.Primitive
 type Literal = L.Literal
 
 {- | State maintained while compiling a 'Procedure'.
@@ -122,10 +123,12 @@ genInitProgram L.Program { L.programEntry = entry } = [cunit|
 The fst element of the returned tuple contains the struct definition and
 function prototype declarations, while the snd element contains the function
 definitions.
+
+TODO: only handles single argument.
 -}
 genTop :: (L.VarId, Expr) -> [C.Definition]
-genTop (name, L.Lambda arg argTy body) =
-  runTR name [(fromJust arg, argTy)] body $ do
+genTop (name, L.Lambda arg body ty) =
+  runTR name [(fromJust arg, fst $ unwrapArrow ty)] body $ do
     (stepDecl , stepDefn ) <- genStep
     (enterDecl, enterDefn) <- genEnter
     structDefn             <- genStruct
@@ -143,6 +146,10 @@ typeIdent (L.TBuiltin tb) = typeBuiltin tb
   typeBuiltin (L.Arrow _ _) = nope
   typeBuiltin (L.Ref   t  ) = sv_ $ typeIdent t -- TODO: doesn't work for nested Refs
   typeBuiltin (L.Tuple _  ) = nope
+
+unwrapArrow :: Type -> (Type, Type)
+unwrapArrow (L.TBuiltin (L.Arrow a b)) = (a, b)
+unwrapArrow _                          = error "not arrow"
 
 unwrapSV :: Type -> Type
 unwrapSV (L.TBuiltin (L.Ref t)) = t
@@ -288,10 +295,10 @@ genStep = do
 -- we're just inferring it from how it's used, i.e., on the LHS of an app vs on
 -- its own.
 genExpr :: Expr -> TR (C.Exp, [C.BlockItem])
-genExpr (L.Var  n             _) = return ([cexp|&$id:acts->$id:(ident n)|], [])
-genExpr (L.Data _             _) = nope
-genExpr (L.Lit  l             t) = genLiteral l t
-genExpr (L.Let  [(Just n, v)] b) = do
+genExpr (L.Var n _) = return ([cexp|&$id:acts->$id:(ident n)|], [])
+genExpr (L.Data _ _             ) = nope
+genExpr (L.Lit  l t             ) = genLiteral l t
+genExpr (L.Let [(Just n, v)] b _) = do
   addLocal (n, L.typeExpr v)
   (defVal, defStms) <- genExpr v
   let var = ident n
@@ -302,17 +309,20 @@ genExpr (L.Let  [(Just n, v)] b) = do
         |]
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defBlock ++ bodyStms)
-genExpr (L.Let _ _) = error "Cannot handle mutually recursive bindings"
-genExpr L.Lambda{}                 = nope
-genExpr L.App{}                    = nope
-genExpr L.Match{}                  = nope
-genExpr (L.New _)                  = nope
-genExpr L.Deref { L.derefArg = a } = do
+genExpr L.Let{}         = error "Cannot handle mutually recursive bindings"
+genExpr L.Lambda{}      = nope
+genExpr L.App{}         = nope
+genExpr L.Match{}       = nope
+genExpr (L.Prim p es t) = genPrim p es t
+
+genPrim :: Primitive -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
+genPrim L.New   _   _ = nope
+genPrim L.Deref [a] _ = do
   (val, stms) <- genExpr a
   -- SSM Refs are all SVs, so we access the value field in order to dereference.
   -- TODO: handle event type
   return ([cexp|$exp:val->value|], stms)
-genExpr L.Assign { L.assignLhs = lhs, L.assignRhs = rhs } = do
+genPrim L.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
   -- TODO: handle event type
@@ -323,7 +333,7 @@ genExpr L.Assign { L.assignLhs = lhs, L.assignRhs = rhs } = do
           $id:(assign_ lhsTy)($exp:lhsVal, $exp:rhsVal);
         |]
   return (unit, assignBlock)
-genExpr L.Later { L.laterTime = time, L.laterLhs = lhs, L.laterRhs = rhs } = do
+genPrim L.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
@@ -336,7 +346,7 @@ genExpr L.Later { L.laterTime = time, L.laterLhs = lhs, L.laterRhs = rhs } = do
           $id:(later_ lhsTy)($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
         |]
   return (unit, laterBlock)
-genExpr (L.Fork procs) = do
+genPrim L.Fork procs _ = do
   yield <- genYield
   let depthSub =
         (ceiling $ logBase (2 :: Double) $ fromIntegral $ length procs) :: Int
@@ -362,7 +372,7 @@ genExpr (L.Fork procs) = do
   (evals, activates) <- unzip <$> mapM genActivate (zip [0 ..] procs)
   return (unit, checkNewDepth ++ concat evals ++ activates ++ yield)
 -- For forks, we expect that every argument is some kind of application
-genExpr (L.Wait vars) = do
+genPrim L.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   addWait $ length varVals
   yield <- genYield
@@ -371,64 +381,66 @@ genExpr (L.Wait vars) = do
         [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
   return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
-genExpr (L.Loop b) = do
+genPrim L.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genExpr L.Break  = return (undef, [citems|break;|])
-genExpr L.Return = return (undef, [citems|return;|])
-genExpr L.PrimOp { L.primOp = op, L.primType = t } = genPrimOp op t
+genPrim L.Break       [] _ = return (undef, [citems|break;|])
+genPrim L.Return      [] _ = return (undef, [citems|return;|])
+genPrim (L.PrimOp op) es t = genPrimOp op es t
+genPrim _ _ _ = error "Unsupported Primitive or wrong number of arguments"
 
 genLiteral :: Literal -> Type -> TR (C.Exp, [C.BlockItem])
 genLiteral (L.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
 genLiteral (L.LitBool     True ) _ = return ([cexp|true|], [])
 genLiteral (L.LitBool     False) _ = return ([cexp|false|], [])
 
-genPrimOp :: PrimOp -> Type -> TR (C.Exp, [C.BlockItem])
-genPrimOp (L.PrimAdd lhs rhs) _ = do
+genPrimOp :: PrimOp -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
+genPrimOp L.PrimAdd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal + $exp:rhsVal|], stms)
-genPrimOp (L.PrimSub lhs rhs) _ = do
+genPrimOp L.PrimSub [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal - $exp:rhsVal|], stms)
-genPrimOp (L.PrimMul lhs rhs) _ = do
+genPrimOp L.PrimMul [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal * $exp:rhsVal|], stms)
-genPrimOp (L.PrimDiv lhs rhs) _ = do
+genPrimOp L.PrimDiv [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal / $exp:rhsVal|], stms)
-genPrimOp (L.PrimMod lhs rhs) _ = do
+genPrimOp L.PrimMod [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal % $exp:rhsVal|], stms)
-genPrimOp (L.PrimNeg opr) _ = do
+genPrimOp L.PrimNeg [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|- $exp:val|], stms)
-genPrimOp (L.PrimBitAnd lhs rhs) _ = do
+genPrimOp L.PrimBitAnd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal & $exp:rhsVal|], stms)
-genPrimOp (L.PrimBitOr lhs rhs) _ = do
+genPrimOp L.PrimBitOr [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal | $exp:rhsVal|], stms)
-genPrimOp (L.PrimBitNot opr) _ = do
+genPrimOp L.PrimBitNot [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|~ $exp:val|], stms)
-genPrimOp (L.PrimEq lhs rhs) _ = do
+genPrimOp L.PrimEq [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal == $exp:rhsVal|], stms)
-genPrimOp (L.PrimNot opr) _ = do
+genPrimOp L.PrimNot [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|! $exp:val|], stms)
-genPrimOp (L.PrimGt lhs rhs) _ = do
+genPrimOp L.PrimGt [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal < $exp:rhsVal|], stms)
-genPrimOp (L.PrimGe lhs rhs) _ = do
+genPrimOp L.PrimGe [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
-genPrimOp (L.PrimLt lhs rhs) _ = do
+genPrimOp L.PrimLt [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal > $exp:rhsVal|], stms)
-genPrimOp (L.PrimLe lhs rhs) _ = do
+genPrimOp L.PrimLe [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
+genPrimOp _ _ _ = error "Unsupported PrimOp or wrong number of arguments"
 
 -- | Helper for sequencing across binary operations.
 genBinop :: Expr -> Expr -> TR (C.Exp, C.Exp, [C.BlockItem])
