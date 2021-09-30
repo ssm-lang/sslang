@@ -32,7 +32,6 @@ data Type
   deriving Eq
 
 instance TypeSystem Type where
-  unit = TBuiltin Unit
-  void = TBuiltin Void
-  ref t = TBuiltin $ Ref t
-  arrow a b = TBuiltin $ Arrow a b
+  projectBuiltin = TBuiltin
+  injectBuiltin (TBuiltin t) = Just t
+  injectBuiltin _            = Nothing

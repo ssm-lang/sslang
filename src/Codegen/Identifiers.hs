@@ -179,16 +179,16 @@ act_t :: C.Type
 act_t = [cty|struct ssm_act|]
 
 -- | Obtain the name of the activation record struct for a routine.
-act_ :: VarId -> CIdent
-act_ routineName = "act_" ++ ident routineName ++ "_t"
+act_ :: CIdent -> CIdent
+act_ routineName = "act_" ++ routineName ++ "_t"
 
 -- | Obtain the name of the step function of a routine.
-step_ :: VarId -> CIdent
-step_ routineName = "step_" ++ ident routineName
+step_ :: CIdent -> CIdent
+step_ routineName = "step_" ++ routineName
 
 -- | Obtain the name for the enter function of a routine.
-enter_ :: VarId -> CIdent
-enter_ routineName = "enter_" ++ ident routineName
+enter_ :: CIdent -> CIdent
+enter_ routineName = "enter_" ++ routineName
 
 -- | Obtain the name of each trigger for a routine.
 trig_ :: Int -> CIdent

@@ -10,6 +10,8 @@ module IR.IR
   , typeExpr
   , VarId(..)
   , DConId(..)
+  , wellFormed
+  , collectLambda
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -94,7 +96,7 @@ data Primitive
   | Break
   {- ^ 'Break' breaks out of the innermost loop. -}
   | Return
-  {- ^ 'Return' returns from the current function. -}
+  {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
 
@@ -161,9 +163,15 @@ data Alt t
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
-collectApp (App lhs rhs _) = (fn, args ++ [rhs])
-  where (fn, args) = collectApp lhs
+collectApp (App lhs rhs _) =
+  let (fn, args) = collectApp lhs in (fn, args ++ [rhs])
 collectApp e = (e, [])
+
+-- | Collect a curried list of function arguments from a nesting of lambdas.
+collectLambda :: Expr t -> ([Binder], Expr t)
+collectLambda (Lambda a b _) =
+  let (as, body) = collectLambda b in (a : as, body)
+collectLambda e = ([], e)
 
 -- | Extract the type information embedded in an expression.
 typeExpr :: Expr t -> t
@@ -175,3 +183,54 @@ typeExpr (Lambda _ _ t ) = t
 typeExpr (App    _ _ t ) = t
 typeExpr (Match _ _ _ t) = t
 typeExpr (Prim _ _ t   ) = t
+
+
+{- | Predicate of whether an expression "looks about right".
+
+Description left deliberately vague so that we have the flexibility to
+strengthen this predicate. For now, we just check that all primitives are
+applied to the right number of arguments.
+
+This predicate also provides a template to recursively traverse through all
+sub-expressions of an expression.
+-}
+wellFormed :: Expr t -> Bool
+wellFormed (Var  _ _        ) = True
+wellFormed (Data _ _        ) = True
+wellFormed (Lit  _ _        ) = True
+wellFormed (Let    defs b _ ) = all (wellFormed . snd) defs && wellFormed b
+wellFormed (Lambda _    b _ ) = wellFormed b
+wellFormed (App    f    a _ ) = wellFormed f && wellFormed a
+wellFormed (Match s _ alts _) = wellFormed s && all wfAlt alts
+ where
+  wfAlt (AltData _ _ e) = wellFormed e
+  wfAlt (AltLit _ e   ) = wellFormed e
+  wfAlt (AltDefault e ) = wellFormed e
+wellFormed (Prim p es _) = wfPrim p es && all wellFormed es
+ where
+  wfPrim Dup                 [_]       = True
+  wfPrim Drop                [_]       = True
+  wfPrim Reuse               [_]       = True
+  wfPrim Deref               [_]       = True
+  wfPrim Assign              [_, _]    = True
+  wfPrim After               [_, _, _] = True
+  wfPrim Fork                (_ : _)   = True
+  wfPrim Wait                (_ : _)   = True
+  wfPrim Break               []        = True
+  wfPrim Return              [_]       = True
+  wfPrim (PrimOp PrimNeg   ) [_]       = True
+  wfPrim (PrimOp PrimNot   ) [_]       = True
+  wfPrim (PrimOp PrimBitNot) [_]       = True
+  wfPrim (PrimOp PrimAdd   ) [_, _]    = True
+  wfPrim (PrimOp PrimSub   ) [_, _]    = True
+  wfPrim (PrimOp PrimMul   ) [_, _]    = True
+  wfPrim (PrimOp PrimDiv   ) [_, _]    = True
+  wfPrim (PrimOp PrimMod   ) [_, _]    = True
+  wfPrim (PrimOp PrimBitAnd) [_, _]    = True
+  wfPrim (PrimOp PrimBitOr ) [_, _]    = True
+  wfPrim (PrimOp PrimEq    ) [_, _]    = True
+  wfPrim (PrimOp PrimGt    ) [_, _]    = True
+  wfPrim (PrimOp PrimGe    ) [_, _]    = True
+  wfPrim (PrimOp PrimLt    ) [_, _]    = True
+  wfPrim (PrimOp PrimLe    ) [_, _]    = True
+  wfPrim _                   _         = False

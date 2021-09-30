@@ -46,7 +46,6 @@ data Type
 
 -- | 'Type' is a type system.
 instance TypeSystem Type where
-  unit = TBuiltin Unit
-  void = TBuiltin Void
-  ref  = TBuiltin . Ref
-  arrow a b = TBuiltin $ Arrow a b
+  projectBuiltin = TBuiltin
+  injectBuiltin (TBuiltin t) = Just t
+  injectBuiltin _ = Nothing
