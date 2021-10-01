@@ -5,7 +5,11 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{syntax}
-
+\renewcommand{\grammarlabel}[2]{\textit{#1}\hfill#2}
+\renewcommand{\syntleft}{\itshape\normalsize}
+\renewcommand{\syntright}{\normalfont\normalsize}
+\renewcommand{\ulitleft}{\normalfont\ttfamily\small}
+\renewcommand{\ulitright}{\normalsize\normalfont}
 \definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
 
 \title{SSLANG Language Reference Manual}
@@ -241,51 +245,50 @@ a look at Agda's user-defined operators.
 
 \noindent Constructors that take more than type argument can be thought of as ``higher-order types". Here's a summary of sslang's higher-order types:
 \begin{itemize}
-    \item \texttt{[<type>]}: An array containing values of type \texttt{<type>}
-    \item \texttt{(<type>, ...)}: A tuple containing values of type \texttt{<type>}
-    \item \texttt{<type1> $\rightarrow$ <type2>}: A function that takes a   \texttt{<type1>} and returns a  \texttt{<type2>}
-    \item \texttt{\&<type>}: A reference to a variable of type \texttt{<type>}
-    \item \texttt{Sched <type>}: A scheduled variable of type \texttt{<type>}. These variables are scheduled and managed by the SSM runtime and are used to synchronize routines
+    \item \texttt{[type]}: An array containing values of type \texttt{type}
+    \item \texttt{(type, ...)}: A tuple containing values of type \texttt{type}
+    \item \texttt{type1 -> type2}: A function that takes a   \texttt{type1} and returns a  \texttt{type2}
+    \item \texttt{\&type}: A reference to a variable of type \texttt{type}
+    \item \texttt{Sched type}: A scheduled variable of type \texttt{type}. These variables are scheduled and managed by the SSM runtime and are used to synchronize routines
 \end{itemize}
 
 \noindent This all is summarized by the following grammar:
 \setlength{\grammarindent}{5em}
 \begin{grammar}
-<type> ::= (<type>)
-\alt [<type>]
-\alt (<type>(, <type>)+)
-\alt <type> $\rightarrow$ <type>
-\alt \&<type>
-\alt ()
-\alt <type-id> <type>*
-
-<type-id> ::= [A-Z][a-zA-Z0-9]* 
+<type> ::= "("<type>")"
+\alt "["<type>"]"
+\alt "("<type>(","<type>)$^{+}$")"
+\alt <type> "->" <type>
+\alt "\&"<type>
+\alt "()"
+\alt "type-id" <type>$^{*}$
 \end{grammar}
+\noindent where \texttt{type-id ::= [A-Z][a-zA-Z0-9]$^{*}$}\\
 
-\noindent Note the generic definition of type constructors: simply one or more type identifiers. This implementation is meant to facilitate support for user-defined types and to provide a concise interface for sslang's type system to deal with.
-\section{Routines}
-\noindent Routines are defined at the top-level of a sslang file and consistent of the following components:
+\noindent Note the generic definition of type constructors: simply a type identifier followed by one or more \textit{type}s. This implementation is meant to facilitate support for user-defined types and to provide a concise interface for sslang's type system to deal with.
+\section{Routines and Top-Level Definitions}
+\noindent Top-level definitions in sslang consistent of the following components:
 \begin{itemize}
-    \item Routine name
-    \item Zero or more parameters, possibly type annotated
+    \item Identifier name (global variable or routine name)
+    \item Zero or more parameters, possibly type-annotated
     \item Annotated return type
-    \item Routine body
+    \item Body
 \end{itemize}
 \noindent The compiler will perform type inference for untyped components and will verify that typed components are correct.
 
-\subsection{Routine Signatures}
+\subsection{Type Signatures}
 \noindent At the core of sslang routine signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
 \begin{itemize}
     \item \texttt{:} (Colon): ``is of type"
-    \item \texttt{$\rightarrow$} (Right Arrow): ``returns"
+    \item \texttt{->} (Right Arrow): ``returns"
 \end{itemize}
 
-\noindent We use these symbols to separate routine signatures into two broad syntactic categories:
+\noindent We use these symbols to separate type signatures into two broad syntactic categories:
 \begin{itemize}
-    \item \texttt{foo <params> $\rightarrow$ <ret-type>}\\
-          Using the ``\texttt{$\rightarrow$}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+    \item \texttt{foo <params> -> <ret-type>}\\
+          Using the ``\texttt{->}" syntax, the return type of the routine is denoted at the end of the signature. This is evocative of languages like Python and Rust.
     \item \texttt{foo <untyped-params> : <fn-type>}\\
-          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures.
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire routine at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
 \end{itemize}
 
 \noindent When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
@@ -296,20 +299,20 @@ a look at Agda's user-defined operators.
 
 \noindent Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
 
-\noindent Routine definitions can be summarized by the following grammar:
-\setlength{\grammarindent}{5em}
+\noindent Top-level definitions can be summarized by the following grammar:
+\setlength{\grammarindent}{6em}
 \begin{grammar}
-<funcdef> ::= id () ($\rightarrow$ <type>)? = \{ <body> \}
-\alt id <param_t>+ ($\rightarrow$ <type>)? = \{ <body> \}
-\alt id <param_t>+ (: <type>)? = \{ <body> \}
+<topdef> ::= "id () ->" <type> "= \{" <body> "\}"
+\alt "id" <param_t>$^{+}$ "->" <type> "= \{" <body> "\}"
+\alt "id" <param_t>$^{*}$ ":" <type> "= \{" <body> "\}"
 
-<param_t> ::= id
-\alt (<param>)
-\alt (<param>(, <param>)+)
+<param_t> ::= "id"
+\alt "("<param>")"
+\alt "("<param>("," <param>)$^{+}$")"
 
-<param> ::= (<param>)
-\alt id(: <type>)?
-\alt (<param>(,<param>)+)(: <type>)?
+<param> ::= "("<param>")"
+\alt "id" (":" <type>)$^{?}$
+\alt "("<param>(","<param>)$^{+}$")"(":" <type>)$^{?}$
 \end{grammar}
 
 \section{Expressions}
