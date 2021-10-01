@@ -531,7 +531,3 @@ unit = [cexp|0|]
 -- | Undefined "value", the fake value used for expressions of type Void.
 undef :: C.Exp
 undef = [cexp|0xdeadbeef|]
-
--- | Generate definitions for SSM type definitions.
-genTypeDef :: TypeDef -> C.Definition
-genTypeDef = todo

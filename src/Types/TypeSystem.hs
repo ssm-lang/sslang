@@ -80,7 +80,7 @@ A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 
   TypeDef { arity = 1
           , [ ("Cons", [VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])]])
-            , (DConId "Nil", [VariantUnnamed []])
+            , ("Nil", [VariantUnnamed []])
             ]
           }
 

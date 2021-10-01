@@ -142,8 +142,8 @@ data Expr t
   alternative, the value of 's' is bound to variable 'v'.
   -}
   | Prim Primitive [Expr t] t
-  {- 'Prim p es t' applies primitive 'p' arguments 'es', producing a value of
-  type 't'.
+  {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
+  of type 't'.
   -}
 
 -- | An alternative in a pattern-match.
