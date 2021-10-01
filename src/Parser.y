@@ -67,10 +67,13 @@ topdecls : topdecl               { [$1] }
 
 topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
         | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 } 
+        | id optFormals ':' typ '=' '{' expr '}'    { Function $1 $2 $7 (CurriedType $4) }
 
-optReturnType : ':' typ       { CurriedType $2 }
-              | '->' typ      { ReturnType $2 }
+optReturnType : '->' typ      { ReturnType $2 }
               | {- nothing -} { ReturnType (TCon "()") }
+
+optFormals : formals       { $1 }
+           | {- nothing -} { [] }
 
 formals : formalTop         { [$1] }
         | formalTop formals { $1 : $2 }
