@@ -7,6 +7,8 @@
 -- 3) A step function, which corresponds to the actual procedure body
 
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DerivingVia #-}
 
 module Codegen.Codegen where
 
@@ -17,14 +19,19 @@ import           Control.Monad.Except           ( ExceptT(..)
                                                 , MonadError(..)
                                                 , runExceptT
                                                 )
-import           Control.Monad.State.Lazy       ( State
+import           Control.Monad.State.Lazy       ( MonadState
+                                                , State
                                                 , evalState
                                                 , gets
                                                 , modify
                                                 )
+import           Data.Bifunctor                 ( Bifunctor(..) )
 
 import           Codegen.Identifiers
-import           Common.Identifiers             ( ident )
+import           Common.Identifiers             ( fromId )
+import           Data.Maybe                     ( fromJust
+                                                , isJust
+                                                )
 import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
 import qualified Types.TypeSystem              as L
@@ -42,6 +49,8 @@ type PrimOp = L.PrimOp
 type Primitive = L.Primitive
 type Literal = L.Literal
 type TypeDef = L.TypeDef Type
+type VarId = L.VarId
+type Binder = L.Binder
 
 {- Notes about what is expected of the IR:
 
@@ -59,9 +68,10 @@ should be computed first, before this information is used to generate the act
 struct and enter definitions.
 -}
 data TRState = TRState
-  { fnName   :: CIdent
-  , fnArgs   :: [(CIdent, C.Type)]
-  , locals   :: [(CIdent, C.Type)]
+  { fnName   :: VarId
+  , fnArgs   :: [(Binder, Type)]
+  , fnRetTy  :: Type
+  , fnLocs   :: [(VarId, Type)]
   , fnBody   :: Expr
   , caseNum  :: Int
   , maxWaits :: Int
@@ -71,21 +81,34 @@ data TRState = TRState
 data CompileError = CompileErrorMsg String | CompileErrorOther
 
 -- | Translation monad.
-type TR a = ExceptT CompileError (State TRState) a
+newtype TR a = TR (ExceptT CompileError (State TRState) a)
+  deriving Functor                    via (ExceptT CompileError (State TRState))
+  deriving Applicative                via (ExceptT CompileError (State TRState))
+  deriving Monad                      via (ExceptT CompileError (State TRState))
+  deriving (MonadError CompileError)  via (ExceptT CompileError (State TRState))
+  deriving (MonadState TRState)       via (ExceptT CompileError (State TRState))
 
-unwrapJust :: Maybe t -> TR t
-unwrapJust = maybe (throwError CompileErrorOther) return
+instance MonadFail TR where
+  fail = throwError . CompileErrorMsg
 
 -- | Run a TR computation on a procedure.
-runTR :: CIdent -> [(CIdent, C.Type)] -> Expr -> TR a -> Either CompileError a
-runTR name args body tra = evalState (runExceptT tra) $ TRState { fnName = name
-                                                                , fnArgs = args
-                                                                , fnBody = body
-                                                                , caseNum = 0
-                                                                , locals = []
-                                                                , maxWaits = 0
-                                                                , tmpNum = 0
-                                                                }
+runTR
+  :: VarId                  -- ^ Name of procedure
+  -> [(Binder, Type)]       -- ^ Names and types of arguments to procedure
+  -> Type                   -- ^ Name and type of return parameter of procedure
+  -> Expr                   -- ^ Body of procedure
+  -> TR a                   -- ^ Translation monad to run
+  -> Either CompileError a  -- ^ Compilation may fail
+runTR name args ret body (TR tra) = evalState (runExceptT tra) $ TRState
+  { fnName   = name
+  , fnArgs   = args
+  , fnRetTy  = ret
+  , fnBody   = body
+  , caseNum  = 0
+  , fnLocs   = []
+  , maxWaits = 0
+  , tmpNum   = 0
+  }
 
 -- | Read and increment the number of cases in a procedure, i.e., caseNum++.
 nextCase :: TR Int
@@ -95,111 +118,108 @@ nextCase = do
   return n
 
 -- | Register a local variable for which an sv should be allocated.
-addLocal :: (CIdent, C.Type) -> TR ()
-addLocal l = modify $ \st -> st { locals = l : locals st }
+addLocal :: (VarId, Type) -> TR ()
+addLocal l = modify $ \st -> st { fnLocs = l : fnLocs st }
 
 -- | Register a name to be waited on
 addWait :: Int -> TR ()
 addWait n = modify $ \st -> st { maxWaits = n `max` maxWaits st }
 
 -- | Read and increment the number of temporaries allocated, i.e., tmpNum++
-nextTmp :: C.Type -> TR CIdent
+nextTmp :: Type -> TR VarId
 nextTmp ty = do
-  t <- tmpOf <$> gets tmpNum
+  t <- fromId . tmp_ <$> gets tmpNum -- TODO: get rid of fromId
   modify $ \st -> st { tmpNum = tmpNum st + 1 }
   addLocal (t, ty)
   return t
 
--- | Return type of current function.
-returnType :: TR L.Type
-returnType =
-  snd . L.dearrow . L.typeExpr . snd . L.collectLambda <$> gets fnBody
+isLocalVar :: VarId -> TR Bool
+isLocalVar name = do
+  args <- gets fnArgs
+  locs <- gets fnLocs
+  return $ isJust (lookup (Just name) args) || isJust (lookup name locs)
 
-{-------- Compilation-specific identifiers --------}
+{-------- Type compilation --------}
 
--- | Identifier for generic (inner) struct act.
-actg :: CIdent
-actg = "actg"
+-- | Wrap a 'C.Type' with pointers, according to some 'L.Type'.
+ptrs_ :: L.Type -> C.Type -> C.Type
+ptrs_ (L.TBuiltin (L.Ref _)) t = [cty|$ty:t *|]
+ptrs_ _                      t = t
+-- ^ TODO: this does not handle nested pointers
 
--- | Identifier for specialized (outer) struct act.
-acts :: CIdent
-acts = "acts"
+typeId :: Type -> CIdent
+typeId (L.TCon     t ) = fromId t
+typeId (L.TBuiltin bt) = builtinId bt
 
--- | Identifier for act member in act struct.
-actm :: CIdent
-actm = "act"
-
--- | Per-variable trigger
-trigOf :: Int -> CIdent
-trigOf i = "__trig_" ++ show i
-
--- | Temporary variable name
-tmpOf :: Int -> CIdent
-tmpOf i = "__tmp_" ++ show i
-
--- | Argument name from 'Binder', using number to generate name if necessary.
-argName :: L.Binder -> Int -> CIdent
-argName (Just v) _ = ident v
-argName Nothing  i = "__arg_" ++ show i
-
-leaveLabel :: CIdent
-leaveLabel = "__leave_process"
-
--- | Name of return argument.
-ret :: CIdent
-ret = "__return_val"
-
--- | Return the C variant of the base type of a SSM type
-typeIdent :: Type -> CIdent
-typeIdent (L.TCon     t ) = ident t
-typeIdent (L.TBuiltin tb) = typeBuiltin tb
- where
-  typeBuiltin L.Unit        = todo
-  typeBuiltin L.Void        = todo
-  typeBuiltin (L.Arrow _ _) = nope
-  typeBuiltin (L.Ref   t  ) = sv_ $ typeIdent t -- TODO: doesn't work for nested Refs
-  typeBuiltin (L.Tuple _  ) = nope
-
-ctype :: CIdent -> C.Type
-ctype t = [cty|typename $id:t|]
+builtinId :: L.Builtin Type -> CIdent
+builtinId L.Unit        = todo
+builtinId L.Void        = todo
+builtinId (L.Arrow _ _) = todo
+builtinId (L.Tuple _  ) = todo
+builtinId (L.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
 
 genType :: Type -> C.Type
-genType = todo
+genType typ = ptrs_ typ $ ctype $ typeId typ
+
+genInit :: Type -> C.Exp
+genInit ty = [cexp|$id:(initialize_ $ typeId $ fromJust $ L.deref ty)|]
+
+genAssign :: Type -> C.Exp
+genAssign ty = [cexp|$id:(assign_ $ typeId $ fromJust $ L.deref ty)|]
+
+genLater :: Type -> C.Exp
+genLater ty = [cexp|$id:(later_ $ typeId $ fromJust $ L.deref ty)|]
+
+genArg :: Int -> (Binder, Type) -> (CIdent, C.Type)
+genArg i = bimap (maybe (arg_ i) fromId) genType
+
+genArgs :: [(Binder, Type)] -> [(CIdent, C.Type)]
+genArgs = zipWith genArg [0 ..]
+
+genLocal :: (VarId, Type) -> (CIdent, C.Type)
+genLocal = bimap fromId genType
+
+genLocals :: [(VarId, Type)] -> [(CIdent, C.Type)]
+genLocals = map genLocal
+
+genTrigs :: Int -> [(CIdent, C.Type)]
+genTrigs trigs = zip (map trig_ [1 .. trigs]) (repeat trigger_t)
+
+-- | The constant unit value, the singleton inhabitant of the type Unit.
+unit :: C.Exp
+unit = [cexp|0|]
+
+-- | Undefined "value", the fake value used for expressions of type Void.
+undef :: C.Exp
+undef = [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
 -- | Include statements in the generated file
 includes :: [C.Definition]
-includes = [cunit|
-$esc:("#include \"ssm-platform.h\"")
-|]
+includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
 
 -- | Setup the entry point of the program.
 genInitProgram :: Program -> [C.Definition]
 genInitProgram L.Program { L.programEntry = entry } = [cunit|
-  int $id:initialize_program(void) {
-     $id:activate($id:(enter_ $ ident entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
-    return 0;
-  }
-|]
+    int $id:initialize_program(void) {
+       $id:activate($id:(enter_ entry)
+        (&$id:top_parent, $id:root_priority, $id:root_depth));
+      return 0;
+    }
+  |]
 
-{- | Generate definitions for an SSM 'Procedure'.
--}
+{- | Generate definitions for an SSM 'Procedure'. -}
 genTop :: (L.VarId, Expr) -> Either CompileError [C.Definition]
-genTop (n, l@(L.Lambda _ _ ty)) = runTR name params body $ do
-  (stepDecl , stepDefn ) <- genStep
-  (enterDecl, enterDefn) <- genEnter
-  structDefn             <- genStruct
-  return [structDefn, enterDecl, stepDecl, enterDefn, stepDefn]
+genTop (name, l@(L.Lambda _ _ ty)) =
+  runTR (fromId name) (zip argIds argTys) retTy body $ do
+    (stepDecl , stepDefn ) <- genStep
+    (enterDecl, enterDefn) <- genEnter
+    structDefn             <- genStruct
+    return [structDefn, enterDecl, stepDecl, enterDefn, stepDefn]
  where
-  name            = ident n
-  (args  , body ) = L.collectLambda l
+  (argIds, body ) = L.collectLambda l
   (argTys, retTy) = L.dearrow ty
-  argIds          = zipWith argName args [0 ..]
-  params          = map param $ zip argIds argTys ++ [(ret, L.ref retTy)]
-
-  param (a, t) = (ident a, genType t)
-
 genTop (_, L.Lit _ _) = todo
 genTop (_, _        ) = nope
 
@@ -209,17 +229,18 @@ This is where local variables, triggers, and parameter values are stored.
 -}
 genStruct :: TR C.Definition
 genStruct = do
-  name <- gets fnName
-  args <- gets fnArgs
-  ts   <- gets maxWaits
-  ls   <- gets locals
+  name  <- gets fnName
+  args  <- gets fnArgs
+  locs  <- gets fnLocs
+  trigs <- gets maxWaits
+
   return [cedecl|
     typedef struct {
-      $ty:act_t $id:actm;
+      $ty:act_t $id:act_member;
 
-      $sdecls:(map structField args)
-      $sdecls:(map structField ls)
-      $sdecls:(map trig [1..ts])
+      $sdecls:(map structField $ genArgs args)
+      $sdecls:(map structField $ genLocals locs)
+      $sdecls:(map structField $ genTrigs trigs)
 
     } $id:(act_ name);
   |]
@@ -227,11 +248,7 @@ genStruct = do
   structField :: (CIdent, C.Type) -> C.FieldGroup
   structField (n, t) = [csdecl|$ty:t $id:n;|]
 
-  trig :: Int -> C.FieldGroup
-  trig i = [csdecl|$ty:trigger_t $id:(trigOf i);|]
-
-
-{- | Generate the enter function for an SSM 'Procedure'.
+{- | Generate the enter function for an SSM 'Procedure' and its signature.
 
 Its struct is allocated and initialized (partially; local variables' values are
 left uninitialized).
@@ -240,31 +257,37 @@ genEnter :: TR (C.Definition, C.Definition)
 genEnter = do
   actname <- gets fnName
   args    <- gets fnArgs
-  ts      <- gets maxWaits
-  let act   = [cty|typename $id:act'|]
-      act'  = act_ actname -- hack to use this typename as expr in macros
-      enter = enter_ actname
-      step  = step_ actname
+  trigs   <- gets maxWaits
+  let act  = [cty|typename $id:act'|]
+      act' = act_ actname -- hack to use this typename as expr in macros
 
-      param (n, t) = [cparam|$ty:t $id:n|]
-      initParam (n, _) = [[cstm|acts->$id:n = $id:n;|]]
-      initTrig i = [cstm| $id:acts->$id:(trigOf i).act = $id:actg;|]
+      declParam (n, t) = [cparam|$ty:t $id:n|]
+      initParam (n, _) = [[cstm|$id:acts->$id:n = $id:n;|]]
+      initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
 
       params =
-        [cparams|$ty:act_t *caller, $ty:priority_t priority, $ty:depth_t depth|]
-          ++ map param args
+        [ [cparam|$ty:act_t *$id:caller|]
+          , [cparam|$ty:priority_t $id:priority|]
+          , [cparam|$ty:depth_t $id:depth|]
+          ]
+          ++ map declParam (genArgs args)
   return
-    ( [cedecl|$ty:act_t *$id:enter($params:params);|]
+    ( [cedecl|$ty:act_t *$id:(enter_ actname)($params:params);|]
     , [cedecl|
-        $ty:act_t *$id:enter($params:params) {
-          $ty:act_t *$id:actg = $id:act_enter(sizeof($ty:act), $id:step, caller, priority, depth);
-          $ty:act *$id:acts = container_of($id:actg, $id:act', act);
+        $ty:act_t *$id:(enter_ actname)($params:params) {
+          $ty:act_t *$id:actg = $id:enter(sizeof($ty:act),
+                                          $id:(step_ actname),
+                                          $id:caller,
+                                          $id:priority,
+                                          $id:depth);
+
+          $ty:act *$id:acts = $id:container_of($id:actg, $id:act', $id:act_member);
 
           /* Assign parameters */
-          $stms:(concatMap initParam args)
+          $stms:(concatMap initParam $ genArgs args)
 
           /* Initialize triggers */
-          $stms:(map initTrig [1..ts])
+          $stms:(map initTrig $ genTrigs trigs)
 
           return $id:actg;
         }
@@ -275,40 +298,50 @@ genEnter = do
 
 This function just defines the function definition and switch statement that
 wraps the statements of the procedure. The heavy lifting is performed by
-'genExpr'.
+'genExpr'.(L.Var n (L.TBuiltin (L.Arrow _ _))) =
 -}
 genStep :: TR (C.Definition, C.Definition)
 genStep = do
   actName   <- gets fnName
   actBody   <- gets fnBody
-  _         <- nextCase -- Toss away 0th case
+  firstCase <- nextCase
   (_, stms) <- genExpr actBody -- Toss away return value
-  -- ls        <- gets locals
   let act  = [cty|typename $id:actt|]
       actt = act_ actName -- hack to use this typename as expr in macros
-      step = step_ actName
 
       -- | Dequeue any outstanding event on a reference
+      -- TODO: move this responsibility to Drop
       -- dequeue :: (L.VarId, Type) -> C.BlockItem
       -- dequeue (n, _) = [citem|$id:unsched_event(&$id:acts->$id:n.sv);|]
   return
-    ( [cedecl|void $id:step($ty:act_t *$id:actg);|]
+    ( [cedecl|void $id:(step_ actName)($ty:act_t *$id:actg);|]
     , [cedecl|
-        void $id:step($ty:act_t *$id:actg) {
-          $ty:act *$id:acts = container_of($id:actg, $id:actt, act);
+        void $id:(step_ actName)($ty:act_t *$id:actg) {
+          $ty:act *$id:acts =
+            $id:container_of($id:actg, $id:actt, $id:act_member);
 
-          switch ($id:actg->pc) {
-          case 0:;
+          switch ($id:actg->$id:pc) {
+          case $int:firstCase:;
             $items:stms
 
           default:
             break;
           }
-        $id:leaveLabel:;
-          $id:act_leave($id:actg, sizeof($ty:act));
+        $id:leave_cleanup:;
+          $id:leave($id:actg, sizeof($ty:act));
         }
       |]
     )
+
+-- | Helper to generate yield point in step function.
+genYield :: TR [C.BlockItem]
+genYield = do
+  next <- nextCase
+  return [citems|
+    $id:actg->$id:pc = $int:next;
+    return;
+    case $int:next:;
+    |]
 
 -- TODO: we currently don't do anything to differentiate between when
 -- a Var is a top-level reference vs when it is a local variable. Here
@@ -318,57 +351,47 @@ genExpr :: Expr -> TR (C.Exp, [C.BlockItem])
 genExpr (L.Var n (L.TBuiltin (L.Arrow _ _))) =
   -- Any identifiers of L.Arrow type must refer to a (global) function, so we
   -- just return a handle to its enter function.
-  return ([cexp|$id:(enter_ $ ident n)|], [])
+  return ([cexp|$id:(enter_ n)|], [])
 genExpr (L.Var n _) = do
-  ls <- gets locals
-  as <- gets fnArgs
-  -- Check if the identifier is a local or a global variable.
-  case lookup (ident n) (ls ++ as) of
-    Just _ -> -- Local variables are stored in the activation record
-      return ([cexp|&$id:acts->$id:(ident n)|], [])
-    Nothing -> -- Who knows how to access global variables (yet)
-      todo
+  isLocal <- isLocalVar n
+  if isLocal then return ([cexp|$id:acts->$id:n|], []) else todo
 genExpr (L.Data _ _             ) = nope
 genExpr (L.Lit  l t             ) = genLiteral l t
-genExpr (L.Let [(Just n, v)] b _) = do
-  addLocal (ident n, genType $ L.typeExpr v)
-  (defVal, defStms) <- genExpr v
-  let var = ident n
-      defBlock = [citems|
-          $items:defStms
-          $id:(initialize_ $ typeIdent $ L.typeExpr v)(&$id:acts->$id:var);
-          $id:acts->$id:var.$id:value = $exp:defVal;
-        |]
+genExpr (L.Let [(Just n, d)] b _) = do
+  addLocal (n, L.typeExpr d)
+  (defVal, defStms) <- genExpr d
+  let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
   (bodyVal, bodyStms) <- genExpr b
-  return (bodyVal, defBlock ++ bodyStms)
+  return (bodyVal, defStms ++ defInit ++ bodyStms)
+genExpr (L.Let [(Nothing, d)] b _) = do
+  (_      , defStms ) <- genExpr d -- Throw away value
+  (bodyVal, bodyStms) <- genExpr b
+  return (bodyVal, defStms ++ bodyStms)
 genExpr L.Let{}          = error "Cannot handle mutually recursive bindings"
 genExpr a@(L.App _ _ ty) = do
-  let (fn, as) = L.collectApp a
-  (fnEnter, fnStms ) <- genExpr fn
-  (argVals, argStms) <- unzip <$> mapM genExpr as
-  tmp                <- nextTmp $ ctype $ sv_ $ typeIdent ty
-  yield              <- genYield
-  let call = [citems|
-          $id:(initialize_ $ typeIdent ty)(&$id:acts->$id:tmp);
-          $id:activate($exp:fnEnter($args:argVals, &$id:acts->$id:tmp));
-        |]
-      unsched = [citems|$id:unsched_event(&$id:acts->$id:tmp.sv);|]
-  return
-    ( [cexp|$id:acts->$id:tmp|]
-    , fnStms ++ concat argStms ++ call ++ yield ++ unsched
-    )
+  let (fn, args) = L.collectApp a
+  (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
+  tmpName                       <- nextTmp ty
+  yield                         <- genYield
+  let tmp = [cexp|$id:acts->$id:tmpName|]
+      enterArgs =
+        [[cexp|$id:actg|], [cexp|$id:actg->$id:priority|]]
+          ++ argVals
+          ++ [[cexp|&$exp:tmp|]]
+      call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
+  return (tmp, concat evalStms ++ call ++ yield)
 genExpr L.Match{}       = nope
 genExpr L.Lambda{}      = error "Cannot handle lambdas"
 genExpr (L.Prim p es t) = genPrim p es t
 
 genPrim :: Primitive -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
-genPrim L.New [e, _] _ = do
+genPrim L.New [e, _] refType = do
   (val, stms) <- genExpr e
-  let sv_type = ctype $ sv_ $ typeIdent $ L.typeExpr e
-  tmp <- nextTmp [cty|$ty:sv_type *|]
+  tmp         <- nextTmp refType
   let alloc = [citems|
-          $id:acts->$id:tmp = malloc(sizeof($ty:sv_type));
-          *$id:acts->$id:tmp = $exp:val;
+          $id:acts->$id:tmp = malloc(sizeof(*$id:acts->$id:tmp));
+          $exp:(genInit refType)($id:acts->$id:tmp);
+          *$id:acts->$id:tmp.$id:value = $exp:val;
         |]
   return ([cexp|$id:acts->$id:tmp|], stms ++ alloc)
 genPrim L.Deref [a] _ = do
@@ -380,11 +403,11 @@ genPrim L.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
   -- TODO: handle event type
-  let Just lhsTy = L.deref $ L.typeExpr lhs
-      assignBlock = [citems|
+  let assignBlock = [citems|
           $items:lhsStms
           $items:rhsStms
-          $id:(assign_ $ typeIdent lhsTy)($exp:lhsVal, $id:actg->$id:priority, $exp:rhsVal);
+          $exp:(genAssign $ L.typeExpr lhs)
+            ($exp:lhsVal, $id:actg->$id:priority, $exp:rhsVal);
         |]
   return (unit, assignBlock)
 genPrim L.After [time, lhs, rhs] _ = do
@@ -392,43 +415,48 @@ genPrim L.After [time, lhs, rhs] _ = do
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
   -- TODO: handle event type
-  let Just lhsTy = L.deref $ L.typeExpr lhs
-      laterBlock = [citems|
+  let laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $id:(later_ $ typeIdent lhsTy)
+          $exp:(genLater $ L.typeExpr lhs)
             ($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
         |]
   return (unit, laterBlock)
 genPrim L.Fork procs _ = do
   yield <- genYield
   let
-    depthSub =
-      (ceiling $ logBase (2 :: Double) $ fromIntegral $ length procs) :: Int
-    newDepth = [cexp|actg->depth - $int:depthSub|]
+    numChildren = length procs
+    forkArgs    = genForkArgs
+      numChildren
+      ([cexp|$id:actg->$id:priority|], [cexp|$id:actg->$id:depth|])
     checkNewDepth = [citems|
-                        if ($id:actg->$id:depth < $int:depthSub)
+                        if ($id:actg->$id:depth < $exp:(depthSub numChildren))
                           $id:throw($id:exhausted_priority);
                       |]
 
-    genActivate :: (Int, Expr) -> TR ([C.BlockItem], C.BlockItem)
-    genActivate (i, L.App (L.Var var _) a _) = do
-      (arg, argStms) <- genExpr a
-      let args =
-            [ [cexp|$id:actg|]
-            , [cexp|$id:actg->$id:priority + $int:i * (1 << $exp:newDepth)|]
-            , arg
-            ]
+    genActivate
+      :: ((C.Exp, C.Exp), Expr) -> TR (C.Exp, [C.BlockItem], C.BlockItem)
+    genActivate ((prioArg, depthArg), a@(L.App _ _ ty)) = do
+      let (fn, args) = L.collectApp a
+      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
+      tmpName                       <- nextTmp ty
+      let tmp = [cexp|$id:acts->$id:tmpName|]
+          enterArgs =
+            [[cexp|$id:actg|], prioArg, depthArg]
+              ++ argVals
+              ++ [[cexp|&$exp:tmp|]]
       return
-        (argStms, [citem|$id:activate($id:(enter_ $ ident var)($args:args));|])
+        ( tmp
+        , concat evalStms
+        , [citem|$id:activate($exp:fnEnter($args:enterArgs));|]
+        )
     -- For now, we only support forking expressions that have a top-level
     -- application (i.e., no thunks), whose left operand is a var.
     genActivate _ = nope
 
-  (evals, activates) <- unzip <$> mapM genActivate (zip [0 ..] procs)
-  return (unit, checkNewDepth ++ concat evals ++ activates ++ yield)
--- For forks, we expect that every argument is some kind of application
+  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip forkArgs procs)
+  return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
 genPrim L.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   addWait $ length varVals
@@ -444,22 +472,22 @@ genPrim L.Loop [b] _ = do
 genPrim L.Break  []  _ = return (undef, [citems|break;|])
 genPrim L.Return [e] _ = do
   (val, stms) <- genExpr e
-  retTy       <- returnType
   -- Assign to return argument and jump to leave
   let retBlock = [citems|
-                    $id:(assign_ $ typeIdent retTy)
-                      ($id:acts->$id:ret, $id:actg->$id:priority, $exp:val);
-                    goto $id:leaveLabel;
+                    $id:acts->$id:ret_val = $exp:val;
+                    goto $id:leave_cleanup;
                  |]
   return (undef, stms ++ retBlock)
 genPrim (L.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = error "Unsupported Primitive or wrong number of arguments"
 
+-- | Generate C value for SSM literal.
 genLiteral :: Literal -> Type -> TR (C.Exp, [C.BlockItem])
 genLiteral (L.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
 genLiteral (L.LitBool     True ) _ = return ([cexp|true|], [])
 genLiteral (L.LitBool     False) _ = return ([cexp|false|], [])
 
+-- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
 genPrimOp L.PrimAdd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
@@ -515,19 +543,16 @@ genBinop lhs rhs = do
   (rhsVal, rhsStms) <- genExpr rhs
   return (lhsVal, rhsVal, lhsStms ++ rhsStms)
 
-genYield :: TR [C.BlockItem]
-genYield = do
-  next <- nextCase
-  return [citems|
-    $id:actg->$id:pc = $int:next;
-    return;
-    case $int:next:;
-    |]
+-- | Compute priority and depth arguments for a fork of width 'numChildren'.
+genForkArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
+genForkArgs numChildren (currentPrio, currentDepth) =
+  [ let p = [cexp|$exp:currentPrio + ($int:(i-1) * (1 << $exp:d))|]
+        d = [cexp|$exp:currentDepth - $exp:(depthSub numChildren)|]
+    in  (p, d)
+  | i <- [1 .. numChildren]
+  ]
 
--- | The unit value, the singleton inhabitant of the type Unit.
-unit :: C.Exp
-unit = [cexp|0|]
-
--- | Undefined "value", the fake value used for expressions of type Void.
-undef :: C.Exp
-undef = [cexp|0xdeadbeef|]
+-- | How much the depth should be decreased when forking 'numChildren'.
+depthSub :: Int -> C.Exp
+depthSub numChildren = [cexp|$int:ds|]
+  where ds = ceiling $ logBase (2 :: Double) $ fromIntegral numChildren :: Int

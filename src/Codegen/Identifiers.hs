@@ -1,88 +1,95 @@
 -- | Identifiers in generated C code and helper functions for constructing them.
 {-# LANGUAGE QuasiQuotes #-}
-module Codegen.Identifiers
-  ( -- * Type aliases
-    CIdent
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
+module Codegen.Identifiers where
 
-      -- * Identifiers recognized by the C runtime system.
-  , initialize_program
-  , initialize_static_input_device
-  , initialize_static_output_device
-  , top_return
-  , top_parent
-  , activate
-  , act_enter
-  , act_leave
-  , event_on
-  , sensitize
-  , desensitize
-  , unsched_event
-  , throw
-  , exhausted_priority
-  , now
-  , never
-
-      -- * Type names recognized by the the C runtime system.
-  , time_t
-  , trigger_t
-  , priority_t
-  , depth_t
-  , stepf_t
-  , act_t
-  , sv_t
-      {- | These are (a subset of the) types that the runtime system includes and uses
-      internally. These are just the ones that the code generator needs to talk about. -}
-  , bool_t
-
-      -- * Constructing Identifiers from strings
-      -- | These functions create identifiers from some known [pre|suf]fix.
-  , act_
-  , step_
-  , enter_
-  , trig_
-  , pc
-  , depth
-  , priority
-
-      -- * Constructing SSM time macros from SSMTimeUnit
-  --, units_
-
-      -- * Constructing Identifiers from types
-      {- | Some identifiers need to be prefixed or suffixed with some type information,
-      such as @later_int@, @later_bool@ etc. We create identifiers like these and others
-      by using these functions. -}
-  , sv_
-  , initialize_
-  , assign_
-  , later_
-  , value
-  , root_priority
-  , root_depth
-
-    -- * Debug-/trace-specific macros
-  , debug_microtick
-  , debug_trace
-
-    -- * Accessing references
-    {- | These functions help the code generator compile a reference into a
-    C-expression that references the same reference. -}
-  -- , refPtr
-  -- , refVal
-  -- , refSV
-  ) where
-
+import           Language.C.Quote               ( ToIdent(..) )
 import           Language.C.Quote.GCC           ( cty )
 import qualified Language.C.Syntax             as C
 
-import           Common.Identifiers             ( VarId
-                                                , ident
+import           Common.Identifiers             ( Identifiable(..)
+                                                , Identifier(..)
+                                                , VarId(..)
+                                                , fromId
                                                 )
 
--- | Use snake_case for c literals
-{-# ANN module "HLint: ignore Use camelCase" #-}
+import           Data.String                    ( IsString(..) )
 
--- | Type alias for C identifiers.
-type CIdent = String
+-- | Use snake_case for c literals
+{-# ANN module ("HLint: ignore Use camelCase"::String) #-}
+
+-- | Identifiers in C.
+newtype CIdent = CIdent Identifier
+  deriving Eq
+  deriving IsString via Identifier
+  deriving Identifiable via Identifier
+  deriving ToIdent via Identifier
+  deriving Semigroup via Identifier
+  deriving Monoid via Identifier
+
+-- | Construct a type name from a C identifier.
+ctype :: CIdent -> C.Type
+ctype i = [cty|typename $id:i|]
+
+{----- libssm Types -----}
+
+-- | C type that represents model time
+time_t :: C.Type
+time_t = [cty|typename ssm_time_t|]
+
+-- | C type that represents process priorities
+priority_t :: C.Type
+priority_t = [cty|typename ssm_priority_t|]
+
+-- | C type that represents process depths
+depth_t :: C.Type
+depth_t = [cty|typename ssm_depth_t|]
+
+-- | C type that represents triggers, aka processes that are sensitized on variables
+trigger_t :: C.Type
+trigger_t = [cty|struct ssm_trigger|]
+
+-- | C type that represents the step function of a process
+stepf_t :: C.Type
+stepf_t = [cty|typename ssm_stepf_t|]
+
+-- | C type that represents booleans
+bool_t :: C.Type
+bool_t = [cty|typename bool|]
+
+-- | The type of the activation record base class.
+act_t :: C.Type
+act_t = [cty|struct ssm_act|]
+
+-- | Name of the program counter field in an 'act_t'.
+pc :: CIdent
+pc = "pc"
+
+-- | Name of the caller field in an 'act_t'.
+caller :: CIdent
+caller = "caller"
+
+-- | Name of the depth field in an 'act_t'.
+depth :: CIdent
+depth = "depth"
+
+-- | Name of the priority field in an 'act_t'.
+priority :: CIdent
+priority = "priority"
+
+-- | The type of the scheduled variable base class.
+sv_t :: C.Type
+sv_t = [cty|struct sv|]
+
+-- | The conventional name of the payload field in a type-specialized SV.
+value :: CIdent
+value = "value"
+
+{- libssm Symbols -}
+
+container_of :: CIdent
+container_of = "container_of"
 
 -- | Name of top level program initialization function
 initialize_program :: CIdent
@@ -109,12 +116,12 @@ activate :: CIdent
 activate = "ssm_activate"
 
 -- | Name of routine that initialized an activation record
-act_enter :: CIdent
-act_enter = "ssm_enter"
+enter :: CIdent
+enter = "ssm_enter"
 
 -- | Name of routine that deallocates an activation record
-act_leave :: CIdent
-act_leave = "ssm_leave"
+leave :: CIdent
+leave = "ssm_leave"
 
 -- | Name of routine that checks if a reference has been written to
 event_on :: CIdent
@@ -140,6 +147,12 @@ now = "ssm_now"
 never :: CIdent
 never = "SSM_NEVER"
 
+root_priority :: CIdent
+root_priority = "SSM_ROOT_PRIORITY"
+
+root_depth :: CIdent
+root_depth = "SSM_ROOT_DEPTH"
+
 -- | Name of macro that throws an error.
 throw :: CIdent
 throw = "SSM_THROW"
@@ -148,95 +161,76 @@ throw = "SSM_THROW"
 exhausted_priority :: CIdent
 exhausted_priority = "SSM_EXHAUSTED_PRIORITY"
 
--- | C type that represents model time
-time_t :: C.Type
-time_t = [cty|typename ssm_time_t|]
-
--- | C type that represents process priorities
-priority_t :: C.Type
-priority_t = [cty|typename ssm_priority_t|]
-
--- | C type that represents process depths
-depth_t :: C.Type
-depth_t = [cty|typename ssm_depth_t|]
-
--- | C type that represents triggers, aka processes that are sensitized on variables
-trigger_t :: C.Type
-trigger_t = [cty|struct ssm_trigger|]
-
--- | C type that represents the step function of a process
-stepf_t :: C.Type
-stepf_t = [cty|typename ssm_stepf_t|]
-
--- | C type that represents booleans
-bool_t :: C.Type
-bool_t = [cty|typename bool|]
-
-{---- Activation record identifiers ----}
-
--- | The type of the activation record base class.
-act_t :: C.Type
-act_t = [cty|struct ssm_act|]
-
--- | Obtain the name of the activation record struct for a routine.
-act_ :: CIdent -> CIdent
-act_ routineName = "act_" ++ routineName ++ "_t"
-
--- | Obtain the name of the step function of a routine.
-step_ :: CIdent -> CIdent
-step_ routineName = "step_" ++ routineName
-
--- | Obtain the name for the enter function of a routine.
-enter_ :: CIdent -> CIdent
-enter_ routineName = "enter_" ++ routineName
-
--- | Obtain the name of each trigger for a routine.
-trig_ :: Int -> CIdent
-trig_ i = "trig" ++ show i
-
-pc :: CIdent
-pc = "pc"
-
-depth :: CIdent
-depth = "depth"
-
-priority :: CIdent
-priority = "priority"
-
-{---- Type identifiers ----}
-
--- | The type of the scheduled variable base class.
-sv_t :: C.Type
-sv_t = [cty|struct sv|]
-
--- | Obtain the name of the scheduled variable type for an SSM `Type`.
-sv_ :: CIdent -> CIdent
-sv_ ty = "ssm_" ++ ty ++ "_t"
-
--- | Obtain the name of the initialize method for an SSM `Type`.
-initialize_ :: CIdent -> CIdent
-initialize_ ty = "ssm_initialize_" ++ ty
-
--- | Obtain the name of the assign method for an SSM `Type`.
-assign_ :: CIdent -> CIdent
-assign_ ty = "ssm_assign_" ++ ty
-
--- | Obtain the name of the later method for an SSM `Type`.
-later_ :: CIdent -> CIdent
-later_ ty = "ssm_later_" ++ ty
-
--- | Name of the field in an SV that holds the payload.
-value :: CIdent
-value = "value"
-
-debug_microtick :: CIdent
-debug_microtick = "SSM_DEBUG_MICROTICK"
-
+-- | Insert debug trace
 debug_trace :: CIdent
 debug_trace = "SSM_DEBUG_TRACE"
 
-root_priority :: CIdent
-root_priority = "SSM_ROOT_PRIORITY"
+-- | Used for inserting
+debug_microtick :: CIdent
+debug_microtick = "SSM_DEBUG_MICROTICK"
 
-root_depth :: CIdent
-root_depth = "SSM_ROOT_DEPTH"
+{---- Activation record identifiers ----}
+
+-- | Obtain the name of the activation record struct for a routine.
+act_ :: VarId -> CIdent
+act_ routineName = "act_" <> fromId routineName <> "_t"
+
+-- | Obtain the name of the step function of a routine.
+step_ :: VarId -> CIdent
+step_ routineName = "step_" <> fromId routineName
+
+-- | Obtain the name for the enter function of a routine.
+enter_ :: VarId -> CIdent
+enter_ routineName = "enter_" <> fromId routineName
+
+-- | Obtain the name of each trigger for a routine.
+trig_ :: Int -> CIdent
+trig_ i = "__trig_" <> fromString (show i)
+
+tmp_ :: Int -> CIdent
+tmp_ i = "__tmp_" <> fromString (show i)
+
+arg_ :: Int -> CIdent
+arg_ i = "__arg_" <> fromString (show i)
+
+-- | Label in the step function where cleanup is performed before leaving.
+leave_cleanup :: CIdent
+leave_cleanup = "__leave_cleanup"
+
+-- | Identifier for specialized (outer) struct act.
+acts :: CIdent
+acts = "acts"
+
+-- | Identifier for generic (inner) struct act.
+actg :: CIdent
+actg = "actg"
+
+-- | Identifier for act member in act struct.
+act_member :: CIdent
+act_member = "act"
+
+-- | Name of return argument.
+ret_val :: CIdent
+ret_val = "__return_val"
+
+{---- Type identifiers ----}
+
+-- | Name of the scheduled variable type for an SSM `Type`.
+sv_ :: Identifiable a => a -> CIdent
+sv_ ty = "ssm_" <> fromId ty <> "_t"
+
+-- | Name of the initialize method for an SSM `Type`.
+initialize_ :: Identifiable a => a -> CIdent
+initialize_ ty = "ssm_initialize_" <> fromId ty
+
+-- | Name of the assign method for an SSM `Type`.
+assign_ :: Identifiable a => a -> CIdent
+assign_ ty = "ssm_assign_" <> fromId ty
+
+-- | Name of the later method for an SSM `Type`.
+later_ :: Identifiable a => a -> CIdent
+later_ ty = "ssm_later_" <> fromId ty
+
+-- | Name of the generic ssm_sv_t embedded inside of a scheduled variable type.
+sv :: CIdent
+sv = "sv"
