@@ -30,6 +30,8 @@ library:
   - array
   - mtl
   - containers
+  - language-c-quote
+  - srcloc
 
 executables:
   sslc:

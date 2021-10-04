@@ -48,7 +48,6 @@ import Ast
   string  { Token _ (TString $$) }
   op      { Token _ (TOp $$) }
   id      { Token _ (TId $$) }
-  duration { Token _ (TDuration $$) }
 
 %left ';' -- Helps with if-then-else
 %nonassoc NOELSE 'else'
@@ -110,7 +109,6 @@ apply : apply aexpr { Apply $1 $2 }
 
 aexpr : int             { Literal (IntLit $1) }
       | string          { Literal (StringLit $1) }
-      | duration        { Literal (DurLit $1) }
       | id              { Id $1 }
       | '_'             { Wildcard }
       | '(' expr ')'    { $2 }
