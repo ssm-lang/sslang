@@ -77,19 +77,19 @@ optFormals : formals       { $1 }
 formals : formalTop         { [$1] }
         | formalTop formals { $1 : $2 }
 
-formalTop : id                    { Bind $1 Nothing }
-          | '_'                   { Bind "_" Nothing }
-          | '(' ')'               { Bind "()" Nothing }
+formalTop : formalAtomic          { Bind $1 Nothing }
           | '(' formalOrTuple ')' { $2 }
 
 formalOrTuple : formal                  { $1 }
               | formal ',' tupleFormals { TupBind ($1 : $3) Nothing }
 
 formal : '(' formal ')'                          { $2 }
-       | id optType                              { Bind $1 $2 }
-       | '_' optType                             { Bind "_" $2 }
-       | '(' ')' optType                         { Bind "()" $3 }
+       | formalAtomic optType                    { Bind $1 $2 }
        | '(' formal ',' tupleFormals ')' optType { TupBind ($2 : $4) $6 }
+
+formalAtomic : id      { $1 }
+             | '_'     { "_" }
+             | '(' ')' { "()" }
 
 tupleFormals : formal                  { [$1] }
              | formal ',' tupleFormals { $1 : $3 }
