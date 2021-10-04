@@ -2,7 +2,6 @@ module Ast where
 
 import Prettyprinter
 import Prelude hiding ( (<>), id )
-import Duration
 
 -- | A type variable name (e.g., a, b)
 type TVarId = String
@@ -37,7 +36,6 @@ data Ty = TCon TConId
 
 data Lit = IntLit Integer
          | StringLit String
-         | DurLit Duration
          | RatLit Rational
          | CharLit Char
 
@@ -121,7 +119,6 @@ instance Pretty Ty where
 instance Pretty Lit where
   pretty (IntLit i) = pretty i
   pretty (StringLit s) = pretty '"' <> pretty s <> pretty '"'
-  pretty (DurLit d) = pretty $ show d
   pretty (RatLit r) = pretty $ show r
   pretty (CharLit c) = pretty '\'' <> pretty c <> pretty '\''
 
