@@ -5,7 +5,9 @@
 module Codegen.Identifiers where
 
 import           Language.C.Quote               ( ToIdent(..) )
-import           Language.C.Quote.GCC           ( cty )
+import           Language.C.Quote.GCC           ( cexp
+                                                , cty
+                                                )
 import qualified Language.C.Syntax             as C
 
 import           Common.Identifiers             ( Identifiable(..)
@@ -31,6 +33,10 @@ newtype CIdent = CIdent Identifier
 -- | Construct a type name from a C identifier.
 ctype :: CIdent -> C.Type
 ctype i = [cty|typename $id:i|]
+
+-- | Construct an expression from a C identifier.
+cexpr :: CIdent -> C.Exp
+cexpr i = [cexp|$id:i|]
 
 {----- libssm Types -----}
 
@@ -234,3 +240,13 @@ later_ ty = "ssm_later_" <> fromId ty
 -- | Name of the generic ssm_sv_t embedded inside of a scheduled variable type.
 sv :: CIdent
 sv = "sv"
+
+{----- Memory management -----}
+
+-- | Allocate memory.
+mem_alloc :: CIdent
+mem_alloc = "malloc"
+
+-- | Free memory.
+mem_free :: CIdent
+mem_free = "free"

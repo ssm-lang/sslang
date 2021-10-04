@@ -15,14 +15,17 @@ module IR.IR
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
+                                                , TConId(..)
                                                 , VarId(..)
                                                 )
+
+import           Types.TypeSystem               ( TypeDef(..) )
 
 -- | Top-level compilation unit.
 data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
-  -- TODO: type defs.
+  , typeDefs     :: [(TConId, TypeDef t)]
   }
 
 {- | Literal values supported by the language.
@@ -30,7 +33,7 @@ data Program t = Program
 Note that these don't carry any connotation of type: '1' just means '1', 
 -}
 data Literal
-  = LitIntegral Int
+  = LitIntegral Integer
   | LitBool Bool
 
 {- | Primitive operations.
@@ -88,7 +91,7 @@ data Primitive
   | After
   {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
   | Fork
-  {- ^ 'Fork ps+' forks processes in 'ps' concurrently. -}
+  {- ^ 'Fork es+' evaluates expressions 'es' concurrently. -}
   | Wait
   {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
   | Loop

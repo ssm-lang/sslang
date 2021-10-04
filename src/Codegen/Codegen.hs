@@ -1,19 +1,33 @@
--- | Translate SSM program to C compilation unit.
---
--- Each procedure in a program is turned into three components:
---
--- 1) A struct (the activation record)
--- 2) An initialization function (the enter function)
--- 3) A step function, which corresponds to the actual procedure body
+{- | Translate SSM program to C compilation unit.
 
+What is expected of the IR:
+
+- Well-formed: All primitive functions are applied to the right number of
+  arguments.
+
+- Fully-applied: All applications are fully-applied; the only time a term of
+  type a -> b appears anywhere is on the left-hand side of an application.
+
+- Defunctionalized: No lambdas/closures; the only kinds of terms with an arrow
+  type are variables.
+
+- Name mangled: All variable identifiers are unique.
+
+-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia #-}
-
 module Codegen.Codegen where
 
+import           Common.Identifiers             ( fromId )
+import qualified IR.IR                         as L
+import qualified Types.Flat                    as L
+import qualified Types.TypeSystem              as L
+
+import           Codegen.Identifiers
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
+
 
 import           Control.Monad.Except           ( ExceptT(..)
                                                 , MonadError(..)
@@ -26,22 +40,17 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Data.Maybe                     ( isJust )
 
-import           Codegen.Identifiers
-import           Common.Identifiers             ( fromId )
-import           Data.Maybe                     ( fromJust
-                                                , isJust
-                                                )
-import qualified IR.IR                         as L
-import qualified Types.Flat                    as L
-import qualified Types.TypeSystem              as L
-
+-- | Possible, but temporarily punted for the sake of expediency.
 todo :: a
 todo = error "Not yet implemented"
 
+-- | Impossible without a discussion about implementation strategy.
 nope :: a
 nope = error "Not yet supported"
 
+{- Some convenience type aliases -}
 type Type = L.Type
 type Program = L.Program Type
 type Expr = L.Expr Type
@@ -52,92 +61,92 @@ type TypeDef = L.TypeDef Type
 type VarId = L.VarId
 type Binder = L.Binder
 
-{- Notes about what is expected of the IR:
+-- | Types of compiler errors that can be thrown during codegen.
+newtype CodegenError
+  = CodegenErrorMsg String  -- ^ Internal compiler error; shouldn't be reachable
 
-- All primitive functions are applied to the right number of arguments.
-- All applications are fully-applied; the only time a term of type a -> b
-  appears anywhere is on the left-hand side of an application.
-- No closures; the only kinds of terms that may appear on the left side of an
-  application is a Var or another application.
--}
-
-{- | State maintained while compiling a 'Procedure'.
+{- | State maintained while compiling a top-level SSM function.
 
 The information here is populated while generating the step function, so that
 should be computed first, before this information is used to generate the act
 struct and enter definitions.
 -}
-data TRState = TRState
-  { fnName   :: VarId
-  , fnArgs   :: [(Binder, Type)]
-  , fnRetTy  :: Type
-  , fnLocs   :: [(VarId, Type)]
-  , fnBody   :: Expr
-  , caseNum  :: Int
-  , maxWaits :: Int
-  , tmpNum   :: Int
+data GenFnState = GenFnState
+  { fnName     :: VarId             -- ^ Function name
+  , fnParams   :: [(Binder, Type)]  -- ^ Function parameters
+  , fnRetTy    :: Type              -- ^ Function return type
+  , fnBody     :: Expr              -- ^ Function body
+  , fnLocs     :: [(VarId, Type)]   -- ^ Function local variables
+  , fnMaxWaits :: Int               -- ^ Number of triggers needed for waiting
+  , fnCases    :: Int               -- ^ Yield point counter
+  , fnTmps     :: Int               -- ^ Temporary variable name counter
   }
 
-data CompileError = CompileErrorMsg String | CompileErrorOther
+{- | Translation monad for procedures, with derived typeclass instances.
 
--- | Translation monad.
-newtype TR a = TR (ExceptT CompileError (State TRState) a)
-  deriving Functor                    via (ExceptT CompileError (State TRState))
-  deriving Applicative                via (ExceptT CompileError (State TRState))
-  deriving Monad                      via (ExceptT CompileError (State TRState))
-  deriving (MonadError CompileError)  via (ExceptT CompileError (State TRState))
-  deriving (MonadState TRState)       via (ExceptT CompileError (State TRState))
+We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
+allowing us to use monadic pattern matching.
+-}
+newtype GenFn a = GenFn (ExceptT CodegenError (State GenFnState) a)
+  deriving Functor                    via (ExceptT CodegenError (State GenFnState))
+  deriving Applicative                via (ExceptT CodegenError (State GenFnState))
+  deriving Monad                      via (ExceptT CodegenError (State GenFnState))
+  deriving (MonadError CodegenError)  via (ExceptT CodegenError (State GenFnState))
+  deriving (MonadState GenFnState)    via (ExceptT CodegenError (State GenFnState))
+instance MonadFail GenFn where
+  fail = throwError . CodegenErrorMsg
 
-instance MonadFail TR where
-  fail = throwError . CompileErrorMsg
-
--- | Run a TR computation on a procedure.
-runTR
+-- | Run a GenFn computation on a procedure.
+runGenFn
   :: VarId                  -- ^ Name of procedure
-  -> [(Binder, Type)]       -- ^ Names and types of arguments to procedure
+  -> [(Binder, Type)]       -- ^ Names and types of parameters to procedure
   -> Type                   -- ^ Name and type of return parameter of procedure
   -> Expr                   -- ^ Body of procedure
-  -> TR a                   -- ^ Translation monad to run
-  -> Either CompileError a  -- ^ Compilation may fail
-runTR name args ret body (TR tra) = evalState (runExceptT tra) $ TRState
-  { fnName   = name
-  , fnArgs   = args
-  , fnRetTy  = ret
-  , fnBody   = body
-  , caseNum  = 0
-  , fnLocs   = []
-  , maxWaits = 0
-  , tmpNum   = 0
-  }
+  -> GenFn a                -- ^ Translation monad to run
+  -> Either CodegenError a  -- ^ Compilation may fail
+runGenFn name params ret body (GenFn tra) =
+  evalState (runExceptT tra) $ GenFnState { fnName     = name
+                                          , fnParams   = params
+                                          , fnRetTy    = ret
+                                          , fnBody     = body
+                                          , fnLocs     = []
+                                          , fnMaxWaits = 0
+                                          , fnCases    = 0
+                                          , fnTmps     = 0
+                                          }
 
--- | Read and increment the number of cases in a procedure, i.e., caseNum++.
-nextCase :: TR Int
+-- | Read and increment the number of cases in a procedure, i.e., fnCases++.
+nextCase :: GenFn Int
 nextCase = do
-  n <- gets caseNum
-  modify $ \st -> st { caseNum = n + 1 }
+  n <- gets fnCases
+  modify $ \st -> st { fnCases = n + 1 }
   return n
 
--- | Register a local variable for which an sv should be allocated.
-addLocal :: (VarId, Type) -> TR ()
+-- | Register a local variable, to be declared in activation record.
+addLocal :: (VarId, Type) -> GenFn ()
 addLocal l = modify $ \st -> st { fnLocs = l : fnLocs st }
 
--- | Register a name to be waited on
-addWait :: Int -> TR ()
-addWait n = modify $ \st -> st { maxWaits = n `max` maxWaits st }
+-- | Register number of wait statements track of number of triggers needed.
+maxWait :: Int -> GenFn ()
+maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
 
--- | Read and increment the number of temporaries allocated, i.e., tmpNum++
-nextTmp :: Type -> TR VarId
+-- | Allocate a temp variable of given 'Type', registered as a local variable.
+nextTmp :: Type -> GenFn VarId
 nextTmp ty = do
-  t <- fromId . tmp_ <$> gets tmpNum -- TODO: get rid of fromId
-  modify $ \st -> st { tmpNum = tmpNum st + 1 }
+  t <- fromId . tmp_ <$> gets fnTmps
+  modify $ \st -> st { fnTmps = fnTmps st + 1 }
   addLocal (t, ty)
   return t
 
-isLocalVar :: VarId -> TR Bool
+{- | Determines whether the given 'VarId' can be found in the activation record.
+
+Returns true iff 'name' appears as local variable or as a parameter.
+-}
+isLocalVar :: VarId -> GenFn Bool
 isLocalVar name = do
-  args <- gets fnArgs
-  locs <- gets fnLocs
-  return $ isJust (lookup (Just name) args) || isJust (lookup name locs)
+  params <- gets fnParams
+  locs   <- gets fnLocs
+  return $ isJust (lookup (Just name) params) || isJust (lookup name locs)
 
 {-------- Type compilation --------}
 
@@ -145,12 +154,14 @@ isLocalVar name = do
 ptrs_ :: L.Type -> C.Type -> C.Type
 ptrs_ (L.TBuiltin (L.Ref _)) t = [cty|$ty:t *|]
 ptrs_ _                      t = t
--- ^ TODO: this does not handle nested pointers
+-- ^ TODO: this does not handle stacked pointers
 
+-- | Obtains the C type name corresponding to an SSM type.
 typeId :: Type -> CIdent
 typeId (L.TCon     t ) = fromId t
 typeId (L.TBuiltin bt) = builtinId bt
 
+-- | Obtains the C type name corresponding to an SSM built-in type.
 builtinId :: L.Builtin Type -> CIdent
 builtinId L.Unit        = todo
 builtinId L.Void        = todo
@@ -158,32 +169,34 @@ builtinId (L.Arrow _ _) = todo
 builtinId (L.Tuple _  ) = todo
 builtinId (L.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
 
+-- | Translate an SSM 'Type' to a 'C.Type'.
 genType :: Type -> C.Type
 genType typ = ptrs_ typ $ ctype $ typeId typ
 
-genInit :: Type -> C.Exp
-genInit ty = [cexp|$id:(initialize_ $ typeId $ fromJust $ L.deref ty)|]
+-- | Obtain the initialize method for a given SSM scheduled variable 'Type'.
+genInit :: Type -> Maybe C.Exp
+genInit ty = cexpr . initialize_ . typeId <$> L.deref ty
 
-genAssign :: Type -> C.Exp
-genAssign ty = [cexp|$id:(assign_ $ typeId $ fromJust $ L.deref ty)|]
+-- | Obtain the assign method for a given SSM scheduled variable 'Type'.
+genAssign :: Type -> Maybe C.Exp
+genAssign ty = cexpr . assign_ . typeId <$> L.deref ty
 
-genLater :: Type -> C.Exp
-genLater ty = [cexp|$id:(later_ $ typeId $ fromJust $ L.deref ty)|]
+-- | Obtain the later method for a given SSM scheduled variable 'Type'.
+genLater :: Type -> Maybe C.Exp
+genLater ty = cexpr . later_ . typeId <$> L.deref ty
 
-genArg :: Int -> (Binder, Type) -> (CIdent, C.Type)
-genArg i = bimap (maybe (arg_ i) fromId) genType
+-- | Translate a list of SSM parameters to C parameters.
+genParams :: [(Binder, Type)] -> [(CIdent, C.Type)]
+genParams = zipWith genArg [0 ..]
+  where genArg i = bimap (maybe (arg_ i) fromId) genType
 
-genArgs :: [(Binder, Type)] -> [(CIdent, C.Type)]
-genArgs = zipWith genArg [0 ..]
-
-genLocal :: (VarId, Type) -> (CIdent, C.Type)
-genLocal = bimap fromId genType
-
+-- | Translate a list of SSM local declarations to C declarations.
 genLocals :: [(VarId, Type)] -> [(CIdent, C.Type)]
-genLocals = map genLocal
+genLocals = map $ bimap fromId genType
 
+-- | Generate declarations for @numTrigs@ triggers.
 genTrigs :: Int -> [(CIdent, C.Type)]
-genTrigs trigs = zip (map trig_ [1 .. trigs]) (repeat trigger_t)
+genTrigs numTrigs = zip (map trig_ [1 .. numTrigs]) (repeat trigger_t)
 
 -- | The constant unit value, the singleton inhabitant of the type Unit.
 unit :: C.Exp
@@ -195,7 +208,13 @@ undef = [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
--- | Include statements in the generated file
+-- | Generate a C compilation from an SSM program.
+genProgram :: Program -> Either CodegenError [C.Definition]
+genProgram p@L.Program { L.programDefs = defs } = do
+  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
+  return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
+
+-- | Include statements in the generated C file.
 includes :: [C.Definition]
 includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
 
@@ -203,20 +222,28 @@ includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
 genInitProgram :: Program -> [C.Definition]
 genInitProgram L.Program { L.programEntry = entry } = [cunit|
     int $id:initialize_program(void) {
-       $id:activate($id:(enter_ entry)
-        (&$id:top_parent, $id:root_priority, $id:root_depth));
+       $id:activate($id:(enter_ entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
       return 0;
     }
   |]
 
-{- | Generate definitions for an SSM 'Procedure'. -}
-genTop :: (L.VarId, Expr) -> Either CompileError [C.Definition]
+{- | Generate C declarations and definitions for a top-level SSM function.
+
+Each top-level function in a program is turned into three components:
+
+(1) a struct (the activation record);
+(2) an initialization function (the enter function); and
+(3) a step function, which corresponds to the actual procedure body.
+
+Items (2) and (3) include both declarations and definitions.
+-}
+genTop :: (VarId, Expr) -> Either CodegenError ([C.Definition], [C.Definition])
 genTop (name, l@(L.Lambda _ _ ty)) =
-  runTR (fromId name) (zip argIds argTys) retTy body $ do
+  runGenFn (fromId name) (zip argIds argTys) retTy body $ do
     (stepDecl , stepDefn ) <- genStep
     (enterDecl, enterDefn) <- genEnter
     structDefn             <- genStruct
-    return [structDefn, enterDecl, stepDecl, enterDefn, stepDefn]
+    return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
  where
   (argIds, body ) = L.collectLambda l
   (argTys, retTy) = L.dearrow ty
@@ -227,18 +254,18 @@ genTop (_, _        ) = nope
 
 This is where local variables, triggers, and parameter values are stored.
 -}
-genStruct :: TR C.Definition
+genStruct :: GenFn C.Definition
 genStruct = do
-  name  <- gets fnName
-  args  <- gets fnArgs
-  locs  <- gets fnLocs
-  trigs <- gets maxWaits
+  name   <- gets fnName
+  params <- gets fnParams
+  locs   <- gets fnLocs
+  trigs  <- gets fnMaxWaits
 
   return [cedecl|
     typedef struct {
       $ty:act_t $id:act_member;
 
-      $sdecls:(map structField $ genArgs args)
+      $sdecls:(map structField $ genParams params)
       $sdecls:(map structField $ genLocals locs)
       $sdecls:(map structField $ genTrigs trigs)
 
@@ -253,11 +280,11 @@ genStruct = do
 Its struct is allocated and initialized (partially; local variables' values are
 left uninitialized).
 -}
-genEnter :: TR (C.Definition, C.Definition)
+genEnter :: GenFn (C.Definition, C.Definition)
 genEnter = do
   actname <- gets fnName
-  args    <- gets fnArgs
-  trigs   <- gets maxWaits
+  params  <- gets fnParams
+  trigs   <- gets fnMaxWaits
   let act  = [cty|typename $id:act'|]
       act' = act_ actname -- hack to use this typename as expr in macros
 
@@ -265,16 +292,16 @@ genEnter = do
       initParam (n, _) = [[cstm|$id:acts->$id:n = $id:n;|]]
       initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
 
-      params =
+      enterParams =
         [ [cparam|$ty:act_t *$id:caller|]
           , [cparam|$ty:priority_t $id:priority|]
           , [cparam|$ty:depth_t $id:depth|]
           ]
-          ++ map declParam (genArgs args)
+          ++ map declParam (genParams params)
   return
-    ( [cedecl|$ty:act_t *$id:(enter_ actname)($params:params);|]
+    ( [cedecl|$ty:act_t *$id:(enter_ actname)($params:enterParams);|]
     , [cedecl|
-        $ty:act_t *$id:(enter_ actname)($params:params) {
+        $ty:act_t *$id:(enter_ actname)($params:enterParams) {
           $ty:act_t *$id:actg = $id:enter(sizeof($ty:act),
                                           $id:(step_ actname),
                                           $id:caller,
@@ -284,7 +311,7 @@ genEnter = do
           $ty:act *$id:acts = $id:container_of($id:actg, $id:act', $id:act_member);
 
           /* Assign parameters */
-          $stms:(concatMap initParam $ genArgs args)
+          $stms:(concatMap initParam $ genParams params)
 
           /* Initialize triggers */
           $stms:(map initTrig $ genTrigs trigs)
@@ -300,7 +327,7 @@ This function just defines the function definition and switch statement that
 wraps the statements of the procedure. The heavy lifting is performed by
 'genExpr'.(L.Var n (L.TBuiltin (L.Arrow _ _))) =
 -}
-genStep :: TR (C.Definition, C.Definition)
+genStep :: GenFn (C.Definition, C.Definition)
 genStep = do
   actName   <- gets fnName
   actBody   <- gets fnBody
@@ -308,11 +335,6 @@ genStep = do
   (_, stms) <- genExpr actBody -- Toss away return value
   let act  = [cty|typename $id:actt|]
       actt = act_ actName -- hack to use this typename as expr in macros
-
-      -- | Dequeue any outstanding event on a reference
-      -- TODO: move this responsibility to Drop
-      -- dequeue :: (L.VarId, Type) -> C.BlockItem
-      -- dequeue (n, _) = [citem|$id:unsched_event(&$id:acts->$id:n.sv);|]
   return
     ( [cedecl|void $id:(step_ actName)($ty:act_t *$id:actg);|]
     , [cedecl|
@@ -334,7 +356,7 @@ genStep = do
     )
 
 -- | Helper to generate yield point in step function.
-genYield :: TR [C.BlockItem]
+genYield :: GenFn [C.BlockItem]
 genYield = do
   next <- nextCase
   return [citems|
@@ -343,14 +365,63 @@ genYield = do
     case $int:next:;
     |]
 
--- TODO: we currently don't do anything to differentiate between when
--- a Var is a top-level reference vs when it is a local variable. Here
--- we're just inferring it from how it's used, i.e., on the LHS of an app vs on
--- its own.
-genExpr :: Expr -> TR (C.Exp, [C.BlockItem])
+{- | Translate an SSM expression into a C expression and statements.
+
+SSM IR is a side-effectful expression language, with two implications when
+translating to C:
+
+(1) every expression has a value (even if it is an uninhabited type), so this
+    must be reflected in C; and
+(2) some of the side effects in SSM cannot be implemented in C using expressions
+    alone.
+
+These two implications roughly translate to the @C.Exp@ and @[C.BlockItem]@ in
+@genExpr@'s return type. When we translate an SSM expression @e@:
+
+  (val, stms) <- genExpr e
+
+@val@ represents the C expression that corresponds to the value of @e@ upon
+evaluation, while @stms@ represents the list of preceding statements that
+compute @val@.
+
+A further consideration upon point (2) is that SSM expressions may yield control
+at any point. Thus, the C expression returned by @genExpr@ must accommodate the
+step function suspending and resuming. For instance, consider the following SSM
+IR expression:
+
+  (let x = 3 in x) + (wait r; 6)
+
+The @x@ in the let-binding in the left operand cannot just be a local variable
+in the step function, because it would be "uninitialized" by the yield in the
+right operand:
+
+    // let x = 3 in x
+    // stms:
+    int x = 3;
+    // exp: x
+
+    // (wait r; 6)
+    // stms:
+    ssm_sensitize(r);
+    actg->pc = N;
+    return;
+  case N:
+    ssm_desensitize(r);
+    // exp: 6
+
+    // After the return, x is no longer initialized, so the following is
+    // undefined behavior:
+    x + 6
+
+To ensure this is cannot happen, we conservatively declare @x@ as a local
+variable in the activation record, so that its value is preserved between
+yields, even if this is not usually necessary. We leave it to later compiler
+passes to optimize this.
+-}
+genExpr :: Expr -> GenFn (C.Exp, [C.BlockItem])
 genExpr (L.Var n (L.TBuiltin (L.Arrow _ _))) =
-  -- Any identifiers of L.Arrow type must refer to a (global) function, so we
-  -- just return a handle to its enter function.
+  -- NOTE: Any identifiers of L.Arrow type must refer to a (global) function, so
+  -- we just return a handle to its enter function.
   return ([cexp|$id:(enter_ n)|], [])
 genExpr (L.Var n _) = do
   isLocal <- isLocalVar n
@@ -367,7 +438,7 @@ genExpr (L.Let [(Nothing, d)] b _) = do
   (_      , defStms ) <- genExpr d -- Throw away value
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
-genExpr L.Let{}          = error "Cannot handle mutually recursive bindings"
+genExpr L.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr a@(L.App _ _ ty) = do
   let (fn, args) = L.collectApp a
   (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
@@ -381,19 +452,38 @@ genExpr a@(L.App _ _ ty) = do
       call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
   return (tmp, concat evalStms ++ call ++ yield)
 genExpr L.Match{}       = nope
-genExpr L.Lambda{}      = error "Cannot handle lambdas"
+genExpr L.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (L.Prim p es t) = genPrim p es t
 
-genPrim :: Primitive -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
+-- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
+genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
 genPrim L.New [e, _] refType = do
-  (val, stms) <- genExpr e
-  tmp         <- nextTmp refType
+  (val, stms)     <- genExpr e
+  tmp             <- nextTmp refType
+  Just initialize <- return $ genInit refType
+  -- TODO: reference counting
   let alloc = [citems|
-          $id:acts->$id:tmp = malloc(sizeof(*$id:acts->$id:tmp));
-          $exp:(genInit refType)($id:acts->$id:tmp);
+          $id:acts->$id:tmp = $id:mem_alloc(sizeof(*$id:acts->$id:tmp));
+          $exp:initialize($id:acts->$id:tmp);
           *$id:acts->$id:tmp.$id:value = $exp:val;
         |]
   return ([cexp|$id:acts->$id:tmp|], stms ++ alloc)
+genPrim L.Dup [e] _ = do
+  -- TODO: reference counting
+  (_val, _stms) <- genExpr e
+  todo
+genPrim L.Drop [e] _ = do
+  (val, stms) <- genExpr e
+  -- TODO: reference counting
+  let free = [citems|
+          $id:unsched_event(&$exp:val->$id:sv);
+          $id:mem_free($exp:val);
+        |]
+  return (unit, stms ++ free)
+genPrim L.Reuse [e] _ = do
+  -- TODO: reference counting
+  (_val, _stms) <- genExpr e
+  todo
 genPrim L.Deref [a] _ = do
   (val, stms) <- genExpr a
   -- SSM Refs are all SVs, so we access the value field in order to dereference.
@@ -402,25 +492,25 @@ genPrim L.Deref [a] _ = do
 genPrim L.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
+  Just assign       <- return $ genAssign $ L.typeExpr lhs
   -- TODO: handle event type
   let assignBlock = [citems|
           $items:lhsStms
           $items:rhsStms
-          $exp:(genAssign $ L.typeExpr lhs)
-            ($exp:lhsVal, $id:actg->$id:priority, $exp:rhsVal);
+          $exp:assign($exp:lhsVal, $id:actg->$id:priority, $exp:rhsVal);
         |]
   return (unit, assignBlock)
 genPrim L.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
+  Just later          <- return $ genLater $ L.typeExpr lhs
   -- TODO: handle event type
   let laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $exp:(genLater $ L.typeExpr lhs)
-            ($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
+          $exp:later($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
         |]
   return (unit, laterBlock)
 genPrim L.Fork procs _ = do
@@ -436,7 +526,7 @@ genPrim L.Fork procs _ = do
                       |]
 
     genActivate
-      :: ((C.Exp, C.Exp), Expr) -> TR (C.Exp, [C.BlockItem], C.BlockItem)
+      :: ((C.Exp, C.Exp), Expr) -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
     genActivate ((prioArg, depthArg), a@(L.App _ _ ty)) = do
       let (fn, args) = L.collectApp a
       (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
@@ -459,7 +549,7 @@ genPrim L.Fork procs _ = do
   return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
 genPrim L.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
-  addWait $ length varVals
+  maxWait $ length varVals
   yield <- genYield
   let trigs = zip [1 :: Int ..] varVals
       sens (i, var) =
@@ -479,16 +569,16 @@ genPrim L.Return [e] _ = do
                  |]
   return (undef, stms ++ retBlock)
 genPrim (L.PrimOp op) es t = genPrimOp op es t
-genPrim _ _ _ = error "Unsupported Primitive or wrong number of arguments"
+genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
 -- | Generate C value for SSM literal.
-genLiteral :: Literal -> Type -> TR (C.Exp, [C.BlockItem])
+genLiteral :: Literal -> Type -> GenFn (C.Exp, [C.BlockItem])
 genLiteral (L.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
 genLiteral (L.LitBool     True ) _ = return ([cexp|true|], [])
 genLiteral (L.LitBool     False) _ = return ([cexp|false|], [])
 
 -- | Generate C expression for SSM primitive operation.
-genPrimOp :: PrimOp -> [Expr] -> Type -> TR (C.Exp, [C.BlockItem])
+genPrimOp :: PrimOp -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
 genPrimOp L.PrimAdd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal + $exp:rhsVal|], stms)
@@ -534,10 +624,10 @@ genPrimOp L.PrimLt [lhs, rhs] _ = do
 genPrimOp L.PrimLe [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
-genPrimOp _ _ _ = error "Unsupported PrimOp or wrong number of arguments"
+genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
 -- | Helper for sequencing across binary operations.
-genBinop :: Expr -> Expr -> TR (C.Exp, C.Exp, [C.BlockItem])
+genBinop :: Expr -> Expr -> GenFn (C.Exp, C.Exp, [C.BlockItem])
 genBinop lhs rhs = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
