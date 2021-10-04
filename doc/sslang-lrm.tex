@@ -300,19 +300,22 @@ a look at Agda's user-defined operators.
 \noindent Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
 
 \noindent Top-level definitions can be summarized by the following grammar:
-\setlength{\grammarindent}{6em}
+\setlength{\grammarindent}{9em}
 \begin{grammar}
-<topdef> ::= "id () ->" <type> "= \{" <body> "\}"
-\alt "id" <param_t>$^{+}$ "->" <type> "= \{" <body> "\}"
+<topdef> ::= "id" <param_t>$^{+}$ ("->" <type>)$^{?}$ "= \{" <body> "\}"
 \alt "id" <param_t>$^{*}$ ":" <type> "= \{" <body> "\}"
 
-<param_t> ::= "id"
+<param_t> ::= <param_atomic>
 \alt "("<param>")"
 \alt "("<param>("," <param>)$^{+}$")"
 
 <param> ::= "("<param>")"
-\alt "id" (":" <type>)$^{?}$
+\alt <param_atomic> (":" <type>)$^{?}$
 \alt "("<param>(","<param>)$^{+}$")"(":" <type>)$^{?}$
+
+<param_atomic> ::= "id"
+\alt "()"
+\alt "_"
 \end{grammar}
 
 \section{Expressions}

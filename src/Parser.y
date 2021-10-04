@@ -65,8 +65,8 @@ program : topdecls { Program (reverse $1) }
 topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
-topdecl : id optFormals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 }
-        | id optFormals ':' typ '=' '{' expr '}'       { Function $1 $2 $7 (CurriedType $4) }
+topdecl : id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 }
+        | id optFormals ':' typ '=' '{' expr '}'    { Function $1 $2 $7 (CurriedType $4) }
 
 optReturnType : '->' typ      { ReturnType $2 }
               | {- nothing -} { ReturnType (TCon "()") }
