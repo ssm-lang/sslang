@@ -33,6 +33,7 @@ data Bind = Bind VarId (Maybe Ty)
 data Ty = TCon TConId
         | TApp Ty Ty
         | TTuple [Ty]
+        | TArrow Ty Ty
 
 data Lit = IntLit Integer
          | StringLit String
@@ -112,10 +113,10 @@ instance Pretty Bind where
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id
-  pretty (TApp (TApp (TCon "->") t1) t2) = pretty t1 <+> pretty "->" <+> pretty t2
   pretty (TApp t (TCon id)) = pretty t <+> pretty id
   pretty (TApp t1 t2) = pretty t1 <+> parens (pretty t2)
   pretty (TTuple tys) = pretty "(" <> hsep (punctuate comma $ map pretty tys) <> pretty ")"
+  pretty (TArrow t1 t2) = pretty t1 <+> pretty "->" <+> pretty t2
 
 instance Pretty Lit where
   pretty (IntLit i) = pretty i

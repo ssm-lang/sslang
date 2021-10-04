@@ -94,7 +94,7 @@ tupleFormals : formal                  { [$1] }
 optType : {- nothing -} { Nothing }
         | ':' typ       { Just $2 }
 
-typ : typ1 '->' typ { TApp (TApp (TCon "->") $1) $3 }
+typ : typ1 '->' typ { TArrow $1 $3 }
     | typ1          { $1 }
 
 typ1 : typ1 typ2 { TApp $1 $2 }
