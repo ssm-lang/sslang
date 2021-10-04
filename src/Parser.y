@@ -65,9 +65,8 @@ program : topdecls { Program (reverse $1) }
 topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
-topdecl : id '(' ')' optReturnType '=' '{' expr '}' { Function $1 [] $7 $4 }
-        | id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 } 
-        | id optFormals ':' typ '=' '{' expr '}'    { Function $1 $2 $7 (CurriedType $4) }
+topdecl : id optFormals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 }
+        | id optFormals ':' typ '=' '{' expr '}'       { Function $1 $2 $7 (CurriedType $4) }
 
 optReturnType : '->' typ      { ReturnType $2 }
               | {- nothing -} { ReturnType (TCon "()") }
@@ -79,6 +78,8 @@ formals : formalTop         { [$1] }
         | formalTop formals { $1 : $2 }
 
 formalTop : id                    { Bind $1 Nothing }
+          | '_'                   { Bind "_" Nothing }
+          | '(' ')'               { Bind "()" Nothing }
           | '(' formalOrTuple ')' { $2 }
 
 formalOrTuple : formal                  { $1 }
@@ -86,6 +87,8 @@ formalOrTuple : formal                  { $1 }
 
 formal : '(' formal ')'                          { $2 }
        | id optType                              { Bind $1 $2 }
+       | '_' optType                             { Bind "_" $2 }
+       | '(' ')' optType                         { Bind "()" $3 }
        | '(' formal ',' tupleFormals ')' optType { TupBind ($2 : $4) $6 }
 
 tupleFormals : formal                  { [$1] }
