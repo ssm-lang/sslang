@@ -21,12 +21,18 @@ type OperatorId = String
 
 data Program = Program [Declaration]
 
-data Declaration = Function VarId [Bind] Expr
+data FnTyAnnotation = ReturnType Ty
+                    | CurriedType Ty
 
-data Bind = Bind [VarId] Ty
+data Declaration = Function VarId [Bind] Expr FnTyAnnotation
+
+data Bind = Bind VarId (Maybe Ty)
+          | TupBind [Bind] (Maybe Ty)
 
 data Ty = TCon TConId
         | TApp Ty Ty
+        | TTuple [Ty]
+        | TArrow Ty Ty
 
 data Lit = IntLit Integer
          | StringLit String
@@ -89,18 +95,26 @@ instance Show Def where
   show d = show $ pretty d
 
 instance Pretty Declaration where
-  pretty (Function id formals body) =
-    nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> pretty '='
+  pretty (Function id formals body r) =
+    let ret = (case r of ReturnType t -> pretty "->" <+> pretty t
+                         CurriedType t -> pretty ":" <+> pretty t) in
+    nest 2 (vsep [ pretty id <> tupled (map pretty formals) <+> ret <+> pretty '='
                  , pretty body ])
 
 instance Pretty Bind where
-  pretty (Bind ids t) = hsep (punctuate comma $ map pretty ids) <+>
-                        pretty ':' <+> pretty t
+  pretty (Bind id mty) = let prettyId = pretty id in
+                         case mty of Just ty -> prettyId <+> pretty ':' <+> pretty ty
+                                     Nothing -> prettyId
+  pretty (TupBind binds mty) = let prettyTup = hsep (punctuate comma $ map pretty binds) in
+                               case mty of Just ty -> parens prettyTup <+> pretty ':' <+> pretty ty
+                                           Nothing -> prettyTup
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id
   pretty (TApp t (TCon id)) = pretty t <+> pretty id
   pretty (TApp t1 t2) = pretty t1 <+> parens (pretty t2)
+  pretty (TTuple tys) = pretty "(" <> hsep (punctuate comma $ map pretty tys) <> pretty ")"
+  pretty (TArrow t1 t2) = pretty t1 <+> pretty "->" <+> pretty t2
 
 instance Pretty Lit where
   pretty (IntLit i) = pretty i
@@ -118,7 +132,7 @@ instance Pretty Expr where
           p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
   pretty (As v e) = pretty v <> pretty '@' <> pretty e
   pretty NoExpr = emptyDoc
-  pretty (Let defs) = pretty "let" <+> (align $ vsep $ map pretty defs)
+  pretty (Let defs) = pretty "let" <+> align (vsep $ map pretty defs)
   pretty (While e1 e2) = nest 2 $ vsep [ pretty "while" <+> pretty e1, pretty e2 ]
   pretty (Loop e) = nest 2 $ vsep [ pretty "loop", pretty e ]
   pretty (Par es) = nest 2 $ vsep $ pretty "par" : map pretty es

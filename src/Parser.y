@@ -34,22 +34,27 @@ import Ast
   'wait'  { Token _ TWait }
   '='     { Token _ TEq }
   '<-'    { Token _ TLarrow }
+  '->'    { Token _ TRarrow }
   '||'    { Token _ TDBar }
   ':'     { Token _ TColon }
   ';'     { Token _ TSemicolon }
   ','     { Token _ TComma }
   '_'     { Token _ TUnderscore }
   '@'     { Token _ TAt }
+  '&'     { Token _ TAmpersand }
   '('     { Token _ TLparen }
   ')'     { Token _ TRparen }
   '{'     { Token _ TLbrace }
   '}'     { Token _ TRbrace }
+  '['     { Token _ TLbracket }
+  ']'     { Token _ TRbracket }
   int     { Token _ (TInteger $$) }  
   string  { Token _ (TString $$) }
   op      { Token _ (TOp $$) }
   id      { Token _ (TId $$) }
 
 %left ';' -- Helps with if-then-else
+%right '->'
 %nonassoc NOELSE 'else'
 
 %%
@@ -59,24 +64,53 @@ program : topdecls { Program (reverse $1) }
 topdecls : topdecl               { [$1] }
          | topdecls ';' topdecl  { $3 : $1 }
 
-topdecl : id '(' optFormals ')' '=' '{' expr '}' { Function $1 $3 $7 }
+topdecl : id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 }
+        | id optFormals ':' typ '=' '{' expr '}'    { Function $1 $2 $7 (CurriedType $4) }
 
-optFormals : {- nothing -} { [] }
-           | formals       { reverse $1 }
+optReturnType : '->' typ      { ReturnType $2 }
+              | {- nothing -} { ReturnType (TCon "()") }
 
-formals : formal             { [$1] }
-        | formals ',' formal { $3 : $1 }
+optFormals : formals       { $1 }
+           | {- nothing -} { [] }
 
-formal : ids ':' typs   { Bind (reverse $1) $3 }
+formals : formalTop         { [$1] }
+        | formalTop formals { $1 : $2 }
 
-ids : id          { [$1] }
-    | ids ',' id  { $3 : $1 }
+formalTop : formalAtomic          { Bind $1 Nothing }
+          | '(' formalOrTuple ')' { $2 }
 
-typs : typ      { $1 }
-     | typs typ { TApp $1 $2 }
-    
-typ : id           { TCon $1 }
-    | '(' typs ')' { $2 }
+formalOrTuple : formal                  { $1 }
+              | formal ',' tupleFormals { TupBind ($1 : $3) Nothing }
+
+formal : '(' formal ')'                          { $2 }
+       | formalAtomic optType                    { Bind $1 $2 }
+       | '(' formal ',' tupleFormals ')' optType { TupBind ($2 : $4) $6 }
+
+formalAtomic : id      { $1 }
+             | '_'     { "_" }
+             | '(' ')' { "()" }
+
+tupleFormals : formal                  { [$1] }
+             | formal ',' tupleFormals { $1 : $3 }
+
+optType : {- nothing -} { Nothing }
+        | ':' typ       { Just $2 }
+
+typ : typ1 '->' typ { TArrow $1 $3 }
+    | typ1          { $1 }
+
+typ1 : typ1 typ2 { TApp $1 $2 }
+     | typ2      { $1 }
+
+typ2 : id                        { TCon $1 }
+     | '[' typ ']'               { TApp (TCon "List") $2 }
+     | '(' typ ')'               { $2 }
+     | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
+     | '(' ')'                   { TCon "()" }
+     | '&' typ2                  { TApp (TCon "Ref") $2 }
+
+tupleTyps : typ               { [$1] }
+          | typ ',' tupleTyps { $1 : $3 }
 
 expr : expr ';' expr0 { Seq $1 $3 }
      | expr0          { $1 }
@@ -91,12 +125,15 @@ expr0 : 'if' expr 'then' expr0 elseOpt  { IfElse $2 $4 $5 }
       | expr2 '<-' expr0                { Assign (exprToPat $1) $3 }
       | id '@' expr0                    { As $1 $3 }
       | expr1                           { $1 }
+
+ids : id          { [$1] }
+    | ids ',' id  { $3 : $1 }
       
 elseOpt : {- nothing -} %prec NOELSE { NoExpr }
         | ';' 'else' expr1           { $3 }
 
-expr1 : expr1 ':' typs                  { Constraint $1 $3 }
-      | expr2                           { $1 }
+expr1 : expr1 ':' typ                  { Constraint $1 $3 }
+      | expr2                          { $1 }
   
 expr2 : apply opregion  { OpRegion $1 $2 }
       | apply           { $1 }

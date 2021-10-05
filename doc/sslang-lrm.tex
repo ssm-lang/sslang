@@ -4,7 +4,12 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{hyperref}
-
+\usepackage{syntax}
+\renewcommand{\grammarlabel}[2]{\textit{#1}\hfill#2}
+\renewcommand{\syntleft}{\itshape\normalsize}
+\renewcommand{\syntright}{\normalfont\normalsize}
+\renewcommand{\ulitleft}{\normalfont\ttfamily\small}
+\renewcommand{\ulitright}{\normalsize\normalfont}
 \definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
 
 \title{SSLANG Language Reference Manual}
@@ -79,100 +84,6 @@ public class SampleClass
 \end{lstlisting}
 
 \subsubsection{Discussions}
-
-\textit{SE:} What should function definitions (type signatures) look like?
-Haskell-style or OCaml-style?  Look at the Nim language.  Named arguments?  Make
-it look like data constructors?
-\textit{JH:} Should be OCaml-style, in that it is inline, but it should not look
-so ugly. Whatever syntax we use, declaration for follow invocation.
-
-\begin{itemize}
-  \item OCaml uses something like: \verb|f (a: int) (b: int) = ..|. Too many
-    parentheses.
-
-  \item In our meeting, we threw around the idea of something like:
-    \verb|f a: Int, b: Int = ..|. \textit{JH:} seems fine, but looks weird because comma
-    precedence is not widely understood.
-
-  \item Rust, Go, Javascript, and other recent languages use: \verb|f(a: Int, b: Int) .. |.
-    \textit{JH:} I don't love it, but I don't hate it either, and it's familiar.
-
-  \item SML allows tuple syntax for function arguments:
-    \verb|fun mult x y = x * y| has type
-    \verb|int -> int -> int|,
-    but \verb|fun mult (x, y) = x * y| has type
-    \verb|int * int -> int|.
-
-\begin{verbatim}
-
--- () -> Int
-e () -> Int = ..
-
-----
-
-f a: Int = ..
-f (a: Int): Int = ..
-
-f(1)
-f 1
-
-f a: Int -> Int = ..   -- PL
-f (a: Int) -> Int = .. -- Python, Rust, Typescript
-
-func f (a int) int {
-}
-
-f a -> Int = ..
-f (a: Int) -> Int = ..
-
-----
-
--- g: (Int, Int) -> Int
-
-g (a: Int, b: Int) -> Int = ...
-
-g ((a, b): (Int, Int)) -> Int = ...
-
-g (a, b): (Int, Int) -> Int = ...
-
-g: (Int, Int) -> Int = \(a, b) = ...
-
-----
-
--- h: Int -> Int -> Int
-
-h a b: Int -> Int -> Int = ...
-
-h: Int -> Int -> Int = \a = \b = ...
-
-h (a: Int) (b: Int) -> Int = ...
-
-----
-Beginnings of a grammar:
-
-  FUNCDEF ::= ID PATTERN* -> TYPE = { BODY }
-            | ID PATTERN* :  TYPE = { BODY }
-
-  PATTERN ::= ID (: TYPE)?
-
-  TYPE ::= [ TYPE ]
-         | ID
-         | ...
-
-----
-
-TODO for Hans:
-- syntax for types and top-level name definitions
-
-TODO for Stephen:
-- flesh out the lexer documentation
-\end{verbatim}
-
-\end{itemize}
-
-Syntax for type expressions: in addition to nullary types, we want to have
-higher-arity type operators, i.e., \verb|( , )|, \verb|->|, \verb|&|, etc.
-Broadly speaking, the things on the right of a colon.
 
 \subsection{Types and expressions}
 
@@ -305,15 +216,13 @@ of the following:
 \item InBlock: The scanner is in a block; a separator is inserted in
   front of each line that starts at the current indentation level.  A
   line that starts to the left of the current indentation level causes
-  a close-block token to be inserted (i.e., \lstinline!}!) and the
+  a close-block token to be inserted (i.e., \texttt{\}}) and the
     current state to be popped.
 
-\item StartBlock: The scanner will start a block (insert a
-  \lstinline!{!) at the start of the next token and enter the InBlock
-    state
-
+\item StartBlock: The scanner will start a block (insert a \texttt{\}})
+at the start of the next token and enter the InBlock state
 \item StartBlockNL: The scanner will start a block (insert a
-  \lstinline!{!) at the token that starts the next line and enter the InBlock
+  \texttt{\}}) at the token that starts the next line and enter the InBlock
     state
 
 \end{itemize}
@@ -328,6 +237,86 @@ NOTE: Avoid Coq's mess of scope declarations and accompanying plumbing; take
 a look at Agda's user-defined operators.
 
 \section{Types}
+\noindent sslang's type system is composed of two fundamental components: type constructors and type application. All types in sslang are a combination of type constructors and applications. \\
+
+\noindent Type constructors may take zero or more type arguments that, when composed via type application, form a fully-qualified type. \\ 
+
+\noindent Constructors that take zero type arguments can be thought of as ``primitive types", such as integers, booleans, pure events (i.e. conditional variable), and unit (i.e. void). \\
+
+\noindent Constructors that take more than type argument can be thought of as ``higher-order types". Here's a summary of sslang's higher-order types:
+\begin{itemize}
+    \item \texttt{[type]}: An array containing values of type \texttt{type}
+    \item \texttt{(type, ...)}: A tuple containing values of type \texttt{type}
+    \item \texttt{type1 -> type2}: A function that takes a   \texttt{type1} and returns a  \texttt{type2}
+    \item \texttt{\&type}: A reference to a variable of type \texttt{type}
+    \item \texttt{Sched type}: A scheduled variable of type \texttt{type}. These variables are scheduled and managed by the SSM runtime and are used to synchronize routines
+\end{itemize}
+
+\noindent This all is summarized by the following grammar:
+\setlength{\grammarindent}{5em}
+\begin{grammar}
+<type> ::= "("<type>")"
+\alt "["<type>"]"
+\alt "("<type>(","<type>)$^{+}$")"
+\alt <type> "->" <type>
+\alt "\&"<type>
+\alt "()"
+\alt "type-id" <type>$^{*}$
+\end{grammar}
+\noindent where \texttt{type-id ::= [A-Z][a-zA-Z0-9]$^{*}$}\\
+
+\noindent Note the generic definition of type constructors: simply a type identifier followed by one or more \textit{type}s. This implementation is meant to facilitate support for user-defined types and to provide a concise interface for sslang's type system to deal with.
+\section{Routines and Top-Level Definitions}
+\noindent Top-level definitions in sslang consistent of the following components:
+\begin{itemize}
+    \item Identifier name (global variable or routine name)
+    \item Zero or more parameters, possibly type-annotated
+    \item Annotated return type
+    \item Body
+\end{itemize}
+\noindent The compiler will perform type inference for untyped components and will verify that typed components are correct.
+
+\subsection{Type Signatures}
+\noindent At the core of sslang routine signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
+\begin{itemize}
+    \item \texttt{:} (Colon): ``is of type"
+    \item \texttt{->} (Right Arrow): ``returns"
+\end{itemize}
+
+\noindent We use these symbols to separate type signatures into two broad syntactic categories:
+\begin{itemize}
+    \item \texttt{foo <params> -> <ret-type>}\\
+          Using the ``\texttt{->}" syntax, the return type of the routine is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+    \item \texttt{foo <untyped-params> : <fn-type>}\\
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire routine at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
+\end{itemize}
+
+\noindent When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
+\begin{itemize}
+    \item \texttt{(a: Int, b: Bool)}
+    \item \texttt{(a , b) : (Int, Bool)}
+\end{itemize}
+
+\noindent Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
+
+\noindent Top-level definitions can be summarized by the following grammar:
+\setlength{\grammarindent}{9em}
+\begin{grammar}
+<topdef> ::= "id" <param_t>$^{+}$ ("->" <type>)$^{?}$ "= \{" <body> "\}"
+\alt "id" <param_t>$^{*}$ ":" <type> "= \{" <body> "\}"
+
+<param_t> ::= <param_atomic>
+\alt "("<param>")"
+\alt "("<param>("," <param>)$^{+}$")"
+
+<param> ::= "("<param>")"
+\alt <param_atomic> (":" <type>)$^{?}$
+\alt "("<param>(","<param>)$^{+}$")"(":" <type>)$^{?}$
+
+<param_atomic> ::= "id"
+\alt "()"
+\alt "_"
+\end{grammar}
 
 \section{Expressions}
 
