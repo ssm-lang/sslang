@@ -2,16 +2,13 @@ module Passes where
 
 import qualified Ast as A
 
-checkRoutineSignatures :: A.Program -> A.Program
-checkRoutineSignatures (A.Program decls) = A.Program $ map checkAnnotations decls
+checkRoutineSignatures :: A.Program -> Bool 
+checkRoutineSignatures (A.Program decls) = and $ map checkAnnotations decls
   where
-    checkAnnotations decl@(A.Function _ binds _ fnTyAnn) =
+    checkAnnotations (A.Function _ binds _ fnTyAnn) =
         case fnTyAnn of 
-          A.ReturnType _ -> let res = foldl annotatedOnce True binds in
-                                if res then decl else error "bad"
-          A.CurriedType ty -> let numParams = countParams ty
-                                  noneAnnotated = foldl notAnnotated True binds in
-                                  if numParams == length binds && noneAnnotated then decl else error "bad"
+          A.ReturnType _ -> foldl annotatedOnce True binds
+          A.CurriedType ty -> countParams ty == length binds && foldl notAnnotated True binds
 
     annotatedOnce ret (A.Bind _ (Just _)) = ret && True
     annotatedOnce ret (A.TupBind bds tupTy) = ret && case tupTy of

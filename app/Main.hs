@@ -100,9 +100,12 @@ main = do
                    filename -> readFile filename) filenames
                               
   ast <- case runAlex (head inputs) parse of -- FIXME: multiple inputs?
-           Right a -> return $ checkRoutineSignatures a
+           Right a -> return a
            Left s -> do hPutStrLn stderr $ "Error: " ++ s
                         exitFailure
+
+  when (not $ checkRoutineSignatures ast) $ (do hPutStrLn stderr "Error: type signature mismatch"
+                                                exitFailure)
 
   when (optMode == DumpAST) $ print ast >> exitSuccess
 
