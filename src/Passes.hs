@@ -9,7 +9,9 @@ checkRoutineSignatures (A.Program decls) = A.Program $ map checkAnnotations decl
         case fnTyAnn of 
           A.ReturnType _ -> let res = foldl annotatedOnce True binds in
                                 if res then decl else error "bad"
-          A.CurriedType _ -> decl --{- get arrow length, check same. -} foldl notAnnotated True binds
+          A.CurriedType ty -> let numParams = countParams ty
+                                  noneAnnotated = foldl notAnnotated True binds in
+                                  if numParams == length binds && noneAnnotated then decl else error "bad"
 
     annotatedOnce ret (A.Bind _ (Just _)) = ret && True
     annotatedOnce ret (A.TupBind bds tupTy) = ret && case tupTy of
@@ -20,4 +22,7 @@ checkRoutineSignatures (A.Program decls) = A.Program $ map checkAnnotations decl
     notAnnotated ret (A.Bind _ Nothing) = ret && True
     notAnnotated ret (A.TupBind bds Nothing) = ret && foldl notAnnotated True bds
     notAnnotated _ _ = False
+
+    countParams (A.TArrow _ t2) = 1 + countParams t2
+    countParams _ = 0
 
