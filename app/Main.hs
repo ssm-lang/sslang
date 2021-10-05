@@ -13,6 +13,7 @@ import IR.Lowering  ( astToIR )
 --import CGen ( cgen, hgen )
 
 import qualified Ast as A
+import Passes ( checkRoutineSignatures )
 
 import System.Environment (getArgs, getProgName)
 import System.Console.GetOpt (getOpt, usageInfo, OptDescr(..),
@@ -99,7 +100,7 @@ main = do
                    filename -> readFile filename) filenames
                               
   ast <- case runAlex (head inputs) parse of -- FIXME: multiple inputs?
-           Right a -> return a
+           Right a -> return $ checkRoutineSignatures a
            Left s -> do hPutStrLn stderr $ "Error: " ++ s
                         exitFailure
 
