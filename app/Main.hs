@@ -104,8 +104,8 @@ main = do
            Left s -> do hPutStrLn stderr $ "Error: " ++ s
                         exitFailure
 
-  when (not $ checkRoutineSignatures ast) $ (do hPutStrLn stderr "Error: type signature mismatch"
-                                                exitFailure)
+  when (not $ checkRoutineSignatures ast) $ do hPutStrLn stderr "Error: type signature mismatch"
+                                               exitFailure
 
   when (optMode == DumpAST) $ print ast >> exitSuccess
 
