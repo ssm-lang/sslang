@@ -1,8 +1,8 @@
 module Main where
 
-import Scanner
-import Parser
-import Ast
+import Front.Scanner
+import Front.Parser
+import Front.Ast
 
 parseStr :: String -> Either String Program
 parseStr s = runAlex s parse

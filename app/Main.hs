@@ -3,16 +3,17 @@
 
 module Main where
 
-import Scanner ( runAlex )
-import Parser  ( parse )
+import Front.Scanner ( runAlex )
+import Front.Parser  ( parse )
 
-import ParseOperators ( parseOperators, Fixity(..) )
+import Front.ParseOperators ( parseOperators, Fixity(..) )
 
 --import Ast ( printAST )
 import IR.Lowering  ( astToIR )
 --import CGen ( cgen, hgen )
 
-import qualified Ast as A
+import qualified Front.Ast as A
+import Front.Check ( checkRoutineSignatures )
 
 import System.Environment (getArgs, getProgName)
 import System.Console.GetOpt (getOpt, usageInfo, OptDescr(..),
@@ -102,6 +103,9 @@ main = do
            Right a -> return a
            Left s -> do hPutStrLn stderr $ "Error: " ++ s
                         exitFailure
+
+  when (not $ checkRoutineSignatures ast) $ do hPutStrLn stderr "Error: type signature mismatch"
+                                               exitFailure
 
   when (optMode == DumpAST) $ print ast >> exitSuccess
 
