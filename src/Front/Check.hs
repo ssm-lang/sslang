@@ -1,6 +1,6 @@
-module Passes where
+module Front.Check where
 
-import qualified Ast as A
+import qualified Front.Ast as A
 
 checkRoutineSignatures :: A.Program -> Bool 
 checkRoutineSignatures (A.Program decls) = all checkAnnotations decls

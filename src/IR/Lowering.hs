@@ -2,7 +2,7 @@ module IR.Lowering
   ( astToIR
   ) where
 
-import qualified Ast                           as A
+import qualified Front.Ast                     as A
 import qualified IR.IR                         as L
 import qualified Types.Ast                     as A
 

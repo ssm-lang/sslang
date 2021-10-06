@@ -1,6 +1,6 @@
-module ParseOperators ( parseOperators, Fixity(..) ) where
+module Front.ParseOperators ( parseOperators, Fixity(..) ) where
 
-import Ast
+import Front.Ast
 import qualified Data.Map.Strict as Map
 
 data Fixity = Infixl Int String

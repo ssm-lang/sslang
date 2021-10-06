@@ -1,4 +1,4 @@
-module Ast where
+module Front.Ast where
 
 import Prettyprinter
 import Prelude hiding ( (<>), id )

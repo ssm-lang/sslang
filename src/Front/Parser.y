@@ -7,10 +7,10 @@ Then check Parser.info
 
 -}
 
-module Parser where
+module Front.Parser where
   
-import Scanner
-import Ast
+import Front.Scanner
+import Front.Ast
 
 }
 

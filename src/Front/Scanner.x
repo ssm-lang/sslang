@@ -2,7 +2,7 @@
 
 -- https://stackoverflow.com/questions/20315739/how-to-use-an-alex-monadic-lexer-with-happy
 
-module Scanner where
+module Front.Scanner where
 
 --import Data.Char ( isDigit )
 --import Data.Word ( Word64 )
