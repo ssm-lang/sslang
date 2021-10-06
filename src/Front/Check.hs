@@ -2,6 +2,16 @@ module Front.Check where
 
 import qualified Front.Ast                     as A
 
+{- | Predicate of whether all routine type signatures are consistent.
+
+That is, given the type annotation style of a routine, check whether the
+parameters are annotated accordingly.
+
+If Pythonic-style annotation is used, all parameters must be annotated exactly
+once. If Haskell-like annotation is used, the arrow-type's length must be
+consistent with the number of parameters in the routine and the parameters
+should not be annotated.
+-}
 checkRoutineSignatures :: A.Program -> Bool
 checkRoutineSignatures (A.Program decls) = all checkAnnotations decls
  where
