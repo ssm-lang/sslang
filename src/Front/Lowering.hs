@@ -1,4 +1,4 @@
-module IR.Lowering
+module Front.Lowering
   ( lowerProgram
   ) where
 

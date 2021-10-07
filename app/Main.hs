@@ -9,7 +9,7 @@ import Front.Parser  ( parse )
 import Front.ParseOperators ( parseOperators, Fixity(..) )
 
 --import Ast ( printAST )
-import IR.Lowering  ( lowerProgram )
+import Front.Lowering  ( lowerProgram )
 --import CGen ( cgen, hgen )
 
 import qualified Front.Ast as A
@@ -104,8 +104,9 @@ main = do
            Left s -> do hPutStrLn stderr $ "Error: " ++ s
                         exitFailure
 
-  when (not $ checkRoutineSignatures ast) $ do hPutStrLn stderr "Error: type signature mismatch"
-                                               exitFailure
+  when (not $ checkRoutineSignatures ast) $ do
+    hPutStrLn stderr "Error: type signature mismatch"
+    exitFailure
 
   when (optMode == DumpAST) $ print ast >> exitSuccess
 
@@ -116,7 +117,7 @@ main = do
 
   when (optMode == DumpASTP) $ print ast' >> exitSuccess
 
-  let ir = lowerProgram ast'
+  let _ = lowerProgram ast'
 
   -- FIXME: Pretty printers for the various IRs (mostly types)
 
