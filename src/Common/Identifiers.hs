@@ -4,7 +4,20 @@
 These are defined as newtypes (rather than as type aliases) so that they cannot
 be accidentally compared with one another.
 -}
-module Common.Identifiers where
+module Common.Identifiers
+  ( Identifiable(..)
+  , IsString(..)
+  , fromId
+  , TVarId(..)
+  , TConId(..)
+  , DConId(..)
+  , TVarIdx(..)
+  , FfiId(..)
+  , VarId(..)
+  , FieldId(..)
+  , Binder
+  , Identifier(..)
+  ) where
 
 import           Data.String                    ( IsString(..) )
 
@@ -34,7 +47,7 @@ instance Semigroup Identifier where
 instance Monoid Identifier where
   mempty = Identifier ""
 
-fromId :: (Identifiable a , Identifiable b) => a -> b
+fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
 
 -- | ToIdentifier for type variable, e.g., "a".

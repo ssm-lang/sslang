@@ -246,7 +246,7 @@ genTop (name, l@(L.Lambda _ _ ty)) =
     return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
  where
   (argIds, body ) = L.collectLambda l
-  (argTys, retTy) = L.dearrow ty
+  (argTys, retTy) = L.collectArrow ty
 genTop (_, L.Lit _ _) = todo
 genTop (_, _        ) = nope
 

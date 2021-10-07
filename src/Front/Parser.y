@@ -112,14 +112,14 @@ typ2 : id                        { TCon $1 }
 tupleTyps : typ               { [$1] }
           | typ ',' tupleTyps { $1 : $3 }
 
-expr : expr ';' expr0 { Seq $1 $3 }
-     | expr0          { $1 }
+expr : expr ';' expr0                   { Seq $1 $3 }
+     | 'let' '{' decls '}' ';' expr     { Let (reverse $3) $6 }
+     | expr0                            { $1 }
 
 expr0 : 'if' expr 'then' expr0 elseOpt  { IfElse $2 $4 $5 }
       | 'while' expr 'do' expr0         { While $2 $4 }
-      | 'let' '{' decls '}'             { Let (reverse $3) }
       | 'loop' expr0                    { Loop $2 }
-      | 'wait' ids                      { Wait $2 }
+      | 'wait' '{' parExprs '}'         { Wait $3 }
       | 'par' '{' parExprs '}'          { Par (reverse $3) }
       | expr2 'later' expr2 '<-' expr0  { Later $1 (exprToPat $3) $5 }
       | expr2 '<-' expr0                { Assign (exprToPat $1) $3 }
