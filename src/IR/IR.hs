@@ -19,6 +19,7 @@ import           Common.Identifiers             ( Binder
                                                 , VarId(..)
                                                 )
 
+import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Types.TypeSystem               ( TypeDef(..) )
 
 -- | Top-level compilation unit.
@@ -187,6 +188,20 @@ typeExpr (App    _ _ t ) = t
 typeExpr (Match _ _ _ t) = t
 typeExpr (Prim _ _ t   ) = t
 
+instance Functor Expr where
+  fmap f (Var  v t      ) = Var v (f t)
+  fmap f (Data d t      ) = Data d (f t)
+  fmap f (Lit  l t      ) = Lit l (f t)
+  fmap f (App    l  r t ) = App (fmap f l) (fmap f r) (f t)
+  fmap f (Let    xs b t ) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
+  fmap f (Lambda v  b t ) = Lambda v (fmap f b) (f t)
+  fmap f (Match s b as t) = Match (fmap f s) b (fmap (fmap f) as) (f t)
+  fmap f (Prim p as t   ) = Prim p (fmap (fmap f) as) (f t)
+
+instance Functor Alt where
+  fmap f (AltData d bs b) = AltData d bs (fmap f b)
+  fmap f (AltLit l b    ) = AltLit l (fmap f b)
+  fmap f (AltDefault b  ) = AltDefault (fmap f b)
 
 {- | Predicate of whether an expression "looks about right".
 
