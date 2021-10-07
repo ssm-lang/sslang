@@ -18,7 +18,6 @@ type VarId = String
 -- | An operator name (e.g., +, foo)
 type OperatorId = String
 
-
 data Program = Program [Declaration]
 
 data FnTyAnnotation = ReturnType Ty
@@ -44,7 +43,7 @@ data Expr = Id VarId
           | Apply Expr Expr
           | OpRegion Expr OpRegion
           | NoExpr
-          | Let [Def]
+          | Let [Def] Expr
           | While Expr Expr
           | Loop Expr
           | Par [Expr]
@@ -53,9 +52,11 @@ data Expr = Id VarId
           | Assign Pat Expr
           | Constraint Expr Ty
           | As VarId Expr
-          | Wait [VarId]
+          | Wait [Expr]
           | Seq Expr Expr
           | Wildcard
+          | Break
+          | Return Expr
 
 data OpRegion = EOR
               | NextOp OperatorId Expr OpRegion
@@ -68,12 +69,18 @@ data Pat = PId VarId
          | PAs VarId Pat
          | PCon TConId [Pat]
 
+-- | TODO: document
+collectTApp :: Ty -> (Ty, [Ty])
+collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
+  where (lf, la) = collectTApp lhs
+collectTApp t = (t, [])
+
 rewrite :: (Expr -> Expr) -> Expr -> Expr
 rewrite f (Apply e1 e2) = Apply (f e1) (f e2)
 rewrite f (OpRegion e r) = OpRegion (f e) (h r)
   where h EOR = EOR
         h (NextOp op e' r') = NextOp op (f e') (h r')
-rewrite f (Let d) = Let $ map (\(Def p e) -> Def p (f e)) d
+rewrite f (Let d b) = Let (map (\(Def p e) -> Def p (f e)) d) b
 rewrite f (While e1 e2) = While (f e1) (f e2)
 rewrite f (Loop e) = Loop (f e)
 rewrite f (Par e) = Par $ map f e
@@ -132,7 +139,8 @@ instance Pretty Expr where
           p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
   pretty (As v e) = pretty v <> pretty '@' <> pretty e
   pretty NoExpr = emptyDoc
-  pretty (Let defs) = pretty "let" <+> align (vsep $ map pretty defs)
+  pretty (Let defs body) =
+    vsep [pretty "let" <+> align (vsep $ map pretty defs), pretty body]
   pretty (While e1 e2) = nest 2 $ vsep [ pretty "while" <+> pretty e1, pretty e2 ]
   pretty (Loop e) = nest 2 $ vsep [ pretty "loop", pretty e ]
   pretty (Par es) = nest 2 $ vsep $ pretty "par" : map pretty es
@@ -150,6 +158,8 @@ instance Pretty Expr where
   pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
   pretty (Seq e1 e2) = vsep [pretty e1, pretty e2]
   pretty Wildcard = pretty '_'
+  pretty Break = pretty "break"
+  pretty (Return e) = pretty "return" <> pretty e
 
 instance Pretty Def where
   pretty (Def p e) = pretty p <+> pretty '=' <+> pretty e
