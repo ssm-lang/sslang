@@ -19,6 +19,7 @@ What is expected of the IR:
 {-# LANGUAGE DerivingVia #-}
 module Codegen.Codegen where
 
+import           Common.Errors                  ( CompileError(..) )
 import           Common.Identifiers             ( fromId )
 import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
@@ -61,10 +62,6 @@ type TypeDef = L.TypeDef Type
 type VarId = L.VarId
 type Binder = L.Binder
 
--- | Types of compiler errors that can be thrown during codegen.
-newtype CodegenError
-  = CodegenErrorMsg String  -- ^ Internal compiler error; shouldn't be reachable
-
 {- | State maintained while compiling a top-level SSM function.
 
 The information here is populated while generating the step function, so that
@@ -87,14 +84,14 @@ data GenFnState = GenFnState
 We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
 allowing us to use monadic pattern matching.
 -}
-newtype GenFn a = GenFn (ExceptT CodegenError (State GenFnState) a)
-  deriving Functor                    via (ExceptT CodegenError (State GenFnState))
-  deriving Applicative                via (ExceptT CodegenError (State GenFnState))
-  deriving Monad                      via (ExceptT CodegenError (State GenFnState))
-  deriving (MonadError CodegenError)  via (ExceptT CodegenError (State GenFnState))
-  deriving (MonadState GenFnState)    via (ExceptT CodegenError (State GenFnState))
+newtype GenFn a = GenFn (ExceptT CompileError (State GenFnState) a)
+  deriving Functor                    via (ExceptT CompileError (State GenFnState))
+  deriving Applicative                via (ExceptT CompileError (State GenFnState))
+  deriving Monad                      via (ExceptT CompileError (State GenFnState))
+  deriving (MonadError CompileError)  via (ExceptT CompileError (State GenFnState))
+  deriving (MonadState GenFnState)    via (ExceptT CompileError (State GenFnState))
 instance MonadFail GenFn where
-  fail = throwError . CodegenErrorMsg
+  fail = throwError . UnexpectedError
 
 -- | Run a GenFn computation on a procedure.
 runGenFn
@@ -103,7 +100,7 @@ runGenFn
   -> Type                   -- ^ Name and type of return parameter of procedure
   -> Expr                   -- ^ Body of procedure
   -> GenFn a                -- ^ Translation monad to run
-  -> Either CodegenError a  -- ^ Compilation may fail
+  -> Either CompileError a  -- ^ Compilation may fail
 runGenFn name params ret body (GenFn tra) =
   evalState (runExceptT tra) $ GenFnState { fnName     = name
                                           , fnParams   = params
@@ -209,7 +206,7 @@ undef = [cexp|0xdeadbeef|]
 {-------- Compilation --------}
 
 -- | Generate a C compilation from an SSM program.
-genProgram :: Program -> Either CodegenError [C.Definition]
+genProgram :: Program -> Either CompileError [C.Definition]
 genProgram p@L.Program { L.programDefs = defs } = do
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
   return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
@@ -237,7 +234,7 @@ Each top-level function in a program is turned into three components:
 
 Items (2) and (3) include both declarations and definitions.
 -}
-genTop :: (VarId, Expr) -> Either CodegenError ([C.Definition], [C.Definition])
+genTop :: (VarId, Expr) -> Either CompileError ([C.Definition], [C.Definition])
 genTop (name, l@(L.Lambda _ _ ty)) =
   runGenFn (fromId name) (zip argIds argTys) retTy body $ do
     (stepDecl , stepDefn ) <- genStep
