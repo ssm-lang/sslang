@@ -9,7 +9,7 @@ import Front.Parser  ( parse )
 import Front.ParseOperators ( parseOperators, Fixity(..) )
 
 --import Ast ( printAST )
-import IR.Lowering  ( astToIR )
+import IR.Lowering  ( lowerProgram )
 --import CGen ( cgen, hgen )
 
 import qualified Front.Ast as A
@@ -116,7 +116,7 @@ main = do
 
   when (optMode == DumpASTP) $ print ast' >> exitSuccess
 
-  let ir = astToIR ast'
+  let ir = lowerProgram ast'
 
   -- FIXME: Pretty printers for the various IRs (mostly types)
 
