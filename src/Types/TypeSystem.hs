@@ -45,34 +45,39 @@ class TypeSystem t where
   projectBuiltin :: Builtin t -> t
   injectBuiltin :: t -> Maybe (Builtin t)
 
--- | Helper to construct unit type in any 'TypeSystem'.
+-- | Helper to construct 'Unit' type in any 'TypeSystem'.
 unit :: TypeSystem t => t
 unit = projectBuiltin Unit
 
--- | Helper to construct void type in any 'TypeSystem'.
+-- | Helper to construct 'Void' type in any 'TypeSystem'.
 void :: TypeSystem t => t
 void = projectBuiltin Void
 
--- | Helper to construct reference type in any 'TypeSystem'.
+-- | Helper to construct 'Ref' type in any 'TypeSystem'.
 ref :: TypeSystem t => t -> t
 ref = projectBuiltin . Ref
 
--- | Helper to construct arrow type in any 'TypeSystem'.
+-- | Helper to construct 'Arrow' type in any 'TypeSystem'.
 arrow :: TypeSystem t => t -> t -> t
 arrow a b = projectBuiltin $ Arrow a b
 
--- | Helper to unrap reference in any 'TypeSystem'.
+-- | Helper to unwrap 'Ref' in any 'TypeSystem'.
 deref :: TypeSystem t => t -> Maybe t
 deref t = case injectBuiltin t of
   Just (Ref t') -> Just t'
   _             -> Nothing
 
--- | Decompose an arrow type into a list of argument types and a return type.
-dearrow :: TypeSystem t => t -> ([t], t)
+-- | Helper to unwrap 'Arrow' in any 'TypeSystem'.
+dearrow :: TypeSystem t => t -> Maybe (t, t)
 dearrow t = case injectBuiltin t of
-  Just (Arrow a b) -> let (as, rt) = dearrow b in (a:as, rt)
-  _ -> ([], t)
+  Just (Arrow a b) -> Just (a, b)
+  _ -> Nothing
 
+-- | Decompose an 'Arrow' type into a list of argument types and a return type.
+collectArrow :: TypeSystem t => t -> ([t], t)
+collectArrow t = case dearrow t of
+  Just (a, b) -> let (as, rt) = collectArrow b in (a:as, rt)
+  _ -> ([], t)
 
 {- | The type definition associated with a type constructor.
 
