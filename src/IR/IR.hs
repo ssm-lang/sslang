@@ -256,8 +256,31 @@ wellFormed (Prim p es _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
 
+
+{-
+how to use:
+1) stack ghci
+2) import IR.IR
+3) samples:
+show (LitIntegral 3)
+show New
+Questions:
+why does `show (Lit "a" Integer)` not work?
+why does `show (Var (VarId (Identifier "foo")) LitIntegral)` not work?
+
+-}
+instance (Pretty e) => Show (Expr e) where
+  show p = show $ pretty p
+
 instance Show Primitive where
   show p = show $ pretty p
+
+instance Show Literal where
+    show p = show $ pretty p
+
+instance Pretty Literal where
+    pretty (LitIntegral i) = pretty (show i)
+    pretty (LitBool b) = pretty (show b)
 
 instance Pretty Primitive where
   pretty New = pretty "new"
@@ -272,4 +295,45 @@ instance Pretty Primitive where
   pretty Loop = pretty "loop"
   pretty Break = pretty "break"
   pretty Return = pretty "return"
-  {-pretty PrimOp = pretty "todo - handle primop"-}
+  pretty (PrimOp p) = pretty "PrimOp" <+> pretty p
+
+instance Pretty PrimOp where
+  pretty PrimNeg = pretty "-"
+  pretty PrimNot = pretty "!"
+  pretty PrimBitNot = pretty "~"
+  pretty PrimAdd = pretty "+"
+  pretty PrimSub = pretty "-"
+  pretty PrimMul = pretty "*"
+  pretty PrimDiv = pretty "/"
+  pretty PrimMod = pretty "%"
+  pretty PrimBitAnd = pretty "&"
+  pretty PrimBitOr = pretty "|"
+  pretty PrimEq = pretty "=="
+  pretty PrimGt = pretty ">"
+  pretty PrimGe = pretty ">="
+  pretty PrimLt = pretty "<"
+  pretty PrimLe = pretty "<="
+
+instance (Pretty t) => Pretty (Expr t) where
+  {- do pretty show(VarId)?
+  this might be needed if other file uses legacy printer
+  var myInt LitIntegral?
+
+  //do things like varId take args?
+
+  //do i have to wrap each expression in parens somehow?
+  // this feels v. lispy
+  -}
+  pretty (Var a b) = pretty "(var" <+> pretty (show a) <+> pretty b <+> pretty ")"
+  pretty (Data a b) = pretty "(data" <+> pretty (show a) <+> pretty b <+> pretty ")"
+  pretty (Lit a b) = pretty "(literal" <+> pretty a <+> pretty b <+> pretty ")"
+  pretty (App a b c) = pretty "(apply" <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (Let a b c) = pretty "(let" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (Lambda a b c) = pretty "(lambda" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (Match a b c d) = pretty "(match" <+> pretty a <+> pretty (show b) <+> pretty c <+> pretty d <+> pretty ")"
+  pretty (Prim a b c) = pretty "(prim " <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+
+instance (Pretty t) => Pretty (Alt t) where
+  pretty (AltData a b c) = pretty "altData" <+> pretty (show a) <+> pretty (show b) <+> pretty c
+  pretty (AltLit a b) = pretty "altLit" <+> pretty a <+> pretty b
+  pretty (AltDefault a) = pretty "altDefault" <+> pretty a
