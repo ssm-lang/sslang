@@ -22,6 +22,9 @@ import           Common.Identifiers             ( Binder
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Types.TypeSystem               ( TypeDef(..) )
 
+import Prettyprinter
+import Prelude hiding ((<>), id, LT, GT)
+
 -- | Top-level compilation unit.
 data Program t = Program
   { programEntry :: VarId
@@ -31,7 +34,7 @@ data Program t = Program
 
 {- | Literal values supported by the language.
 
-Note that these don't carry any connotation of type: '1' just means '1', 
+Note that these don't carry any connotation of type: '1' just means '1',
 -}
 data Literal
   = LitIntegral Integer
@@ -252,3 +255,21 @@ wellFormed (Prim p es _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLt    ) [_, _]    = True
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
+
+instance Show Primitive where
+  show p = show $ pretty p
+
+instance Pretty Primitive where
+  pretty New = pretty "new"
+  pretty Dup = pretty "dup"
+  pretty Drop = pretty "drop"
+  pretty Reuse = pretty "reuse"
+  pretty Deref = pretty "deref"
+  pretty Assign = pretty "="
+  pretty After = pretty "after"
+  pretty Fork = pretty "fork"
+  pretty Wait = pretty "wait"
+  pretty Loop = pretty "loop"
+  pretty Break = pretty "break"
+  pretty Return = pretty "return"
+  {-pretty PrimOp = pretty "todo - handle primop"-}
