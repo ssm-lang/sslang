@@ -265,8 +265,10 @@ how to use:
 show (LitIntegral 3)
 show New
 Questions:
-why does `show (Lit "a" Integer)` not work?
+why does `show (Lit "a" Integer)` not work? -- b/c types not defined, just use () as a type
 why does `show (Var (VarId (Identifier "foo")) LitIntegral)` not work?
+
+show (Var (VarId (Identifier "foo")) ()))
 
 -}
 instance (Pretty e) => Show (Expr e) where
