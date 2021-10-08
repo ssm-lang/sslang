@@ -1,6 +1,6 @@
 module Main where
 
-import           Common.Errors                  ( CompileError(..) )
+import qualified Common.Compiler as Compiler
 import qualified Front
 import qualified IR
 import qualified Types
@@ -75,10 +75,10 @@ optionDescriptions =
            "Set the module name"
   ]
 
-runPass :: Either CompileError a -> IO a
-runPass (Left e) = do
-  hPrint stderr e >> exitFailure
-runPass (Right a) = return a
+doPass :: Compiler.Pass a -> IO a
+doPass p = case Compiler.runPass p of
+             Left e -> hPrint stderr e >> exitFailure
+             Right a -> return a
 
 readInput :: String -> IO String
 readInput "-"      = getContents
@@ -102,31 +102,31 @@ main = do
 
   inputs <- mapM readInput filenames
 
-  ast    <- runPass $ Front.parseSource (head inputs)
+  ast    <- doPass $ Front.parseSource (head inputs)
   when (optMode opts == DumpAST) $ print ast >> exitSuccess
 
-  ast' <- runPass $ Front.desugarAst ast
+  ast' <- doPass $ Front.desugarAst ast
   when (optMode opts == DumpASTP) $ print ast' >> exitSuccess
 
-  () <- runPass $ Front.checkAst ast'
+  () <- doPass $ Front.checkAst ast'
 
-  irA <- runPass $ Front.lowerAst ast'
+  irA <- doPass $ Front.lowerAst ast'
 
-  irC <- runPass $ Types.inferTypes irA
+  irC <- doPass $ Types.inferTypes irA
 
-  irP <- runPass $ Types.instantiateClasses irC
+  irP <- doPass $ Types.instantiateClasses irC
 
-  irF <- runPass $ Types.monomorphize irP
+  irF <- doPass $ Types.monomorphize irP
 
-  irL <- runPass $ IR.yieldAbstraction irF
+  irL <- doPass $ IR.yieldAbstraction irF
 
-  irG <- runPass $ IR.lambdaLift irL
+  irG <- doPass $ IR.lambdaLift irL
 
-  irI <- runPass $ IR.defunctionalize irG
+  irI <- doPass $ IR.defunctionalize irG
 
-  irD <- runPass $ IR.inferDrops irI
+  irD <- doPass $ IR.inferDrops irI
 
-  _ <- runPass $ IR.codegen irD
+  _ <- doPass $ IR.codegen irD
 
   putStrLn "TODO"
 

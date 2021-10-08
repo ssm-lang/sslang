@@ -1,6 +1,6 @@
 module Front where
 
-import           Common.Errors                  ( CompileError(..) )
+import qualified Common.Compiler               as Compiler
 
 import qualified Front.Ast                     as A
 import qualified IR.IR                         as L
@@ -12,18 +12,19 @@ import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parse )
 import           Front.Scanner                  ( runAlex )
 
+import           Control.Monad.Except           ( liftEither )
 import           Data.Bifunctor                 ( first )
 
-parseSource :: String -> Either CompileError A.Program
-parseSource = first ParseError . flip runAlex parse
+parseSource :: String -> Compiler.Pass A.Program
+parseSource = liftEither . first Compiler.ParseError . flip runAlex parse
 
-desugarAst :: A.Program -> Either CompileError A.Program
+desugarAst :: A.Program -> Compiler.Pass A.Program
 desugarAst = return . parseOperators
 
-checkAst :: A.Program -> Either CompileError ()
+checkAst :: A.Program -> Compiler.Pass ()
 checkAst prog = if checkRoutineSignatures prog
   then return ()
-  else Left $ AstError "Type signature mismatch" -- TODO: better error message
+  else Compiler.throw $ Compiler.AstError "Type signature mismatch" -- TODO: better error message
 
-lowerAst :: A.Program -> Either CompileError (L.Program L.Type)
+lowerAst :: A.Program -> Compiler.Pass (L.Program L.Type)
 lowerAst = return . lowerProgram

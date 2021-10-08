@@ -19,7 +19,7 @@ What is expected of the IR:
 {-# LANGUAGE DerivingVia #-}
 module Codegen.Codegen where
 
-import           Common.Errors                  ( CompileError(..) )
+import qualified Common.Compiler as Compiler
 import           Common.Identifiers             ( fromId )
 import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
@@ -30,15 +30,12 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
-import           Control.Monad.Except           ( ExceptT(..)
-                                                , MonadError(..)
-                                                , runExceptT
-                                                )
+import           Control.Monad.Except           ( MonadError(..))
 import           Control.Monad.State.Lazy       ( MonadState
-                                                , State
-                                                , evalState
                                                 , gets
                                                 , modify
+                                                , StateT(..)
+                                                , evalStateT
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( isJust )
@@ -84,14 +81,13 @@ data GenFnState = GenFnState
 We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
 allowing us to use monadic pattern matching.
 -}
-newtype GenFn a = GenFn (ExceptT CompileError (State GenFnState) a)
-  deriving Functor                    via (ExceptT CompileError (State GenFnState))
-  deriving Applicative                via (ExceptT CompileError (State GenFnState))
-  deriving Monad                      via (ExceptT CompileError (State GenFnState))
-  deriving (MonadError CompileError)  via (ExceptT CompileError (State GenFnState))
-  deriving (MonadState GenFnState)    via (ExceptT CompileError (State GenFnState))
-instance MonadFail GenFn where
-  fail = throwError . UnexpectedError
+newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
+  deriving Functor                      via (StateT GenFnState Compiler.Pass)
+  deriving Applicative                  via (StateT GenFnState Compiler.Pass)
+  deriving Monad                        via (StateT GenFnState Compiler.Pass)
+  deriving MonadFail                    via (StateT GenFnState Compiler.Pass)
+  deriving (MonadError Compiler.Error)  via (StateT GenFnState Compiler.Pass)
+  deriving (MonadState GenFnState)      via (StateT GenFnState Compiler.Pass)
 
 -- | Run a GenFn computation on a procedure.
 runGenFn
@@ -100,9 +96,9 @@ runGenFn
   -> Type                   -- ^ Name and type of return parameter of procedure
   -> Expr                   -- ^ Body of procedure
   -> GenFn a                -- ^ Translation monad to run
-  -> Either CompileError a  -- ^ Compilation may fail
+  -> Compiler.Pass a        -- ^ Pass on errors to caller
 runGenFn name params ret body (GenFn tra) =
-  evalState (runExceptT tra) $ GenFnState { fnName     = name
+  evalStateT tra $ GenFnState { fnName     = name
                                           , fnParams   = params
                                           , fnRetTy    = ret
                                           , fnBody     = body
@@ -206,7 +202,7 @@ undef = [cexp|0xdeadbeef|]
 {-------- Compilation --------}
 
 -- | Generate a C compilation from an SSM program.
-genProgram :: Program -> Either CompileError [C.Definition]
+genProgram :: Program -> Compiler.Pass [C.Definition]
 genProgram p@L.Program { L.programDefs = defs } = do
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
   return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
@@ -234,7 +230,7 @@ Each top-level function in a program is turned into three components:
 
 Items (2) and (3) include both declarations and definitions.
 -}
-genTop :: (VarId, Expr) -> Either CompileError ([C.Definition], [C.Definition])
+genTop :: (VarId, Expr) -> Compiler.Pass ([C.Definition], [C.Definition])
 genTop (name, l@(L.Lambda _ _ ty)) =
   runGenFn (fromId name) (zip argIds argTys) retTy body $ do
     (stepDecl , stepDefn ) <- genStep
