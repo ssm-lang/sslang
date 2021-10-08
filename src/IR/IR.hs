@@ -271,13 +271,16 @@ why does `show (Var (VarId (Identifier "foo")) LitIntegral)` not work?
 show (Var (VarId (Identifier "foo")) ()))
 
 -}
-instance (Pretty e) => Show (Expr e) where
+instance (Pretty t) => Show (Expr t) where
   show p = show $ pretty p
 
 instance Show Primitive where
   show p = show $ pretty p
 
 instance Show Literal where
+    show p = show $ pretty p
+
+instance (Pretty t) => Show (Program t) where
     show p = show $ pretty p
 
 instance Pretty Literal where
@@ -339,3 +342,10 @@ instance (Pretty t) => Pretty (Alt t) where
   pretty (AltData a b c) = pretty "altData" <+> pretty (show a) <+> pretty (show b) <+> pretty c
   pretty (AltLit a b) = pretty "altLit" <+> pretty a <+> pretty b
   pretty (AltDefault a) = pretty "altDefault" <+> pretty a
+
+{- todo: move this to Identifiers -}
+instance Pretty VarId where
+  pretty p = pretty (show p)
+
+instance (Pretty t) => Pretty (Program t) where
+  pretty p = pretty "program { entryPoint: " <+> (pretty (programEntry p)) <+>pretty "; defs:" <+> (pretty (programDefs p)) <+>pretty "; types: todo(types don't have a show)" <+>pretty "}"
