@@ -22,6 +22,24 @@ stack test sslang:scanner-test
 stack test sslang:parser-test
 ````
 
+## Development Setup
+
+To setup git aliases:
+
 ```
 git config --local include.path ../.gitconfig
 ```
+
+To lint:
+
+```
+git lint
+```
+
+To format:
+
+```
+git fmt
+```
+
+Run with `--help` for more details.

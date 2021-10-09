@@ -1,3 +1,5 @@
 [alias]
     root = rev-parse --show-toplevel
     hello = "!$(git rev-parse --show-toplevel)/scripts/hello"
+    fmt = "!$(git rev-parse --show-toplevel)/scripts/fmt"
+    lint = "!$(git rev-parse --show-toplevel)/scripts/lint"
