@@ -21,3 +21,7 @@ cd regression-tests ; ./runtests.sh
 stack test sslang:scanner-test
 stack test sslang:parser-test
 ````
+
+```
+git config --local include.path ../.gitconfig
+```
