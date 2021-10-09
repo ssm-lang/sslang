@@ -22,8 +22,12 @@ import           Common.Identifiers             ( Binder
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Types.TypeSystem               ( TypeDef(..) )
 
-import Prettyprinter
-import Prelude hiding ((<>), id, LT, GT)
+import           Prelude                 hiding ( (<>)
+                                                , GT
+                                                , LT
+                                                , id
+                                                )
+import           Prettyprinter
 
 -- | Top-level compilation unit.
 data Program t = Program
@@ -278,46 +282,46 @@ instance Show Primitive where
   show p = show $ pretty p
 
 instance Show Literal where
-    show p = show $ pretty p
+  show p = show $ pretty p
 
 instance (Pretty t) => Show (Program t) where
-    show p = show $ pretty p
+  show p = show $ pretty p
 
 instance Pretty Literal where
-    pretty (LitIntegral i) = pretty (show i)
-    pretty (LitBool b) = pretty (show b)
+  pretty (LitIntegral i) = pretty (show i)
+  pretty (LitBool     b) = pretty (show b)
 
 instance Pretty Primitive where
-  pretty New = pretty "new"
-  pretty Dup = pretty "dup"
-  pretty Drop = pretty "drop"
-  pretty Reuse = pretty "reuse"
-  pretty Deref = pretty "deref"
-  pretty Assign = pretty "="
-  pretty After = pretty "after"
-  pretty Fork = pretty "fork"
-  pretty Wait = pretty "wait"
-  pretty Loop = pretty "loop"
-  pretty Break = pretty "break"
-  pretty Return = pretty "return"
+  pretty New        = pretty "new"
+  pretty Dup        = pretty "dup"
+  pretty Drop       = pretty "drop"
+  pretty Reuse      = pretty "reuse"
+  pretty Deref      = pretty "deref"
+  pretty Assign     = pretty "="
+  pretty After      = pretty "after"
+  pretty Fork       = pretty "fork"
+  pretty Wait       = pretty "wait"
+  pretty Loop       = pretty "loop"
+  pretty Break      = pretty "break"
+  pretty Return     = pretty "return"
   pretty (PrimOp p) = pretty "PrimOp" <+> pretty p
 
 instance Pretty PrimOp where
-  pretty PrimNeg = pretty "-"
-  pretty PrimNot = pretty "!"
+  pretty PrimNeg    = pretty "-"
+  pretty PrimNot    = pretty "!"
   pretty PrimBitNot = pretty "~"
-  pretty PrimAdd = pretty "+"
-  pretty PrimSub = pretty "-"
-  pretty PrimMul = pretty "*"
-  pretty PrimDiv = pretty "/"
-  pretty PrimMod = pretty "%"
+  pretty PrimAdd    = pretty "+"
+  pretty PrimSub    = pretty "-"
+  pretty PrimMul    = pretty "*"
+  pretty PrimDiv    = pretty "/"
+  pretty PrimMod    = pretty "%"
   pretty PrimBitAnd = pretty "&"
-  pretty PrimBitOr = pretty "|"
-  pretty PrimEq = pretty "=="
-  pretty PrimGt = pretty ">"
-  pretty PrimGe = pretty ">="
-  pretty PrimLt = pretty "<"
-  pretty PrimLe = pretty "<="
+  pretty PrimBitOr  = pretty "|"
+  pretty PrimEq     = pretty "=="
+  pretty PrimGt     = pretty ">"
+  pretty PrimGe     = pretty ">="
+  pretty PrimLt     = pretty "<"
+  pretty PrimLe     = pretty "<="
 
 instance (Pretty t) => Pretty (Expr t) where
   {- do pretty show(VarId)?
@@ -329,18 +333,32 @@ instance (Pretty t) => Pretty (Expr t) where
   //do i have to wrap each expression in parens somehow?
   // this feels v. lispy
   -}
-  pretty (Var a b) = pretty "(var" <+> pretty (show a) <+> pretty b <+> pretty ")"
-  pretty (Data a b) = pretty "(data" <+> pretty (show a) <+> pretty b <+> pretty ")"
+  pretty (Var a b) =
+    pretty "(var" <+> pretty (show a) <+> pretty b <+> pretty ")"
+  pretty (Data a b) =
+    pretty "(data" <+> pretty (show a) <+> pretty b <+> pretty ")"
   pretty (Lit a b) = pretty "(literal" <+> pretty a <+> pretty b <+> pretty ")"
-  pretty (App a b c) = pretty "(apply" <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
-  pretty (Let a b c) = pretty "(let" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
-  pretty (Lambda a b c) = pretty "(lambda" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
-  pretty (Match a b c d) = pretty "(match" <+> pretty a <+> pretty (show b) <+> pretty c <+> pretty d <+> pretty ")"
-  pretty (Prim a b c) = pretty "(prim " <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (App a b c) =
+    pretty "(apply" <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (Let a b c) =
+    pretty "(let" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
+  pretty (Lambda a b c) =
+    pretty "(lambda" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty
+      ")"
+  pretty (Match a b c d) =
+    pretty "(match"
+      <+> pretty a
+      <+> pretty (show b)
+      <+> pretty c
+      <+> pretty d
+      <+> pretty ")"
+  pretty (Prim a b c) =
+    pretty "(prim " <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
 
 instance (Pretty t) => Pretty (Alt t) where
-  pretty (AltData a b c) = pretty "altData" <+> pretty (show a) <+> pretty (show b) <+> pretty c
-  pretty (AltLit a b) = pretty "altLit" <+> pretty a <+> pretty b
+  pretty (AltData a b c) =
+    pretty "altData" <+> pretty (show a) <+> pretty (show b) <+> pretty c
+  pretty (AltLit a b  ) = pretty "altLit" <+> pretty a <+> pretty b
   pretty (AltDefault a) = pretty "altDefault" <+> pretty a
 
 {- todo: move this to Identifiers -}
@@ -348,4 +366,10 @@ instance Pretty VarId where
   pretty p = pretty (show p)
 
 instance (Pretty t) => Pretty (Program t) where
-  pretty p = pretty "program { entryPoint: " <+> (pretty (programEntry p)) <+>pretty "; defs:" <+> (pretty (programDefs p)) <+>pretty "; types: todo(types don't have a show)" <+>pretty "}"
+  pretty p =
+    pretty "program { entryPoint: "
+      <+> (pretty (programEntry p))
+      <+> pretty "; defs:"
+      <+> (pretty (programDefs p))
+      <+> pretty "; types: todo(types don't have a show)"
+      <+> pretty "}"
