@@ -19,7 +19,7 @@ What is expected of the IR:
 {-# LANGUAGE DerivingVia #-}
 module Codegen.Codegen where
 
-import qualified Common.Compiler as Compiler
+import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( fromId )
 import qualified IR.IR                         as L
 import qualified Types.Flat                    as L
@@ -30,12 +30,12 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
-import           Control.Monad.Except           ( MonadError(..))
+import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
-                                                , gets
-                                                , modify
                                                 , StateT(..)
                                                 , evalStateT
+                                                , gets
+                                                , modify
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( isJust )
@@ -97,16 +97,16 @@ runGenFn
   -> Expr                   -- ^ Body of procedure
   -> GenFn a                -- ^ Translation monad to run
   -> Compiler.Pass a        -- ^ Pass on errors to caller
-runGenFn name params ret body (GenFn tra) =
-  evalStateT tra $ GenFnState { fnName     = name
-                                          , fnParams   = params
-                                          , fnRetTy    = ret
-                                          , fnBody     = body
-                                          , fnLocs     = []
-                                          , fnMaxWaits = 0
-                                          , fnCases    = 0
-                                          , fnTmps     = 0
-                                          }
+runGenFn name params ret body (GenFn tra) = evalStateT tra $ GenFnState
+  { fnName     = name
+  , fnParams   = params
+  , fnRetTy    = ret
+  , fnBody     = body
+  , fnLocs     = []
+  , fnMaxWaits = 0
+  , fnCases    = 0
+  , fnTmps     = 0
+  }
 
 -- | Read and increment the number of cases in a procedure, i.e., fnCases++.
 nextCase :: GenFn Int

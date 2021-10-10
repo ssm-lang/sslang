@@ -27,9 +27,10 @@ import           System.IO                      ( hPrint
                                                 )
 
 data Mode
-  = DumpAST    -- ^ AST before operator parsing
-  | DumpASTP   -- ^ AST after operators are parsed
-  | DumpIR     -- ^ Intermediate representation
+  = DumpAST     -- ^ AST before operator parsing
+  | DumpASTP    -- ^ AST after operators are parsed
+  | DumpIR      -- ^ Intermediate representation
+  | GenerateC   -- ^ Generate C backend
   deriving (Eq, Show)
 
 data Options = Options
@@ -62,13 +63,9 @@ optionDescriptions =
            ["dump-ir"]
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
-{-    , Option "" ["generate-c"]
+  , Option "" ["generate-c"]
         (NoArg (\ opt -> return opt { optMode = GenerateC }))
         "Generate C (default)"
-    , Option "" ["generate-h"]
-        (NoArg (\ opt -> return opt { optMode = GenerateH }))
-        "Generate a C header file"
--}
   , Option "m"
            ["module-name"]
            (ReqArg (\mn opt -> return opt { modName = mn }) "<module-name>")
@@ -126,12 +123,6 @@ main = do
 
   irD <- doPass $ IR.inferDrops irI
 
-  _ <- doPass $ IR.codegen irD
+  cDefs <- doPass $ IR.codegen irD
 
-  putStrLn "TODO"
-
---  when (optMode == DumpIR) $ print ir >> exitSuccess
-
---  when (optMode == GenerateH) $ print (hgen modName ir) >> exitSuccess
-
---  when (optMode == GenerateC) $ print (cgen modName ir) >> exitSuccess
+  when (optMode opts == GenerateC) $ doPass (IR.prettyC cDefs) >>= print
