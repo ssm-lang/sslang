@@ -48,7 +48,7 @@ data Expr = Id VarId
           | Loop Expr
           | Par [Expr]
           | IfElse Expr Expr Expr
-          | Later Expr Pat Expr
+          | After Expr Pat Expr
           | Assign Pat Expr
           | Constraint Expr Ty
           | As VarId Expr
@@ -85,7 +85,7 @@ rewrite f (While e1 e2) = While (f e1) (f e2)
 rewrite f (Loop e) = Loop (f e)
 rewrite f (Par e) = Par $ map f e
 rewrite f (IfElse e1 e2 e3) = IfElse (f e1) (f e2) (f e3)
-rewrite f (Later e1 p e2) = Later (f e1) p (f e2)
+rewrite f (After e1 p e2) = After (f e1) p (f e2)
 rewrite f (Assign p e) = Assign p (f e)
 rewrite f (Constraint e t) = Constraint (f e) t
 rewrite f (As s e) = As s (f e)
@@ -150,7 +150,7 @@ instance Pretty Expr where
                                                   , pretty e2 ]
                                   , nest 2 $ vsep [ pretty "else"
                                                   , pretty e3 ] ]
-  pretty (Later e1 v e2) = pretty e1 <+> pretty "later" <+> 
+  pretty (After e1 v e2) = pretty "after" <+> pretty e1 <+> pretty "," <+>
                            pretty v <+> pretty "<-" <+> pretty e2
   pretty (Assign v e) = pretty v <+> pretty "<-" <+> pretty e
   pretty (Wait vars) =
