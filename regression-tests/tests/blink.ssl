@@ -1,6 +1,6 @@
 main(led : Ref (Sched Int) ) =
   loop
-    50 ms later led <- 1
+    after 50 ms , led <- 1
     wait led
-    50 ms later led <- 0
+    after 50 ms , led <- 0
     wait led

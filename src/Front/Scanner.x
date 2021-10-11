@@ -46,7 +46,7 @@ tokens :-
     \:    { keyword TColon }
     do    { doBlock }
     par   { layout  TPar TDBar }
-    later { keyword TLater }
+    after { keyword TAfter }
     wait  { layout  TWait TDBar }
 
     \<\-  { layout  TLarrow TSemicolon }
@@ -240,7 +240,7 @@ data TokenType
   | TAnd
   | TCase
   | TOf
-  | TLater
+  | TAfter
   | TWait
   | TEq
   | TLarrow
