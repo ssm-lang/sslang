@@ -20,7 +20,7 @@ import           Common.Identifiers             ( Binder
                                                 )
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Types.TypeSystem               ( TypeDef(..) )
+import           IR.Types.TypeSystem            ( TypeDef(..) )
 
 -- | Top-level compilation unit.
 data Program t = Program

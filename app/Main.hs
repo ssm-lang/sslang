@@ -3,7 +3,7 @@ module Main where
 import qualified Common.Compiler as Compiler
 import qualified Front
 import qualified IR
-import qualified Types
+import qualified Codegen
 
 import           Control.Monad                  ( unless
                                                 , when
@@ -107,22 +107,22 @@ main = do
 
   () <- doPass $ Front.checkAst ast'
 
-  irA <- doPass $ Front.lowerAst ast'
+  irA <- doPass $ IR.lowerAst ast'
 
-  irC <- doPass $ Types.inferTypes irA
+  irC <- doPass $ IR.inferTypes irA
 
-  irP <- doPass $ Types.instantiateClasses irC
+  irP <- doPass $ IR.instantiateClasses irC
 
-  irF <- doPass $ Types.monomorphize irP
+  irY <- doPass $ IR.yieldAbstraction irP
 
-  irL <- doPass $ IR.yieldAbstraction irF
+  irL <- doPass $ IR.lambdaLift irY
 
-  irG <- doPass $ IR.lambdaLift irL
-
-  irI <- doPass $ IR.defunctionalize irG
+  irI <- doPass $ IR.defunctionalize irL
 
   irD <- doPass $ IR.inferDrops irI
 
-  cDefs <- doPass $ IR.codegen irD
+  irM <- doPass $ IR.monomorphize irD
 
-  when (optMode opts == GenerateC) $ doPass (IR.prettyC cDefs) >>= print
+  cDefs <- doPass $ Codegen.genIR irM
+
+  when (optMode opts == GenerateC) $ doPass (Codegen.prettyC cDefs) >>= print
