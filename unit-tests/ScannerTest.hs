@@ -428,7 +428,7 @@ main = do
     , Token (AlexPn 3 1 4)   (TOp "#")
     , Token (AlexPn 5 1 6)   (TOp "$")
     , Token (AlexPn 7 1 8)   (TOp "%")
-    , Token (AlexPn 9 1 10)  (TOp "&")
+    , Token (AlexPn 9 1 10)  TAmpersand
     , Token (AlexPn 11 1 12) (TOp "*")
     , Token (AlexPn 13 1 14) (TOp "+")
     , Token (AlexPn 15 1 16) (TOp ".")

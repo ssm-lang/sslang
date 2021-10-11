@@ -54,7 +54,7 @@ tokens :-
     do    { doBlock }
     par   { layout  TPar TDBar }
     later { keyword TLater }
-    wait  { keyword TWait }
+    wait  { layout  TWait TDBar }
 
     \<\-  { layout  TLarrow TSemicolon }
     \|\|  { keyword TDBar }
