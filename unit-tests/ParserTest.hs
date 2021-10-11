@@ -9,7 +9,7 @@ main :: IO ()
 main = do
   putStrLn "Parser test"
   print $ parseStr $ unlines
-    [ "main(clk : Ref Sched Int) ="
+    [ "main(clk : Ref Int) ="
     , "  loop"
     , "    wait clk"
     , "    wait clk"
