@@ -8,10 +8,10 @@ module Common.Identifiers
   ( Identifiable(..)
   , IsString(..)
   , fromId
-  , TVarId(..)
   , TConId(..)
-  , DConId(..)
+  , TVarId(..)
   , TVarIdx(..)
+  , DConId(..)
   , FfiId(..)
   , VarId(..)
   , FieldId(..)
@@ -50,25 +50,36 @@ instance Monoid Identifier where
 fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
 
--- | ToIdentifier for type variable, e.g., "a".
-newtype TVarId = TVarId Identifier
+-- | ToIdentifier for type constructors, e.g., "Option".
+newtype TConId = TConId Identifier
   deriving Eq
-  deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
 
--- | ToIdentifier for type constructors, e.g., "Option".
-newtype TConId = TConId Identifier
+instance Show TConId where
+  show (TConId i) = "Ty" ++ show i
+
+-- | ToIdentifier for type variable, e.g., "a".
+newtype TVarId = TVarId Identifier
   deriving Eq
-  deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+
+instance Show TVarId where
+  show (TVarId i) = "tyvar" ++ show i
+
+-- | de Bruijn index for type variables, e.g., "'0".
+newtype TVarIdx = TVarIdx Int
+  deriving Eq
+
+instance Show TVarIdx where
+  show (TVarIdx i) = "'" ++ show i
 
 -- | ToIdentifier for data constructors, e.g., "None".
 newtype DConId = DConId Identifier
@@ -109,13 +120,6 @@ newtype FieldId = FieldId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
-
--- | de Bruijn index for type variables, e.g., "'0".
-newtype TVarIdx = TVarIdx Int
-  deriving Eq
-
-instance Show TVarIdx where
-  show (TVarIdx i) = "'" ++ show i
 
 -- | The name (if any) a value is bound to.
 type Binder = Maybe VarId

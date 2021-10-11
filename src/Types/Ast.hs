@@ -30,7 +30,6 @@ newtype Type = Type [TypeAnnote]
   deriving Semigroup  via [TypeAnnote]
   deriving Monoid     via [TypeAnnote]
 
-
 -- | A type annotation.
 data TypeAnnote
   = TBuiltin (Builtin Type)         -- ^ Builtin types

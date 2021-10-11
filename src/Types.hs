@@ -29,7 +29,9 @@ instantiateClasses = return . fmap class2Poly
 
 monomorphize :: Program Poly.Type -> Compiler.Pass (Program Flat.Type)
 monomorphize = return . fmap poly2Flat
-  where poly2Flat :: Poly.Type -> Flat.Type
-        poly2Flat (Poly.TBuiltin bty) = Flat.TBuiltin $ fmap poly2Flat bty
-        poly2Flat (Poly.TCon tid tys) = Flat.TCon tid -- TODO concat tys
-        poly2Flat (Poly.TVar _) = error "Cannot handle this right now"
+ where
+  poly2Flat :: Poly.Type -> Flat.Type
+  poly2Flat (Poly.TBuiltin bty) = Flat.TBuiltin $ fmap poly2Flat bty
+  poly2Flat (Poly.TCon tid tys) =
+    Flat.TCon $ Flat.flattenApp tid $ fmap poly2Flat tys
+  poly2Flat (Poly.TVar _) = error "Cannot handle this right now"

@@ -18,6 +18,7 @@ easily lower them with a 1:1 encoding.
 module Types.Flat
   ( Type(..)
   , Builtin(..)
+  , flattenApp
   ) where
 
 import           Common.Identifiers             ( TConId )
@@ -35,3 +36,7 @@ instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
   injectBuiltin _            = Nothing
+
+-- | Flatten a list of type constructors into a
+flattenApp :: TConId -> [Type] -> TConId
+flattenApp = error "TODO"

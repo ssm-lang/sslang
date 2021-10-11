@@ -10,14 +10,15 @@ import qualified Text.PrettyPrint.Mainland.Class
                                                as C
 
 import qualified Types.Flat                    as Flat
+import qualified Types.Poly                    as Poly
 
 yieldAbstraction :: I.Program a -> Compiler.Pass (I.Program a)
 yieldAbstraction = return
 
-lambdaLift :: I.Program a -> Compiler.Pass (I.Program a)
+lambdaLift :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 lambdaLift = return
 
-defunctionalize :: I.Program a -> Compiler.Pass (I.Program a)
+defunctionalize :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 defunctionalize = return
 
 inferDrops :: I.Program a -> Compiler.Pass (I.Program a)
