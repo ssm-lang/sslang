@@ -31,6 +31,7 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
+import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -161,6 +162,7 @@ builtinId I.Unit        = todo
 builtinId I.Void        = todo
 builtinId (I.Arrow _ _) = todo
 builtinId (I.Tuple _  ) = todo
+builtinId (I.Integral s) = int_ s
 builtinId (I.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
 
 -- | Translate an SSM 'Type' to a 'C.Type'.
@@ -423,7 +425,7 @@ genExpr (I.Var n _) = do
 genExpr (I.Data _ _             ) = nope
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
-  addLocal (n, I.typeExpr d)
+  addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
   let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
   (bodyVal, bodyStms) <- genExpr b
@@ -486,7 +488,7 @@ genPrim I.Deref [a] _ = do
 genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
-  Just assign       <- return $ genAssign $ I.typeExpr lhs
+  Just assign       <- return $ genAssign $ extract lhs
   -- TODO: handle event type
   let assignBlock = [citems|
           $items:lhsStms
@@ -498,7 +500,7 @@ genPrim I.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
-  Just later          <- return $ genLater $ I.typeExpr lhs
+  Just later          <- return $ genLater $ extract lhs
   -- TODO: handle event type
   let laterBlock = [citems|
           $items:timeStms

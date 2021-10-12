@@ -101,11 +101,11 @@ typ1 : typ1 typ2 { TApp $1 $2 }
      | typ2      { $1 }
 
 typ2 : id                        { TCon $1 }
-     | '[' typ ']'               { TApp (TCon "List") $2 }
+     | '[' typ ']'               { TApp (TCon "[]") $2 }
      | '(' typ ')'               { $2 }
      | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
      | '(' ')'                   { TCon "()" }
-     | '&' typ2                  { TApp (TCon "Ref") $2 }
+     | '&' typ2                  { TApp (TCon "&") $2 }
 
 tupleTyps : typ               { [$1] }
           | typ ',' tupleTyps { $1 : $3 }
@@ -119,8 +119,8 @@ expr0 : 'if' expr 'then' expr0 elseOpt      { IfElse $2 $4 $5 }
       | 'loop' expr0                        { Loop $2 }
       | 'wait' '{' parExprs '}'             { Wait $3 }
       | 'par' '{' parExprs '}'              { Par (reverse $3) }
-      | 'after' expr2 ',' expr2 '<-' expr0  { After $2 (exprToPat $4) $6 }
-      | expr2 '<-' expr0                    { Assign (exprToPat $1) $3 }
+      | 'after' expr2 ',' expr2 '<-' expr0  { After $2 $4 $6 }
+      | expr2 '<-' expr0                    { Assign $1 $3 }
       | id '@' expr0                        { As $1 $3 }
       | expr1                               { $1 }
 
