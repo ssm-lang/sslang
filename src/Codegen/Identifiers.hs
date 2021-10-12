@@ -242,7 +242,7 @@ sv :: CIdent
 sv = "sv"
 
 int_ :: Int -> CIdent
-int_ s = "i" <> fromString (show s) <> "_t"
+int_ s = "i" <> fromString (show s)
 
 {----- Memory management -----}
 

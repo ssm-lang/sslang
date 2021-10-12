@@ -208,11 +208,11 @@ undef = [cexp|0xdeadbeef|]
 genProgram :: Program -> Compiler.Pass [C.Definition]
 genProgram p@I.Program { I.programDefs = defs } = do
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
-  return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
+  return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
-includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
+includes = [cunit|$esc:("#include \"ssm.h\"")|]
 
 -- | Setup the entry point of the program.
 genInitProgram :: Program -> [C.Definition]
@@ -506,7 +506,7 @@ genPrim I.After [time, lhs, rhs] _ = do
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $exp:later($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
+          $exp:later($exp:lhsVal, $id:now() + $exp:timeVal, $exp:rhsVal);
         |]
   return (unit, laterBlock)
 genPrim I.Fork procs _ = do
@@ -549,7 +549,7 @@ genPrim I.Wait vars _ = do
   yield <- genYield
   let trigs = zip [1 :: Int ..] varVals
       sens (i, var) =
-        [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
+        [citem|$id:sensitize(&$exp:var->$id:sv, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
   return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
 genPrim I.Loop [b] _ = do
