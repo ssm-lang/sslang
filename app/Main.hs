@@ -27,7 +27,8 @@ import           System.IO                      ( hPrint
                                                 )
 
 data Mode
-  = DumpAST     -- ^ AST before operator parsing
+  = DumpTokens  -- ^ Token stream before parsing
+  | DumpAST     -- ^ AST before operator parsing
   | DumpASTP    -- ^ AST after operators are parsed
   | DumpIR      -- ^ Intermediate representation
   | GenerateC   -- ^ Generate C backend
@@ -51,6 +52,10 @@ usageMessage = do
 optionDescriptions :: [OptDescr (Options -> IO Options)]
 optionDescriptions =
   [ Option "h" ["help"] (NoArg (\_ -> usageMessage >> exitSuccess)) "Print help"
+  , Option ""
+           ["dump-tokens"]
+           (NoArg (\opt -> return opt { optMode = DumpTokens }))
+           "Print the token stream"
   , Option ""
            ["dump-ast"]
            (NoArg (\opt -> return opt { optMode = DumpAST }))
@@ -99,6 +104,9 @@ main = do
 
   inputs <- mapM readInput filenames
 
+  when (optMode opts == DumpTokens) $ do
+    doPass (Front.tokenStream (head inputs)) >>= mapM_ print
+    exitSuccess
   ast    <- doPass $ Front.parseSource (head inputs)
   when (optMode opts == DumpAST) $ print ast >> exitSuccess
 
@@ -125,4 +133,4 @@ main = do
 
   cDefs <- doPass $ Codegen.genIR irM
 
-  when (optMode opts == GenerateC) $ doPass (Codegen.prettyC cDefs) >>= print
+  when (optMode opts == GenerateC) $ doPass (Codegen.prettyC cDefs) >>= putStrLn
