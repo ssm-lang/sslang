@@ -11,16 +11,56 @@ import qualified IR.Types.Classes              as Classes
 import qualified IR.Types.Flat                 as Flat
 import qualified IR.Types.Poly                 as Poly
 
+import           Control.Comonad                ( Comonad(..) )
+import           Data.Bifunctor                 ( Bifunctor(..) )
+import           GHC.Stack                      ( HasCallStack )
 import           IR.LowerAst                    ( lowerProgram )
+import           IR.Types.TypeSystem            ( int
+                                                , ref
+                                                , unit
+                                                , void
+                                                )
 
 lowerAst :: A.Program -> Compiler.Pass (I.Program Ann.Type)
 lowerAst = return . lowerProgram
 
 inferTypes :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
-inferTypes = return . fmap ann2Class
+inferTypes p@I.Program { I.programDefs = defs } = return $ ann2Class <$> p
+  { I.programDefs = second pmInfer <$> defs
+  }
  where
-  ann2Class :: Ann.Type -> Classes.Type
-  ann2Class (Ann.Type tys) = anns2Class $ head tys
+  pmInfer :: I.Expr Ann.Type -> I.Expr Ann.Type
+  pmInfer (I.Let vs b t) | bty /= Ann.untyped = I.Let vs b' (bty <> t)
+    where (b', bty) = (pmInfer b, extract b')
+  pmInfer (I.Prim I.New [e] t) | ety /= Ann.untyped = I.Prim I.New
+                                                             [e']
+                                                             (ety <> t)
+    where (e', ety) = (pmInfer e, extract e')
+  pmInfer (I.Prim I.Dup [e] t) | ety /= Ann.untyped = I.Prim I.Dup
+                                                             [e']
+                                                             (ety <> t)
+    where (e', ety) = (pmInfer e, extract e')
+  pmInfer (I.Prim I.Assign [lhs, rhs] t) = I.Prim
+    I.Assign
+    [fmap ((ref $ extract rhs') <>) lhs', rhs']
+    (unit <> t)
+    where (lhs', rhs') = (pmInfer lhs, pmInfer rhs)
+  pmInfer (I.Prim I.After [del, lhs, rhs] t) = I.Prim
+    I.After
+    [fmap (int 32 <>) del', fmap ((ref $ extract rhs') <>) lhs', rhs']
+    (unit <> t)
+    where (del', lhs', rhs') = (pmInfer del, pmInfer lhs, pmInfer rhs)
+  -- pmInfer (I.Prim I.Wait       rs t) = unit <> t
+  pmInfer (I.Prim I.Loop       [b]  t) = I.Prim I.Loop [pmInfer b] $ unit <> t
+  pmInfer (I.Prim I.Break      []  t) = I.Prim I.Break [] $ void <> t
+  pmInfer (I.Prim I.Return     []  t) = I.Prim I.Return [] $ void <> t
+  -- pmInfer (I.Prim (I.PrimOp _) _  t) = void <> t
+  -- pmInfer (I.Prim I.Fork ps t) | all ((/= Ann.untyped) . pmInfer) ps = unit <> t
+  pmInfer e = e
+
+  ann2Class :: HasCallStack => Ann.Type -> Classes.Type
+  ann2Class (Ann.Type []      ) = error "no type annotation"
+  ann2Class (Ann.Type (ty : _)) = anns2Class ty
 
   anns2Class :: Ann.TypeAnnote -> Classes.Type
   anns2Class (Ann.TBuiltin bty) = Classes.TBuiltin $ fmap ann2Class bty
