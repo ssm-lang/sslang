@@ -118,12 +118,12 @@ lowerExpr (A.Par  es) k = I.Prim I.Fork exprs (k I.untyped)
 lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
-  tArm = I.AltLit (I.LitBool True) (lowerExpr t id)
-  eArm = I.AltDefault (lowerExpr e id)
+  tArm = (I.AltLit (I.LitBool True), lowerExpr t id)
+  eArm = (I.AltDefault, lowerExpr e id)
 lowerExpr (A.After delay lhs rhs) k = I.Prim I.After args (k I.untyped)
-  where args = map (`lowerExpr` id) [delay, todo lhs, rhs]
+  where args = map (`lowerExpr` id) [delay, lhs, rhs]
 lowerExpr (A.Assign lhs rhs) k = I.Prim I.Assign args (k I.untyped)
-  where args = map (`lowerExpr` id) [todo lhs, rhs]
+  where args = map (`lowerExpr` id) [lhs, rhs]
 lowerExpr (A.Constraint e ty) k = lowerExpr e ((<> lowerType ty) . k)
 lowerExpr (A.Wait exprs     ) k = I.Prim I.Wait args (k I.untyped)
   where args = map (`lowerExpr` id) exprs

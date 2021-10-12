@@ -48,8 +48,8 @@ data Expr = Id VarId
           | Loop Expr
           | Par [Expr]
           | IfElse Expr Expr Expr
-          | After Expr Pat Expr
-          | Assign Pat Expr
+          | After Expr Expr Expr
+          | Assign Expr Expr
           | Constraint Expr Ty
           | As VarId Expr
           | Wait [Expr]
@@ -118,6 +118,8 @@ instance Pretty Bind where
 
 instance Pretty Ty where
   pretty (TCon id) = pretty id
+  pretty (TApp (TCon "[]") t2) = pretty "[" <> parens (pretty t2) <> pretty "]"
+  pretty (TApp (TCon "&") t2) = pretty "&" <> parens (pretty t2)
   pretty (TApp t (TCon id)) = pretty t <+> pretty id
   pretty (TApp t1 t2) = pretty t1 <+> parens (pretty t2)
   pretty (TTuple tys) = pretty "(" <> hsep (punctuate comma $ map pretty tys) <> pretty ")"

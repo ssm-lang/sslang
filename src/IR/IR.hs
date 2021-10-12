@@ -7,7 +7,6 @@ module IR.IR
   , Expr(..)
   , Alt(..)
   , collectApp
-  , typeExpr
   , VarId(..)
   , DConId(..)
   , wellFormed
@@ -19,6 +18,7 @@ import           Common.Identifiers             ( Binder
                                                 , VarId(..)
                                                 )
 
+import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           IR.Types.TypeSystem            ( TypeDef(..) )
 
@@ -140,7 +140,7 @@ data Expr t
   {- ^ 'Lambda v b t' constructs an anonymous function of type 't' that binds
   a value to parameter 'v' in its body 'b'.
   -}
-  | Match (Expr t) Binder [Alt t] t
+  | Match (Expr t) Binder [(Alt, Expr t)] t
   {- ^ 'Match s v alts t' pattern-matches on scrutinee 's' against alternatives
   'alts', each producing a value of type 't'. In the expression of each
   alternative, the value of 's' is bound to variable 'v'.
@@ -151,18 +151,18 @@ data Expr t
   -}
 
 -- | An alternative in a pattern-match.
-data Alt t
-  = AltData DConId [Binder] (Expr t)
+data Alt
+  = AltData DConId [Binder]
   {- ^ 'AltData d vs e' matches against data constructor 'd', producing
   expresison 'e', with dcon members bound to names 'vs' in 'e'.
   -}
-  | AltLit Literal (Expr t)
+  | AltLit Literal
   {- ^ 'AltLit l e' matches against literal 'd', producing expression 'e'.
 
   TODO: do we even need this? It seems like this is better suited to PrimEq
   applied to literals anyway.
   -}
-  | AltDefault (Expr t)
+  | AltDefault
   {- ^ 'AltDefault e' matches anything, producing expression 'e'. -}
 
 -- | Collect a curried application into the function applied to a list of args.
@@ -177,17 +177,6 @@ collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
 
--- | Extract the type information embedded in an expression.
-typeExpr :: Expr t -> t
-typeExpr (Var  _ t     ) = t
-typeExpr (Data _ t     ) = t
-typeExpr (Lit  _ t     ) = t
-typeExpr (Let    _ _ t ) = t
-typeExpr (Lambda _ _ t ) = t
-typeExpr (App    _ _ t ) = t
-typeExpr (Match _ _ _ t) = t
-typeExpr (Prim _ _ t   ) = t
-
 instance Functor Program where
   fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
     Program { programEntry = e
@@ -196,19 +185,35 @@ instance Functor Program where
             }
 
 instance Functor Expr where
-  fmap f (Var  v t      ) = Var v (f t)
-  fmap f (Data d t      ) = Data d (f t)
-  fmap f (Lit  l t      ) = Lit l (f t)
-  fmap f (App    l  r t ) = App (fmap f l) (fmap f r) (f t)
-  fmap f (Let    xs b t ) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
-  fmap f (Lambda v  b t ) = Lambda v (fmap f b) (f t)
-  fmap f (Match s b as t) = Match (fmap f s) b (fmap (fmap f) as) (f t)
-  fmap f (Prim p as t   ) = Prim p (fmap (fmap f) as) (f t)
+  fmap f (Var  v t     ) = Var v (f t)
+  fmap f (Data d t     ) = Data d (f t)
+  fmap f (Lit  l t     ) = Lit l (f t)
+  fmap f (App    l  r t) = App (fmap f l) (fmap f r) (f t)
+  fmap f (Let    xs b t) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
+  fmap f (Lambda v  b t) = Lambda v (fmap f b) (f t)
+  fmap f (Match s b as t) =
+    Match (fmap f s) b (fmap (second $ fmap f) as) (f t)
+  fmap f (Prim p as t) = Prim p (fmap (fmap f) as) (f t)
 
-instance Functor Alt where
-  fmap f (AltData d bs b) = AltData d bs (fmap f b)
-  fmap f (AltLit l b    ) = AltLit l (fmap f b)
-  fmap f (AltDefault b  ) = AltDefault (fmap f b)
+instance Comonad Expr where
+  extract (Var  _ t     ) = t
+  extract (Data _ t     ) = t
+  extract (Lit  _ t     ) = t
+  extract (Let    _ _ t ) = t
+  extract (Lambda _ _ t ) = t
+  extract (App    _ _ t ) = t
+  extract (Match _ _ _ t) = t
+  extract (Prim _ _ t   ) = t
+  extend f e@(Var  i _) = Var i (f e)
+  extend f e@(Data i _) = Data i (f e)
+  extend f e@(Lit  l _) = Lit l (f e)
+  extend f e@(Let xs b _) =
+    Let (fmap (second $ extend f) xs) (extend f b) (f e)
+  extend f e@(Lambda v b _) = Lambda v (extend f b) (f e)
+  extend f e@(App    l r _) = App (extend f l) (extend f r) (f e)
+  extend f e@(Match s b as _) =
+    Match (extend f s) b (fmap (second $ extend f) as) (f e)
+  extend f e@(Prim p es _) = Prim p (fmap (extend f) es) (f e)
 
 {- | Predicate of whether an expression "looks about right".
 
@@ -226,12 +231,8 @@ wellFormed (Lit  _ _        ) = True
 wellFormed (Let    defs b _ ) = all (wellFormed . snd) defs && wellFormed b
 wellFormed (Lambda _    b _ ) = wellFormed b
 wellFormed (App    f    a _ ) = wellFormed f && wellFormed a
-wellFormed (Match s _ alts _) = wellFormed s && all wfAlt alts
- where
-  wfAlt (AltData _ _ e) = wellFormed e
-  wfAlt (AltLit _ e   ) = wellFormed e
-  wfAlt (AltDefault e ) = wellFormed e
-wellFormed (Prim p es _) = wfPrim p es && all wellFormed es
+wellFormed (Match s _ alts _) = wellFormed s && all (wellFormed . snd) alts
+wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
  where
   wfPrim Dup                 [_]       = True
   wfPrim Drop                [_]       = True
