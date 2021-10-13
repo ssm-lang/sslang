@@ -158,12 +158,12 @@ typeId (I.TBuiltin bt) = builtinId bt
 
 -- | Obtains the C type name corresponding to an SSM built-in type.
 builtinId :: I.Builtin Type -> CIdent
-builtinId I.Unit        = todo
-builtinId I.Void        = todo
-builtinId (I.Arrow _ _) = todo
-builtinId (I.Tuple _  ) = todo
+builtinId I.Unit         = "unit"
+builtinId I.Void         = todo
+builtinId (I.Arrow _ _ ) = todo
+builtinId (I.Tuple    _) = todo
 builtinId (I.Integral s) = int_ s
-builtinId (I.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
+builtinId (I.Ref      t) = sv_ $ typeId t -- NOTE: this does not add pointers
 
 -- | Translate an SSM 'Type' to a 'C.Type'.
 genType :: Type -> C.Type
@@ -212,7 +212,11 @@ genProgram p@I.Program { I.programDefs = defs } = do
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
-includes = [cunit|$esc:("#include \"ssm.h\"")|]
+includes = [cunit|
+$esc:("#include \"ssm.h\"")
+#define ssm_later_unit(l, d, r) ssm_later_event(l, d)
+#define ssm_assign_unit(l, p, r) ssm_assign_event(l, p)
+|]
 
 -- | Setup the entry point of the program.
 genInitProgram :: Program -> [C.Definition]
@@ -480,16 +484,16 @@ genPrim I.Reuse [e] _ = do
   -- TODO: reference counting
   (_val, _stms) <- genExpr e
   todo
-genPrim I.Deref [a] _ = do
+genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   -- SSM Refs are all SVs, so we access the value field in order to dereference.
-  -- TODO: handle event type
-  return ([cexp|$exp:val->$id:value|], stms)
+  -- For event types, there is no value, so we just return the 'unit' value.
+  return (if ty == I.unit then unit else [cexp|$exp:val->$id:value|], stms)
+
 genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
   Just assign       <- return $ genAssign $ extract lhs
-  -- TODO: handle event type
   let assignBlock = [citems|
           $items:lhsStms
           $items:rhsStms
@@ -501,7 +505,6 @@ genPrim I.After [time, lhs, rhs] _ = do
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
   Just later          <- return $ genLater $ extract lhs
-  -- TODO: handle event type
   let laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
@@ -572,6 +575,7 @@ genLiteral :: Literal -> Type -> GenFn (C.Exp, [C.BlockItem])
 genLiteral (I.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
 genLiteral (I.LitBool     True ) _ = return ([cexp|true|], [])
 genLiteral (I.LitBool     False) _ = return ([cexp|false|], [])
+genLiteral I.LitEvent            _ = return ([cexp|1|], [])
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])

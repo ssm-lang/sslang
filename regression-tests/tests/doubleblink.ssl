@@ -1,20 +1,20 @@
-toggle(led : Ref (Sched Int)) =
-  led <- 1 - led
+toggle(led : &Int) =
+  (led: &Int) <- 1 - (led: &Int)
 
-slow(led : Ref (Sched Int)) =
-  let e1 = Occur : Sched Event
+slow(led : &Int) =
+  let e1 = new ()
   loop
-    toggle led
-    after 30 ms , e1 <- Occur
-    wait e1
+    toggle (led: &Int)
+    after 30 ms , (e1: &()) <- ()
+    wait (e1: &())
 
 fast(led : Ref (Sched Int)) =
-  let e2 = Occur : Sched Event
+  let e2 = new ()
   loop
     toggle led
-    after 20 ms , e2 <- Occur
-    wait e2
+    after 20 ms , (e2: &()) <- ()
+    wait (e2: &())
 
-main(led : Ref (Sched Int)) =
-  par slow led
-      fast led
+main(led : &Int) =
+  par slow (led: &Int)
+      fast (led: &Int)
