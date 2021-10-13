@@ -15,13 +15,14 @@ codegen. An alternate perspective is that these are left unapplied because these
 are the same type constructors available in lower-level languages, so we can
 easily lower them with a 1:1 encoding.
 -}
-module Types.Flat
+module IR.Types.Flat
   ( Type(..)
   , Builtin(..)
+  , flattenApp
   ) where
 
 import           Common.Identifiers             ( TConId )
-import           Types.TypeSystem               ( Builtin(..)
+import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
 
@@ -35,3 +36,7 @@ instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
   injectBuiltin _            = Nothing
+
+-- | Flatten a list of type constructors into a
+flattenApp :: TConId -> [Type] -> TConId
+flattenApp = error "TODO"

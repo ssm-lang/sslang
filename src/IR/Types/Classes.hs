@@ -7,7 +7,7 @@ For now, just the polymorphic types.
 -}
 
 {-# LANGUAGE DerivingVia #-}
-module Types.Classes
+module IR.Types.Classes
   ( Builtin(..)
   , Type(..)
   ) where
@@ -15,7 +15,7 @@ module Types.Classes
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
-import           Types.TypeSystem               ( Builtin(..)
+import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
 
@@ -31,4 +31,4 @@ data Type
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
-  injectBuiltin _ = Nothing
+  injectBuiltin _            = Nothing

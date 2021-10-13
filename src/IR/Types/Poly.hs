@@ -24,7 +24,7 @@ higher-kinded polymorphism. This is due to following restrictions:
   distinguishes HM from System F, and what makes the former decidable while
   the latter undecidable.
 -}
-module Types.Poly
+module IR.Types.Poly
   ( Type(..)
   , Builtin(..)
   ) where
@@ -32,7 +32,7 @@ module Types.Poly
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
-import           Types.TypeSystem               ( Builtin(..)
+import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
 
@@ -48,4 +48,4 @@ data Type
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
-  injectBuiltin _ = Nothing
+  injectBuiltin _            = Nothing

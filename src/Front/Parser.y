@@ -1,17 +1,15 @@
 {
-
 {-
-happy -i Parser.y -o /dev/null
+To generate parser manually:
 
-Then check Parser.info
+  happy -i Parser.y -o /dev/null
 
+Then check Parser.info.
 -}
-
 module Front.Parser where
-  
+
 import Front.Scanner
 import Front.Ast
-
 }
 
 %name parse
@@ -27,10 +25,10 @@ import Front.Ast
   'while' { Token _ TWhile }
   'do'    { Token _ TDo }
   'par'   { Token _ TPar }
-  'loop'  { Token _ TLoop }  
+  'loop'  { Token _ TLoop }
   'let'   { Token _ TLet }
-  'and'   { Token _ TAnd }  
-  'later' { Token _ TLater }
+  'and'   { Token _ TAnd }
+  'after' { Token _ TAfter }
   'wait'  { Token _ TWait }
   '='     { Token _ TEq }
   '<-'    { Token _ TLarrow }
@@ -48,7 +46,7 @@ import Front.Ast
   '}'     { Token _ TRbrace }
   '['     { Token _ TLbracket }
   ']'     { Token _ TRbracket }
-  int     { Token _ (TInteger $$) }  
+  int     { Token _ (TInteger $$) }
   string  { Token _ (TString $$) }
   op      { Token _ (TOp $$) }
   id      { Token _ (TId $$) }
@@ -116,25 +114,25 @@ expr : expr ';' expr0                   { Seq $1 $3 }
      | 'let' '{' decls '}' ';' expr     { Let (reverse $3) $6 }
      | expr0                            { $1 }
 
-expr0 : 'if' expr 'then' expr0 elseOpt  { IfElse $2 $4 $5 }
-      | 'while' expr 'do' expr0         { While $2 $4 }
-      | 'loop' expr0                    { Loop $2 }
-      | 'wait' '{' parExprs '}'         { Wait $3 }
-      | 'par' '{' parExprs '}'          { Par (reverse $3) }
-      | expr2 'later' expr2 '<-' expr0  { Later $1 (exprToPat $3) $5 }
-      | expr2 '<-' expr0                { Assign (exprToPat $1) $3 }
-      | id '@' expr0                    { As $1 $3 }
-      | expr1                           { $1 }
+expr0 : 'if' expr 'then' expr0 elseOpt      { IfElse $2 $4 $5 }
+      | 'while' expr 'do' expr0             { While $2 $4 }
+      | 'loop' expr0                        { Loop $2 }
+      | 'wait' '{' parExprs '}'             { Wait $3 }
+      | 'par' '{' parExprs '}'              { Par (reverse $3) }
+      | 'after' expr2 ',' expr2 '<-' expr0  { After $2 (exprToPat $4) $6 }
+      | expr2 '<-' expr0                    { Assign (exprToPat $1) $3 }
+      | id '@' expr0                        { As $1 $3 }
+      | expr1                               { $1 }
 
 ids : id          { [$1] }
     | ids ',' id  { $3 : $1 }
-      
+
 elseOpt : {- nothing -} %prec NOELSE { NoExpr }
         | ';' 'else' expr1           { $3 }
 
 expr1 : expr1 ':' typ                  { Constraint $1 $3 }
       | expr2                          { $1 }
-  
+
 expr2 : apply opregion  { OpRegion $1 $2 }
       | apply           { $1 }
 
@@ -159,16 +157,15 @@ parExprs : parExprs '||' expr { $3 : $1 }
 
 decl : expr2 '=' aexpr      { Def (exprToPat $1) $3 }
 
-       
 {
-
-data Lit = SLit String
-         | ILit Integer
+data Lit
+  = SLit String
+  | ILit Integer
   deriving Show
-  
+
 parseError :: Token -> a
-parseError t = error $ case t of
-  Token (AlexPn _ l c) _ -> show l ++ ":" ++ show c ++ ":Syntax error"
+parseError (Token (AlexPn _ l c) _) =
+    error $ show l ++ ":" ++ show c ++ ":Syntax error"
 
 exprToPat :: Expr -> Pat
 exprToPat (Id s) = PId s
@@ -180,5 +177,4 @@ exprToPat (Apply (Id pc) pats) = PCon pc $ patList pats
    patList (Apply p1 ps) = exprToPat p1 : patList ps
    patList e = [exprToPat e]
 exprToPat e = error $ "syntax error in pattern " ++ show e
-
 }
