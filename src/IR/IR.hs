@@ -36,6 +36,7 @@ Note that these don't carry any connotation of type: '1' just means '1',
 data Literal
   = LitIntegral Integer
   | LitBool Bool
+  | LitEvent
 
 {- | Primitive operations.
 

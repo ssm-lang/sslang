@@ -37,6 +37,7 @@ data Lit = IntLit Integer
          | StringLit String
          | RatLit Rational
          | CharLit Char
+         | EventLit
 
 data Expr = Id VarId
           | Literal Lit
@@ -53,6 +54,7 @@ data Expr = Id VarId
           | Constraint Expr Ty
           | As VarId Expr
           | Wait [Expr]
+          | New Expr
           | Seq Expr Expr
           | Wildcard
           | Break
@@ -130,6 +132,7 @@ instance Pretty Lit where
   pretty (StringLit s) = pretty '"' <> pretty s <> pretty '"'
   pretty (RatLit r) = pretty $ show r
   pretty (CharLit c) = pretty '\'' <> pretty c <> pretty '\''
+  pretty EventLit = pretty "()"
 
 instance Pretty Expr where
   pretty (Id id) = pretty id
@@ -157,6 +160,7 @@ instance Pretty Expr where
   pretty (Assign v e) = pretty v <+> pretty "<-" <+> pretty e
   pretty (Wait vars) =
       pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
+  pretty (New e) = pretty "new" <+> pretty e
   pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
   pretty (Seq e1 e2) = vsep [pretty e1, pretty e2]
   pretty Wildcard = pretty '_'

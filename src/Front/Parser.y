@@ -30,6 +30,7 @@ import Front.Ast
   'and'   { Token _ TAnd }
   'after' { Token _ TAfter }
   'wait'  { Token _ TWait }
+  'new'   { Token _ TNew  }
   '='     { Token _ TEq }
   '<-'    { Token _ TLarrow }
   '->'    { Token _ TRarrow }
@@ -121,6 +122,7 @@ expr0 : 'if' expr 'then' expr0 elseOpt      { IfElse $2 $4 $5 }
       | 'par' '{' parExprs '}'              { Par (reverse $3) }
       | 'after' expr2 ',' expr2 '<-' expr0  { After $2 $4 $6 }
       | expr2 '<-' expr0                    { Assign $1 $3 }
+      | 'new'  expr0                        { New $2 }
       | id '@' expr0                        { As $1 $3 }
       | expr1                               { $1 }
 
@@ -148,6 +150,7 @@ aexpr : int             { Literal (IntLit $1) }
       | '_'             { Wildcard }
       | '(' expr ')'    { $2 }
       | '{' expr '}'    { $2 }
+      | '(' ')'         { Literal EventLit }
 
 decls : decls 'and' decl  { $3 : $1 }
       | decl              { [$1] }

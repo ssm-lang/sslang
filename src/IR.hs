@@ -51,12 +51,14 @@ inferTypes p@I.Program { I.programDefs = defs } = return $ ann2Class <$> p
     (unit <> t)
     where (del', lhs', rhs') = (pmInfer del, pmInfer lhs, pmInfer rhs)
   -- pmInfer (I.Prim I.Wait       rs t) = unit <> t
-  pmInfer (I.Prim I.Loop       [b]  t) = I.Prim I.Loop [pmInfer b] $ unit <> t
-  pmInfer (I.Prim I.Break      []  t) = I.Prim I.Break [] $ void <> t
-  pmInfer (I.Prim I.Return     []  t) = I.Prim I.Return [] $ void <> t
+  pmInfer (I.Prim I.Loop   [b] t      ) = I.Prim I.Loop [pmInfer b] $ unit <> t
+  pmInfer (I.Prim I.Break  []  t      ) = I.Prim I.Break [] $ void <> t
+  pmInfer (I.Prim I.Return []  t      ) = I.Prim I.Return [] $ void <> t
+  pmInfer (I.Lit I.LitEvent          t) = I.Lit I.LitEvent $ unit <> t
+  pmInfer (I.Lit i@(I.LitIntegral _) t) = I.Lit i $ int 32 <> t
   -- pmInfer (I.Prim (I.PrimOp _) _  t) = void <> t
   -- pmInfer (I.Prim I.Fork ps t) | all ((/= Ann.untyped) . pmInfer) ps = unit <> t
-  pmInfer e = e
+  pmInfer e                             = e
 
   ann2Class :: HasCallStack => Ann.Type -> Classes.Type
   ann2Class (Ann.Type []      ) = error "no type annotation"

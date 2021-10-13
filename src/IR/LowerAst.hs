@@ -136,6 +136,7 @@ lowerExpr (A.Assign lhs rhs) k = I.Prim I.Assign args (k I.untyped)
 lowerExpr (A.Constraint e ty) k = lowerExpr e ((<> lowerType ty) . k)
 lowerExpr (A.Wait exprs     ) k = I.Prim I.Wait args (k I.untyped)
   where args = map (`lowerExpr` id) exprs
+lowerExpr (A.New e  ) k = I.Prim I.New [lowerExpr e id] (k I.untyped)
 lowerExpr (A.Seq l r) k = I.Let [(Nothing, lhs)] rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)
@@ -147,7 +148,8 @@ lowerExpr (A.As _ _)       _ = what
 
 -- | Lower an AST literal into an IR literal.
 lowerLit :: HasCallStack => A.Lit -> I.Literal
-lowerLit (A.IntLit    i ) = I.LitIntegral i
+lowerLit (A.IntLit i)     = I.LitIntegral i
+lowerLit A.EventLit       = I.LitEvent
 lowerLit (A.StringLit _s) = todo
 lowerLit (A.RatLit    _r) = todo
 lowerLit (A.CharLit   _c) = todo
