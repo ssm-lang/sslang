@@ -2,6 +2,8 @@ module IR.LowerAst
   ( lowerProgram
   ) where
 
+import qualified Common.Compiler               as Compiler
+
 import qualified Front.Ast                     as A
 
 import qualified IR.IR                         as I
@@ -11,25 +13,26 @@ import qualified IR.Types.TypeSystem           as I
 import           Common.Identifiers             ( fromString )
 import           Data.Composition               ( (.:) )
 import           Data.Maybe                     ( fromJust )
-import           GHC.Stack                      ( HasCallStack )
 import           IR.Types.TypeSystem            ( int
                                                 , ref
                                                 , unit
                                                 )
 
-todo, nope, what :: HasCallStack => a
+todo, nope, what :: a
 todo = error "TODO"
 nope = error "Not going to implement this"
 what = error "What does this even mean"
 
 -- | Lower an AST 'Program' into IR.
-lowerProgram :: HasCallStack => A.Program -> I.Program I.Type
-lowerProgram (A.Program ds) = I.Program { I.programEntry = fromString "main"
-                                        , I.programDefs  = map lowerDecl ds
-                                        , I.typeDefs     = [todo]
-                                        }
+lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
+lowerProgram (A.Program ds) = return $ I.Program
+  { I.programEntry = fromString "main"
+  , I.programDefs  = map lowerDecl ds
+  , I.typeDefs     = [todo]
+  }
+
 -- | Lower a top-level 'Declaration' into triple of name, type, and definition.
-lowerDecl :: HasCallStack => A.Declaration -> (I.VarId, I.Expr I.Type)
+lowerDecl :: A.Declaration -> (I.VarId, I.Expr I.Type)
 lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
  where
   lName = fromString aName
@@ -49,7 +52,7 @@ lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
   lBody = lowerBinds aBinds aBody lTy
 
   -- | Extracts possible AST type annotation from a binding.
-  bindType :: HasCallStack => A.Bind -> Maybe A.Ty
+  bindType :: A.Bind -> Maybe A.Ty
   bindType (A.Bind    _    (Just ty)) = return ty
   bindType (A.TupBind _    (Just ty)) = return ty
   bindType (A.TupBind tups Nothing  ) = A.TTuple <$> mapM bindType tups
@@ -60,7 +63,7 @@ lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
   As this function unpacks the bindings, it also unpacks the outer function's
   type annotation to appropriate annotate each sub-lambda.
   -}
-  lowerBinds :: HasCallStack => [A.Bind] -> A.Expr -> I.Type -> I.Expr I.Type
+  lowerBinds :: [A.Bind] -> A.Expr -> I.Type -> I.Expr I.Type
   lowerBinds (A.Bind v _ : bs) body ty = I.Lambda
     (Just $ fromString v)
     (lowerBinds bs body (snd $ fromJust $ I.dearrow ty))
@@ -69,7 +72,7 @@ lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
   lowerBinds []                       body  ty = lowerExpr body (<> ty)
 
 -- | Lowers the AST's representation of types into that of the IR.
-lowerType :: HasCallStack => A.Ty -> I.Type
+lowerType :: A.Ty -> I.Type
 lowerType (  A.TCon "Int") = int 32
 lowerType (  A.TCon "()" ) = unit
 lowerType (  A.TCon i    ) = I.Type [I.TCon (fromString i) []]
@@ -83,7 +86,7 @@ lowerType (A.TArrow lhs rhs) =
   I.Type [I.TBuiltin $ I.Arrow (lowerType lhs) (lowerType rhs)]
 
 -- | Lowers an AST expression into an IR expression. Performs desguaring inline.
-lowerExpr :: HasCallStack => A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
+lowerExpr :: A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
 lowerExpr (A.Id      v) k = I.Var (fromString v) (k I.untyped)
 lowerExpr (A.Literal l) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr (A.Apply l r) k = I.App lhs rhs (k I.untyped)
@@ -147,7 +150,7 @@ lowerExpr A.Wildcard       _ = what
 lowerExpr (A.As _ _)       _ = what
 
 -- | Lower an AST literal into an IR literal.
-lowerLit :: HasCallStack => A.Lit -> I.Literal
+lowerLit :: A.Lit -> I.Literal
 lowerLit (A.IntLit i)     = I.LitIntegral i
 lowerLit A.EventLit       = I.LitEvent
 lowerLit (A.StringLit _s) = todo
