@@ -19,23 +19,22 @@ What is expected of the IR:
 {-# LANGUAGE DerivingVia #-}
 module Codegen.Codegen where
 
+import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( fromId )
-import qualified IR.IR                         as L
-import qualified Types.Flat                    as L
-import qualified Types.TypeSystem              as L
+
+import qualified IR.IR                         as I
+import qualified IR.Types.Flat                 as I
+import qualified IR.Types.TypeSystem           as I
 
 import           Codegen.Identifiers
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
-import           Control.Monad.Except           ( ExceptT(..)
-                                                , MonadError(..)
-                                                , runExceptT
-                                                )
+import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
-                                                , State
-                                                , evalState
+                                                , StateT(..)
+                                                , evalStateT
                                                 , gets
                                                 , modify
                                                 )
@@ -51,19 +50,15 @@ nope :: a
 nope = error "Not yet supported"
 
 {- Some convenience type aliases -}
-type Type = L.Type
-type Program = L.Program Type
-type Expr = L.Expr Type
-type PrimOp = L.PrimOp
-type Primitive = L.Primitive
-type Literal = L.Literal
-type TypeDef = L.TypeDef Type
-type VarId = L.VarId
-type Binder = L.Binder
-
--- | Types of compiler errors that can be thrown during codegen.
-newtype CodegenError
-  = CodegenErrorMsg String  -- ^ Internal compiler error; shouldn't be reachable
+type Type = I.Type
+type Program = I.Program Type
+type Expr = I.Expr Type
+type PrimOp = I.PrimOp
+type Primitive = I.Primitive
+type Literal = I.Literal
+type TypeDef = I.TypeDef Type
+type VarId = I.VarId
+type Binder = I.Binder
 
 {- | State maintained while compiling a top-level SSM function.
 
@@ -87,14 +82,13 @@ data GenFnState = GenFnState
 We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
 allowing us to use monadic pattern matching.
 -}
-newtype GenFn a = GenFn (ExceptT CodegenError (State GenFnState) a)
-  deriving Functor                    via (ExceptT CodegenError (State GenFnState))
-  deriving Applicative                via (ExceptT CodegenError (State GenFnState))
-  deriving Monad                      via (ExceptT CodegenError (State GenFnState))
-  deriving (MonadError CodegenError)  via (ExceptT CodegenError (State GenFnState))
-  deriving (MonadState GenFnState)    via (ExceptT CodegenError (State GenFnState))
-instance MonadFail GenFn where
-  fail = throwError . CodegenErrorMsg
+newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
+  deriving Functor                      via (StateT GenFnState Compiler.Pass)
+  deriving Applicative                  via (StateT GenFnState Compiler.Pass)
+  deriving Monad                        via (StateT GenFnState Compiler.Pass)
+  deriving MonadFail                    via (StateT GenFnState Compiler.Pass)
+  deriving (MonadError Compiler.Error)  via (StateT GenFnState Compiler.Pass)
+  deriving (MonadState GenFnState)      via (StateT GenFnState Compiler.Pass)
 
 -- | Run a GenFn computation on a procedure.
 runGenFn
@@ -103,17 +97,17 @@ runGenFn
   -> Type                   -- ^ Name and type of return parameter of procedure
   -> Expr                   -- ^ Body of procedure
   -> GenFn a                -- ^ Translation monad to run
-  -> Either CodegenError a  -- ^ Compilation may fail
-runGenFn name params ret body (GenFn tra) =
-  evalState (runExceptT tra) $ GenFnState { fnName     = name
-                                          , fnParams   = params
-                                          , fnRetTy    = ret
-                                          , fnBody     = body
-                                          , fnLocs     = []
-                                          , fnMaxWaits = 0
-                                          , fnCases    = 0
-                                          , fnTmps     = 0
-                                          }
+  -> Compiler.Pass a        -- ^ Pass on errors to caller
+runGenFn name params ret body (GenFn tra) = evalStateT tra $ GenFnState
+  { fnName     = name
+  , fnParams   = params
+  , fnRetTy    = ret
+  , fnBody     = body
+  , fnLocs     = []
+  , fnMaxWaits = 0
+  , fnCases    = 0
+  , fnTmps     = 0
+  }
 
 -- | Read and increment the number of cases in a procedure, i.e., fnCases++.
 nextCase :: GenFn Int
@@ -150,24 +144,24 @@ isLocalVar name = do
 
 {-------- Type compilation --------}
 
--- | Wrap a 'C.Type' with pointers, according to some 'L.Type'.
-ptrs_ :: L.Type -> C.Type -> C.Type
-ptrs_ (L.TBuiltin (L.Ref _)) t = [cty|$ty:t *|]
+-- | Wrap a 'C.Type' with pointers, according to some 'I.Type'.
+ptrs_ :: I.Type -> C.Type -> C.Type
+ptrs_ (I.TBuiltin (I.Ref _)) t = [cty|$ty:t *|]
 ptrs_ _                      t = t
 -- ^ TODO: this does not handle stacked pointers
 
 -- | Obtains the C type name corresponding to an SSM type.
 typeId :: Type -> CIdent
-typeId (L.TCon     t ) = fromId t
-typeId (L.TBuiltin bt) = builtinId bt
+typeId (I.TCon     t ) = fromId t
+typeId (I.TBuiltin bt) = builtinId bt
 
 -- | Obtains the C type name corresponding to an SSM built-in type.
-builtinId :: L.Builtin Type -> CIdent
-builtinId L.Unit        = todo
-builtinId L.Void        = todo
-builtinId (L.Arrow _ _) = todo
-builtinId (L.Tuple _  ) = todo
-builtinId (L.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
+builtinId :: I.Builtin Type -> CIdent
+builtinId I.Unit        = todo
+builtinId I.Void        = todo
+builtinId (I.Arrow _ _) = todo
+builtinId (I.Tuple _  ) = todo
+builtinId (I.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
 
 -- | Translate an SSM 'Type' to a 'C.Type'.
 genType :: Type -> C.Type
@@ -175,15 +169,15 @@ genType typ = ptrs_ typ $ ctype $ typeId typ
 
 -- | Obtain the initialize method for a given SSM scheduled variable 'Type'.
 genInit :: Type -> Maybe C.Exp
-genInit ty = cexpr . initialize_ . typeId <$> L.deref ty
+genInit ty = cexpr . initialize_ . typeId <$> I.deref ty
 
 -- | Obtain the assign method for a given SSM scheduled variable 'Type'.
 genAssign :: Type -> Maybe C.Exp
-genAssign ty = cexpr . assign_ . typeId <$> L.deref ty
+genAssign ty = cexpr . assign_ . typeId <$> I.deref ty
 
 -- | Obtain the later method for a given SSM scheduled variable 'Type'.
 genLater :: Type -> Maybe C.Exp
-genLater ty = cexpr . later_ . typeId <$> L.deref ty
+genLater ty = cexpr . later_ . typeId <$> I.deref ty
 
 -- | Translate a list of SSM parameters to C parameters.
 genParams :: [(Binder, Type)] -> [(CIdent, C.Type)]
@@ -209,8 +203,8 @@ undef = [cexp|0xdeadbeef|]
 {-------- Compilation --------}
 
 -- | Generate a C compilation from an SSM program.
-genProgram :: Program -> Either CodegenError [C.Definition]
-genProgram p@L.Program { L.programDefs = defs } = do
+genProgram :: Program -> Compiler.Pass [C.Definition]
+genProgram p@I.Program { I.programDefs = defs } = do
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
   return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
 
@@ -220,7 +214,7 @@ includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
 
 -- | Setup the entry point of the program.
 genInitProgram :: Program -> [C.Definition]
-genInitProgram L.Program { L.programEntry = entry } = [cunit|
+genInitProgram I.Program { I.programEntry = entry } = [cunit|
     int $id:initialize_program(void) {
        $id:activate($id:(enter_ entry)(&$id:top_parent, $id:root_priority, $id:root_depth));
       return 0;
@@ -237,17 +231,17 @@ Each top-level function in a program is turned into three components:
 
 Items (2) and (3) include both declarations and definitions.
 -}
-genTop :: (VarId, Expr) -> Either CodegenError ([C.Definition], [C.Definition])
-genTop (name, l@(L.Lambda _ _ ty)) =
+genTop :: (VarId, Expr) -> Compiler.Pass ([C.Definition], [C.Definition])
+genTop (name, l@(I.Lambda _ _ ty)) =
   runGenFn (fromId name) (zip argIds argTys) retTy body $ do
     (stepDecl , stepDefn ) <- genStep
     (enterDecl, enterDefn) <- genEnter
     structDefn             <- genStruct
     return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
  where
-  (argIds, body ) = L.collectLambda l
-  (argTys, retTy) = L.collectArrow ty
-genTop (_, L.Lit _ _) = todo
+  (argIds, body ) = I.collectLambda l
+  (argTys, retTy) = I.collectArrow ty
+genTop (_, I.Lit _ _) = todo
 genTop (_, _        ) = nope
 
 {- | Generate struct definition for an SSM 'Procedure'.
@@ -325,7 +319,7 @@ genEnter = do
 
 This function just defines the function definition and switch statement that
 wraps the statements of the procedure. The heavy lifting is performed by
-'genExpr'.(L.Var n (L.TBuiltin (L.Arrow _ _))) =
+'genExpr'.(I.Var n (I.TBuiltin (I.Arrow _ _))) =
 -}
 genStep :: GenFn (C.Definition, C.Definition)
 genStep = do
@@ -419,28 +413,28 @@ yields, even if this is not usually necessary. We leave it to later compiler
 passes to optimize this.
 -}
 genExpr :: Expr -> GenFn (C.Exp, [C.BlockItem])
-genExpr (L.Var n (L.TBuiltin (L.Arrow _ _))) =
-  -- NOTE: Any identifiers of L.Arrow type must refer to a (global) function, so
+genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
+  -- NOTE: Any identifiers of I.Arrow type must refer to a (global) function, so
   -- we just return a handle to its enter function.
   return ([cexp|$id:(enter_ n)|], [])
-genExpr (L.Var n _) = do
+genExpr (I.Var n _) = do
   isLocal <- isLocalVar n
   if isLocal then return ([cexp|$id:acts->$id:n|], []) else todo
-genExpr (L.Data _ _             ) = nope
-genExpr (L.Lit  l t             ) = genLiteral l t
-genExpr (L.Let [(Just n, d)] b _) = do
-  addLocal (n, L.typeExpr d)
+genExpr (I.Data _ _             ) = nope
+genExpr (I.Lit  l t             ) = genLiteral l t
+genExpr (I.Let [(Just n, d)] b _) = do
+  addLocal (n, I.typeExpr d)
   (defVal, defStms) <- genExpr d
   let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ defInit ++ bodyStms)
-genExpr (L.Let [(Nothing, d)] b _) = do
+genExpr (I.Let [(Nothing, d)] b _) = do
   (_      , defStms ) <- genExpr d -- Throw away value
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
-genExpr L.Let{}          = fail "Cannot handle mutually recursive bindings"
-genExpr a@(L.App _ _ ty) = do
-  let (fn, args) = L.collectApp a
+genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
+genExpr a@(I.App _ _ ty) = do
+  let (fn, args) = I.collectApp a
   (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
   tmpName                       <- nextTmp ty
   yield                         <- genYield
@@ -451,13 +445,13 @@ genExpr a@(L.App _ _ ty) = do
           ++ [[cexp|&$exp:tmp|]]
       call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
   return (tmp, concat evalStms ++ call ++ yield)
-genExpr L.Match{}       = nope
-genExpr L.Lambda{}      = fail "Cannot handle lambdas"
-genExpr (L.Prim p es t) = genPrim p es t
+genExpr I.Match{}       = nope
+genExpr I.Lambda{}      = fail "Cannot handle lambdas"
+genExpr (I.Prim p es t) = genPrim p es t
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
-genPrim L.New [e, _] refType = do
+genPrim I.New [e, _] refType = do
   (val, stms)     <- genExpr e
   tmp             <- nextTmp refType
   Just initialize <- return $ genInit refType
@@ -468,11 +462,11 @@ genPrim L.New [e, _] refType = do
           *$id:acts->$id:tmp.$id:value = $exp:val;
         |]
   return ([cexp|$id:acts->$id:tmp|], stms ++ alloc)
-genPrim L.Dup [e] _ = do
+genPrim I.Dup [e] _ = do
   -- TODO: reference counting
   (_val, _stms) <- genExpr e
   todo
-genPrim L.Drop [e] _ = do
+genPrim I.Drop [e] _ = do
   (val, stms) <- genExpr e
   -- TODO: reference counting
   let free = [citems|
@@ -480,19 +474,19 @@ genPrim L.Drop [e] _ = do
           $id:mem_free($exp:val);
         |]
   return (unit, stms ++ free)
-genPrim L.Reuse [e] _ = do
+genPrim I.Reuse [e] _ = do
   -- TODO: reference counting
   (_val, _stms) <- genExpr e
   todo
-genPrim L.Deref [a] _ = do
+genPrim I.Deref [a] _ = do
   (val, stms) <- genExpr a
   -- SSM Refs are all SVs, so we access the value field in order to dereference.
   -- TODO: handle event type
   return ([cexp|$exp:val->$id:value|], stms)
-genPrim L.Assign [lhs, rhs] _ = do
+genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
-  Just assign       <- return $ genAssign $ L.typeExpr lhs
+  Just assign       <- return $ genAssign $ I.typeExpr lhs
   -- TODO: handle event type
   let assignBlock = [citems|
           $items:lhsStms
@@ -500,11 +494,11 @@ genPrim L.Assign [lhs, rhs] _ = do
           $exp:assign($exp:lhsVal, $id:actg->$id:priority, $exp:rhsVal);
         |]
   return (unit, assignBlock)
-genPrim L.After [time, lhs, rhs] _ = do
+genPrim I.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
-  Just later          <- return $ genLater $ L.typeExpr lhs
+  Just later          <- return $ genLater $ I.typeExpr lhs
   -- TODO: handle event type
   let laterBlock = [citems|
           $items:timeStms
@@ -513,7 +507,7 @@ genPrim L.After [time, lhs, rhs] _ = do
           $exp:later($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
         |]
   return (unit, laterBlock)
-genPrim L.Fork procs _ = do
+genPrim I.Fork procs _ = do
   yield <- genYield
   let
     numChildren = length procs
@@ -527,8 +521,8 @@ genPrim L.Fork procs _ = do
 
     genActivate
       :: ((C.Exp, C.Exp), Expr) -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
-    genActivate ((prioArg, depthArg), a@(L.App _ _ ty)) = do
-      let (fn, args) = L.collectApp a
+    genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
+      let (fn, args) = I.collectApp a
       (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
       tmpName                       <- nextTmp ty
       let tmp = [cexp|$id:acts->$id:tmpName|]
@@ -547,7 +541,7 @@ genPrim L.Fork procs _ = do
 
   (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip forkArgs procs)
   return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
-genPrim L.Wait vars _ = do
+genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
   yield <- genYield
@@ -556,11 +550,11 @@ genPrim L.Wait vars _ = do
         [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
   return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
-genPrim L.Loop [b] _ = do
+genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim L.Break  []  _ = return (undef, [citems|break;|])
-genPrim L.Return [e] _ = do
+genPrim I.Break  []  _ = return (undef, [citems|break;|])
+genPrim I.Return [e] _ = do
   (val, stms) <- genExpr e
   -- Assign to return argument and jump to leave
   let retBlock = [citems|
@@ -568,60 +562,60 @@ genPrim L.Return [e] _ = do
                     goto $id:leave_cleanup;
                  |]
   return (undef, stms ++ retBlock)
-genPrim (L.PrimOp op) es t = genPrimOp op es t
+genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
 -- | Generate C value for SSM literal.
 genLiteral :: Literal -> Type -> GenFn (C.Exp, [C.BlockItem])
-genLiteral (L.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
-genLiteral (L.LitBool     True ) _ = return ([cexp|true|], [])
-genLiteral (L.LitBool     False) _ = return ([cexp|false|], [])
+genLiteral (I.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
+genLiteral (I.LitBool     True ) _ = return ([cexp|true|], [])
+genLiteral (I.LitBool     False) _ = return ([cexp|false|], [])
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
-genPrimOp L.PrimAdd [lhs, rhs] _ = do
+genPrimOp I.PrimAdd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal + $exp:rhsVal|], stms)
-genPrimOp L.PrimSub [lhs, rhs] _ = do
+genPrimOp I.PrimSub [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal - $exp:rhsVal|], stms)
-genPrimOp L.PrimMul [lhs, rhs] _ = do
+genPrimOp I.PrimMul [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal * $exp:rhsVal|], stms)
-genPrimOp L.PrimDiv [lhs, rhs] _ = do
+genPrimOp I.PrimDiv [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal / $exp:rhsVal|], stms)
-genPrimOp L.PrimMod [lhs, rhs] _ = do
+genPrimOp I.PrimMod [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal % $exp:rhsVal|], stms)
-genPrimOp L.PrimNeg [opr] _ = do
+genPrimOp I.PrimNeg [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|- $exp:val|], stms)
-genPrimOp L.PrimBitAnd [lhs, rhs] _ = do
+genPrimOp I.PrimBitAnd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal & $exp:rhsVal|], stms)
-genPrimOp L.PrimBitOr [lhs, rhs] _ = do
+genPrimOp I.PrimBitOr [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal | $exp:rhsVal|], stms)
-genPrimOp L.PrimBitNot [opr] _ = do
+genPrimOp I.PrimBitNot [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|~ $exp:val|], stms)
-genPrimOp L.PrimEq [lhs, rhs] _ = do
+genPrimOp I.PrimEq [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal == $exp:rhsVal|], stms)
-genPrimOp L.PrimNot [opr] _ = do
+genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- genExpr opr
   return ([cexp|! $exp:val|], stms)
-genPrimOp L.PrimGt [lhs, rhs] _ = do
+genPrimOp I.PrimGt [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal < $exp:rhsVal|], stms)
-genPrimOp L.PrimGe [lhs, rhs] _ = do
+genPrimOp I.PrimGe [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
-genPrimOp L.PrimLt [lhs, rhs] _ = do
+genPrimOp I.PrimLt [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal > $exp:rhsVal|], stms)
-genPrimOp L.PrimLe [lhs, rhs] _ = do
+genPrimOp I.PrimLe [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
 genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"

@@ -20,7 +20,7 @@ import           Common.Identifiers             ( Binder
                                                 )
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Types.TypeSystem               ( TypeDef(..) )
+import           IR.Types.TypeSystem            ( TypeDef(..) )
 
 -- | Top-level compilation unit.
 data Program t = Program
@@ -187,6 +187,13 @@ typeExpr (Lambda _ _ t ) = t
 typeExpr (App    _ _ t ) = t
 typeExpr (Match _ _ _ t) = t
 typeExpr (Prim _ _ t   ) = t
+
+instance Functor Program where
+  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
+    Program { programEntry = e
+            , programDefs  = fmap (second $ fmap f) defs
+            , typeDefs     = fmap (second $ fmap f) tds
+            }
 
 instance Functor Expr where
   fmap f (Var  v t      ) = Var v (f t)

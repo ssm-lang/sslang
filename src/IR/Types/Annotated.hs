@@ -6,15 +6,16 @@ For now, just the polymorphic typeclass types.
 
 -}
 {-# LANGUAGE DerivingVia #-}
-module Types.Ast
+module IR.Types.Annotated
   ( Builtin(..)
   , Type(..)
   , TypeAnnote(..)
-  , untyped) where
+  , untyped
+  ) where
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
-import           Types.TypeSystem               ( Builtin(..)
+import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
 {- | A single term may be annotated by zero or more types.
@@ -29,7 +30,6 @@ newtype Type = Type [TypeAnnote]
   deriving Eq         via [TypeAnnote]
   deriving Semigroup  via [TypeAnnote]
   deriving Monoid     via [TypeAnnote]
-
 
 -- | A type annotation.
 data TypeAnnote
