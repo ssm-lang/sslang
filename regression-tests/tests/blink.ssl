@@ -1,6 +1,6 @@
-main(led : Ref (Sched Int) ) =
+main(led : & Int) =
   loop
-    after 50 ms , led <- 1
-    wait led
-    after 50 ms , led <- 0
-    wait led
+    after 50 , (led: &Int) <- 1
+    wait (led: &Int)
+    after 50 , (led: &Int) <- 0
+    wait (led: &Int)

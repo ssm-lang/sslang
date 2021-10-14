@@ -28,12 +28,13 @@ type Arity = Int
 
 -- | Builtin type constructors that should be preserved across all type systems.
 data Builtin t
-  = Unit        -- ^ Singleton type (())
-  | Void        -- ^ Uninhabited type (!), coerces with anything
-  | Ref t       -- ^ Reference of (&)
-  | Arrow t t   -- ^ Function arrow (a -> b)
-  | Tuple [t]   -- ^ Tuple, where arity must be >= 2
-  deriving Eq
+  = Unit          -- ^ Singleton type (())
+  | Void          -- ^ Uninhabited type (!), coerces with anything
+  | Ref t         -- ^ Reference of (&)
+  | Arrow t t     -- ^ Function arrow (a -> b)
+  | Tuple [t]     -- ^ Tuple, where arity must be >= 2
+  | Integral Int  -- ^ Sized integral type
+  deriving (Eq, Show)
 
 instance Functor Builtin where
   fmap _ Unit        = Unit
@@ -41,6 +42,7 @@ instance Functor Builtin where
   fmap f (Ref t    ) = Ref $ f t
   fmap f (Arrow l r) = Arrow (f l) (f r)
   fmap f (Tuple tys) = Tuple $ fmap f tys
+  fmap _ (Integral s) = Integral s
 
 {- | A type system must allow us to construct and access underlying builtins.
 
@@ -80,6 +82,16 @@ dearrow :: TypeSystem t => t -> Maybe (t, t)
 dearrow t = case injectBuiltin t of
   Just (Arrow a b) -> Just (a, b)
   _                -> Nothing
+
+-- | Helper to construct tuples from list of types, accounting for size < 2.
+tuple :: TypeSystem t => [t] -> t
+tuple [] = unit -- Empty tuples are just voids
+tuple [t] = t   -- Singleton tuples are just tuples.
+tuple ts = projectBuiltin $ Tuple ts
+
+-- | Helper to construct integral type.
+int :: TypeSystem t => Int -> t
+int s = projectBuiltin $ Integral s
 
 -- | Decompose an 'Arrow' type into a list of argument types and a return type.
 collectArrow :: TypeSystem t => t -> ([t], t)

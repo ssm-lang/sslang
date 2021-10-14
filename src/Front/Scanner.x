@@ -48,6 +48,7 @@ tokens :-
     par   { layout  TPar TDBar }
     after { keyword TAfter }
     wait  { layout  TWait TDBar }
+    new   { layout  TNew TSemicolon }
 
     \<\-  { layout  TLarrow TSemicolon }
     \|\|  { keyword TDBar }
@@ -242,6 +243,7 @@ data TokenType
   | TOf
   | TAfter
   | TWait
+  | TNew
   | TEq
   | TLarrow
   | TRarrow

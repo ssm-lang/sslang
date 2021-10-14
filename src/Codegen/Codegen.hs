@@ -31,6 +31,7 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
+import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -157,11 +158,12 @@ typeId (I.TBuiltin bt) = builtinId bt
 
 -- | Obtains the C type name corresponding to an SSM built-in type.
 builtinId :: I.Builtin Type -> CIdent
-builtinId I.Unit        = todo
-builtinId I.Void        = todo
-builtinId (I.Arrow _ _) = todo
-builtinId (I.Tuple _  ) = todo
-builtinId (I.Ref   t  ) = sv_ $ typeId t -- NOTE: this does not add pointers
+builtinId I.Unit         = "unit"
+builtinId I.Void         = todo
+builtinId (I.Arrow _ _ ) = todo
+builtinId (I.Tuple    _) = todo
+builtinId (I.Integral s) = int_ s
+builtinId (I.Ref      t) = sv_ $ typeId t -- NOTE: this does not add pointers
 
 -- | Translate an SSM 'Type' to a 'C.Type'.
 genType :: Type -> C.Type
@@ -206,11 +208,15 @@ undef = [cexp|0xdeadbeef|]
 genProgram :: Program -> Compiler.Pass [C.Definition]
 genProgram p@I.Program { I.programDefs = defs } = do
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
-  return $ includes ++ cdecls ++ cdefs ++ genInitProgram p
+  return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
-includes = [cunit|$esc:("#include \"ssm-platform.h\"")|]
+includes = [cunit|
+$esc:("#include \"ssm.h\"")
+#define ssm_later_unit(l, d, r) ssm_later_event(l, d)
+#define ssm_assign_unit(l, p, r) ssm_assign_event(l, p)
+|]
 
 -- | Setup the entry point of the program.
 genInitProgram :: Program -> [C.Definition]
@@ -423,7 +429,7 @@ genExpr (I.Var n _) = do
 genExpr (I.Data _ _             ) = nope
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
-  addLocal (n, I.typeExpr d)
+  addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
   let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
   (bodyVal, bodyStms) <- genExpr b
@@ -478,16 +484,16 @@ genPrim I.Reuse [e] _ = do
   -- TODO: reference counting
   (_val, _stms) <- genExpr e
   todo
-genPrim I.Deref [a] _ = do
+genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   -- SSM Refs are all SVs, so we access the value field in order to dereference.
-  -- TODO: handle event type
-  return ([cexp|$exp:val->$id:value|], stms)
+  -- For event types, there is no value, so we just return the 'unit' value.
+  return (if ty == I.unit then unit else [cexp|$exp:val->$id:value|], stms)
+
 genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
-  Just assign       <- return $ genAssign $ I.typeExpr lhs
-  -- TODO: handle event type
+  Just assign       <- return $ genAssign $ extract lhs
   let assignBlock = [citems|
           $items:lhsStms
           $items:rhsStms
@@ -498,13 +504,12 @@ genPrim I.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
-  Just later          <- return $ genLater $ I.typeExpr lhs
-  -- TODO: handle event type
+  Just later          <- return $ genLater $ extract lhs
   let laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $exp:later($exp:lhsVal, $exp:rhsVal, $id:now() + $exp:timeVal);
+          $exp:later($exp:lhsVal, $id:now() + $exp:timeVal, $exp:rhsVal);
         |]
   return (unit, laterBlock)
 genPrim I.Fork procs _ = do
@@ -547,7 +552,7 @@ genPrim I.Wait vars _ = do
   yield <- genYield
   let trigs = zip [1 :: Int ..] varVals
       sens (i, var) =
-        [citem|$id:sensitize($exp:var, &$id:acts->$id:(trig_ i));|]
+        [citem|$id:sensitize(&$exp:var->$id:sv, &$id:acts->$id:(trig_ i));|]
       desens (i, _) = [citem|$id:desensitize(&$id:acts->$id:(trig_ i));|]
   return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
 genPrim I.Loop [b] _ = do
@@ -570,6 +575,7 @@ genLiteral :: Literal -> Type -> GenFn (C.Exp, [C.BlockItem])
 genLiteral (I.LitIntegral i    ) _ = return ([cexp|$int:i|], [])
 genLiteral (I.LitBool     True ) _ = return ([cexp|true|], [])
 genLiteral (I.LitBool     False) _ = return ([cexp|false|], [])
+genLiteral I.LitEvent            _ = return ([cexp|1|], [])
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])

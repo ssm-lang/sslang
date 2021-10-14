@@ -2,6 +2,8 @@ module IR.LowerAst
   ( lowerProgram
   ) where
 
+import qualified Common.Compiler               as Compiler
+
 import qualified Front.Ast                     as A
 
 import qualified IR.IR                         as I
@@ -11,6 +13,10 @@ import qualified IR.Types.TypeSystem           as I
 import           Common.Identifiers             ( fromString )
 import           Data.Composition               ( (.:) )
 import           Data.Maybe                     ( fromJust )
+import           IR.Types.TypeSystem            ( int
+                                                , ref
+                                                , unit
+                                                )
 
 todo, nope, what :: a
 todo = error "TODO"
@@ -18,11 +24,13 @@ nope = error "Not going to implement this"
 what = error "What does this even mean"
 
 -- | Lower an AST 'Program' into IR.
-lowerProgram :: A.Program -> I.Program I.Type
-lowerProgram (A.Program ds) = I.Program { I.programEntry = todo
-                                        , I.programDefs  = map lowerDecl ds
-                                        , I.typeDefs     = [todo]
-                                        }
+lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
+lowerProgram (A.Program ds) = return $ I.Program
+  { I.programEntry = fromString "main"
+  , I.programDefs  = map lowerDecl ds
+  , I.typeDefs     = [todo]
+  }
+
 -- | Lower a top-level 'Declaration' into triple of name, type, and definition.
 lowerDecl :: A.Declaration -> (I.VarId, I.Expr I.Type)
 lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
@@ -65,10 +73,14 @@ lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
 
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Ty -> I.Type
-lowerType (  A.TCon i  ) = I.Type [I.TCon (fromString i) []]
-lowerType a@(A.TApp _ _) = case A.collectTApp a of
-  (A.TCon i, args) -> I.Type [I.TCon (fromString i) $ map lowerType args]
-  _                -> nope
+lowerType (  A.TCon "Int") = int 32
+lowerType (  A.TCon "()" ) = unit
+lowerType (  A.TCon i    ) = I.Type [I.TCon (fromString i) []]
+lowerType a@(A.TApp _ _  ) = case A.collectTApp a of
+  (A.TCon "&" , [arg] ) -> ref $ lowerType arg
+  (A.TCon "[]", [_arg]) -> todo
+  (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
+  _                     -> nope
 lowerType (A.TTuple tys) = I.Type [I.TBuiltin $ I.Tuple $ map lowerType tys]
 lowerType (A.TArrow lhs rhs) =
   I.Type [I.TBuiltin $ I.Arrow (lowerType lhs) (lowerType rhs)]
@@ -118,15 +130,16 @@ lowerExpr (A.Par  es) k = I.Prim I.Fork exprs (k I.untyped)
 lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
-  tArm = I.AltLit (I.LitBool True) (lowerExpr t id)
-  eArm = I.AltDefault (lowerExpr e id)
+  tArm = (I.AltLit (I.LitBool True), lowerExpr t id)
+  eArm = (I.AltDefault, lowerExpr e id)
 lowerExpr (A.After delay lhs rhs) k = I.Prim I.After args (k I.untyped)
-  where args = map (`lowerExpr` id) [delay, todo lhs, rhs]
+  where args = map (`lowerExpr` id) [delay, lhs, rhs]
 lowerExpr (A.Assign lhs rhs) k = I.Prim I.Assign args (k I.untyped)
-  where args = map (`lowerExpr` id) [todo lhs, rhs]
+  where args = map (`lowerExpr` id) [lhs, rhs]
 lowerExpr (A.Constraint e ty) k = lowerExpr e ((<> lowerType ty) . k)
 lowerExpr (A.Wait exprs     ) k = I.Prim I.Wait args (k I.untyped)
   where args = map (`lowerExpr` id) exprs
+lowerExpr (A.New e  ) k = I.Prim I.New [lowerExpr e id] (k I.untyped)
 lowerExpr (A.Seq l r) k = I.Let [(Nothing, lhs)] rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)
@@ -138,7 +151,8 @@ lowerExpr (A.As _ _)       _ = what
 
 -- | Lower an AST literal into an IR literal.
 lowerLit :: A.Lit -> I.Literal
-lowerLit (A.IntLit    i ) = I.LitIntegral i
+lowerLit (A.IntLit i)     = I.LitIntegral i
+lowerLit A.EventLit       = I.LitEvent
 lowerLit (A.StringLit _s) = todo
 lowerLit (A.RatLit    _r) = todo
 lowerLit (A.CharLit   _c) = todo

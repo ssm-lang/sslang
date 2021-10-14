@@ -16,6 +16,7 @@ import           Control.Monad.Except           ( Except
 data Error
   = UnexpectedError String  -- ^ Internal compiler error; shouldn't be reachable
   | TypeError String
+  | LexError String         -- ^ Lex error
   | ParseError String       -- ^ Parse error
   | AstError String         -- ^ Some error in the AST
   deriving Show

@@ -30,7 +30,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
 data Type
   = TBuiltin (Builtin Type) -- ^ Builtin types
   | TCon TConId             -- ^ Type constructors
-  deriving Eq
+  deriving (Eq, Show)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
@@ -39,4 +39,5 @@ instance TypeSystem Type where
 
 -- | Flatten a list of type constructors into a
 flattenApp :: TConId -> [Type] -> TConId
-flattenApp = error "TODO"
+flattenApp t [] = t
+flattenApp t ts = error $ "flat cat: " ++ show t ++ " and " ++ concatMap show ts

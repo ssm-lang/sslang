@@ -241,6 +241,9 @@ later_ ty = "ssm_later_" <> fromId ty
 sv :: CIdent
 sv = "sv"
 
+int_ :: Int -> CIdent
+int_ s = "i" <> fromString (show s)
+
 {----- Memory management -----}
 
 -- | Allocate memory.
