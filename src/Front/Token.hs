@@ -5,9 +5,15 @@ import           Prettyprinter                  ( (<+>)
                                                 , Pretty(..)
                                                 )
 
+-- | Tokens extracted from source text.
 newtype Token = Token (Span, TokenType)
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 
+-- | Extract the 'TokenType' from a 'Token'.
+tokenType :: Token -> TokenType
+tokenType (Token (_, t)) = t
+
+-- | The location of a token in the source text.
 data Span = Span
   { tokPos  :: Int
   , tokLen  :: Int
@@ -16,6 +22,7 @@ data Span = Span
   }
   deriving (Eq, Show)
 
+-- | The types of tokens that can appear in a sslang source file.
 data TokenType
   = TEOF
   | TIf

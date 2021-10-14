@@ -19,25 +19,31 @@ type VarId = String
 type OperatorId = String
 
 data Program = Program [Declaration]
+  deriving (Eq, Show)
 
 data FnTyAnnotation = ReturnType Ty
                     | CurriedType Ty
+  deriving (Eq, Show)
 
 data Declaration = Function VarId [Bind] Expr FnTyAnnotation
+  deriving (Eq, Show)
 
 data Bind = Bind VarId (Maybe Ty)
           | TupBind [Bind] (Maybe Ty)
+  deriving (Eq, Show)
 
 data Ty = TCon TConId
         | TApp Ty Ty
         | TTuple [Ty]
         | TArrow Ty Ty
+  deriving (Eq, Show)
 
 data Lit = IntLit Integer
          | StringLit String
          | RatLit Rational
          | CharLit Char
          | EventLit
+  deriving (Eq, Show)
 
 data Expr = Id VarId
           | Literal Lit
@@ -59,32 +65,27 @@ data Expr = Id VarId
           | Wildcard
           | Break
           | Return Expr
+  deriving (Eq, Show)
 
 data OpRegion = EOR
               | NextOp OperatorId Expr OpRegion
+  deriving (Eq, Show)
 
 data Def = Def Pat Expr
+  deriving (Eq, Show)
 
 data Pat = PId VarId
          | PLiteral Lit
          | PWildcard
          | PAs VarId Pat
          | PCon TConId [Pat]
+  deriving (Eq, Show)
 
 -- | TODO: document
 collectTApp :: Ty -> (Ty, [Ty])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
-
-instance Show Program where
-  show (Program decls) = concatMap (\d -> show (pretty d) ++ "\n\n") decls
-
-instance Show Expr where
-  show e = show $ pretty e
-
-instance Show Def where
-  show d = show $ pretty d
 
 instance Pretty Declaration where
   pretty (Function id formals body r) =

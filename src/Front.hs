@@ -6,28 +6,18 @@ import qualified Front.Ast                     as A
 
 import           Front.Check                    ( checkRoutineSignatures )
 import           Front.ParseOperators           ( parseOperators )
-import           Front.Parser                   ( parse )
-import           Front.Scanner                  ( alexMonadScan
-                                                , runAlex
-                                                )
-import           Front.Token                    ( Token(..)
-                                                , TokenType(..)
-                                                )
+import           Front.Parser                   ( parseProgram )
+import           Front.Scanner                  ( scanTokens )
+import           Front.Token                    ( Token(..) )
 
 import           Control.Monad.Except           ( liftEither )
 import           Data.Bifunctor                 ( first )
 
 tokenStream :: String -> Compiler.Pass [Token]
-tokenStream = liftEither . first Compiler.LexError . (`runAlex` tokenize)
- where
-  tokenize = do
-    tok <- alexMonadScan
-    case tok of
-      Token (_, TEOF) -> return []
-      Token _         -> (:) tok <$> tokenize
+tokenStream = liftEither . first Compiler.LexError . scanTokens
 
 parseSource :: String -> Compiler.Pass A.Program
-parseSource = liftEither . first Compiler.ParseError . flip runAlex parse
+parseSource = liftEither . first Compiler.ParseError . parseProgram
 
 desugarAst :: A.Program -> Compiler.Pass A.Program
 desugarAst = return . parseOperators

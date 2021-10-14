@@ -182,4 +182,7 @@ exprToPat (Apply (Id pc) pats) = PCon pc $ patList pats
    patList (Apply p1 ps) = exprToPat p1 : patList ps
    patList e = [exprToPat e]
 exprToPat e = error $ "syntax error in pattern " ++ show e
+
+parseProgram :: String -> Either String Program
+parseProgram = flip runAlex parse
 }

@@ -1,6 +1,7 @@
 {
 module Front.Scanner where
-import Front.Token (Token(..), TokenType(..), Span(..))
+
+import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 }
 
 %wrapper "monadUserState"
@@ -246,4 +247,17 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
 
 lexerForHappy :: (Token -> Alex a) -> Alex a
 lexerForHappy = (alexMonadScan >>=)
+
+-- | Extract a token stream from an input string.
+scanTokens :: String -> Either String [Token]
+scanTokens s = runAlex s getStream
+  where
+    getStream = do
+     tok <- alexMonadScan
+     case tok of
+       Token (_, TEOF) -> return []
+       _ -> (:) tok <$> getStream
+
+scanTokenTypes :: String -> Either String [TokenType]
+scanTokenTypes = fmap (map tokenType) . scanTokens
 }
