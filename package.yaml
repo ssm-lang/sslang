@@ -49,6 +49,7 @@ executables:
 
     dependencies:
     - sslang
+    - prettyprinter >= 1.7.0
 
     build-tools:
     - happy

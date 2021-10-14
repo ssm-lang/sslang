@@ -10,47 +10,49 @@ module Front.Parser where
 
 import Front.Scanner
 import Front.Ast
+import Front.Token
+import Prettyprinter (pretty)
 }
 
 %name parse
 %error { parseError }
-%lexer { lexerForHappy } { Token _ TEOF }
+%lexer { lexerForHappy } { Token (_, TEOF) }
 %monad { Alex }
 %tokentype { Token }
 
 %token
-  'if'    { Token _ TIf }
-  'then'  { Token _ TThen }
-  'else'  { Token _ TElse }
-  'while' { Token _ TWhile }
-  'do'    { Token _ TDo }
-  'par'   { Token _ TPar }
-  'loop'  { Token _ TLoop }
-  'let'   { Token _ TLet }
-  'and'   { Token _ TAnd }
-  'after' { Token _ TAfter }
-  'wait'  { Token _ TWait }
-  'new'   { Token _ TNew  }
-  '='     { Token _ TEq }
-  '<-'    { Token _ TLarrow }
-  '->'    { Token _ TRarrow }
-  '||'    { Token _ TDBar }
-  ':'     { Token _ TColon }
-  ';'     { Token _ TSemicolon }
-  ','     { Token _ TComma }
-  '_'     { Token _ TUnderscore }
-  '@'     { Token _ TAt }
-  '&'     { Token _ TAmpersand }
-  '('     { Token _ TLparen }
-  ')'     { Token _ TRparen }
-  '{'     { Token _ TLbrace }
-  '}'     { Token _ TRbrace }
-  '['     { Token _ TLbracket }
-  ']'     { Token _ TRbracket }
-  int     { Token _ (TInteger $$) }
-  string  { Token _ (TString $$) }
-  op      { Token _ (TOp $$) }
-  id      { Token _ (TId $$) }
+  'if'    { Token (_, TIf) }
+  'then'  { Token (_, TThen) }
+  'else'  { Token (_, TElse) }
+  'while' { Token (_, TWhile) }
+  'do'    { Token (_, TDo) }
+  'par'   { Token (_, TPar) }
+  'loop'  { Token (_, TLoop) }
+  'let'   { Token (_, TLet) }
+  'and'   { Token (_, TAnd) }
+  'after' { Token (_, TAfter) }
+  'wait'  { Token (_, TWait) }
+  'new'   { Token (_, TNew)  }
+  '='     { Token (_, TEq) }
+  '<-'    { Token (_, TLarrow) }
+  '->'    { Token (_, TRarrow) }
+  '||'    { Token (_, TDBar) }
+  ':'     { Token (_, TColon) }
+  ';'     { Token (_, TSemicolon) }
+  ','     { Token (_, TComma) }
+  '_'     { Token (_, TUnderscore) }
+  '@'     { Token (_, TAt) }
+  '&'     { Token (_, TAmpersand) }
+  '('     { Token (_, TLparen) }
+  ')'     { Token (_, TRparen) }
+  '{'     { Token (_, TLbrace) }
+  '}'     { Token (_, TRbrace) }
+  '['     { Token (_, TLbracket) }
+  ']'     { Token (_, TRbracket) }
+  int     { Token (_, TInteger $$) }
+  string  { Token (_, TString $$) }
+  op      { Token (_, TOp $$) }
+  id      { Token (_, TId $$) }
 
 %left ';' -- Helps with if-then-else
 %right '->'
@@ -167,8 +169,8 @@ data Lit
   deriving Show
 
 parseError :: Token -> a
-parseError (Token (AlexPn _ l c) _) =
-    error $ show l ++ ":" ++ show c ++ ":Syntax error"
+parseError (Token (sp, _)) =
+    error $ show (pretty sp) ++ ":Syntax error"
 
 exprToPat :: Expr -> Pat
 exprToPat (Id s) = PId s

@@ -7,10 +7,11 @@ import qualified Front.Ast                     as A
 import           Front.Check                    ( checkRoutineSignatures )
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parse )
-import           Front.Scanner                  ( Token(..)
-                                                , TokenType(..)
-                                                , alexMonadScan
+import           Front.Scanner                  ( alexMonadScan
                                                 , runAlex
+                                                )
+import           Front.Token                    ( Token(..)
+                                                , TokenType(..)
                                                 )
 
 import           Control.Monad.Except           ( liftEither )
@@ -22,8 +23,8 @@ tokenStream = liftEither . first Compiler.LexError . (`runAlex` tokenize)
   tokenize = do
     tok <- alexMonadScan
     case tok of
-      Token _ TEOF -> return []
-      Token _ _    -> (:) tok <$> tokenize
+      Token (_, TEOF) -> return []
+      Token _         -> (:) tok <$> tokenize
 
 parseSource :: String -> Compiler.Pass A.Program
 parseSource = liftEither . first Compiler.ParseError . flip runAlex parse
