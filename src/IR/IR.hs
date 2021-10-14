@@ -92,8 +92,8 @@ data Primitive
   {- ^ 'Assign r e' instantly assigns value 'e' to reference 'r'. -}
   | After
   {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
-  | Fork
-  {- ^ 'Fork es+' evaluates expressions 'es' concurrently. -}
+  | Par
+  {- ^ 'Par  es+' evaluates expressions 'es' concurrently. -}
   | Wait
   {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
   | Loop
@@ -241,7 +241,7 @@ wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
-  wfPrim Fork                (_ : _)   = True
+  wfPrim Par                 (_ : _)   = True
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
   wfPrim Return              [_]       = True

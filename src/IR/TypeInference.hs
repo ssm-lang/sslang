@@ -57,5 +57,5 @@ inferExpr (I.Prim I.Return []  t      ) = I.Prim I.Return [] $ void <> t
 inferExpr (I.Lit I.LitEvent          t) = I.Lit I.LitEvent $ unit <> t
 inferExpr (I.Lit i@(I.LitIntegral _) t) = I.Lit i $ int 32 <> t
 -- inferExpr (I.Prim (I.PrimOp _) _  t) = void <> t
--- inferExpr (I.Prim I.Fork ps t) | all ((/= Ann.untyped) . inferExpr) ps = unit <> t
+-- inferExpr (I.Prim I.Par ps t) | all ((/= Ann.untyped) . inferExpr) ps = unit <> t
 inferExpr e                             = e

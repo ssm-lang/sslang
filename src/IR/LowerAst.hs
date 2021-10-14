@@ -125,7 +125,7 @@ lowerExpr (A.Let ds b) k = I.Let defs body (k I.untyped)
 lowerExpr (A.While c b) k = I.Prim I.Loop [body] (k I.untyped)
   where body = lowerExpr (A.IfElse c A.Break A.NoExpr `A.Seq` b) id
 lowerExpr (A.Loop b ) k = I.Prim I.Loop [lowerExpr b id] (k I.untyped)
-lowerExpr (A.Par  es) k = I.Prim I.Fork exprs (k I.untyped)
+lowerExpr (A.Par  es) k = I.Prim I.Par exprs (k I.untyped)
   where exprs = map (`lowerExpr` id) es
 lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
  where

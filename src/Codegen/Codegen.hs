@@ -512,11 +512,11 @@ genPrim I.After [time, lhs, rhs] _ = do
           $exp:later($exp:lhsVal, $id:now() + $exp:timeVal, $exp:rhsVal);
         |]
   return (unit, laterBlock)
-genPrim I.Fork procs _ = do
+genPrim I.Par procs _ = do
   yield <- genYield
   let
     numChildren = length procs
-    forkArgs    = genForkArgs
+    parArgs    = genParArgs
       numChildren
       ([cexp|$id:actg->$id:priority|], [cexp|$id:actg->$id:depth|])
     checkNewDepth = [citems|
@@ -544,7 +544,7 @@ genPrim I.Fork procs _ = do
     -- application (i.e., no thunks), whose left operand is a var.
     genActivate _ = nope
 
-  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip forkArgs procs)
+  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip parArgs procs)
   return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
@@ -633,16 +633,16 @@ genBinop lhs rhs = do
   (rhsVal, rhsStms) <- genExpr rhs
   return (lhsVal, rhsVal, lhsStms ++ rhsStms)
 
--- | Compute priority and depth arguments for a fork of width 'numChildren'.
-genForkArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
-genForkArgs numChildren (currentPrio, currentDepth) =
+-- | Compute priority and depth arguments for a par fork of width 'numChildren'.
+genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
+genParArgs numChildren (currentPrio, currentDepth) =
   [ let p = [cexp|$exp:currentPrio + ($int:(i-1) * (1 << $exp:d))|]
         d = [cexp|$exp:currentDepth - $exp:(depthSub numChildren)|]
     in  (p, d)
   | i <- [1 .. numChildren]
   ]
 
--- | How much the depth should be decreased when forking 'numChildren'.
+-- | How much the depth should be decreased when par forking 'numChildren'.
 depthSub :: Int -> C.Exp
 depthSub numChildren = [cexp|$int:ds|]
   where ds = ceiling $ logBase (2 :: Double) $ fromIntegral numChildren :: Int
