@@ -328,8 +328,7 @@ instance (Pretty t) => Pretty (Expr t) where
   pretty (Let a b c) =
     pretty "let" <+> pretty (show a) <+> pretty "=" <+> pretty b <+> pretty "in \n" <+> pretty c <+> pretty ""
   pretty (Lambda a b c) =
-    pretty "(lambda" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty
-      ")"
+    pretty "((\\" <+> pretty (show a) <+> pretty "->"<+> pretty b <+> pretty "):" <+>pretty c <> pretty ")"
   pretty (Match a b c d) =
     pretty "(match"
       <+> pretty a
@@ -340,11 +339,11 @@ instance (Pretty t) => Pretty (Expr t) where
   pretty (Prim a b c) =
     pretty "(prim " <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
 
-instance (Pretty t) => Pretty (Alt t) where
-  pretty (AltData a b c) =
-    pretty "altData" <+> pretty (show a) <+> pretty (show b) <+> pretty c
-  pretty (AltLit a b  ) = pretty "altLit" <+> pretty a <+> pretty b
-  pretty (AltDefault a) = pretty "altDefault" <+> pretty a
+instance Pretty Alt where
+  pretty (AltData a b ) = pretty (show a) <+> pretty (show b)
+  pretty (AltLit a) = pretty a
+  pretty AltDefault=  pretty "default"
+
 
 {- todo: move this to Identifiers -}
 instance Pretty VarId where
