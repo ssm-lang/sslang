@@ -77,23 +77,6 @@ collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
 
-rewrite :: (Expr -> Expr) -> Expr -> Expr
-rewrite f (Apply e1 e2) = Apply (f e1) (f e2)
-rewrite f (OpRegion e r) = OpRegion (f e) (h r)
-  where h EOR = EOR
-        h (NextOp op e' r') = NextOp op (f e') (h r')
-rewrite f (Let d b) = Let (map (\(Def p e) -> Def p (f e)) d) b
-rewrite f (While e1 e2) = While (f e1) (f e2)
-rewrite f (Loop e) = Loop (f e)
-rewrite f (Par e) = Par $ map f e
-rewrite f (IfElse e1 e2 e3) = IfElse (f e1) (f e2) (f e3)
-rewrite f (After e1 p e2) = After (f e1) p (f e2)
-rewrite f (Assign p e) = Assign p (f e)
-rewrite f (Constraint e t) = Constraint (f e) t
-rewrite f (As s e) = As s (f e)
-rewrite f (Seq e1 e2) = Seq (f e1) (f e2)
-rewrite _ e = e
-
 instance Show Program where
   show (Program decls) = concatMap (\d -> show (pretty d) ++ "\n\n") decls
 
