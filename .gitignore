@@ -8,6 +8,9 @@ Parser.info
 runtests.log
 regression-tests/out
 
+src/Front/Scanner.hs
+src/Front/Parser.hs
+
 # Created by https://www.toptal.com/developers/gitignore/api/haskell
 # Edit at https://www.toptal.com/developers/gitignore?templates=haskell
 
