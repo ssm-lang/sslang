@@ -267,21 +267,6 @@ wellFormed (Prim p es _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
 
-
-{-
-how to use:
-1) stack ghci
-2) import IR.IR
-3) samples:
-show (LitIntegral 3)
-show New
-Questions:
-why does `show (Lit "a" Integer)` not work? -- b/c types not defined, just use () as a type
-why does `show (Var (VarId (Identifier "foo")) LitIntegral)` not work?
-
-show (Var (VarId (Identifier "foo")) ()))
-
--}
 instance (Pretty t) => Show (Expr t) where
   show p = show $ pretty p
 
@@ -331,24 +316,15 @@ instance Pretty PrimOp where
   pretty PrimLe     = pretty "<="
 
 instance (Pretty t) => Pretty (Expr t) where
-  {- do pretty show(VarId)?
-  this might be needed if other file uses legacy printer
-  var myInt LitIntegral?
-
-  //do things like varId take args?
-
-  //do i have to wrap each expression in parens somehow?
-  // this feels v. lispy
-  -}
   pretty (Var a b) =
     pretty "(var" <+> pretty (show a) <+> pretty b <+> pretty ")"
   pretty (Data a b) =
     pretty "(data" <+> pretty (show a) <+> pretty b <+> pretty ")"
-  pretty (Lit a b) = pretty "(literal" <+> pretty a <+> pretty b <+> pretty ")"
+  pretty (Lit a b) = pretty "(" <> pretty a <> pretty ": "<>pretty b <> pretty ")"
   pretty (App a b c) =
     pretty "(apply" <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
   pretty (Let a b c) =
-    pretty "(let" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty ")"
+    pretty "let" <+> pretty (show a) <+> pretty "=" <+> pretty b <+> pretty "in \n" <+> pretty c <+> pretty ""
   pretty (Lambda a b c) =
     pretty "(lambda" <+> pretty (show a) <+> pretty b <+> pretty c <+> pretty
       ")"
