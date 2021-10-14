@@ -3,6 +3,8 @@ module Front.Token where
 
 import           Prettyprinter                  ( (<+>)
                                                 , Pretty(..)
+                                                , fill
+                                                , viaShow
                                                 )
 
 -- | Tokens extracted from source text.
@@ -62,6 +64,26 @@ data TokenType
   | TOp String
   deriving (Eq, Show)
 
+{- | 'Pretty' instance for 'Token', good for dumping tokens for inspection.
+
+Prints 'TokenType' via both its 'Pretty' and 'Show' instances for clarity.
+-}
+instance Pretty Token where
+  pretty (Token (sp, tok)) =
+    fill 15 (pretty sp)
+      <+> fill 31 (pretty tok)
+      <+> pretty "("
+      <>  viaShow tok
+      <>  pretty ")"
+
+-- | 'Pretty' instance for 'Span'. Reports both line:col and [addr+len].
+instance Pretty Span where
+  pretty Span { tokPos, tokLen, tokLine, tokCol } =
+    fill 8 (pretty tokLine <> pretty ":" <> pretty tokCol) <> fill
+      8
+      (pretty "[" <> pretty tokPos <> pretty "+" <> pretty tokLen <> pretty "]")
+
+-- | 'Pretty' instance for 'TokenType'. Recovers strings from keywords.
 instance Pretty TokenType where
   pretty TEOF         = mempty
   pretty TIf          = pretty "if"
@@ -99,12 +121,3 @@ instance Pretty TokenType where
   pretty (TString  s) = pretty $ "\"" ++ s ++ "\""
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
-
-instance Pretty Span where
-  pretty Span { tokPos, tokLen, tokLine, tokCol } =
-    pretty (show tokLine ++ ":" ++ show tokCol)
-      <+> pretty ("[" ++ show tokPos ++ "+" ++ show tokLen ++ "]")
-
-instance Pretty Token where
-  pretty (Token (sp, tok)) =
-    pretty sp <+> pretty tok <+> pretty ("(" ++ show tok ++ ")")
