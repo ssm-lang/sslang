@@ -4,8 +4,7 @@ module Front.ParseOperators
   ) where
 
 import qualified Data.Map.Strict               as Map
-import           Front.Ast                      ( Declaration(..)
-                                                , Def(..)
+import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
                                                 , OpRegion(..)
                                                 , Program(..)
@@ -24,12 +23,14 @@ defaultOps =
 
 parseOperators :: Program -> Program
 parseOperators (Program decls) = Program $ map (parseOps defaultOps) decls
-  where parseOps fs (Function s bs e t) = Function s bs (parseExprOps fs e) t
+ where
+  parseOps fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
+  parseOps fs (DefPat b e    ) = DefPat b $ parseExprOps fs e
 
 -- | Remove the OpRegion constructs in the AST by parsing the operators
 --   according to the given Fixity specifications
 parseExprOps :: [Fixity] -> Expr -> Expr
-parseExprOps fixity expr = rw expr
+parseExprOps fixity = rw
  where
   rw r@(OpRegion _ _) = let OpRegion e r' = rewrite rw r in step BOS e r'
   rw e                = rewrite rw e
@@ -66,7 +67,10 @@ parseExprOps fixity expr = rw expr
    where
     h EOR               = EOR
     h (NextOp op e' r') = NextOp op (f e') (h r')
-  rewrite f (Let   d  b      ) = Let (map (\(Def p e) -> Def p (f e)) d) b
+  rewrite f (Let d b) = Let (map g d) b
+   where
+    g (DefFn v bs t e) = DefFn v bs t $ f e
+    g (DefPat p e    ) = DefPat p $ f e
   rewrite f (While e1 e2     ) = While (f e1) (f e2)
   rewrite f (Loop e          ) = Loop (f e)
   rewrite f (Par  e          ) = Par $ map f e

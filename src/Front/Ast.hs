@@ -9,6 +9,9 @@ type TVarId = String
 -- | A type constructor name (e.g., Int, Bool)
 type TConId = String
 
+-- | A data constructor name (e.g., Just, False)
+type DConId = String
+
 -- | A type class name (e.g., Eq, Ord)
 type TClassId = String
 
@@ -26,18 +29,20 @@ data Definition
   | DefPat Bind Expr
   deriving (Eq, Show)
 
-data Bind = Bind Pat (Maybe Typ)
+data Bind = Bind BindPat [Typ]
   deriving (Eq, Show)
 
-data Pat
-  = PatId VarId
-  | PatWildcard
-  | PatBind Bind
-  | PatTup [Bind]
-  | PatAs VarId Pat
-  | PatLit Lit
-  | PatCon TConId [Pat]
+data BindPat
+  = BindWildcard
+  | BindId VarId
+  | BindLit Literal
+  | BindAs VarId Bind
+  | BindTup [Bind]
+  | BindCon DConId [Bind]
   deriving (Eq, Show)
+
+annBind :: Bind -> [Typ] -> Bind
+annBind (Bind p ts) ts' = Bind p (ts'++ts)
 
 data TypFn
   = TypReturn TypAnn
@@ -58,7 +63,7 @@ data Typ
 
 data Expr
   = Id VarId
-  | Literal Lit
+  | Lit Literal
   | Apply Expr Expr
   | OpRegion Expr OpRegion
   | NoExpr
@@ -84,7 +89,7 @@ data OpRegion
   | EOR
   deriving (Eq, Show)
 
-data Lit
+data Literal
   = LitInt Integer
   | LitString String
   | LitRat Rational
@@ -134,8 +139,6 @@ instance Pretty Bind where
           Nothing -> prettyTup
   -}
 
-instance Pretty Pat where
-  pretty = undefined
   {-
   pretty (PId      s) = pretty s
   pretty (PLiteral l) = pretty l
@@ -204,7 +207,7 @@ instance Pretty Expr where
   pretty (Return e)         = pretty "return" <> pretty e
   -}
 
-instance Pretty Lit where
+instance Pretty Literal where
   pretty = undefined
     {-
   pretty (IntLit    i) = pretty i

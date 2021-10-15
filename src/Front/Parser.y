@@ -91,7 +91,7 @@ bindArgs                              --> [Bind]
 
 -- | Argument binder, which cannot be type-annotated without wrapping parens.
 bindArg                               --> Bind
-  : pat                                 { Bind $1 Nothing }
+  : pat                                 { $1 }
 
 -- | Tuple binders are comma-separated and can be type-annotated.
 bindTups                              --> [Bind]
@@ -100,15 +100,15 @@ bindTups                              --> [Bind]
 
 -- | Tuple binder, which consist of a pattern and an optional type annotation.
 bindTup                               --> Bind
-  : pat typPat                          { Bind $1 $2 }
+  : pat typBind                         { annBind $1 $2 }
 
 -- | Root node of pattern.
-pat                                   --> Pat
+pat                                   --> Bind
   : patPre                              { $1 }
 
 -- | Prefix pattern operators.
-patPre                                --> Pat
-  : id '@' patPre                       { PatAs $1 $3 }
+patPre                                --> Bind
+  : id '@' patPre                       { Bind (BindAs $1 $3) [] }
   | patAtom                             { $1 }
 
 {- | Atomic patterns.
@@ -116,11 +116,11 @@ patPre                                --> Pat
 Note that a 1-ary tuple decays into regular binding (i.e., pattern with optional
 type annotation).
 -}
-patAtom                               --> Pat
-  : '_'                                 { PatWildcard }
-  | '(' bindTups ')'                    { normalize PatBind PatTup $2 }
-  | '(' ')'                             { PatId "()" }
-  | id                                  { PatId $1 }
+patAtom                               --> Bind
+  : '_'                                 { Bind BindWildcard []}
+  | '(' bindTups ')'                    { normalize id BindTup $2 }
+  | '(' ')'                             { Bind (BindLit LitEvent) [] }
+  | id                                  { Bind (BindId $1) [] }
   -- TODO: actually support literal patterns
 
 -- | Root node for type annotation.
@@ -160,9 +160,9 @@ typFn                                 --> TypFn
   | {- nothing -}                       { TypNone }
 
 -- | Type annotation for patterns.
-typPat                                --> Maybe Typ
-  : ':' typ                             { Just $2 }
-  | {- nothing -}                       { Nothing }
+typBind                               --> [Typ]
+  : ':' typ                             { [$2] }
+  | {- nothing -}                       { [] }
 
 -- | Tuple types are comma-separated.
 typTups                               --> [Typ]
