@@ -235,6 +235,7 @@ exprBlk                               --> Expr
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
   : ';' 'else' '{' expr '}'             { $3 }
+  | 'else' '{' expr '}'                 { $2 }
   | {- nothing -} %prec NOELSE          { NoExpr }
 
 -- | Expressions with application by juxtaposition.
