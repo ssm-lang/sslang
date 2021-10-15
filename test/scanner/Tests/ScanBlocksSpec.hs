@@ -37,27 +37,68 @@ spec = do
     scanTokenTypes input `shouldBe` Right output
 
   it "supports do blocks with implicit braces" $ do
-    pending
-    -- f do a
-    --      b
+    let input = unlines
+          [ "f do a"
+          , "     b"
+          ]
+        output =
+          [ TId "f"
+          , TLbrace
+          , TId "a"
+          , TSemicolon
+          , TId "b"
+          , TRbrace
+          ]
+    scanTokenTypes input `shouldBe` Right output
 
   it "supports do blocks with implicit braces, followed by continuation" $ do
-    pending
-    -- f do a
-    --      b
-    --    c
-    --   d
+    let input = unlines
+          [ "f do a"
+          , "     b"
+          , "    c"
+          , "   d"
+          ]
+        output =
+          [ TId "f"
+          , TLbrace
+          , TId "a"
+          , TSemicolon
+          , TId "b"
+          , TRbrace
+          , TId "c"
+          , TId "d"
+          ]
+    scanTokenTypes input `shouldBe` Right output
 
   it "supports do blocks with explicit braces" $ do
-    pending
-    -- f {
-    --   g
-    --     x
-    -- }
+    let input = unlines
+          [ "f {"
+          , "  g"
+          , "    x"
+          , "}"
+          ]
+        output =
+          [ TId "f"
+          , TLbrace
+          , TId "g"
+          , TId "x"
+          , TRbrace
+          ]
+    scanTokenTypes input `shouldBe` Right output
 
   it "supports do blocks with explicit braces and semicolons" $ do
-    pending
-    -- f {
-    --   g;
-    --     x
-    -- }
+    let input = unlines
+          [ "f {"
+          , "  g;"
+          , "    x"
+          , "}"
+          ]
+        output =
+          [ TId "f"
+          , TLbrace
+          , TId "g"
+          , TSemicolon
+          , TId "x"
+          , TRbrace
+          ]
+    scanTokenTypes input `shouldBe` Right output
