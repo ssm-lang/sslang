@@ -1,6 +1,5 @@
-{
-{-
-To generate parser manually:
+{ {- | Parser for sslang token stream.
+To check for shift/reduce and reduce/reduce conflicts, generate parser manually:
 
   happy -i Parser.y -o /dev/null
 
@@ -22,17 +21,14 @@ import Prettyprinter (pretty)
 
 %token
   'if'    { Token (_, TIf) }
-  'then'  { Token (_, TThen) }
   'else'  { Token (_, TElse) }
   'while' { Token (_, TWhile) }
   'do'    { Token (_, TDo) }
   'par'   { Token (_, TPar) }
   'loop'  { Token (_, TLoop) }
   'let'   { Token (_, TLet) }
-  'and'   { Token (_, TAnd) }
   'after' { Token (_, TAfter) }
   'wait'  { Token (_, TWait) }
-  'new'   { Token (_, TNew)  }
   '='     { Token (_, TEq) }
   '<-'    { Token (_, TLarrow) }
   '->'    { Token (_, TRarrow) }
@@ -55,134 +51,241 @@ import Prettyprinter (pretty)
   id      { Token (_, TId $$) }
 
 %left ';' -- Helps with if-then-else
-%right '->'
 %nonassoc NOELSE 'else'
 
 %%
+-- | Root node of sslang program parser.
+program                               --> Program
+  : defTop                              { Program $1 }
+  -- TODO: support empty program
 
-program : topdecls { Program (reverse $1) }
+{- | Top-level definitions.
 
-topdecls : topdecl               { [$1] }
-         | topdecls ';' topdecl  { $3 : $1 }
+Note that although these also begin with 'let', they are grammatically (and
+indeed semantically) distinct from actual let-bindings (@defLets@).
 
-topdecl : id formals optReturnType '=' '{' expr '}' { Function $1 $2 $6 $3 }
-        | id optFormals ':' typ '=' '{' expr '}'    { Function $1 $2 $7 (CurriedType $4) }
+They are separated with '||' rather than ';' because the latter somehow causes
+shift-reduce conflicts.
+-}
+defTop                                --> [Definition]
+  : 'let' defLet '||' defTop            { $1 : $3 }
+  | 'let' defLet                        { [$1] }
 
-optReturnType : '->' typ      { ReturnType $2 }
-              | {- nothing -} { ReturnType (TCon "()") }
+-- | Mutually recursive block of let-definitions.
+defLets                               --> [Definition]
+  : defLet '||' defLets                 { $1 : $3 }
+  | defLet                              { [$1] }
 
-optFormals : formals       { $1 }
-           | {- nothing -} { [] }
+{- | Single let-definition.
 
-formals : formalTop         { [$1] }
-        | formalTop formals { $1 : $2 }
+We use 'categorizeDef' to figure out whether we are defining a function or a
+variable.
+-}
+defLet                                --> Definition
+  : bindArgs typFn '=' expr             { categorizeDef $1 $2 $3 }
 
-formalTop : formalAtomic          { Bind $1 Nothing }
-          | '(' formalOrTuple ')' { $2 }
+-- | A list of argument binders consists of a series of juxtaposed patterns.
+bindArgs                              --> [Bind]
+  : bindArg bindArgs                    { $1 : $2 }
+  | {- nothing -}                       { [] }
 
-formalOrTuple : formal                  { $1 }
-              | formal ',' tupleFormals { TupBind ($1 : $3) Nothing }
+-- | Argument binder, which cannot be type-annotated without wrapping parens.
+bindArg                               --> Bind
+  : pat                                 { Bind $1 Nothing }
 
-formal : '(' formal ')'                          { $2 }
-       | formalAtomic optType                    { Bind $1 $2 }
-       | '(' formal ',' tupleFormals ')' optType { TupBind ($2 : $4) $6 }
+-- | Tuple binders are comma-separated and can be type-annotated.
+bindTups                              --> [Bind]
+  : bindTup ',' bindTups                { $1 : $3 }
+  | bindTup                             { $1 }
 
-formalAtomic : id      { $1 }
-             | '_'     { "_" }
-             | '(' ')' { "()" }
+-- | Tuple binder, which consist of a pattern and an optional type annotation.
+bindTup                               --> Bind
+  : pat typPat                          { Bind $1 $2 }
 
-tupleFormals : formal                  { [$1] }
-             | formal ',' tupleFormals { $1 : $3 }
+-- | Root node of pattern.
+pat                                   --> Pat
+  : patPre                              { $1 }
 
-optType : {- nothing -} { Nothing }
-        | ':' typ       { Just $2 }
+-- | Prefix pattern operators.
+patPre                                --> Pat
+  : id '@' patPre                       { PatAs $1 $3 }
+  | patAtom                             { $1 }
 
-typ : typ1 '->' typ { TArrow $1 $3 }
-    | typ1          { $1 }
+{- | Atomic patterns.
 
-typ1 : typ1 typ2 { TApp $1 $2 }
-     | typ2      { $1 }
+Note that a 1-ary tuple decays into regular binding (i.e., pattern with optional
+type annotation).
+-}
+patAtom                               --> Pat
+  : '_'                                 { PatWildcard }
+  | '(' bindTups ')'                    { normalize PatBind PatTup $2 }
+  | '(' ')'                             { PatId "()" }
+  | id                                  { PatId $1 }
+  -- TODO: actually support literal patterns
 
-typ2 : id                        { TCon $1 }
-     | '[' typ ']'               { TApp (TCon "[]") $2 }
-     | '(' typ ')'               { $2 }
-     | '(' typ ',' tupleTyps ')' { TTuple ($2 : $4) }
-     | '(' ')'                   { TCon "()" }
-     | '&' typ2                  { TApp (TCon "&") $2 }
+-- | Root node for type annotation.
+typ                                   --> Typ
+  : typIn                               { $1 }
 
-tupleTyps : typ               { [$1] }
-          | typ ',' tupleTyps { $1 : $3 }
+-- | Infix type operators. Note that '->' is right-associative.
+typIn                                 --> Typ
+  : typApp '->' typIn                   { TArrow $1 $3 }
+  | typApp                              { $1 }
 
-expr : expr ';' expr0                   { Seq $1 $3 }
-     | 'let' '{' decls '}' ';' expr     { Let (reverse $3) $6 }
-     | expr0                            { $1 }
+-- | Type application by juxtaposition. Left-associative.
+typApp                                --> Typ
+  : typApp typPre                       { TApp $1 $2 }
+  | typPre                              { $1 }
 
-expr0 : 'if' expr 'then' expr0 elseOpt      { IfElse $2 $4 $5 }
-      | 'while' expr 'do' expr0             { While $2 $4 }
-      | 'loop' expr0                        { Loop $2 }
-      | 'wait' '{' parExprs '}'             { Wait $3 }
-      | 'par' '{' parExprs '}'              { Par (reverse $3) }
-      | 'after' expr2 ',' expr2 '<-' expr0  { After $2 $4 $6 }
-      | expr2 '<-' expr0                    { Assign $1 $3 }
-      | 'new'  expr0                        { New $2 }
-      | id '@' expr0                        { As $1 $3 }
-      | expr1                               { $1 }
+-- | Prefix type operators.
+typPre                                --> Typ
+  : '&' typPre                          { TApp (TCon "&") $2 }
+  | typAtom                             { $1 }
 
-ids : id          { [$1] }
-    | ids ',' id  { $3 : $1 }
+{- | Atomic type expressions.
 
-elseOpt : {- nothing -} %prec NOELSE { NoExpr }
-        | ';' 'else' expr1           { $3 }
+Note that a 1-ary tuple type decays into regular type (which happens when you
+parenthesize a type expression).
+-}
+typAtom                               --> Typ
+  : id                                  { TCon $1 }
+  | '(' typTups ')'                     { normalize id TTuple $2 }
+  | '[' typ ']'                         { TApp (TCon "[]") $2 }
+  | '(' ')'                             { TCon "()" }
 
-expr1 : expr1 ':' typ                  { Constraint $1 $3 }
-      | expr2                          { $1 }
+-- | Type annotation for (potentially) functions.
+typFn                                 --> TypFn
+  : '->' typ                            { TypReturn $2 }
+  | ':' typ                             { TypProper $2 }
+  | {- nothing -}                       { TypNone }
 
-expr2 : apply opregion  { OpRegion $1 $2 }
-      | apply           { $1 }
+-- | Type annotation for patterns.
+typPat                                --> Maybe Typ
+  : ':' typ                             { Just $2 }
+  | {- nothing -}                       { Nothing }
 
-opregion : op apply opregion { NextOp $1 $2 $3 }
-         | op apply          { NextOp $1 $2 EOR }
+-- | Tuple types are comma-separated.
+typTups                               --> [Typ]
+  : typ ',' typTups                     { $1 : $3 }
+  | typ                                 { [$1] }
 
-apply : apply aexpr { Apply $1 $2 }
-      | aexpr       { $1 }
+-- | Root node for expressions.
+expr                                  --> Expr
+  : exprSeq                             { $1 }
 
-aexpr : int             { Literal (IntLit $1) }
-      | string          { Literal (StringLit $1) }
-      | id              { Id $1 }
-      | '_'             { Wildcard }
-      | '(' expr ')'    { $2 }
-      | '{' expr '}'    { $2 }
-      | '(' ')'         { Literal EventLit }
+{- | Sequenced expressions.
 
-decls : decls 'and' decl  { $3 : $1 }
-      | decl              { [$1] }
+Note that the semantics of 'Seq' are fully associative, so it shouldn't really
+matter how we assemble that tree as long as the leaves are correctly ordered.
+Here it happens to be right-associative.
+-}
+exprSeq                               --> Expr
+  : exprStm ';' exprSeq                 { Seq $1 $3 }
+  | 'let' '{' defLets '}' ';' exprSeq   { Let $3 $6 }
+  | exprStm                             { $1 }
 
-parExprs : parExprs '||' expr { $3 : $1 }
-         | expr               { [$1] }
+{- | Expressions that resemble some kind of statement.
 
-decl : expr2 '=' aexpr      { Def (exprToPat $1) $3 }
+This rule exists because it ensures that type annotations are at a higher
+precedence than these statements (for which it makes little sense to type
+annotate). Yet this rule is not self-referential because we want to discourage
+arbitrary combination of these syntactic constructs, e.g., no @a <- b <- c@
+business.
+-}
+exprStm                               --> Expr
+  : exprAnn '<-' exprAnn                { Assign $1 $3 }
+  | 'after' exprAnn ',' exprAnn '<-' exprAnn
+                                        { After $2 $4 $6 }
+  | exprAnn                             { $1 }
 
+-- | Expressions with type annotations.
+exprAnn                               --> Expr
+  : exprAnn ':' typ                     { Constraint $1 $3 }
+  | exprOp                              { $1 }
+
+-- | Expressions with operators, whose precedence is not known a priori.
+exprOp                                --> Expr
+  : exprBlk exprOpRegion                { OpRegion $1 $2 }
+  | exprBlk                             { $1 }
+
+-- | Expressions with operators are parsed as flat lists.
+exprOpRegion                          --> OpRegion
+  : op exprBlk exprOpRegion             { NextOp $1 $2 $3 }
+  | op exprBlk                          { NextOp $1 $2 EOR }
+
+{- | Expressions that consist of blocks of other expressions.
+
+While these have statement-like semantics, they are at such a low precedence
+because they syntactically resemble juxtaposed alphanumeric tokens. Yet they are
+at higher precedence than regular application because something like 'f if ...'
+looks confusing.
+
+Note that do-blocks appear here as an alternative to parenthesizing expressions,
+which the scanner can exploit to insert implicit braces and semicolons.
+-}
+exprBlk                               --> Expr
+  : 'do' '{' expr '}'                   { $3 }
+  | 'loop' '{' expr '}'                 { Loop $2 }
+  | 'wait' '{' exprPar '}'              { Wait $3 }
+  | 'par' '{' exprPar '}'               { Par $3 }
+  | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $5 }
+  | 'while' exprBlk '{' expr '}'        { While $2 $4 }
+  | exprApp                             { $1 }
+
+-- | Optional trailing 'else' branch to 'if' statement.
+exprElse                              --> Expr
+  : ';' 'else' '{' expr '}'             { $3 }
+  | {- nothing -} %prec NOELSE          { NoExpr }
+
+-- | Expressions with application by juxtaposition.
+exprApp                               --> Expr
+  : exprApp exprAtom                    { Apply $1 $2 }
+  | exprAtom                            { $1 }
+
+-- | Atomic expressions.
+exprAtom
+  : int                                 { Literal (LitInt $1) }
+  | string                              { Literal (LitString $1) }
+  | id                                  { Id $1 }
+  | '(' expr ')'                        { $2 }
+  | '(' ')'                             { Literal LitEvent }
+
+-- | Pipe-separated expressions, for parallel composition.
+exprPar                               --> [Expr]
+  : expr '||' exprPar                   { $1 : $3 }
+  | expr                                { [$1] }
 {
-data Lit
-  = SLit String
-  | ILit Integer
-  deriving Show
-
+-- | What to do upon encountering parse error.
+--
+-- TODO does this really just throw an uncaught exception on parse error, or
+-- does Happy catch that for us?
 parseError :: Token -> a
 parseError (Token (sp, _)) =
     error $ show (pretty sp) ++ ":Syntax error"
 
-exprToPat :: Expr -> Pat
-exprToPat (Id s) = PId s
-exprToPat (Literal l) = PLiteral l
-exprToPat Wildcard = PWildcard
-exprToPat (As v e) = PAs v (exprToPat e)
-exprToPat (Apply (Id pc) pats) = PCon pc $ patList pats
- where
-   patList (Apply p1 ps) = exprToPat p1 : patList ps
-   patList e = [exprToPat e]
-exprToPat e = error $ "syntax error in pattern " ++ show e
-
+-- | Top-level helper function to parse program from string.
 parseProgram :: String -> Either String Program
 parseProgram = flip runAlex parse
+
+{- | List combinator for singleton vs other lists.
+
+Useful for distinguishing between parentheses vs tuple lists.
+-}
+normalize :: (a -> b) ([a] -> b) -> [a] -> b
+normalize f _ [x] = f x
+normalize _ f xs = f xs
+
+{- | Categorize the contents of a let-definition.
+
+- Anything of the form @a : T = ...@ is treated as a pattern binding.
+- Anything of the form @pat = ...@ is treated as a pattern binding.
+- Anything of the form @id [pats..] [:T|->T] = ...@ is treated as a function
+  binding.
+- Nothing else is considered well-formed.
+-}
+categorizeDef :: [Bind] -> TypFn -> Expr -> Definition
+categorizeDef [Bind pat Nothing] (TypProper typ) = DefPat $ Bind pat (Just typ)
+categorizeDef [b] (TypNone) = DefPat b
+categorizeDef (Bind (PatId f) Nothing:args) fAnn = DefFn f args
+categorizeDef _ _ = error "Syntax error in definition"
 }
