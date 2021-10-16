@@ -291,7 +291,7 @@ instance Pretty Primitive where
   pretty Drop       = pretty "drop"
   pretty Reuse      = pretty "reuse"
   pretty Deref      = pretty "deref"
-  pretty Assign     = pretty "="
+  pretty Assign     = pretty "<-"
   pretty After      = pretty "after"
   pretty Fork       = pretty "fork"
   pretty Wait       = pretty "wait"
@@ -324,16 +324,17 @@ instance (Pretty t) => Pretty (Expr t) where
     pretty "(data" <+> pretty (show a) <+> pretty b <+> pretty ")"
   pretty (Lit a b) = pretty "(" <> pretty a <> pretty ": "<>pretty b <> pretty ")"
   pretty (App a b c) =
-    pretty "(apply" <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+    pretty "((" <> pretty a <> pretty ")" <+> pretty "(" <> pretty b <> pretty "):"<+> pretty c <> pretty ")"
   pretty (Let a b c) =
     pretty "let" <+> pretty (show a) <+> pretty "=" <+> pretty b <+> pretty "in \n" <+> pretty c <+> pretty ""
   pretty (Lambda a b c) =
     pretty "((\\" <+> pretty (show a) <+> pretty "->"<+> pretty b <+> pretty "):" <+>pretty c <> pretty ")"
   pretty (Match a b c d) =
+    let listAlts = (Prelude.map (\(x,y) -> (pretty x <+> pretty "=>" <+> pretty y<> pretty "\n")) c) in
     pretty "(match"
       <+> pretty a
       <+> pretty (show b)
-      <+> pretty c
+      <+> (foldl (<+>) (head listAlts) (tail listAlts))
       <+> pretty d
       <+> pretty ")"
   pretty (Prim a b c) =
