@@ -206,7 +206,7 @@ undef = [cexp|0xdeadbeef|]
 
 -- | Generate a C compilation from an SSM program.
 genProgram :: Program -> Compiler.Pass [C.Definition]
-genProgram p@I.Program { I.programDefs = defs } = do
+genProgram I.Program { I.programDefs = defs } = do -- p@I.Program
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
   return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
 

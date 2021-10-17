@@ -13,10 +13,11 @@ This type system also does not support type classes or any sort of
 higher-kinded polymorphism. This is due to following restrictions:
 
 - No partially-applied type constructors; whenever a type constructor appears
-  in a type expression, it is fully applied. e.g., `Option` is not allowed.
+  in a type expression, it is fully applied. e.g., @Option@ by itself is
+  not allowed, but @Option Int@ is.
 
 - No abstraction over type constructors; the head (left-most term) of a type
-  application must be a concrete type constructor. e.g., `a b` is not
+  application must be a concrete type constructor. e.g., @'1 '2@ is not
   allowed.
 
 - No quantifiers inside of type expressions; all quantifiers must be
@@ -40,8 +41,8 @@ import           IR.Types.TypeSystem            ( Builtin(..)
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
-  | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TCon TConId [Type]              -- ^ Type constructor, e.g., @Option '0@
+  | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
   deriving Eq
 
 -- | 'Type' is a type system.

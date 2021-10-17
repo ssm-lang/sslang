@@ -18,27 +18,34 @@ type VarId = String
 -- | An operator name (e.g., +, foo)
 type OperatorId = String
 
+-- | A complete program: a list of declarations
 data Program = Program [Declaration]
 
+-- | Function type annotation
 data FnTyAnnotation = ReturnType Ty
                     | CurriedType Ty
 
+-- | A function declaration (FIXME: should just be a value definition)
 data Declaration = Function VarId [Bind] Expr FnTyAnnotation
 
+-- | A name bound to a type
 data Bind = Bind VarId (Maybe Ty)
           | TupBind [Bind] (Maybe Ty)
 
+-- | A type definition
 data Ty = TCon TConId
         | TApp Ty Ty
         | TTuple [Ty]
         | TArrow Ty Ty
 
+-- | A literal
 data Lit = IntLit Integer
          | StringLit String
          | RatLit Rational
          | CharLit Char
          | EventLit
 
+-- | An expression
 data Expr = Id VarId
           | Literal Lit
           | Apply Expr Expr
@@ -60,11 +67,19 @@ data Expr = Id VarId
           | Break
           | Return Expr
 
+{- | An operator region: a flat list of alternating expressions and operators
+that is initially parsed flat but will be restructured into a tree by
+the operator precedence parser.
+-}
 data OpRegion = EOR
               | NextOp OperatorId Expr OpRegion
 
+{- | A definition line inside a @let@ block (FIXME: this should be
+   like a top-level definition)
+-}
 data Def = Def Pat Expr
 
+{- | A pattern, e.g., @let Cons hd tl = x in ...@ -}
 data Pat = PId VarId
          | PLiteral Lit
          | PWildcard
@@ -77,6 +92,7 @@ collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
 
+-- | Apply an expression rewriter (FIXME: Isn't this an instance of functor?)
 rewrite :: (Expr -> Expr) -> Expr -> Expr
 rewrite f (Apply e1 e2) = Apply (f e1) (f e2)
 rewrite f (OpRegion e r) = OpRegion (f e) (h r)
