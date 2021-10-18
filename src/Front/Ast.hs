@@ -21,17 +21,21 @@ type VarId = String
 -- | An operator name (e.g., +, foo)
 type OperatorId = String
 
+-- | A complete program: a list of declarations
 newtype Program = Program [Definition]
   deriving (Eq, Show)
 
+-- | A value definition
 data Definition
   = DefFn VarId [Bind] TypFn Expr
   | DefPat Bind Expr
   deriving (Eq, Show)
 
+-- | A name bound to a type
 data Bind = Bind BindPat [Typ]
   deriving (Eq, Show)
 
+{- | A pattern, e.g., @let Cons hd tl = x in ...@ -}
 data BindPat
   = BindWildcard
   | BindId VarId
@@ -41,9 +45,7 @@ data BindPat
   | BindCon DConId [Bind]
   deriving (Eq, Show)
 
-annBind :: Bind -> [Typ] -> Bind
-annBind (Bind p ts) ts' = Bind p (ts'++ts)
-
+-- | Function type annotation
 data TypFn
   = TypReturn TypAnn
   | TypProper TypAnn
@@ -53,6 +55,7 @@ data TypFn
 -- | TODO: type classes
 type TypAnn = Typ
 
+-- | A type definition
 data Typ
   = TCon TConId
   | TApp Typ Typ
@@ -61,6 +64,7 @@ data Typ
   -- TODO type variables
   deriving (Eq, Show)
 
+-- | An expression
 data Expr
   = Id VarId
   | Lit Literal
@@ -84,11 +88,16 @@ data Expr
   | Return Expr
   deriving (Eq, Show)
 
+{- | An operator region: a flat list of alternating expressions and operators
+that is initially parsed flat but will be restructured into a tree by
+the operator precedence parser.
+-}
 data OpRegion
   = NextOp OperatorId Expr OpRegion
   | EOR
   deriving (Eq, Show)
 
+-- | A literal
 data Literal
   = LitInt Integer
   | LitString String
@@ -97,7 +106,11 @@ data Literal
   | LitEvent
   deriving (Eq, Show)
 
--- | TODO: document
+-- | Annotate 'Bind' with additional types
+annBind :: Bind -> [Typ] -> Bind
+annBind (Bind p ts) ts' = Bind p (ts'++ts)
+
+-- | Collect a curried application into the function and its list of arguments.
 collectTApp :: Typ -> (Typ, [Typ])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs

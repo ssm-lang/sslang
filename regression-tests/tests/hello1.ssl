@@ -1,0 +1,13 @@
+main ( cout : & Int ) =
+  after 10 , (cout : & Int) <- 72
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- 101
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- 108
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- 108
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- 111
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- 10
+  wait (cout : & Int)

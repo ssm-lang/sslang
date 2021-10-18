@@ -61,6 +61,8 @@ parseExprOps fixity = rw
     prel = Map.findWithDefault defaultPrec opl opMap
     prer = Map.findWithDefault defaultPrec opr opMap
 
+  -- | Rewriter for expressions. ('Expr' is almost a functor, except its kind is
+  -- @*@; functors must be of kind @* -> *@.)
   rewrite :: (Expr -> Expr) -> Expr -> Expr
   rewrite f (Apply    e1 e2) = Apply (f e1) (f e2)
   rewrite f (OpRegion e  r ) = OpRegion (f e) (h r)
