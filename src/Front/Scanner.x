@@ -38,12 +38,8 @@ tokens :-
     @newline            { nextLine }
   }
 
-  -- | Explicit matched delimiters, higher prio than 'firstBlockToken'.
+  -- | Explicit brace delimiters; higher priority than 'firstBlockToken'.
   <0,startBlock> {
-    \(                  { lDelimeter TLparen TRparen }
-    \)                  { rDelimeter TRparen }
-    \[                  { lDelimeter TLbracket TRbracket }
-    \]                  { rDelimeter TRbracket }
     \{                  { lDelimeter TLbrace TRbrace }
     \}                  { rDelimeter TRbrace }
   }
@@ -54,6 +50,12 @@ tokens :-
   }
 
   <0> {
+    -- | Other delimiters that don't start blocks, but activate freeform mode.
+    \(                  { lDelimeter TLparen TRparen }
+    \)                  { rDelimeter TRparen }
+    \[                  { lDelimeter TLbracket TRbracket }
+    \]                  { rDelimeter TRbracket }
+
     -- | Keywords that start blocks
     if                  { layoutNL  TIf     TSemicolon }
     else                { layout    TElse   TSemicolon }

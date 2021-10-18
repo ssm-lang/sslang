@@ -12,6 +12,7 @@ import qualified IR.Types.TypeSystem           as I
 
 import           Common.Identifiers             ( fromString )
 
+import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( fromJust )
 
@@ -57,10 +58,19 @@ lowerDef (A.DefFn aName aBinds aTy aBody) =
     A.TypNone      -> (id, id)
 
   lowerBinds :: [A.Bind] -> (I.Type -> I.Type) -> I.Expr I.Type
-  lowerBinds (b@(A.Bind (A.BindId v) _) : bs) k =
-    I.Lambda (Just $ fromString v) (lowerBinds bs id) (k $ lowerBindType b)
-  lowerBinds (b@(A.Bind A.BindWildcard _) : bs) k =
-    I.Lambda Nothing (lowerBinds bs id) (k $ lowerBindType b)
+  lowerBinds (b@(A.Bind (A.BindId v) _) : bs) k = I.Lambda
+    (Just $ fromString v)
+    lBody
+    (k lType)
+   where
+    lBody = lowerBinds bs id
+    lType = lowerBindType b `I.arrow` extract lBody
+  lowerBinds (b@(A.Bind A.BindWildcard _) : bs) k = I.Lambda Nothing
+                                                             lBody
+                                                             (k lType)
+   where
+    lBody = lowerBinds bs id
+    lType = lowerBindType b `I.arrow` extract lBody
   lowerBinds [] k = lowerExpr aBody (k . tailAnn)
   lowerBinds _  _ = nope -- Should have been desugared into pattern matches
 
