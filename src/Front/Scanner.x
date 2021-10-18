@@ -149,15 +149,15 @@ dropEnds b a = reverse . drop a . reverse . drop b
 
 
 -- | Arbitrary string token helper, which uses 'f' to produce 'TokenType'.
-strTok :: (String -> TokenType) -> AlexAction
+strTok :: (String -> TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = return $ Token (alexInputSpan i len, f $ take len s)
 
 -- | Keyword is just a plain keyword, which just emits given 'TokenType'.
-keyword :: TokenType -> AlexAction
+keyword :: TokenType -> AlexAction Token
 keyword ttype i len = return $ Token (alexInputSpan i len, ttype)
 
 -- | Keyword starts a new block immediately.
-layout :: TokenType -> TokenType -> AlexAction
+layout :: TokenType -> TokenType -> AlexAction Token
 layout ttype sepToken i len = do
   -- Push 'PendingBlock' onto stack so we remember what 'sepToken' is
   alexPushContext $ PendingBlock sepToken
@@ -168,7 +168,7 @@ layout ttype sepToken i len = do
   return $ Token (alexInputSpan i len, ttype)
 
 -- | First token in a block (epsilon action).
-firstBlockToken :: AlexAction
+firstBlockToken :: AlexAction Token
 firstBlockToken (pn@(AlexPn _ _ col), _, _, _) _ = do
   alexSetStartCode 0
   -- Check the top of the context stack to obtain saved separator token.
@@ -183,19 +183,19 @@ firstBlockToken (pn@(AlexPn _ _ col), _, _, _) _ = do
   return $ Token (alexEmptySpan pn, TLbrace)
 
 -- | Keyword starts a new block at next line.
-layoutNL :: TokenType -> TokenType -> TokenType -> AlexAction
+layoutNL :: TokenType -> TokenType -> AlexAction Token
 layoutNL ttype sepToken i len = do
   -- Push PendingBlockNL' onto stack so we remember 'sepToken', and to start
   -- new block at next line
-  alexPushContext $ PendingBlockNL startToken sepToken
+  alexPushContext $ PendingBlockNL sepToken
   -- Emit token and continue scanning
   return $ Token (alexInputSpan i len, ttype)
 
 -- | Left delimiting token, along with its (closing) right delimiter.
-lDelimeter :: TokenType -> TokenType -> AlexAction
+lDelimeter :: TokenType -> TokenType -> AlexAction Token
 lDelimeter ttype closer i len = do
   ctxt <- alexPeekContext
-  case (ttype, ctxt) of
+  case (ctxt, ttype) of
     -- If about to start a block and we encounter explicit @{@, then that block
     -- has been started explicitly, so we forget about the 'PendingBlock' state.
     (PendingBlock _, TLbrace)   -> alexPopContext
@@ -203,17 +203,18 @@ lDelimeter ttype closer i len = do
     _ -> return ()
   -- Push 'Freeform' to remember the column this explicit block was started,
   -- and what closing token to look for.
-  alexPushContext $ Freeform (inputCol i) closer
+  let sp = alexInputSpan i len
+  alexPushContext $ Freeform (tokCol sp) closer
   return $ Token (alexInputSpan i len, ttype)
 
 -- | Right delimiter, e.g., ), }, ]
-rDelimeter :: TokenType -> AlexAction
+rDelimeter :: TokenType -> AlexAction Token
 rDelimeter ttype i len = do
   alexPushContext $ EndingFreeform ttype (alexInputSpan i len)
   closeBrace i len
 
 -- | "Subroutine" to insert closing braces (epsilon action).
-closeBrace :: AlexAction
+closeBrace :: AlexAction Token
 closeBrace (pn, _, _, _) _ = do
   alexSetStartCode 0
   -- When this subroutine starts, we expect the 'EndingFreeform' context we
@@ -222,7 +223,7 @@ closeBrace (pn, _, _, _) _ = do
   alexPopContext
   (closer, cspan) <- case closing of
     EndingFreeform cl sp -> return (cl, sp)
-    _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show ctxt
+    _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show closing
 
   -- We check whatever context comes next.
   ctxt <- alexPeekContext
@@ -243,16 +244,18 @@ closeBrace (pn, _, _, _) _ = do
 
     -- If somehow in Freeform for different closer, then we there must be
     -- a delimiter mismatch, e.g., @( ]@.
-    Freeform _ closer' -> syntaxErr "Delimiter mismatch error message TODO"
+    Freeform _ _closer' -> syntaxErr "Delimiter mismatch error message TODO"
 
     -- If somehow pending block, then user wrote something like @do )@ or
     -- @if x )@, both of which are syntax errors.
     PendingBlock _   -> syntaxErr "error message TODO"
     PendingBlockNL _ -> syntaxErr "error message TODO"
 
+    _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show ctxt
+
 -- | Start of each line.
-nextLine :: AlexAction
-nextLine i len = do
+nextLine :: AlexAction Token
+nextLine _ _ = do
   -- We're at the start of the line, but we don't yet know:
   -- (1) what the first token is, or
   -- (2) what its indentation is.
@@ -262,7 +265,7 @@ nextLine i len = do
   alexMonadScan
 
 -- | First token in a line.
-firstLineToken :: AlexAction
+firstLineToken :: AlexAction Token
 firstLineToken (_,_,_,"") _ = do
   -- EOF case; turn off 'startLine' and let scanner proceed to 'alexEOF'.
   alexSetStartCode 0
@@ -297,7 +300,7 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       | tCol > col -> do
         alexMonadScan
       | otherwise -> do
-        parseErr "error message TODO"
+        syntaxErr "error message TODO"
 
     PendingBlockNL sepToken -> do
       -- We were about to start a block in a new line, and we encountered the
@@ -318,7 +321,7 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
     -- Close all unclosed implicit blocks
     InBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
       where s' = s { alex_ust = st { usContext = ctxts } }
-    _ -> parseErr "error message TODO"
+    _ -> error "error message TODO"
 
 -- | Used to integrate with Happy parser.
 lexerForHappy :: (Token -> Alex a) -> Alex a

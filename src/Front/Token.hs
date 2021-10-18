@@ -36,7 +36,7 @@ data TokenType
   | TLoop
   | TLet
   | TAnd
-  | TCase
+  | TMatch
   | TOf
   | TAfter
   | TWait
@@ -95,7 +95,7 @@ instance Pretty TokenType where
   pretty TLoop        = pretty "loop"
   pretty TLet         = pretty "let"
   pretty TAnd         = pretty "and"
-  pretty TCase        = pretty "case"
+  pretty TMatch       = pretty "match"
   pretty TOf          = pretty "of"
   pretty TAfter       = pretty "after"
   pretty TWait        = pretty "wait"

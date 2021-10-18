@@ -68,8 +68,8 @@ They are separated with '||' rather than ';' because the latter somehow causes
 shift-reduce conflicts.
 -}
 defTop                                --> [Definition]
-  : 'let' defLet '||' defTop            { $1 : $3 }
-  | 'let' defLet                        { [$1] }
+  : 'let' defLet '||' defTop            { $2 : $4 }
+  | 'let' defLet                        { [$2] }
 
 -- | Mutually recursive block of let-definitions.
 defLets                               --> [Definition]
@@ -82,7 +82,7 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : bindArgs typFn '=' expr             { categorizeDef $1 $2 $3 }
+  : bindArgs typFn '=' expr             { categorizeDef $1 $2 $4 }
 
 -- | A list of argument binders consists of a series of juxtaposed patterns.
 bindArgs                              --> [Bind]
@@ -96,7 +96,7 @@ bindArg                               --> Bind
 -- | Tuple binders are comma-separated and can be type-annotated.
 bindTups                              --> [Bind]
   : bindTup ',' bindTups                { $1 : $3 }
-  | bindTup                             { $1 }
+  | bindTup                             { [$1] }
 
 -- | Tuple binder, which consist of a pattern and an optional type annotation.
 bindTup                               --> Bind
@@ -118,7 +118,7 @@ type annotation).
 -}
 patAtom                               --> Bind
   : '_'                                 { Bind BindWildcard []}
-  | '(' bindTups ')'                    { normalize id BindTup $2 }
+  | '(' bindTups ')'                    { normalize id (flip Bind []. BindTup) $2 }
   | '(' ')'                             { Bind (BindLit LitEvent) [] }
   | id                                  { Bind (BindId $1) [] }
   -- TODO: actually support literal patterns
@@ -225,17 +225,17 @@ which the scanner can exploit to insert implicit braces and semicolons.
 -}
 exprBlk                               --> Expr
   : 'do' '{' expr '}'                   { $3 }
-  | 'loop' '{' expr '}'                 { Loop $2 }
+  | 'loop' '{' expr '}'                 { Loop $3 }
   | 'wait' '{' exprPar '}'              { Wait $3 }
   | 'par' '{' exprPar '}'               { Par $3 }
-  | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $5 }
+  | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
   | 'while' exprBlk '{' expr '}'        { While $2 $4 }
   | exprApp                             { $1 }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
-  : ';' 'else' '{' expr '}'             { $3 }
-  | 'else' '{' expr '}'                 { $2 }
+  : ';' 'else' '{' expr '}'             { $4 }
+  | 'else' '{' expr '}'                 { $3 }
   | {- nothing -} %prec NOELSE          { NoExpr }
 
 -- | Expressions with application by juxtaposition.
@@ -245,11 +245,11 @@ exprApp                               --> Expr
 
 -- | Atomic expressions.
 exprAtom
-  : int                                 { Literal (LitInt $1) }
-  | string                              { Literal (LitString $1) }
+  : int                                 { Lit (LitInt $1) }
+  | string                              { Lit (LitString $1) }
   | id                                  { Id $1 }
   | '(' expr ')'                        { $2 }
-  | '(' ')'                             { Literal LitEvent }
+  | '(' ')'                             { Lit LitEvent }
 
 -- | Pipe-separated expressions, for parallel composition.
 exprPar                               --> [Expr]
@@ -272,7 +272,7 @@ parseProgram = flip runAlex parse
 
 Useful for distinguishing between parentheses vs tuple lists.
 -}
-normalize :: (a -> b) ([a] -> b) -> [a] -> b
+normalize :: (a -> b) -> ([a] -> b) -> [a] -> b
 normalize f _ [x] = f x
 normalize _ f xs = f xs
 
@@ -285,8 +285,8 @@ normalize _ f xs = f xs
 - Nothing else is considered well-formed.
 -}
 categorizeDef :: [Bind] -> TypFn -> Expr -> Definition
-categorizeDef [Bind pat Nothing] (TypProper typ) = DefPat $ Bind pat (Just typ)
+categorizeDef [Bind pat []] (TypProper typ) = DefPat $ Bind pat [typ]
 categorizeDef [b] (TypNone) = DefPat b
-categorizeDef (Bind (PatId f) Nothing:args) fAnn = DefFn f args
+categorizeDef (Bind (BindId f) []:args) fAnn = DefFn f args fAnn
 categorizeDef _ _ = error "Syntax error in definition"
 }

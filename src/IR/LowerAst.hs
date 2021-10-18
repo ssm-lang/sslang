@@ -11,12 +11,9 @@ import qualified IR.Types.Annotated            as I
 import qualified IR.Types.TypeSystem           as I
 
 import           Common.Identifiers             ( fromString )
-import           Data.Composition               ( (.:) )
+
+import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( fromJust )
-import           IR.Types.TypeSystem            ( int
-                                                , ref
-                                                , unit
-                                                )
 
 todo, nope, what :: a
 todo = error "TODO"
@@ -27,101 +24,76 @@ what = error "What does this even mean"
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
   { I.programEntry = fromString "main"
-  , I.programDefs  = map lowerDecl ds
+  , I.programDefs  = map (first fromJust . lowerDef) ds
   , I.typeDefs     = [todo]
   }
 
 -- | Lower a top-level 'Declaration' into triple of name, type, and definition.
-lowerDecl :: A.Declaration -> (I.VarId, I.Expr I.Type)
-lowerDecl (A.Function aName aBinds aBody aTy) = (lName, lBody)
+lowerDef :: A.Definition -> (I.Binder, I.Expr I.Type)
+lowerDef (A.DefPat (A.Bind (A.BindId bName) bTy) aBody) =
+  (Just $ fromString bName, lowerExpr aBody (mconcat (map lowerType bTy) <>))
+lowerDef (A.DefPat (A.Bind A.BindWildcard bTy) aBody) =
+  (Nothing, lowerExpr aBody (mconcat (map lowerType bTy) <>))
+lowerDef (A.DefPat _ _) = nope -- Should be desugared into match
+lowerDef (A.DefFn aName aBinds aTy aBody) =
+  (Just $ fromString aName, lowerBinds aBinds headAnn)
  where
-  lName = fromString aName
-  lTy   = case aTy of
-    A.CurriedType t -> lowerType t
-    A.ReturnType  t -> foldr buildArrow (lowerType t) aBinds
-      -- Construct a curried arrow type while folding through a list of binds
-     where
-      buildArrow =
-        I.Type
-          .  (: [])
-          .  I.TBuiltin
-          .: I.Arrow
-          .  lowerType
-          .  fromJust
-          .  bindType
-  lBody = lowerBinds aBinds aBody lTy
+  {- | Where 'A.TypFn' type annotation should be applied.
 
-  -- | Extracts possible AST type annotation from a binding.
-  bindType :: A.Bind -> Maybe A.Ty
-  bindType (A.Bind    _    (Just ty)) = return ty
-  bindType (A.TupBind _    (Just ty)) = return ty
-  bindType (A.TupBind tups Nothing  ) = A.TTuple <$> mapM bindType tups
-  bindType _                          = Nothing
+  When @let f x y = b@ is desugared into @let f = \x -> \y -> b@
+  'A.TypProper' means the type annotation applies to the definition bound to @f@
+  (i.e., @\x -> \y -> b@), whereas 'A.TypReturn' means the type annotation
+  applies to the inner most function body (i.e., @b@). 'A.TypNone' means no type
+  annotations need to be applied.
 
-  {- | Lowers function args and body into nested lambdas.
-
-  As this function unpacks the bindings, it also unpacks the outer function's
-  type annotation to appropriate annotate each sub-lambda.
+  Note that while 'A.TypProper' gives us enough information to unpack the
+  arrow types and annotate all the intermediate lambdas, we punt that to the
+  type checker. That is, @let f x : Int = b@ won't fail here, but it will/should
+  be caught by the type checker.
   -}
-  lowerBinds :: [A.Bind] -> A.Expr -> I.Type -> I.Expr I.Type
-  lowerBinds (A.Bind v _ : bs) body ty = I.Lambda
-    (Just $ fromString v)
-    (lowerBinds bs body (snd $ fromJust $ I.dearrow ty))
-    ty
-  lowerBinds (A.TupBind _b _ty : _bs) _body _  = todo -- Need to desugar this to match
-  lowerBinds []                       body  ty = lowerExpr body (<> ty)
+  (headAnn, tailAnn) = case aTy of
+    A.TypProper ty -> ((lowerType ty <>), id)
+    A.TypReturn ty -> (id, (lowerType ty <>))
+    A.TypNone      -> (id, id)
+
+  lowerBinds :: [A.Bind] -> (I.Type -> I.Type) -> I.Expr I.Type
+  lowerBinds (b@(A.Bind (A.BindId v) _) : bs) k =
+    I.Lambda (Just $ fromString v) (lowerBinds bs id) (k $ lowerBindType b)
+  lowerBinds (b@(A.Bind A.BindWildcard _) : bs) k =
+    I.Lambda Nothing (lowerBinds bs id) (k $ lowerBindType b)
+  lowerBinds [] k = lowerExpr aBody (k . tailAnn)
+  lowerBinds _  _ = nope -- Should have been desugared into pattern matches
+
+-- | Extracts and lowers possible AST type annotation from a binding.
+lowerBindType :: A.Bind -> I.Type
+lowerBindType (A.Bind (A.BindAs _ b) tys) =
+  lowerBindType b <> mconcat (map lowerType tys)
+lowerBindType (A.Bind (A.BindTup bs) tys) =
+  I.tuple (map lowerBindType bs) <> mconcat (map lowerType tys)
+lowerBindType (A.Bind (A.BindCon _ _bs) _tys) = nope -- should be desugared to match
+lowerBindType (A.Bind _                 tys ) = mconcat $ map lowerType tys
 
 -- | Lowers the AST's representation of types into that of the IR.
-lowerType :: A.Ty -> I.Type
-lowerType (  A.TCon "Int") = int 32
-lowerType (  A.TCon "()" ) = unit
+lowerType :: A.Typ -> I.Type
+lowerType (  A.TCon "Int") = I.int 32
+lowerType (  A.TCon "()" ) = I.unit
 lowerType (  A.TCon i    ) = I.Type [I.TCon (fromString i) []]
 lowerType a@(A.TApp _ _  ) = case A.collectTApp a of
-  (A.TCon "&" , [arg] ) -> ref $ lowerType arg
+  (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
   (A.TCon "[]", [_arg]) -> todo
   (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
   _                     -> nope
-lowerType (A.TTuple tys) = I.Type [I.TBuiltin $ I.Tuple $ map lowerType tys]
-lowerType (A.TArrow lhs rhs) =
-  I.Type [I.TBuiltin $ I.Arrow (lowerType lhs) (lowerType rhs)]
+lowerType (A.TTuple tys    ) = I.tuple $ map lowerType tys
+lowerType (A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
 
 -- | Lowers an AST expression into an IR expression. Performs desguaring inline.
 lowerExpr :: A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
-lowerExpr (A.Id      v) k = I.Var (fromString v) (k I.untyped)
-lowerExpr (A.Literal l) k = I.Lit (lowerLit l) (k I.untyped)
+lowerExpr (A.Id  v    ) k = I.Var (fromString v) (k I.untyped)
+lowerExpr (A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr (A.Apply l r) k = I.App lhs rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr (A.Let ds b) k = I.Let defs body (k I.untyped)
- where
-  (defs, body) = (map lowerLet ds, lowerExpr b id)
-  -- | Accumulator to lower an AST let-binding into an IR let-binding.
-  lowerLet (A.Def (A.PId n)       d ) = (Just $ fromString n, lowerExpr d id)
-  lowerLet (A.Def A.PWildcard     e ) = (Nothing, lowerExpr e id)
-  lowerLet (A.Def (A.PAs  _n _p ) _e) = todo
-    {- This is tricky because something like
-      @
-        let p'' = d''
-            n@p = d
-            p' = d'
-        in b
-      @
-
-      is desugared into
-
-      @
-        let p'' = let p = n in d''
-            n = d
-            p' = let p = n in d'
-        in let p = n in b
-      @
-
-      To account for the alias being used in co-recursive definitions as well as
-      the let-body. This desugaring should be done somewhere, but probably not
-      here.
-    -}
-  lowerLet (A.Def (A.PCon _n _ps) _ ) = what -- Why is n a TConId?
-  lowerLet (A.Def (A.PLiteral _l) _e) = what
-
+  where (defs, body) = (map lowerDef ds, lowerExpr b id)
 lowerExpr (A.While c b) k = I.Prim I.Loop [body] (k I.untyped)
   where body = lowerExpr (A.IfElse c A.Break A.NoExpr `A.Seq` b) id
 lowerExpr (A.Loop b ) k = I.Prim I.Loop [lowerExpr b id] (k I.untyped)
@@ -150,9 +122,9 @@ lowerExpr A.Wildcard       _ = what
 lowerExpr (A.As _ _)       _ = what
 
 -- | Lower an AST literal into an IR literal.
-lowerLit :: A.Lit -> I.Literal
-lowerLit (A.IntLit i)     = I.LitIntegral i
-lowerLit A.EventLit       = I.LitEvent
-lowerLit (A.StringLit _s) = todo
-lowerLit (A.RatLit    _r) = todo
-lowerLit (A.CharLit   _c) = todo
+lowerLit :: A.Literal -> I.Literal
+lowerLit (A.LitInt i)     = I.LitIntegral i
+lowerLit A.LitEvent       = I.LitEvent
+lowerLit (A.LitString _s) = todo
+lowerLit (A.LitRat    _r) = todo
+lowerLit (A.LitChar   _c) = todo
