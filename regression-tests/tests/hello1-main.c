@@ -7,8 +7,9 @@ typedef struct {
   ssm_trigger_t trigger1;
 } cout_act_t;
 
+void step_cout(ssm_act_t *sact);
 cout_act_t *enter_cout(ssm_act_t *parent, ssm_priority_t priority,
-			 ssm_depth_t depth, ssm_u32_t *cout)
+			 ssm_depth_t depth, ssm_i32_t *cout)
 {
   cout_act_t *act = (cout_act_t *)
     ssm_enter(sizeof(cout_act_t), step_cout, parent, priority, depth);
@@ -48,7 +49,7 @@ int main()
 {
   ssm_i32_t cout;
   ssm_initialize_i32(&cout);
-  led.value = 0;
+  cout.value = 0;
 
   {
     ssm_depth_t new_depth = SSM_ROOT_DEPTH - 1; // 2 children

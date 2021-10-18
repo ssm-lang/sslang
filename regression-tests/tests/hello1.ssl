@@ -1,24 +1,13 @@
-// Single-line comments start with //
-
-/* Multi-line comments are C-style
-  /* And may nest /* arbitrarily */
-     and present
-  */
-  no issues
-  // Along with single-line comments, of course
-  so all of this should be ignored
-*/
-
 main ( cout : & Int ) =
   after 10 , (cout : & Int) <- 72
-  wait (led : & Int)
+  wait (cout : & Int)
   after 10 , (cout : & Int) <- 101
-  wait (led : & Int)
+  wait (cout : & Int)
   after 10 , (cout : & Int) <- 108
-  wait (led : & Int)
+  wait (cout : & Int)
   after 10 , (cout : & Int) <- 108
-  wait (led : & Int)
+  wait (cout : & Int)
   after 10 , (cout : & Int) <- 111
-  wait (led : & Int)
+  wait (cout : & Int)
   after 10 , (cout : & Int) <- 10
-  wait (led : & Int)
+  wait (cout : & Int)
