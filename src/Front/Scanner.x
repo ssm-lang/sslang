@@ -2,7 +2,6 @@
 module Front.Scanner where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
-import Debug.Trace
 }
 
 %wrapper "monadUserState"
@@ -24,29 +23,29 @@ tokens :-
 
   -- | Emit closing braces.
   <closeBraces> {
-    ()                  { (trace "closeBraces epsilon" closeBrace) }
+    ()                  { closeBrace }
   }
 
   <startBlock,startLine> {
     -- | Ignore consecutive newlines.
-    @newline            { (trace "startLine newline" (\_ _ -> alexMonadScan)) }
+    @newline            ;
     -- | First non-whitespace character of line.
-    ()                  { (trace "startLine eps" firstLineToken) }
+    ()                  { firstLineToken }
   }
 
   -- | Custom action for new lines.
   <0,startBlock> {
-    @newline              { (trace "newline newline" nextLine) }
+    @newline            { nextLine }
   }
 
   -- | Explicit matched delimiters, higher prio than 'firstBlockToken'.
   <0,startBlock> {
-    \(                    { lDelimeter TLparen TRparen }
-    \)                    { rDelimeter TRparen }
-    \[                    { lDelimeter TLbracket TRbracket }
-    \]                    { rDelimeter TRbracket }
-    \{                    { lDelimeter TLbrace TRbrace }
-    \}                    { rDelimeter TRbrace }
+    \(                  { lDelimeter TLparen TRparen }
+    \)                  { rDelimeter TRparen }
+    \[                  { lDelimeter TLbracket TRbracket }
+    \]                  { rDelimeter TRbracket }
+    \{                  { lDelimeter TLbrace TRbrace }
+    \}                  { rDelimeter TRbrace }
   }
 
   <startBlock> {
@@ -56,36 +55,36 @@ tokens :-
 
   <0> {
     -- | Keywords that start blocks
-    if                    { layoutNL  TIf     TSemicolon }
-    else                  { layout    TElse   TSemicolon }
-    while                 { layoutNL  TWhile  TSemicolon }
-    let                   { layout    TLet    TDBar }
-    match                 { layoutNL  TMatch  TBar }
-    loop                  { layout    TLoop   TSemicolon }
-    do                    { layout    TDo     TSemicolon }
-    par                   { layout    TPar    TDBar }
-    wait                  { layout    TWait   TDBar }
+    if                  { layoutNL  TIf     TSemicolon }
+    else                { layout    TElse   TSemicolon }
+    while               { layoutNL  TWhile  TSemicolon }
+    let                 { layout    TLet    TDBar }
+    match               { layoutNL  TMatch  TBar }
+    loop                { layout    TLoop   TSemicolon }
+    do                  { layout    TDo     TSemicolon }
+    par                 { layout    TPar    TDBar }
+    wait                { layout    TWait   TDBar }
 
     -- | Keywords that just do as they be
-    after                 { keyword TAfter }
-    \=                    { keyword TEq }
-    \:                    { keyword TColon }
-    \<\-                  { keyword TLarrow }
-    \|\|                  { keyword TDBar }
-    \-\>                  { keyword TRarrow }
-    \|                    { keyword TBar }
-    \;                    { keyword TSemicolon }
-    \:                    { keyword TColon }
-    \,                    { keyword TComma }
-    \_                    { keyword TUnderscore }
-    \@                    { keyword TAt }
-    \&                    { keyword TAmpersand }
+    after               { keyword TAfter }
+    \=                  { keyword TEq }
+    \:                  { keyword TColon }
+    \<\-                { keyword TLarrow }
+    \|\|                { keyword TDBar }
+    \-\>                { keyword TRarrow }
+    \|                  { keyword TBar }
+    \;                  { keyword TSemicolon }
+    \:                  { keyword TColon }
+    \,                  { keyword TComma }
+    \_                  { keyword TUnderscore }
+    \@                  { keyword TAt }
+    \&                  { keyword TAmpersand }
 
     -- | Other tokens
-    @operator             { strTok TOp }
-    \` @identifier \`     { strTok (TOp . dropEnds 1 1) }
-    @identifier           { strTok TId }
-    $digit+               { strTok (TInteger . read) }
+    @operator           { strTok TOp }
+    \` @identifier \`   { strTok (TOp . dropEnds 1 1) }
+    @identifier         { strTok TId }
+    $digit+             { strTok (TInteger . read) }
   }
 
 {
@@ -158,7 +157,6 @@ dropEnds b a = reverse . drop a . reverse . drop b
 -- | Arbitrary string token helper, which uses 'f' to produce 'TokenType'.
 strTok :: (String -> TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = do
-  trace ("hit identifier '" ++ head (words s) ++ "'") $ return ()
   return $ Token (alexInputSpan i len, f $ take len s)
 
 -- | Keyword is just a plain keyword, which just emits given 'TokenType'.
@@ -179,7 +177,6 @@ layout ttype sepToken i len = do
 -- | First token in a block (epsilon action).
 firstBlockToken :: AlexAction Token
 firstBlockToken (pn@(AlexPn _ _ col), _, _, _) _ = do
-  trace "we're in firstBlockToken" $ return ()
   alexSetStartCode 0
   -- Check the top of the context stack to obtain saved separator token.
   ctxt <- alexPeekContext
@@ -272,19 +269,16 @@ nextLine _ _ = do
   -- We set the start code to 'startLine' and let the scanner take us there,
   -- at which point it will call 'firstLineToken'.
   alexSetStartCode startLine
-  trace "we're in nextLine" $ return ()
   alexMonadScan
 
 -- | First token in a line.
 firstLineToken :: AlexAction Token
 firstLineToken (_,_,_,"") _ = do
   -- EOF case; turn off 'startLine' and let scanner proceed to 'alexEOF'.
-  trace "we hit firstLineToken EOF" $ return ()
   alexSetStartCode 0
   alexMonadScan
 firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
   -- We have encountered the first token in a line.
-  trace "we hit firstLineToken" $ return ()
   alexSetStartCode 0
   ctxt <- alexPeekContext
   case ctxt of
@@ -349,15 +343,17 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
 lexerForHappy :: (Token -> Alex a) -> Alex a
 lexerForHappy = (alexMonadScan >>=)
 
+-- | Alex monad which collects all tokens together into a list.
+collectStream :: Alex [Token]
+collectStream = do
+  tok <- alexMonadScan
+  case tok of
+    Token (_, TEOF) -> return []
+    _ -> (:) tok <$> collectStream
+
 -- | Extract a token stream from an input string.
 scanTokens :: String -> Either String [Token]
-scanTokens s = runAlex s getStream
-  where
-    getStream = do
-     tok <- alexMonadScan
-     case tok of
-       Token (_, TEOF) -> return []
-       _ -> (:) tok <$> getStream
+scanTokens s = runAlex s collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
 scanTokenTypes :: String -> Either String [TokenType]

@@ -68,8 +68,8 @@ They are separated with '||' rather than ';' because the latter somehow causes
 shift-reduce conflicts.
 -}
 defTop                                --> [Definition]
-  : 'let' defLet '||' defTop            { $2 : $4 }
-  | 'let' defLet                        { [$2] }
+  : defLet '||' defTop                  { $1 : $3 }
+  | defLet                              { [$1] }
 
 -- | Mutually recursive block of let-definitions.
 defLets                               --> [Definition]

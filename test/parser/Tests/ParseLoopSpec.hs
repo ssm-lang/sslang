@@ -27,7 +27,7 @@ spec = do
             [Bind (BindId "clk") [TApp (TCon "&") (TCon "Int")]]
             TypNone
             (Loop
-              (Seq (Seq (Wait [Id "clk"]) (Wait [Id "clk"])) (Wait [Id "clk"]))
+              (Seq (Wait [Id "clk"]) (Seq (Wait [Id "clk"]) (Wait [Id "clk"])))
             )
         ]
     parseProgram input `shouldBe` Right output
