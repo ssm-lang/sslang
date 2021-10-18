@@ -2,6 +2,7 @@
 module Front.Scanner where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
+import Debug.Trace
 }
 
 %wrapper "monadUserState"
@@ -23,63 +24,69 @@ tokens :-
 
   -- | Emit closing braces.
   <closeBraces> {
-    ()                  { closeBrace }
+    ()                  { (trace "closeBraces epsilon" closeBrace) }
   }
 
-  <startLine> {
+  <startBlock,startLine> {
     -- | Ignore consecutive newlines.
-    @newline            ;
+    @newline            { (trace "startLine newline" (\_ _ -> alexMonadScan)) }
     -- | First non-whitespace character of line.
-    ()                  { firstLineToken }
+    ()                  { (trace "startLine eps" firstLineToken) }
   }
 
   -- | Custom action for new lines.
-  @newline              { nextLine }
+  <0,startBlock> {
+    @newline              { (trace "newline newline" nextLine) }
+  }
 
-  -- | Explicit matched delimiters, higher prio than startBlock.
-  \(                    { lDelimeter TLparen TRparen }
-  \)                    { rDelimeter TRparen }
-  \[                    { lDelimeter TLbracket TRbracket }
-  \]                    { rDelimeter TRbracket }
-  \{                    { lDelimeter TLbrace TRbrace }
-  \}                    { rDelimeter TRbrace }
+  -- | Explicit matched delimiters, higher prio than 'firstBlockToken'.
+  <0,startBlock> {
+    \(                    { lDelimeter TLparen TRparen }
+    \)                    { rDelimeter TRparen }
+    \[                    { lDelimeter TLbracket TRbracket }
+    \]                    { rDelimeter TRbracket }
+    \{                    { lDelimeter TLbrace TRbrace }
+    \}                    { rDelimeter TRbrace }
+  }
 
   <startBlock> {
     -- | First non-whitespace character of block.
     ()                  { firstBlockToken }
   }
 
-  -- | Keywords that start blocks
-  if                    { layoutNL  TIf     TSemicolon }
-  else                  { layout    TElse   TSemicolon }
-  while                 { layoutNL  TWhile  TSemicolon }
-  let                   { layout    TLet    TDBar }
-  match                 { layoutNL  TMatch  TBar }
-  loop                  { layout    TLoop   TSemicolon }
-  do                    { layout    TDo     TSemicolon }
-  par                   { layout    TPar    TDBar }
-  wait                  { layout    TWait   TDBar }
+  <0> {
+    -- | Keywords that start blocks
+    if                    { layoutNL  TIf     TSemicolon }
+    else                  { layout    TElse   TSemicolon }
+    while                 { layoutNL  TWhile  TSemicolon }
+    let                   { layout    TLet    TDBar }
+    match                 { layoutNL  TMatch  TBar }
+    loop                  { layout    TLoop   TSemicolon }
+    do                    { layout    TDo     TSemicolon }
+    par                   { layout    TPar    TDBar }
+    wait                  { layout    TWait   TDBar }
 
-  -- | Keywords that just do as they be
-  after                 { keyword TAfter }
-  \=                    { keyword TEq }
-  \:                    { keyword TColon }
-  \<\-                  { keyword TLarrow }
-  \|\|                  { keyword TDBar }
-  \-\>                  { keyword TRarrow }
-  \|                    { keyword TBar }
-  \;                    { keyword TSemicolon }
-  \:                    { keyword TColon }
-  \,                    { keyword TComma }
-  \_                    { keyword TUnderscore }
-  \@                    { keyword TAt }
-  \&                    { keyword TAmpersand }
+    -- | Keywords that just do as they be
+    after                 { keyword TAfter }
+    \=                    { keyword TEq }
+    \:                    { keyword TColon }
+    \<\-                  { keyword TLarrow }
+    \|\|                  { keyword TDBar }
+    \-\>                  { keyword TRarrow }
+    \|                    { keyword TBar }
+    \;                    { keyword TSemicolon }
+    \:                    { keyword TColon }
+    \,                    { keyword TComma }
+    \_                    { keyword TUnderscore }
+    \@                    { keyword TAt }
+    \&                    { keyword TAmpersand }
 
-  -- | Other tokens
-  @operator             { strTok TOp }
-  \` @identifier \`     { strTok (TOp . dropEnds 1 1) }
-  @identifier           { strTok TId }
-  $digit+               { strTok (TInteger . read) }
+    -- | Other tokens
+    @operator             { strTok TOp }
+    \` @identifier \`     { strTok (TOp . dropEnds 1 1) }
+    @identifier           { strTok TId }
+    $digit+               { strTok (TInteger . read) }
+  }
 
 {
 -- | User-facing syntax error.
@@ -150,7 +157,9 @@ dropEnds b a = reverse . drop a . reverse . drop b
 
 -- | Arbitrary string token helper, which uses 'f' to produce 'TokenType'.
 strTok :: (String -> TokenType) -> AlexAction Token
-strTok f i@(_,_,_,s) len = return $ Token (alexInputSpan i len, f $ take len s)
+strTok f i@(_,_,_,s) len = do
+  trace ("hit identifier '" ++ head (words s) ++ "'") $ return ()
+  return $ Token (alexInputSpan i len, f $ take len s)
 
 -- | Keyword is just a plain keyword, which just emits given 'TokenType'.
 keyword :: TokenType -> AlexAction Token
@@ -170,6 +179,7 @@ layout ttype sepToken i len = do
 -- | First token in a block (epsilon action).
 firstBlockToken :: AlexAction Token
 firstBlockToken (pn@(AlexPn _ _ col), _, _, _) _ = do
+  trace "we're in firstBlockToken" $ return ()
   alexSetStartCode 0
   -- Check the top of the context stack to obtain saved separator token.
   ctxt <- alexPeekContext
@@ -248,8 +258,8 @@ closeBrace (pn, _, _, _) _ = do
 
     -- If somehow pending block, then user wrote something like @do )@ or
     -- @if x )@, both of which are syntax errors.
-    PendingBlock _   -> syntaxErr "error message TODO"
-    PendingBlockNL _ -> syntaxErr "error message TODO"
+    PendingBlock _   -> syntaxErr "error message TODO closeBrace pendingblockNL"
+    PendingBlockNL _ -> syntaxErr "error message TODO clsoeBrace pendingblockNl"
 
     _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show ctxt
 
@@ -262,15 +272,19 @@ nextLine _ _ = do
   -- We set the start code to 'startLine' and let the scanner take us there,
   -- at which point it will call 'firstLineToken'.
   alexSetStartCode startLine
+  trace "we're in nextLine" $ return ()
   alexMonadScan
 
 -- | First token in a line.
 firstLineToken :: AlexAction Token
 firstLineToken (_,_,_,"") _ = do
   -- EOF case; turn off 'startLine' and let scanner proceed to 'alexEOF'.
+  trace "we hit firstLineToken EOF" $ return ()
   alexSetStartCode 0
   alexMonadScan
 firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
+  -- We have encountered the first token in a line.
+  trace "we hit firstLineToken" $ return ()
   alexSetStartCode 0
   ctxt <- alexPeekContext
   case ctxt of
@@ -300,12 +314,20 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       | tCol > col -> do
         alexMonadScan
       | otherwise -> do
-        syntaxErr "error message TODO"
+        syntaxErr "error message TODO firstLineToken"
 
     PendingBlockNL sepToken -> do
       -- We were about to start a block in a new line, and we encountered the
       -- first token of that new line. Transition from 'PendingNL' to 'InBlock',
       -- and emit the opening brace for the new block.
+      alexPopContext
+      alexPushContext $ InBlock tCol sepToken
+      return $ Token (alexEmptySpan pn, TLbrace)
+
+    PendingBlock sepToken -> do
+      -- We were about to start a new block immediately, but encountered
+      -- a newline, and now we're at the first token of the new line---this
+      -- happens when we have a hanging block. We start the block here.
       alexPopContext
       alexPushContext $ InBlock tCol sepToken
       return $ Token (alexEmptySpan pn, TLbrace)
@@ -321,7 +343,7 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
     -- Close all unclosed implicit blocks
     InBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
       where s' = s { alex_ust = st { usContext = ctxts } }
-    _ -> error "error message TODO"
+    _ -> error $ "error message TODO (alexEOF)" ++ show (usContext st)
 
 -- | Used to integrate with Happy parser.
 lexerForHappy :: (Token -> Alex a) -> Alex a

@@ -22,12 +22,12 @@ spec = do
         , "    wait clk"
         ]
       output = Program
-        [ Function
+        [ DefFn
             "main"
-            [Bind "clk" (Just (TApp (TCon "&") (TCon "Int")))]
+            [Bind (BindId "clk") [TApp (TCon "&") (TCon "Int")]]
+            TypNone
             (Loop
               (Seq (Seq (Wait [Id "clk"]) (Wait [Id "clk"])) (Wait [Id "clk"]))
             )
-            (ReturnType (TCon "()"))
         ]
     parseProgram input `shouldBe` Right output

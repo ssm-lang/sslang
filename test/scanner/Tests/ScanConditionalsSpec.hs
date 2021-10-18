@@ -17,7 +17,7 @@ spec = do
     let input = "if a { b }"
         output =
           [ TIf
-          , TId "a" -- TODO(hans): What happened to TThen?
+          , TId "a"
           , TLbrace
           , TId "b"
           , TRbrace
@@ -32,7 +32,6 @@ spec = do
         output =
           [ TIf
           , TId "a"
-          , TThen
           , TLbrace
           , TId "b"
           , TRbrace

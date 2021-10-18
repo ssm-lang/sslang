@@ -28,7 +28,7 @@ spec = do
           , TId "with"
           , TId "more"
           , TId "indentation"
-          , TSemicolon
+          , TDBar
           , TId "but"
           , TId "this"
           , TId "is"
@@ -38,11 +38,13 @@ spec = do
 
   it "supports do blocks with implicit braces" $ do
     let input = unlines
-          [ "f do a"
-          , "     b"
+          [ "f = do a"
+          , "       b"
           ]
         output =
           [ TId "f"
+          , TEq
+          , TDo
           , TLbrace
           , TId "a"
           , TSemicolon
@@ -53,32 +55,38 @@ spec = do
 
   it "supports do blocks with implicit braces, followed by continuation" $ do
     let input = unlines
-          [ "f do a"
-          , "     b"
-          , "    c"
-          , "   d"
+          [ "f = do a"
+          , "        b"
+          , "       c"
+          , "     d"
+          , "    e"
           ]
         output =
           [ TId "f"
+          , TEq
+          , TDo
           , TLbrace
           , TId "a"
-          , TSemicolon
           , TId "b"
-          , TRbrace
+          , TSemicolon
           , TId "c"
+          , TRbrace
           , TId "d"
+          , TId "e"
           ]
     scanTokenTypes input `shouldBe` Right output
 
   it "supports do blocks with explicit braces" $ do
     let input = unlines
-          [ "f {"
-          , "  g"
-          , "    x"
+          [ "f = do {"
+          , "    g"
+          , "  x"
           , "}"
           ]
         output =
           [ TId "f"
+          , TEq
+          , TDo
           , TLbrace
           , TId "g"
           , TId "x"
@@ -88,13 +96,15 @@ spec = do
 
   it "supports do blocks with explicit braces and semicolons" $ do
     let input = unlines
-          [ "f {"
+          [ "f = do {"
           , "  g;"
           , "    x"
           , "}"
           ]
         output =
           [ TId "f"
+          , TEq
+          , TDo
           , TLbrace
           , TId "g"
           , TSemicolon

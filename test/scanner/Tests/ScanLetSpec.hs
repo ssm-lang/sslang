@@ -19,9 +19,7 @@ spec = do
           , TLbrace
           , TId "variable"
           , TEq
-          , TLbrace
           , TId "definition"
-          , TRbrace
           , TRbrace
           ]
     scanTokenTypes input `shouldBe` Right output
@@ -37,18 +35,14 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
-          , TLbrace
           , TId "a_def"
-          , TRbrace
           , TRbrace
           , TSemicolon
           , TLet
           , TLbrace
           , TId "b"
           , TEq
-          , TLbrace
           , TId "b_def"
-          , TRbrace
           , TRbrace
           , TSemicolon
           , TId "c"
@@ -63,17 +57,13 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
-          , TLbrace
           , TLet
           , TLbrace
           , TId "b"
           , TEq
-          , TLbrace
           , TId "c"
           , TSemicolon
           , TId "d"
-          , TRbrace
-          , TRbrace
           , TRbrace
           , TRbrace
           ]
@@ -121,7 +111,7 @@ spec = do
           , TLbrace
           , TId "a_block"
           , TRbrace
-          , TAnd
+          , TDBar
           , TId "b"
           , TEq
           , TLbrace
@@ -215,7 +205,7 @@ spec = do
           , TLbrace
           , TId "c"
           , TRbrace
-          , TAnd
+          , TDBar
           , TId "c"
           , TEq
           , TLbrace

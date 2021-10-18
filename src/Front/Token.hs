@@ -28,16 +28,13 @@ data Span = Span
 data TokenType
   = TEOF
   | TIf
-  | TThen
   | TElse
   | TWhile
   | TDo
   | TPar
   | TLoop
   | TLet
-  | TAnd
   | TMatch
-  | TOf
   | TAfter
   | TWait
   | TNew
@@ -87,16 +84,13 @@ instance Pretty Span where
 instance Pretty TokenType where
   pretty TEOF         = mempty
   pretty TIf          = pretty "if"
-  pretty TThen        = pretty "then"
   pretty TElse        = pretty "else"
   pretty TWhile       = pretty "while"
   pretty TDo          = pretty "do"
   pretty TPar         = pretty "par"
   pretty TLoop        = pretty "loop"
   pretty TLet         = pretty "let"
-  pretty TAnd         = pretty "and"
   pretty TMatch       = pretty "match"
-  pretty TOf          = pretty "of"
   pretty TAfter       = pretty "after"
   pretty TWait        = pretty "wait"
   pretty TNew         = pretty "new"
