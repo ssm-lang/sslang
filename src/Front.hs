@@ -16,6 +16,7 @@ import           Front.Scanner                  ( Token(..)
 import           Control.Monad.Except           ( liftEither )
 import           Data.Bifunctor                 ( first )
 
+-- | Scan the string into a list of tokens (for debugging)
 tokenStream :: String -> Compiler.Pass [Token]
 tokenStream = liftEither . first Compiler.LexError . (`runAlex` tokenize)
  where
@@ -25,12 +26,15 @@ tokenStream = liftEither . first Compiler.LexError . (`runAlex` tokenize)
       Token _ TEOF -> return []
       Token _ _    -> (:) tok <$> tokenize
 
+-- | Scan and parse the string into the AST
 parseSource :: String -> Compiler.Pass A.Program
 parseSource = liftEither . first Compiler.ParseError . flip runAlex parse
 
+-- | Desugar various AST constructs
 desugarAst :: A.Program -> Compiler.Pass A.Program
 desugarAst = return . parseOperators
 
+-- | Check the structure of the AST, throwing errors as necessary
 checkAst :: A.Program -> Compiler.Pass ()
 checkAst prog = if checkRoutineSignatures prog
   then return ()

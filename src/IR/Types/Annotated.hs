@@ -20,10 +20,10 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 )
 {- | A single term may be annotated by zero or more types.
 
-When multiple exist, it should be assumed that they are "equivalent", in the
+When multiple exist, it should be assumed that they are equivalent, in the
 sense that they can be unified.
 
-Type annotations can be added using '<>' (from 'Semigroup'), while 'mempty'
+Type annotations can be added using '<>' (from `Semigroup'), while 'mempty'
 represents no type annotation.
 -}
 newtype Type = Type [TypeAnnote]
@@ -38,7 +38,7 @@ data TypeAnnote
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
   deriving Eq
 
--- | 'Type' is a type system.
+-- | `Type' is a type system.
 instance TypeSystem Type where
   projectBuiltin = Type . (: []) . TBuiltin
 

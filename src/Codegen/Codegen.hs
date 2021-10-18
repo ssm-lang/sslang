@@ -206,7 +206,7 @@ undef = [cexp|0xdeadbeef|]
 
 -- | Generate a C compilation from an SSM program.
 genProgram :: Program -> Compiler.Pass [C.Definition]
-genProgram p@I.Program { I.programDefs = defs } = do
+genProgram I.Program { I.programDefs = defs } = do -- p@I.Program
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
   return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
 
@@ -424,8 +424,8 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
   -- we just return a handle to its enter function.
   return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
-  isLocal <- isLocalVar n
-  if isLocal then return ([cexp|$id:acts->$id:n|], []) else todo
+  -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
+  return ([cexp|$id:acts->$id:n|], [])
 genExpr (I.Data _ _             ) = nope
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do

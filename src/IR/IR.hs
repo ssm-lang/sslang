@@ -22,7 +22,11 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           IR.Types.TypeSystem            ( TypeDef(..) )
 
--- | Top-level compilation unit.
+{- | Top-level compilation unit.
+
+`t' is the type system in use, e.g., "IR.Types.Flat"
+
+-}
 data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
@@ -107,16 +111,19 @@ data Primitive
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
-'t' represents the type of this expression. At various stages, this may
-represent a richer or simpler type system. The type is embedded in each data
-constructor so as to type-annotate the entire expression tree.
+`t' represents the type of this expression, e.g., "IR.Types.Flat". At
+various stages, this may represent a richer or simpler type
+system. The type is embedded in each data constructor so as to
+type-annotate the entire expression tree.
 
 Designed for side effects with call-by-value evaluation order. Basic
 sequencing can be recovered through let-bindings:
 
+@
    let _ = stmt1 in
    let _ = stmt2 in
    ...
+@
 
 Effects of 'stmt1' take place before that of 'stmt2'.
 -}
