@@ -16,33 +16,22 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( fromJust )
 
-todo, nope, what :: a
-todo = error "TODO"
-nope = error "Not going to implement this"
-what = error "What does this even mean"
-
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
   { I.programEntry = fromString "main"
   , I.programDefs  = map (first fromJust . lowerDef) ds
-  , I.typeDefs     = [todo]
+  , I.typeDefs     = [error "Typedefs are not yet implemented"]
   }
 
 -- | Lower a top-level 'Declaration' into triple of name, type, and definition.
 lowerDef :: A.Definition -> (I.Binder, I.Expr I.Type)
 lowerDef (A.DefPat aPat aBody) =
-  (lowerName aPat, lowerExpr aBody (lowerPatType aPat <>))
- where
-  lowerName (A.PatId v)      = Just $ fromString v
-  lowerName A.PatWildcard    = Nothing
-  lowerName (A.PatAnn _ pat) = lowerName pat
-  lowerName _ = error "pattern should be desguared into pattern match"
-lowerDef (A.DefPat _ _) = nope -- Should be desugared into match
+  (lowerPatName aPat, lowerExpr aBody (lowerPatType aPat <>))
 lowerDef (A.DefFn aName aBinds aTy aBody) =
   (Just $ fromString aName, lowerBinds aBinds headAnn)
  where
-  {- | Where 'A.TypFn' type annotation should be applied.
+  {- | Where the 'A.TypFn' type annotation should be applied.
 
   When @let f x y = b@ is desugared into @let f = \x -> \y -> b@
   'A.TypProper' means the type annotation applies to the definition bound to @f@
@@ -61,27 +50,26 @@ lowerDef (A.DefFn aName aBinds aTy aBody) =
     A.TypNone      -> (id, id)
 
   lowerBinds :: [A.Pat] -> (I.Type -> I.Type) -> I.Expr I.Type
-  lowerBinds (A.PatId v : bs) k = I.Lambda (Just $ fromString v)
-                                           lBody
-                                           (k lType)
+  lowerBinds (p : ps) k = I.Lambda lVar lBody lType
    where
-    lBody = lowerBinds bs id
-    lType = mempty `I.arrow` extract lBody
-  lowerBinds (b@A.PatWildcard : bs) k = I.Lambda Nothing lBody (k lType)
-  -- wip
-   where
-    lBody = lowerBinds bs id
-    lType = mempty `I.arrow` extract lBody
+    lVar  = lowerPatName p
+    lBody = lowerBinds ps id
+    lType = k $ lowerPatType p `I.arrow` extract lBody
   lowerBinds [] k = lowerExpr aBody (k . tailAnn)
-  lowerBinds _  _ = nope -- Should have been desugared into pattern matches
+
+lowerPatName :: A.Pat -> I.Binder
+lowerPatName (A.PatId v)      = Just $ fromString v
+lowerPatName A.PatWildcard    = Nothing
+lowerPatName (A.PatAnn _ pat) = lowerPatName pat
+lowerPatName _ = error "pattern should be desguared into pattern match"
 
 -- | Extracts and lowers possible AST type annotation from a binding.
-lowerBindType :: A.Pat -> I.Type
-lowerBindType (A.PatAs _ b     ) = lowerBindType b
-lowerBindType (A.PatTup bs     ) = I.tuple $ map lowerBindType bs
-lowerBindType (A.PatCon _   _bs) = error "need to perform DConId lookup"
-lowerBindType (A.PatAnn typ p  ) = lowerType typ <> lowerBindType p
-lowerBindType _                  = mempty
+lowerPatType :: A.Pat -> I.Type
+lowerPatType (A.PatAs _ b     ) = lowerPatType b
+lowerPatType (A.PatTup bs     ) = I.tuple $ map lowerPatType bs
+lowerPatType (A.PatCon _   _bs) = error "need to perform DConId lookup"
+lowerPatType (A.PatAnn typ p  ) = lowerType typ <> lowerPatType p
+lowerPatType _                  = mempty
 
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Typ -> I.Type
@@ -90,9 +78,9 @@ lowerType (  A.TCon "()" ) = I.unit
 lowerType (  A.TCon i    ) = I.Type [I.TCon (fromString i) []]
 lowerType a@(A.TApp _ _  ) = case A.collectTApp a of
   (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
-  (A.TCon "[]", [_arg]) -> todo
+  (A.TCon "[]", [_arg]) -> error "list types are not yet implemented"
   (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
-  _                     -> nope
+  _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
 lowerType (A.TTuple tys    ) = I.tuple $ map lowerType tys
 lowerType (A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
 
@@ -130,14 +118,12 @@ lowerExpr (A.Seq l r) k = I.Let [(Nothing, lhs)] rhs (k I.untyped)
 lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)
 lowerExpr (A.Return e    ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
-lowerExpr A.NoExpr         _ = what -- Perhaps this should be a unit literal?
-lowerExpr A.Wildcard       _ = what
-lowerExpr (A.As _ _)       _ = what
+lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an AST literal into an IR literal.
 lowerLit :: A.Literal -> I.Literal
 lowerLit (A.LitInt i)     = I.LitIntegral i
 lowerLit A.LitEvent       = I.LitEvent
-lowerLit (A.LitString _s) = todo
-lowerLit (A.LitRat    _r) = todo
-lowerLit (A.LitChar   _c) = todo
+lowerLit (A.LitChar   _c) = error "Char literals are not yet implemented"
+lowerLit (A.LitString _s) = error "String literals are not yet implemented"
+lowerLit (A.LitRat    _r) = error "Rational literals are not yet implemented"

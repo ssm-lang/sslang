@@ -76,10 +76,8 @@ data Expr
   | After Expr Expr Expr
   | Assign Expr Expr
   | Constraint Expr TypAnn
-  | As VarId Expr
   | Wait [Expr]
   | Seq Expr Expr
-  | Wildcard
   | Break
   | Return Expr
   deriving (Eq, Show)

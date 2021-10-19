@@ -81,6 +81,5 @@ parseExprOps fixity = rw
   rewrite f (After  e1 p  e2 ) = After (f e1) p (f e2)
   rewrite f (Assign     p  e ) = Assign p (f e)
   rewrite f (Constraint e  t ) = Constraint (f e) t
-  rewrite f (As         s  e ) = As s (f e)
   rewrite f (Seq        e1 e2) = Seq (f e1) (f e2)
   rewrite _ e                  = e
