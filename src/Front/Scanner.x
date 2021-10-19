@@ -1,4 +1,18 @@
 {
+{- Scanner for sslang.
+
+In addition to tokenizing the input text stream, this scanner is responsible for
+the following:
+
+- Insert implicit open braces after any block-starting token, if necessary;
+- Insert implicit separators for aligned lines within the same block; and
+- Insert implicit close braces if an implicit block closed, either by
+  a decrease in indentation, or by the closure of a surrounding explicit block.
+
+As such, the scanner's state is enriched with a stack of contexts which it uses
+to perform basic delimiter matching. It also relies on epsilon transitions to
+emit implicit tokens.
+-}
 module Front.Scanner where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
@@ -21,57 +35,57 @@ tokens :-
   -- | Always ignore single-line comments
   "//".*                ;
 
-  -- | Emit closing braces.
+  -- | Close implicit braces; used by 'rDelimeter' and 'closeBrace'.
   <closeBraces> {
     ()                  { closeBrace }
   }
 
-  <startBlock,startLine> {
+  <startLine> {
     -- | Ignore consecutive newlines.
     @newline            ;
+    do                  { doBlock }
+    \{                  { lBrace }
+
     -- | First non-whitespace character of line.
     ()                  { firstLineToken }
   }
 
-  -- | Custom action for new lines.
-  <0,startBlock> {
-    @newline            { nextLine }
-  }
-
-  -- | Explicit brace delimiters; higher priority than 'firstBlockToken'.
-  <0,startBlock> {
-    \{                  { lDelimeter TLbrace TRbrace }
-    \}                  { rDelimeter TRbrace }
-  }
-
   <startBlock> {
+    @newline            { nextLine }
+    do                  { doBlock }
+    \{                  { lBrace }
+
     -- | First non-whitespace character of block.
     ()                  { firstBlockToken }
   }
 
   <0> {
-    -- | Other delimiters that don't start blocks, but activate freeform mode.
+    @newline            { nextLine }
+    do                  { doBlock }
+    \{                  { lBrace }
+
+    -- | Explicit delimiters.
+    \}                  { rDelimeter TRbrace }
     \(                  { lDelimeter TLparen TRparen }
     \)                  { rDelimeter TRparen }
     \[                  { lDelimeter TLbracket TRbracket }
     \]                  { rDelimeter TRbracket }
 
-    -- | Keywords that start blocks
+    -- | Keywords that start blocks.
     if                  { layoutNL  TIf     TSemicolon }
     else                { layout    TElse   TSemicolon }
     while               { layoutNL  TWhile  TSemicolon }
     let                 { layout    TLet    TDBar }
     match               { layoutNL  TMatch  TBar }
     loop                { layout    TLoop   TSemicolon }
-    do                  { layout    TDo     TSemicolon }
+    \=                  { layout    TEq     TSemicolon }
+    \<\-                { layout    TLarrow TSemicolon }
     par                 { layout    TPar    TDBar }
     wait                { layout    TWait   TDBar }
 
-    -- | Keywords that just do as they be
+    -- | Keywords that just do as they be.
     after               { keyword TAfter }
-    \=                  { keyword TEq }
     \:                  { keyword TColon }
-    \<\-                { keyword TLarrow }
     \|\|                { keyword TDBar }
     \-\>                { keyword TRarrow }
     \|                  { keyword TBar }
@@ -82,7 +96,7 @@ tokens :-
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
 
-    -- | Other tokens
+    -- | Other stringy tokens.
     @operator           { strTok TOp }
     \` @identifier \`   { strTok (TOp . dropEnds 1 1) }
     @identifier         { strTok TId }
@@ -100,24 +114,32 @@ internalErr s = alexError $ "Internal error: " ++ s
 
 -- | The various contexts that the scanner maintains in its stack state.
 data ScannerContext
-  -- | In a freeform block with left margin, to end at given token.
-  = Freeform Int TokenType
+  -- | In a freeform block that ends at given token.
+  = ExplicitBlock Int TokenType
   -- | Ending explicit block with closing token and span.
-  | EndingFreeform TokenType Span
+  | EndingExplicitBlock Int TokenType Span
   -- | Start a block at next token with given separator.
-  | PendingBlock TokenType
+  | PendingBlock Int TokenType
   -- | Start a block at next line with given separator.
-  | PendingBlockNL TokenType
-  -- | In an implicit block with left margin, lines separated by given token.
-  | InBlock Int TokenType
+  | PendingBlockNL Int TokenType
+  -- | In an implicit block, lines separated by given token.
+  | ImplicitBlock Int TokenType
   deriving (Show)
+
+-- | The 'Int' in 'ScannerContext' is the margin.
+ctxtMargin :: ScannerContext -> Int
+ctxtMargin (ExplicitBlock m _        ) = m
+ctxtMargin (EndingExplicitBlock m _ _) = m
+ctxtMargin (PendingBlock m _         ) = m
+ctxtMargin (PendingBlockNL m _       ) = m
+ctxtMargin (ImplicitBlock m _        ) = m
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
 data AlexUserState = AlexUserState { usContext :: [ScannerContext] }
 
 -- | Initial Alex monad state.
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState { usContext = [InBlock 1 TDBar] }
+alexInitUserState = AlexUserState { usContext = [ImplicitBlock 1 TDBar] }
 
 -- | Enter a new context by pushing it onto stack.
 alexPushContext :: ScannerContext -> Alex ()
@@ -168,8 +190,9 @@ keyword ttype i len = return $ Token (alexInputSpan i len, ttype)
 -- | Keyword starts a new block immediately.
 layout :: TokenType -> TokenType -> AlexAction Token
 layout ttype sepToken i len = do
+  marg <- ctxtMargin <$> alexPeekContext
   -- Push 'PendingBlock' onto stack so we remember what 'sepToken' is
-  alexPushContext $ PendingBlock sepToken
+  alexPushContext $ PendingBlock marg sepToken
   -- Set 'startBlock' code so that scanner takes us to the next token, at which
   -- point 'firstBlockToken' is invoked.
   alexSetStartCode startBlock
@@ -182,12 +205,12 @@ firstBlockToken (pn@(AlexPn _ _ col), _, _, _) _ = do
   alexSetStartCode 0
   -- Check the top of the context stack to obtain saved separator token.
   ctxt <- alexPeekContext
-  sepToken <- case ctxt of
-    PendingBlock s -> do return s
+  (marg, sepToken) <- case ctxt of
+    PendingBlock m s -> return (m, s)
     _ -> internalErr $ "unexpected context in firstBlockToken: " ++ show ctxt
   alexPopContext
   -- About to start a block; remember current indentation level and sepToken.
-  alexPushContext $ InBlock col sepToken
+  alexPushContext $ ImplicitBlock col sepToken
   -- Emit TLbrace to start block.
   return $ Token (alexEmptySpan pn, TLbrace)
 
@@ -196,42 +219,49 @@ layoutNL :: TokenType -> TokenType -> AlexAction Token
 layoutNL ttype sepToken i len = do
   -- Push PendingBlockNL' onto stack so we remember 'sepToken', and to start
   -- new block at next line
-  alexPushContext $ PendingBlockNL sepToken
+  marg <- ctxtMargin <$> alexPeekContext
+  alexPushContext $ PendingBlockNL marg sepToken
   -- Emit token and continue scanning
   return $ Token (alexInputSpan i len, ttype)
+
+-- | Left brace token.
+lBrace :: AlexAction Token
+lBrace = do
+  ctxt <- alexPeekContext
+  margin <- case ctxt of
+    -- If about to start a block and we encounter explicit @{@, then that block
+    -- has been started explicitly, so we forget about the 'PendingBlock' state.
+    PendingBlock m _   -> alexPopContext >> return m
+    PendingBlockNL m _ -> alexPopContext >> return m
+    _ -> return ()
+  lDelimiter TLbrace TRbrace
 
 -- | Left delimiting token, along with its (closing) right delimiter.
 lDelimeter :: TokenType -> TokenType -> AlexAction Token
 lDelimeter ttype closer i len = do
-  ctxt <- alexPeekContext
-  case (ctxt, ttype) of
-    -- If about to start a block and we encounter explicit @{@, then that block
-    -- has been started explicitly, so we forget about the 'PendingBlock' state.
-    (PendingBlock _, TLbrace)   -> alexPopContext
-    (PendingBlockNL _, TLbrace) -> alexPopContext
-    _ -> return ()
-  -- Push 'Freeform' to remember the column this explicit block was started,
+  -- Push 'ExplicitBlock' to remember the column this explicit block was started,
   -- and what closing token to look for.
   let sp = alexInputSpan i len
-  alexPushContext $ Freeform (tokCol sp) closer
+  alexPushContext $ ExplicitBlock (tokCol sp) closer
   return $ Token (alexInputSpan i len, ttype)
 
 -- | Right delimiter, e.g., ), }, ]
 rDelimeter :: TokenType -> AlexAction Token
 rDelimeter ttype i len = do
-  alexPushContext $ EndingFreeform ttype (alexInputSpan i len)
+  marg <- ctxtMargin <$> alexPeekContext
+  alexPushContext $ EndingExplicitBlock marg ttype (alexInputSpan i len)
   closeBrace i len
 
 -- | "Subroutine" to insert closing braces (epsilon action).
 closeBrace :: AlexAction Token
 closeBrace (pn, _, _, _) _ = do
   alexSetStartCode 0
-  -- When this subroutine starts, we expect the 'EndingFreeform' context we
+  -- When this subroutine starts, we expect the 'EndingExplicitBlock' context we
   -- pushed to always be at the top of the stack; we use this to maintain state.
   closing <- alexPeekContext
   alexPopContext
   (closer, cspan) <- case closing of
-    EndingFreeform cl sp -> return (cl, sp)
+    EndingExplicitBlock _ cl sp -> return (cl, sp)
     _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show closing
 
   -- We check whatever context comes next.
@@ -241,24 +271,24 @@ closeBrace (pn, _, _, _) _ = do
     -- If we are inside of another block, we close it by emitting an TRbrace,
     -- and loop back around to this subroutine. We also push the closing
     -- context back onto the stack for the next iter.
-    InBlock _ _ -> do
+    ImplicitBlock _ _ -> do
       alexSetStartCode closeBraces
       alexPushContext closing
       return $ Token (alexEmptySpan pn, TRbrace)
 
-    -- If we find the Freeform block we're supposed to close, then we're done.
+    -- If we find the ExplicitBlock block we're supposed to close, then we're done.
     -- Reset the alex start code to the default (0), and emit closing delimiter.
-    Freeform _ closer' | closer == closer' -> do
+    ExplicitBlock _ closer' | closer == closer' -> do
       return $ Token (cspan, closer)
 
-    -- If somehow in Freeform for different closer, then we there must be
+    -- If somehow in ExplicitBlock for different closer, then we there must be
     -- a delimiter mismatch, e.g., @( ]@.
-    Freeform _ _closer' -> syntaxErr "Delimiter mismatch error message TODO"
+    ExplicitBlock _ _closer' -> syntaxErr "Delimiter mismatch error message TODO"
 
     -- If somehow pending block, then user wrote something like @do )@ or
     -- @if x )@, both of which are syntax errors.
-    PendingBlock _   -> syntaxErr "error message TODO closeBrace pendingblockNL"
-    PendingBlockNL _ -> syntaxErr "error message TODO clsoeBrace pendingblockNl"
+    PendingBlock _  _ -> syntaxErr $ "closeBrace :" ++ show ctxt
+    PendingBlockNL _ _ -> syntaxErr $ "closeBrace :" ++ show ctxt
 
     _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show ctxt
 
@@ -284,7 +314,7 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
   alexSetStartCode 0
   ctxt <- alexPeekContext
   case ctxt of
-    InBlock col sepToken
+    ImplicitBlock col sepToken
       | tCol > col  -> do
         -- Continued line; continue to scan as normal
         alexMonadScan
@@ -299,11 +329,11 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
         alexPopContext
         return $ Token (alexEmptySpan pn, TRbrace)
 
-    Freeform _ TRbrace -> do
+    ExplicitBlock _ TRbrace -> do
       -- Newlines don't mean anything in freeform mode started by braces.
       alexMonadScan
 
-    Freeform col _
+    ExplicitBlock col _
       -- Adopt a technicality of Haskell: when freeform mode is started by
       -- non-braces, new lines must be greater than where freeform mode was
       -- started.
@@ -312,20 +342,20 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       | otherwise -> do
         syntaxErr "error message TODO firstLineToken"
 
-    PendingBlockNL sepToken -> do
+    PendingBlockNL _ sepToken -> do
       -- We were about to start a block in a new line, and we encountered the
-      -- first token of that new line. Transition from 'PendingNL' to 'InBlock',
-      -- and emit the opening brace for the new block.
+      -- first token of that new line. Transition from 'PendingNL' to
+      -- 'ImplicitBlock', and emit the opening brace for the new block.
       alexPopContext
-      alexPushContext $ InBlock tCol sepToken
+      alexPushContext $ ImplicitBlock tCol sepToken
       return $ Token (alexEmptySpan pn, TLbrace)
 
-    PendingBlock sepToken -> do
+    PendingBlock _ sepToken -> do
       -- We were about to start a new block immediately, but encountered
       -- a newline, and now we're at the first token of the new line---this
       -- happens when we have a hanging block. We start the block here.
       alexPopContext
-      alexPushContext $ InBlock tCol sepToken
+      alexPushContext $ ImplicitBlock tCol sepToken
       return $ Token (alexEmptySpan pn, TLbrace)
 
     _ -> internalErr $ "unexpected ctxt during firstLineToken: " ++ show ctxt
@@ -335,9 +365,9 @@ alexEOF :: Alex Token
 alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
   case usContext st of
     -- Last block---emit 'TEOF'
-    [InBlock _ _] -> Right (s, Token (alexEmptySpan pos, TEOF))
+    [ImplicitBlock _ _] -> Right (s, Token (alexEmptySpan pos, TEOF))
     -- Close all unclosed implicit blocks
-    InBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
+    ImplicitBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
       where s' = s { alex_ust = st { usContext = ctxts } }
     _ -> error $ "error message TODO (alexEOF)" ++ show (usContext st)
 

@@ -82,7 +82,7 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : bindArgs typFn '=' expr             { categorizeDef $1 $2 $4 }
+  : bindArgs typFn '=' '{' expr '}'     { categorizeDef $1 $2 $5 }
 
 -- | A list of argument binders consists of a series of juxtaposed patterns.
 bindArgs                              --> [Bind]
