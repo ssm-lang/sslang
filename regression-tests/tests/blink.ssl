@@ -1,4 +1,4 @@
-main(led : & Int) = do
+main(led : & Int) =
   loop
     after 50 , (led: &Int) <- 1
     wait (led: &Int)

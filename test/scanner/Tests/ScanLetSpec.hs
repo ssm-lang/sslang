@@ -21,7 +21,9 @@ spec = do
           , TLbrace
           , TId "variable"
           , TEq
+          , TLbrace
           , TId "definition"
+          , TRbrace
           , TRbrace
           , TRbrace
           ]
@@ -41,14 +43,18 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
+          , TLbrace
           , TId "a_def"
+          , TRbrace
           , TRbrace
           , TSemicolon
           , TLet
           , TLbrace
           , TId "b"
           , TEq
+          , TLbrace
           , TId "b_def"
+          , TRbrace
           , TRbrace
           , TSemicolon
           , TId "c"
@@ -57,21 +63,27 @@ spec = do
     scanTokenTypes input `shouldBe` Right output
 
 
-  it "scans nested let definitions" $ do
-    let input = "let a = let b = c; d"
+  it "scans inline nested let definitions" $ do
+    let input = "let a = { let b = { c }; d }; e"
         output =
           [ TLet
           , TLbrace
           , TId "a"
           , TEq
+          , TLbrace
           , TLet
           , TLbrace
           , TId "b"
           , TEq
+          , TLbrace
           , TId "c"
+          , TRbrace
           , TSemicolon
           , TId "d"
           , TRbrace
+          , TRbrace
+          , TSemicolon
+          , TId "e"
           , TRbrace
           ]
     scanTokenTypes input `shouldBe` Right output
@@ -80,9 +92,9 @@ spec = do
     let input = unlines
           [ "do"
           , " let a = a_block"
-          , "     b = do b_block_1"
-          , "            b_block_2"
-          , "              b_block_2_cont"
+          , "     b = b_block_1"
+          , "         b_block_2"
+          , "           b_block_2_cont"
           , " outside_let"
           ]
         output =
@@ -92,11 +104,12 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
+          , TLbrace
           , TId "a_block"
+          , TRbrace
           , TDBar
           , TId "b"
           , TEq
-          , TDo
           , TLbrace
           , TId "b_block_1"
           , TSemicolon
@@ -141,7 +154,32 @@ spec = do
     scanTokenTypes input `shouldBe` Right output
 
   it "supports explicit braces around bind group" $ do
-    pendingWith "help needed"
+    let input = unlines
+          [ "do"
+          , " let { a = b"
+          , "   ||  b = a }"
+          ]
+        output =
+          [ TDo
+          , TLbrace
+          , TLet
+          , TLbrace
+          , TId "a"
+          , TEq
+          , TLbrace
+          , TId "b"
+          , TRbrace
+          , TDBar
+          , TId "b"
+          , TEq
+          , TLbrace
+          , TId "a"
+          , TRbrace
+          , TRbrace
+          , TRbrace
+          ]
+    scanTokenTypes input `shouldBe` Right output
+    -- pendingWith "help needed"
     -- let { a = b
     --   || b = a }
     --
@@ -153,7 +191,8 @@ spec = do
           [ "do"
           , " let a = (a"
           , "          b c)"
-          , "      d"
+          , "          d"
+          , "         e"
           ]
         output =
           [ TDo
@@ -162,12 +201,16 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
+          , TLbrace
           , TLparen
           , TId "a"
           , TId "b"
           , TId "c"
           , TRparen
           , TId "d"
+          , TSemicolon
+          , TId "e"
+          , TRbrace
           , TRbrace
           , TRbrace
           ]
@@ -187,15 +230,21 @@ spec = do
           , TLbrace
           , TId "a"
           , TEq
+          , TLbrace
           , TLet
           , TLbrace
           , TId "b"
           , TEq
+          , TLbrace
           , TId "c"
+          , TRbrace
           , TDBar
           , TId "c"
           , TEq
+          , TLbrace
           , TId "b"
+          , TRbrace
+          , TRbrace
           , TRbrace
           , TRbrace
           , TSemicolon
@@ -208,7 +257,7 @@ spec = do
     let input = unlines
           [ "do"
           , "  let f = let g x = 1"
-          , "  g"
+          , "          g"
           ]
         output =
           [ TDo
@@ -217,16 +266,20 @@ spec = do
           , TLbrace
           , TId "f"
           , TEq
+          , TLbrace
           , TLet
           , TLbrace
           , TId "g"
           , TId "x"
           , TEq
+          , TLbrace
           , TInteger 1
           , TRbrace
           , TRbrace
           , TSemicolon
           , TId "g"
+          , TRbrace
+          , TRbrace
           , TRbrace
           ]
     scanTokenTypes input `shouldBe` Right output

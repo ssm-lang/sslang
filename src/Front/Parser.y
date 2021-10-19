@@ -193,9 +193,9 @@ arbitrary combination of these syntactic constructs, e.g., no @a <- b <- c@
 business.
 -}
 exprStm                               --> Expr
-  : exprAnn '<-' exprAnn                { Assign $1 $3 }
-  | 'after' exprAnn ',' exprAnn '<-' exprAnn
-                                        { After $2 $4 $6 }
+  : exprAnn '<-' '{' exprAnn '}'        { Assign $1 $4 }
+  | 'after' exprAnn ',' exprAnn '<-' '{' exprAnn '}'
+                                        { After $2 $4 $7 }
   | exprAnn                             { $1 }
 
 -- | Expressions with type annotations.

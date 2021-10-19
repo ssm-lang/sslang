@@ -38,13 +38,11 @@ spec = do
 
   it "supports do blocks with implicit braces" $ do
     let input = unlines
-          [ "f = do a"
-          , "       b"
+          [ "do a"
+          , "   b"
           ]
         output =
-          [ TId "f"
-          , TEq
-          , TDo
+          [ TDo
           , TLbrace
           , TId "a"
           , TSemicolon
@@ -55,16 +53,14 @@ spec = do
 
   it "supports do blocks with implicit braces, followed by continuation" $ do
     let input = unlines
-          [ "f = do a"
-          , "        b"
-          , "       c"
-          , "     d"
-          , "    e"
+          [ "do a"
+          , "     b"
+          , "   c"
+          , " d"
+          , "     e"
           ]
         output =
-          [ TId "f"
-          , TEq
-          , TDo
+          [ TDo
           , TLbrace
           , TId "a"
           , TId "b"
@@ -78,15 +74,13 @@ spec = do
 
   it "supports do blocks with explicit braces" $ do
     let input = unlines
-          [ "f = do {"
+          [ "do {"
           , "    g"
-          , "  x"
-          , "}"
+          , "x"
+          , "  }"
           ]
         output =
-          [ TId "f"
-          , TEq
-          , TDo
+          [ TDo
           , TLbrace
           , TId "g"
           , TId "x"
@@ -96,15 +90,13 @@ spec = do
 
   it "supports do blocks with explicit braces and semicolons" $ do
     let input = unlines
-          [ "f = do {"
+          [ "do {"
           , "  g;"
           , "    x"
           , "}"
           ]
         output =
-          [ TId "f"
-          , TEq
-          , TDo
+          [ TDo
           , TLbrace
           , TId "g"
           , TSemicolon
