@@ -1,8 +1,5 @@
 module Front.Ast where
 
-import           Prelude                 hiding ( (<>)
-                                                , id
-                                                )
 import           Prettyprinter
 
 -- | A type variable name (e.g., a, b)
@@ -117,14 +114,15 @@ instance Show Program where
   show (Program defs) = concatMap (\df -> show (pretty df) ++ "\n\n") defs
 
 instance Pretty Definition where
-  pretty (DefFn id formals r body) = nest
+  pretty (DefFn fid formals r body) = nest
     2
     (vsep
-      [ pretty id <> tupled (map pretty formals) <+> pretty r <+> pretty '='
+      [ pretty fid <> tupled (map pretty formals) <+> pretty r <+> pretty '='
       , pretty body
       ]
     )
-  pretty (DefPat b body) = pretty b <+> pretty "=" <+> pretty "{" <+> pretty body <+> pretty "}"
+  pretty (DefPat b body) =
+    pretty b <+> pretty "=" <+> pretty "{" <+> pretty body <+> pretty "}"
 
 instance Pretty Pat where
   pretty PatWildcard   = pretty '_'
@@ -135,28 +133,27 @@ instance Pretty Pat where
   pretty (PatCon dc pat) = pretty dc <+> parens (pretty pat)
   pretty (PatAnn ty pat) = pretty pat <+> pretty ":" <+> pretty ty 
 
-
 instance Pretty TypFn where
   pretty (TypReturn t) = pretty "->" <+> pretty t
   pretty (TypProper t) = pretty ":" <+> pretty t
   pretty TypNone       = pretty ": ()" -- TODO(hans): What is this?
 
 instance Pretty Typ where
-  pretty (TCon id                   ) = pretty id
+  pretty (TCon cid                   ) = pretty cid
   pretty (TApp (TCon "[]") t2) = pretty "[" <> parens (pretty t2) <> pretty "]"
-  pretty (TApp (TCon "&" ) t2       ) = pretty "&" <> parens (pretty t2)
-  pretty (TApp t           (TCon id)) = pretty t <+> pretty id
-  pretty (TApp t1          t2       ) = pretty t1 <+> parens (pretty t2)
+  pretty (TApp (TCon "&" ) t2        ) = pretty "&" <> parens (pretty t2)
+  pretty (TApp t           (TCon cid)) = pretty t <+> pretty cid
+  pretty (TApp t1          t2        ) = pretty t1 <+> parens (pretty t2)
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TArrow t1 t2              ) = pretty t1 <+> pretty "->" <+> pretty t2
+  pretty (TArrow t1 t2               ) = pretty t1 <+> pretty "->" <+> pretty t2
 
 
 instance Pretty Expr where
-  pretty (Id  id             ) = pretty id
-  pretty (Lit l              ) = pretty l
-  pretty (Apply    (Id id) e ) = pretty id <+> pretty e
-  pretty (Apply    e1      e2) = parens (pretty e1) <+> pretty e2
-  pretty (OpRegion e1      r ) = parens (pretty e1 <> p r)
+  pretty (Id  ident             ) = pretty ident
+  pretty (Lit l                 ) = pretty l
+  pretty (Apply    (Id ident) e ) = pretty ident <+> pretty e
+  pretty (Apply    e1         e2) = parens (pretty e1) <+> pretty e2
+  pretty (OpRegion e1         r ) = parens (pretty e1 <> p r)
    where
     p EOR             = emptyDoc
     p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
