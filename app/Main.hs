@@ -110,10 +110,10 @@ main = do
     doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
   ast <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ print ast >> exitSuccess
+  when (optMode opts == DumpAST) $ print (pretty ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $ print ast' >> exitSuccess
+  when (optMode opts == DumpASTP) $ print (pretty ast') >> exitSuccess
 
   ()    <- doPass $ Front.checkAst ast'
 
