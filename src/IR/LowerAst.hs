@@ -31,10 +31,13 @@ lowerProgram (A.Program ds) = return $ I.Program
 
 -- | Lower a top-level 'Declaration' into triple of name, type, and definition.
 lowerDef :: A.Definition -> (I.Binder, I.Expr I.Type)
-lowerDef (A.DefPat (A.Bind (A.BindId bName) bTy) aBody) =
-  (Just $ fromString bName, lowerExpr aBody (mconcat (map lowerType bTy) <>))
-lowerDef (A.DefPat (A.Bind A.BindWildcard bTy) aBody) =
-  (Nothing, lowerExpr aBody (mconcat (map lowerType bTy) <>))
+lowerDef (A.DefPat aPat aBody) =
+  (lowerName aPat, lowerExpr aBody (lowerPatType aPat <>))
+ where
+  lowerName (A.PatId v)      = Just $ fromString v
+  lowerName A.PatWildcard    = Nothing
+  lowerName (A.PatAnn _ pat) = lowerName pat
+  lowerName _ = error "pattern should be desguared into pattern match"
 lowerDef (A.DefPat _ _) = nope -- Should be desugared into match
 lowerDef (A.DefFn aName aBinds aTy aBody) =
   (Just $ fromString aName, lowerBinds aBinds headAnn)
@@ -57,31 +60,28 @@ lowerDef (A.DefFn aName aBinds aTy aBody) =
     A.TypReturn ty -> (id, (lowerType ty <>))
     A.TypNone      -> (id, id)
 
-  lowerBinds :: [A.Bind] -> (I.Type -> I.Type) -> I.Expr I.Type
-  lowerBinds (b@(A.Bind (A.BindId v) _) : bs) k = I.Lambda
-    (Just $ fromString v)
-    lBody
-    (k lType)
+  lowerBinds :: [A.Pat] -> (I.Type -> I.Type) -> I.Expr I.Type
+  lowerBinds (A.PatId v : bs) k = I.Lambda (Just $ fromString v)
+                                           lBody
+                                           (k lType)
    where
     lBody = lowerBinds bs id
-    lType = lowerBindType b `I.arrow` extract lBody
-  lowerBinds (b@(A.Bind A.BindWildcard _) : bs) k = I.Lambda Nothing
-                                                             lBody
-                                                             (k lType)
+    lType = mempty `I.arrow` extract lBody
+  lowerBinds (b@A.PatWildcard : bs) k = I.Lambda Nothing lBody (k lType)
+  -- wip
    where
     lBody = lowerBinds bs id
-    lType = lowerBindType b `I.arrow` extract lBody
+    lType = mempty `I.arrow` extract lBody
   lowerBinds [] k = lowerExpr aBody (k . tailAnn)
   lowerBinds _  _ = nope -- Should have been desugared into pattern matches
 
 -- | Extracts and lowers possible AST type annotation from a binding.
-lowerBindType :: A.Bind -> I.Type
-lowerBindType (A.Bind (A.BindAs _ b) tys) =
-  lowerBindType b <> mconcat (map lowerType tys)
-lowerBindType (A.Bind (A.BindTup bs) tys) =
-  I.tuple (map lowerBindType bs) <> mconcat (map lowerType tys)
-lowerBindType (A.Bind (A.BindCon _ _bs) _tys) = nope -- should be desugared to match
-lowerBindType (A.Bind _                 tys ) = mconcat $ map lowerType tys
+lowerBindType :: A.Pat -> I.Type
+lowerBindType (A.PatAs _ b     ) = lowerBindType b
+lowerBindType (A.PatTup bs     ) = I.tuple $ map lowerBindType bs
+lowerBindType (A.PatCon _   _bs) = error "need to perform DConId lookup"
+lowerBindType (A.PatAnn typ p  ) = lowerType typ <> lowerBindType p
+lowerBindType _                  = mempty
 
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Typ -> I.Type
@@ -98,8 +98,12 @@ lowerType (A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
 
 -- | Lowers an AST expression into an IR expression. Performs desguaring inline.
 lowerExpr :: A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
-lowerExpr (A.Id  v    ) k = I.Var (fromString v) (k I.untyped)
-lowerExpr (A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
+lowerExpr (A.Id  v) k = I.Var (fromString v) (k I.untyped)
+lowerExpr (A.Lit l) k = I.Lit (lowerLit l) (k I.untyped)
+lowerExpr a@(A.Apply _ _) k | fst (A.collectApp a) == A.Id "new" = primNew
+ where
+  args    = map (`lowerExpr` id) $ snd $ A.collectApp a
+  primNew = I.Prim I.New args (k I.untyped)
 lowerExpr (A.Apply l r) k = I.App lhs rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr (A.Let ds b) k = I.Let defs body (k I.untyped)
@@ -121,7 +125,6 @@ lowerExpr (A.Assign lhs rhs) k = I.Prim I.Assign args (k I.untyped)
 lowerExpr (A.Constraint e ty) k = lowerExpr e ((<> lowerType ty) . k)
 lowerExpr (A.Wait exprs     ) k = I.Prim I.Wait args (k I.untyped)
   where args = map (`lowerExpr` id) exprs
-lowerExpr (A.New e  ) k = I.Prim I.New [lowerExpr e id] (k I.untyped)
 lowerExpr (A.Seq l r) k = I.Let [(Nothing, lhs)] rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)

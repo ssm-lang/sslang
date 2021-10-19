@@ -31,19 +31,16 @@ checkTopSignatures (A.Program defns) = all checkAnnotations defns
   countCurried (A.TArrow _ t2) = 1 + countCurried t2
   countCurried _               = 0
 
-  annotatedOnce :: A.Bind -> Bool
-  annotatedOnce (A.Bind (A.BindTup bs  ) [_]) = all notAnnotated bs
-  annotatedOnce (A.Bind (A.BindCon _ bs) [_]) = all notAnnotated bs
-  annotatedOnce (A.Bind (A.BindAs  _ b ) [_]) = notAnnotated b
-  annotatedOnce (A.Bind _                [_]) = True
-  annotatedOnce (A.Bind (A.BindTup bs  ) [] ) = all annotatedOnce bs
-  annotatedOnce (A.Bind (A.BindCon _ bs) [] ) = all annotatedOnce bs
-  annotatedOnce (A.Bind (A.BindAs  _ b ) [] ) = annotatedOnce b
-  annotatedOnce (A.Bind _                _  ) = False
+  annotatedOnce :: A.Pat -> Bool
+  annotatedOnce (A.PatAs _ p) = annotatedOnce p
+  annotatedOnce (A.PatTup ps) = all annotatedOnce ps
+  annotatedOnce (A.PatCon _ ps) = all annotatedOnce ps
+  annotatedOnce (A.PatAnn _ p) = notAnnotated p
+  annotatedOnce _ = False
 
-  notAnnotated :: A.Bind -> Bool
-  notAnnotated (A.Bind (A.BindTup bs  ) []) = all notAnnotated bs
-  notAnnotated (A.Bind (A.BindCon _ bs) []) = all notAnnotated bs
-  notAnnotated (A.Bind (A.BindAs  _ b ) []) = notAnnotated b
-  notAnnotated (A.Bind _                []) = True
-  notAnnotated (A.Bind _                _ ) = False
+  notAnnotated :: A.Pat  -> Bool
+  notAnnotated (A.PatAs _ p) = notAnnotated p
+  notAnnotated (A.PatTup ps) = all notAnnotated ps
+  notAnnotated (A.PatCon _ ps) = all notAnnotated ps
+  notAnnotated (A.PatAnn _ _) = False
+  notAnnotated _ = True

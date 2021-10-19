@@ -82,45 +82,42 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : bindArgs typFn '=' '{' expr '}'     { categorizeDef $1 $2 $5 }
+  : patArgs typFn '=' '{' expr '}'      { categorizeDef $1 $2 $5 }
 
--- | A list of argument binders consists of a series of juxtaposed patterns.
-bindArgs                              --> [Bind]
-  : bindArg bindArgs                    { $1 : $2 }
+-- | Tuple patterns are comma-separated and can be type-annotated.
+patTups                              --> [Pat]
+  : patAnn ',' patTups                  { $1 : $3 }
+  | patAnn                              { [$1] }
+
+-- | Tuple pattern, which consist of a pattern and an optional type annotation.
+patAnn                                --> Pat
+  : pat ':' typ                         { PatAnn $3 $1 }
+  | pat                                 { $1 }
+
+-- | A list of argument patterns consists of a series of juxtaposed patterns.
+patArgs                               --> [Pat]
+  : pat patArgs                         { $1 : $2 }
   | {- nothing -}                       { [] }
 
--- | Argument binder, which cannot be type-annotated without wrapping parens.
-bindArg                               --> Bind
-  : pat                                 { $1 }
-
--- | Tuple binders are comma-separated and can be type-annotated.
-bindTups                              --> [Bind]
-  : bindTup ',' bindTups                { $1 : $3 }
-  | bindTup                             { [$1] }
-
--- | Tuple binder, which consist of a pattern and an optional type annotation.
-bindTup                               --> Bind
-  : pat typBind                         { annBind $1 $2 }
-
--- | Root node of pattern.
-pat                                   --> Bind
+-- | Root node of patterns, which cannot be type-annotated without parens.
+pat                                   --> Pat
   : patPre                              { $1 }
 
 -- | Prefix pattern operators.
-patPre                                --> Bind
-  : id '@' patPre                       { Bind (BindAs $1 $3) [] }
+patPre                                --> Pat
+  : id '@' patPre                       { PatAs $1 $3 }
   | patAtom                             { $1 }
 
 {- | Atomic patterns.
 
-Note that a 1-ary tuple decays into regular binding (i.e., pattern with optional
-type annotation).
+Note that a 1-ary tuple decays into regular pattern (i.e., pattern surrounded by
+parens, with optional type annotation).
 -}
-patAtom                               --> Bind
-  : '_'                                 { Bind BindWildcard []}
-  | '(' bindTups ')'                    { normalize id (flip Bind []. BindTup) $2 }
-  | '(' ')'                             { Bind (BindLit LitEvent) [] }
-  | id                                  { Bind (BindId $1) [] }
+patAtom                               --> Pat
+  : '_'                                 { PatWildcard }
+  | '(' patTups ')'                     { normalize id PatTup $2 }
+  | '(' ')'                             { PatLit LitEvent }
+  | id                                  { PatId $1 }
   -- TODO: actually support literal patterns
 
 -- | Root node for type annotation.
@@ -158,11 +155,6 @@ typFn                                 --> TypFn
   : '->' typ                            { TypReturn $2 }
   | ':' typ                             { TypProper $2 }
   | {- nothing -}                       { TypNone }
-
--- | Type annotation for patterns.
-typBind                               --> [Typ]
-  : ':' typ                             { [$2] }
-  | {- nothing -}                       { [] }
 
 -- | Tuple types are comma-separated.
 typTups                               --> [Typ]
@@ -278,15 +270,15 @@ normalize _ f xs = f xs
 
 {- | Categorize the contents of a let-definition.
 
-- Anything of the form @a : T = ...@ is treated as a pattern binding.
-- Anything of the form @pat = ...@ is treated as a pattern binding.
+- Anything of the form @a : T = ...@ is treated as a pattern definition.
+- Anything of the form @pat = ...@ is treated as a pattern definition.
 - Anything of the form @id [pats..] [:T|->T] = ...@ is treated as a function
-  binding.
+  definition.
 - Nothing else is considered well-formed.
 -}
-categorizeDef :: [Bind] -> TypFn -> Expr -> Definition
-categorizeDef [Bind pat []] (TypProper typ) = DefPat $ Bind pat [typ]
-categorizeDef [b] (TypNone) = DefPat b
-categorizeDef (Bind (BindId f) []:args) fAnn = DefFn f args fAnn
+categorizeDef :: [Pat] -> TypFn -> Expr -> Definition
+categorizeDef [pat] (TypProper typ) = DefPat $ PatAnn typ pat
+categorizeDef [pat] TypNone = DefPat pat
+categorizeDef (PatId f:args) fAnn = DefFn f args fAnn
 categorizeDef _ _ = error "Syntax error in definition"
 }

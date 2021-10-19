@@ -108,6 +108,11 @@ collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
 
+collectApp :: Expr -> (Expr, [Expr])
+collectApp (Apply lhs rhs) = (lf, la ++ [rhs])
+  where (lf, la) = collectApp lhs
+collectApp t = (t, [])
+
 instance Pretty Program where
   pretty (Program _) = undefined
 
@@ -129,7 +134,7 @@ instance Pretty Definition where
           )
           -}
 
-instance Pretty Bind where
+instance Pretty Pat where
   pretty = undefined
   {-
   pretty (Bind id mty) =
