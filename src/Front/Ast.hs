@@ -1,5 +1,6 @@
 module Front.Ast where
 
+import           Data.List                      ( intersperse )
 import           Prettyprinter
 
 -- | A type variable name (e.g., a, b)
@@ -22,7 +23,7 @@ type OperatorId = String
 
 -- | A complete program: a list of declarations
 newtype Program = Program [Definition]
-  deriving Eq
+  deriving (Eq, Show)
 
 -- | A value definition
 data Definition
@@ -110,8 +111,8 @@ collectApp (Apply lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectApp lhs
 collectApp t = (t, [])
 
-instance Show Program where
-  show (Program defs) = concatMap (\df -> show (pretty df) ++ "\n\n") defs
+instance Pretty Program where
+  pretty (Program defs) = vsep $ intersperse emptyDoc $ map pretty defs
 
 instance Pretty Definition where
   pretty (DefFn fid formals r body) = nest
@@ -157,7 +158,7 @@ instance Pretty Expr where
    where
     p EOR             = emptyDoc
     p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
-  pretty NoExpr = emptyDoc
+  pretty NoExpr = error "Unexpected NoExpr"
   pretty (Let defs body) =
     vsep [pretty "let" <+> align (vsep $ map pretty defs), pretty body]
   pretty (While e1 e2) =
@@ -176,8 +177,11 @@ instance Pretty Expr where
       <+> pretty ","
       <+> pretty v
       <+> pretty "<-"
+      <+> pretty "{"
       <+> pretty e2
-  pretty (Assign     v e) = pretty v <+> pretty "<-" <+> pretty e
+      <+> pretty "}"
+  pretty (Assign v e) =
+    pretty v <+> pretty "<-" <+> pretty "{" <+> pretty e <+> pretty "}"
   pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
   pretty (As         v e) = pretty v <> pretty '@' <> pretty e
   pretty (Wait vars) =
