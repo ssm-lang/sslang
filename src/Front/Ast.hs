@@ -135,6 +135,7 @@ instance Pretty Pat where
   pretty (PatCon dc pat) = pretty dc <+> parens (pretty pat)
   pretty (PatAnn ty pat) = pretty pat <+> pretty ":" <+> pretty ty 
 
+
 instance Pretty TypFn where
   pretty (TypReturn t) = pretty "->" <+> pretty t
   pretty (TypProper t) = pretty ":" <+> pretty t
