@@ -27,22 +27,19 @@ newtype Program = Program [Definition]
 
 -- | A value definition
 data Definition
-  = DefFn VarId [Bind] TypFn Expr
-  | DefPat Bind Expr
+  = DefFn VarId [Pat] TypFn Expr
+  | DefPat Pat Expr
   deriving (Eq, Show)
 
--- | A name bound to a type
-data Bind = Bind BindPat [Typ]
-  deriving (Eq, Show)
-
-{- | A pattern, e.g., @let Cons hd tl = x in ...@ -}
-data BindPat
-  = BindWildcard
-  | BindId VarId
-  | BindLit Literal
-  | BindAs VarId Bind
-  | BindTup [Bind]
-  | BindCon DConId [Bind]
+-- | A pattern appearing on the LHS of a definition or match arm
+data Pat
+  = PatWildcard         -- ^ Match anything, i.e., @_@
+  | PatId VarId         -- ^ Bind value to variable, e.g., @v@
+  | PatLit Literal      -- ^ Literal match, e.g., @1@
+  | PatAs VarId Pat     -- ^ Pattern alias, e.g., @a \@ <pat>@
+  | PatTup [Pat]        -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
+  | PatCon DConId [Pat] -- ^ Match on data constructor, e.g., @Some <pat>@
+  | PatAnn Typ Pat      -- ^ Match with type annotation, e.g., @<pat>: Type@
   deriving (Eq, Show)
 
 -- | Function type annotation
@@ -81,7 +78,6 @@ data Expr
   | Constraint Expr TypAnn
   | As VarId Expr
   | Wait [Expr]
-  | New Expr
   | Seq Expr Expr
   | Wildcard
   | Break
@@ -105,10 +101,6 @@ data Literal
   | LitChar Char
   | LitEvent
   deriving (Eq, Show)
-
--- | Annotate 'Bind' with additional types
-annBind :: Bind -> [Typ] -> Bind
-annBind (Bind p ts) ts' = Bind p (ts'++ts)
 
 -- | Collect a curried application into the function and its list of arguments.
 collectTApp :: Typ -> (Typ, [Typ])
