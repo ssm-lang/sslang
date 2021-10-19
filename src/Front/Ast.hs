@@ -107,32 +107,33 @@ collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
 collectTApp t = (t, [])
 
 collectApp :: Expr -> (Expr, [Expr])
-collectApp (Apply lhs rhs) = (lf, la ++ [rhs])
-  where (lf, la) = collectApp lhs
-collectApp t = (t, [])
+collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
+collectApp t               = (t, [])
 
 instance Pretty Program where
-  pretty (Program defs) = vsep $ intersperse emptyDoc $ map pretty defs
+  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
 instance Pretty Definition where
-  pretty (DefFn fid formals r body) = nest
-    2
-    (vsep
-      [ pretty fid <> tupled (map pretty formals) <+> pretty r <+> pretty '='
-      , pretty body
-      ]
-    )
+  pretty (DefFn fid formals r body) =
+    pretty fid
+      <>  tupled (map pretty formals)
+      <+> pretty r
+      <+> pretty '='
+      <+> pretty "{"
+      <+> pretty body
+      <+> pretty "}"
+
   pretty (DefPat b body) =
     pretty b <+> pretty "=" <+> pretty "{" <+> pretty body <+> pretty "}"
 
 instance Pretty Pat where
-  pretty PatWildcard   = pretty '_'
-  pretty (PatId  s   ) = pretty s
-  pretty (PatLit l   ) = pretty l
-  pretty (PatAs b p  ) = pretty b <> pretty '@' <> pretty p -- TODO(hans): Parens around p?
-  pretty (PatTup bs  ) = parens $ hsep (punctuate comma $ map pretty bs)
+  pretty PatWildcard     = pretty '_'
+  pretty (PatId  s     ) = pretty s
+  pretty (PatLit l     ) = pretty l
+  pretty (PatAs b p    ) = pretty b <> pretty '@' <> parens (pretty p)
+  pretty (PatTup bs    ) = parens $ hsep (punctuate comma $ map pretty bs)
   pretty (PatCon dc pat) = pretty dc <+> parens (pretty pat)
-  pretty (PatAnn ty pat) = pretty pat <+> pretty ":" <+> pretty ty 
+  pretty (PatAnn ty pat) = pretty pat <+> pretty ":" <+> pretty ty
 
 instance Pretty TypFn where
   pretty (TypReturn t) = pretty "->" <+> pretty t
@@ -160,17 +161,29 @@ instance Pretty Expr where
     p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
   pretty NoExpr = error "Unexpected NoExpr"
   pretty (Let defs body) =
-    vsep [pretty "let" <+> align (vsep $ map pretty defs), pretty body]
+    pretty "let"
+      <+> pretty "{"
+      <+> hsep (map pretty defs)
+      <+> pretty "}"
+      <>  pretty ";"
+      <+> pretty body
   pretty (While e1 e2) =
-    nest 2 $ vsep [pretty "while" <+> pretty e1, pretty e2]
-  pretty (Loop e ) = nest 2 $ vsep [pretty "loop", pretty e]
-  pretty (Par  es) = nest 2 $ vsep $ pretty "par" : map pretty es
+    pretty "while" <+> pretty e1 <+> pretty "{" <+> pretty e2 <+> pretty "}"
+  pretty (Loop e) = pretty "loop" <+> pretty "{" <+> pretty e <+> pretty "}"
+  pretty (Par es) =
+    pretty "par" <+> pretty "{" <+> hsep (map pretty es) <+> pretty "}"
   pretty (IfElse e1 e2 NoExpr) =
-    nest 2 $ vsep [pretty "if" <+> pretty e1, pretty e2]
-  pretty (IfElse e1 e2 e3) = vsep
-    [ nest 2 $ vsep [pretty "if" <+> pretty e1, pretty e2]
-    , nest 2 $ vsep [pretty "else", pretty e3]
-    ]
+    pretty "if" <+> pretty e1 <+> pretty "{" <+> pretty e2 <+> pretty "}"
+  pretty (IfElse e1 e2 e3) =
+    pretty "if"
+      <+> pretty e1
+      <+> pretty "{"
+      <+> pretty e2
+      <+> pretty "}"
+      <+> pretty "else"
+      <+> pretty "{"
+      <+> pretty e3
+      <+> pretty "}"
   pretty (After e1 v e2) =
     pretty "after"
       <+> pretty e1
@@ -183,10 +196,10 @@ instance Pretty Expr where
   pretty (Assign v e) =
     pretty v <+> pretty "<-" <+> pretty "{" <+> pretty e <+> pretty "}"
   pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
-  pretty (As         v e) = pretty v <> pretty '@' <> pretty e
+  pretty (As         v e) = pretty v <> pretty '@' <> parens (pretty e)
   pretty (Wait vars) =
     pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
-  pretty (Seq e1 e2) = vsep [pretty e1, pretty e2]
+  pretty (Seq e1 e2) = hsep [pretty e1 <> pretty ";", pretty e2]
   pretty Wildcard    = pretty '_'
   pretty Break       = pretty "break"
   pretty (Return e)  = pretty "return" <> pretty e
