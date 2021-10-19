@@ -24,7 +24,7 @@ spec = do
       output = Program
         [ DefFn
             "main"
-            [Bind (BindId "clk") [TApp (TCon "&") (TCon "Int")]]
+            [PatAnn (TApp (TCon "&") (TCon "Int")) (PatId "clk")]
             TypNone
             (Loop
               (Seq (Wait [Id "clk"]) (Seq (Wait [Id "clk"]) (Wait [Id "clk"])))
