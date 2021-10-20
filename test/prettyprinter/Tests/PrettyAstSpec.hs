@@ -6,14 +6,14 @@ import           Test.Hspec                     ( Spec(..)
                                                 , shouldBe
                                                 )
 
+import           Data.Bifunctor                 ( bimap )
+import           Data.Either                    ( fromRight )
 import           Front                          ( renderAst )
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
 
 parseAndRender :: String -> String
-parseAndRender input = case parseProgram input of
-  Left  e   -> error e
-  Right ast -> renderAst ast
+parseAndRender = fromRight undefined . bimap error renderAst . parseProgram
 
 spec :: Spec
 spec = do
