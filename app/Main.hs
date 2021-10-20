@@ -8,7 +8,13 @@ import qualified IR
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
-import           Prettyprinter                  ( pretty )
+import           Prettyprinter                  ( LayoutOptions(..)
+                                                , PageWidth(AvailablePerLine)
+                                                , layoutPageWidth
+                                                , layoutPretty
+                                                , pretty
+                                                )
+import           Prettyprinter.Render.Text      ( renderIO )
 import           System.Console.GetOpt          ( ArgDescr(NoArg, ReqArg)
                                                 , ArgOrder(RequireOrder)
                                                 , OptDescr(..)
@@ -25,6 +31,7 @@ import           System.IO                      ( hPrint
                                                 , hPutStr
                                                 , hPutStrLn
                                                 , stderr
+                                                , stdout
                                                 )
 
 data Mode
@@ -88,6 +95,12 @@ readInput :: String -> IO String
 readInput "-"      = getContents
 readInput filename = readFile filename
 
+renderAst :: Front.Program -> IO ()
+renderAst ast =
+  let renderOptions =
+        LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
+  in  renderIO stdout (layoutPretty renderOptions (pretty ast))
+
 main :: IO ()
 main = do
   args <- getArgs
@@ -110,7 +123,7 @@ main = do
     doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
   ast <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ print (pretty ast) >> exitSuccess
+  when (optMode opts == DumpAST) $ renderAst ast >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
   when (optMode opts == DumpASTP) $ print (pretty ast') >> exitSuccess

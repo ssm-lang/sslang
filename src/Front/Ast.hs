@@ -111,7 +111,7 @@ collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])
 
 instance Pretty Program where
-  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
+  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs) <+> pretty "\n"
 
 instance Pretty Definition where
   pretty (DefFn fid formals r body) =
@@ -196,11 +196,9 @@ instance Pretty Expr where
   pretty (Assign v e) =
     pretty v <+> pretty "<-" <+> pretty "{" <+> pretty e <+> pretty "}"
   pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
-  pretty (As         v e) = pretty v <> pretty '@' <> parens (pretty e)
   pretty (Wait vars) =
     pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
   pretty (Seq e1 e2) = hsep [pretty e1 <> pretty ";", pretty e2]
-  pretty Wildcard    = pretty '_'
   pretty Break       = pretty "break"
   pretty (Return e)  = pretty "return" <> pretty e
 
