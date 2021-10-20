@@ -131,6 +131,8 @@ main = do
 
   irM <- doPass $ IR.monomorphize irD
 
+  when (optMode opts == DumpIR) $ print irC >> exitSuccess
+
   cDefs <- doPass $ Codegen.genIR irM
 
   when (optMode opts == GenerateC) $ doPass (Codegen.prettyC cDefs) >>= putStrLn

@@ -25,6 +25,7 @@ import           Common.Identifiers             ( TConId )
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
+import           Prettyprinter
 
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
@@ -36,6 +37,10 @@ instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
   injectBuiltin _            = Nothing
+
+instance Pretty Type where
+  pretty (TBuiltin a) = pretty "(todo: pretty print builtin type)"
+  pretty (TCon  a) = pretty "(todo: pretty print tcon type)"
 
 -- | Flatten a list of type constructors into a
 flattenApp :: TConId -> [Type] -> TConId
