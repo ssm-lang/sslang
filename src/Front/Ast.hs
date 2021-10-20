@@ -2,6 +2,7 @@ module Front.Ast where
 
 import           Data.List                      ( intersperse )
 import           Prettyprinter
+import           Prettyprinter.Internal
 
 -- | A type variable name (e.g., a, b)
 type TVarId = String
@@ -110,8 +111,14 @@ collectApp :: Expr -> (Expr, [Expr])
 collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])
 
+renderAst :: Program -> String
+renderAst ast =
+  let renderOptions =
+        LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
+  in  renderShowS (layoutPretty renderOptions (pretty ast)) $ ""
+
 instance Pretty Program where
-  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs) <+> pretty "\n"
+  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
 instance Pretty Definition where
   pretty (DefFn fid formals r body) =
