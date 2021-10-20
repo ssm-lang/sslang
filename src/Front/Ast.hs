@@ -115,7 +115,7 @@ renderAst :: Program -> String
 renderAst ast =
   let renderOptions =
         LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
-  in  renderShowS (layoutPretty renderOptions (pretty ast)) $ ""
+  in  renderShowS (layoutPretty renderOptions (pretty ast)) ""
 
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
@@ -123,7 +123,7 @@ instance Pretty Program where
 instance Pretty Definition where
   pretty (DefFn fid formals r body) =
     pretty fid
-      <>  tupled (map pretty formals)
+      <+> hsep (map (parens . pretty) formals)
       <+> pretty r
       <+> pretty '='
       <+> pretty "{"
