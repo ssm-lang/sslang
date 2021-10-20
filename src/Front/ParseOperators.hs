@@ -51,7 +51,7 @@ parseExprOps fixity = rw
 
   shift, reduce :: Stack -> Expr -> String -> Expr -> OpRegion -> Expr
   shift s e1 op e2 ts = step (Stack s e1 op) e2 ts
-  reduce s e1 op e2 ts = step s (Apply (Apply (Id op) e1) e2) ts
+  reduce s e1 op e2 ts = step s (Apply (Apply (Id $ "(" ++ op ++ ")") e1) e2) ts
 
   shouldShift :: String -> String -> Bool
   shouldShift opl opr = pl < pr

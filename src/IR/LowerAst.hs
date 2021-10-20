@@ -88,10 +88,14 @@ lowerType (A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
 lowerExpr :: A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
 lowerExpr (A.Id  v) k = I.Var (fromString v) (k I.untyped)
 lowerExpr (A.Lit l) k = I.Lit (lowerLit l) (k I.untyped)
-lowerExpr a@(A.Apply _ _) k | fst (A.collectApp a) == A.Id "new" = primNew
+lowerExpr a@(A.Apply _ _) k | fst (A.collectApp a) == A.Id "new"   = primNew
+                            | fst (A.collectApp a) == A.Id "deref" = primDeref
+                            | fst (A.collectApp a) == A.Id "(-)"   = primSub
  where
-  args    = map (`lowerExpr` id) $ snd $ A.collectApp a
-  primNew = I.Prim I.New args (k I.untyped)
+  args      = map (`lowerExpr` id) $ snd $ A.collectApp a
+  primNew   = I.Prim I.New args (k I.untyped)
+  primDeref = I.Prim I.Deref args (k I.untyped)
+  primSub   = I.Prim (I.PrimOp I.PrimSub) args (k I.untyped)
 lowerExpr (A.Apply l r) k = I.App lhs rhs (k I.untyped)
   where (lhs, rhs) = (lowerExpr l id, lowerExpr r id)
 lowerExpr (A.Let ds b) k = I.Let defs body (k I.untyped)
