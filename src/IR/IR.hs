@@ -352,10 +352,11 @@ instance Pretty VarId where
 
 instance (Pretty t) => Pretty (Program t) where
   pretty p =
-    let defs = (head (programDefs p)) in
+    let defs = programDefs p in
+    let prettyDefs = (map (\x ->pretty (fst x) <+> pretty "=>" <+> pretty (snd x)) defs) in
     pretty "program { entryPoint: "
       <+> (pretty (programEntry p))
       <+> pretty "; defs:"
-      <+> pretty (fst defs) <+> pretty (snd defs)
+      <+> (foldl (<+>) (head prettyDefs) (tail prettyDefs))
       <+> pretty "; types: todo(types don't have a show)"
       <+> pretty "}"
