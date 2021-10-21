@@ -282,8 +282,9 @@ instance (Pretty t) => Show (Program t) where
   show p = show $ pretty p
 
 instance Pretty Literal where
-  pretty (LitIntegral i) = pretty (show i)
-  pretty (LitBool     b) = pretty (show b)
+  pretty (LitIntegral i) = pretty "LitInt" <+>pretty (show i)
+  pretty (LitBool     b) = pretty "LitBool" <+>pretty (show b)
+  pretty LitEvent = pretty "LitEvent"
 
 instance Pretty Primitive where
   pretty New        = pretty "new"
@@ -326,7 +327,11 @@ instance (Pretty t) => Pretty (Expr t) where
   pretty (App a b c) =
     pretty "((" <> pretty a <> pretty ")" <+> pretty "(" <> pretty b <> pretty "):"<+> pretty c <> pretty ")"
   pretty (Let a b c) =
-    pretty "let" <+> pretty (show a) <+> pretty "=" <+> pretty b <+> pretty "in \n" <+> pretty c <+> pretty ""
+    let mapA = (map (\x -> pretty (fst x)<+>pretty "=" <+>pretty (snd x)<+> pretty ",") a) in
+    pretty "let" <+>
+    (foldl (<+>) (head mapA) (tail mapA)) <+>
+    pretty b <+>
+    pretty "in \n" <+> pretty c <+> pretty ""
   pretty (Lambda a b c) =
     pretty "((\\" <+> pretty (show a) <+> pretty "->"<+> pretty b <+> pretty "):" <+>pretty c <> pretty ")"
   pretty (Match a b c d) =
@@ -338,7 +343,10 @@ instance (Pretty t) => Pretty (Expr t) where
       <+> pretty d
       <+> pretty ")"
   pretty (Prim a b c) =
-    pretty "(prim " <+> pretty a <+> pretty b <+> pretty c <+> pretty ")"
+    let exprs = (map (\x -> (pretty x) <>pretty "\n") b) in
+    pretty "(prim " <+> pretty a <+>
+          (foldl (<+>) (head exprs) (tail exprs)) <+>
+          pretty c <+> pretty ")\n"
 
 instance Pretty Alt where
   pretty (AltData a b ) = pretty (show a) <+> pretty (show b)
