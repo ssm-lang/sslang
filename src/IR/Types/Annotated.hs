@@ -1,10 +1,4 @@
-{- |
-
-Types straight from the AST.
-
-For now, just the polymorphic typeclass types.
-
--}
+-- | Type annotations, as collected from the Ast.
 {-# LANGUAGE DerivingVia #-}
 module IR.Types.Annotated
   ( Builtin(..)
