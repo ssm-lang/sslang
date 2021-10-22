@@ -1,16 +1,22 @@
-{ {- | Parser for sslang token stream.
+{
+{-# OPTIONS_HADDOCK prune #-}
+{- | Parser for sslang token stream.
+
 To check for shift/reduce and reduce/reduce conflicts, generate parser manually:
 
-  happy -i Parser.y -o /dev/null
+> happy -i Parser.y -o /dev/null
 
-Then check Parser.info.
+Then check @Parser.info@.
 -}
-module Front.Parser where
+module Front.Parser
+  ( parseProgram
+  ) where
 
 import Front.Scanner
 import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
+import Common.Compiler (ErrorMsg)
 }
 
 %name parse
@@ -256,8 +262,8 @@ parseError :: Token -> a
 parseError (Token (sp, _)) =
     error $ show (pretty sp) ++ ":Syntax error"
 
--- | Top-level helper function to parse program from string.
-parseProgram :: String -> Either String Program
+-- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
+parseProgram :: String -> Either ErrorMsg Program
 parseProgram = flip runAlex parse
 
 {- | List combinator for singleton vs other lists.

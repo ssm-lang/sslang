@@ -1,5 +1,6 @@
 {
-{- Scanner for sslang.
+{-# OPTIONS_HADDOCK prune #-}
+{- | Scanner for sslang.
 
 In addition to tokenizing the input text stream, this scanner is responsible for
 the following:
@@ -13,10 +14,20 @@ As such, the scanner's state is enriched with a stack of contexts which it uses
 to perform basic delimiter matching. It also relies on epsilon transitions to
 emit implicit tokens.
 -}
-module Front.Scanner where
+module Front.Scanner
+  ( scanTokens
+  , scanTokenTypes
+  , lexerForHappy
+  , Token(..)
+  , TokenType(..)
+  , Span(..)
+  , Alex(..)
+  , runAlex
+  ) where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
+import Common.Compiler (ErrorMsg)
 }
 
 %wrapper "monadUserState"
@@ -406,10 +417,10 @@ collectStream = do
     _ -> (:) tok <$> collectStream
 
 -- | Extract a token stream from an input string.
-scanTokens :: String -> Either String [Token]
+scanTokens :: String -> Either ErrorMsg [Token]
 scanTokens s = runAlex s collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
-scanTokenTypes :: String -> Either String [TokenType]
+scanTokenTypes :: String -> Either ErrorMsg [TokenType]
 scanTokenTypes = fmap (map tokenType) . scanTokens
 }
