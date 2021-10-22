@@ -122,7 +122,7 @@ You can also run individual test modules or test cases. For instance, to run onl
 stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/"'
 ```
 
-Or to run only the first test case:
+Or to run only a specific test case:
 
 ```
 stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single-line comments/"'
