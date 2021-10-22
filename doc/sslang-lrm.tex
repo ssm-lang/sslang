@@ -403,12 +403,13 @@ a look at Agda's user-defined operators.}
 <type-app> ::= <type-app> <type-atom>
 \alt <type-atom>
 
+<type-pre> ::= "&" <type-pre>
+\alt <type-atom>
+
 <type-atom> ::= <type-id>
-\alt "(" <type> ")"
 \alt "(" ")"
 \alt "[" <type> "]"
-\alt "&" <type-atom>
-\alt "(" <type> ("," <type>)$^+$ ")"
+\alt "(" <type> ("," <type>)$^*$ ")"
 
 <type-id> ::= ["A"--"Z"]["a"--"zA"--"Z0"--"9"]$^*$
 \end{grammar}
@@ -447,18 +448,18 @@ A parentheses-enclosed comma-separated list of two or more types
 denotes a tuple, e.g., \lit*{(} \lit*{Int} \lit*{,} \lit*{Int}
 \lit*{)} is a pair of integers.
 
-\section{Routines and Top-Level Definitions}
+\section{Top-Level Definitions}
 Top-level definitions in sslang consistent of the following components:
 \begin{itemize}
     \item Identifier name (global variable or routine name)
-    \item Zero or more parameters, possibly type-annotated
+    \item Zero or more patterns, possibly type-annotated
     \item Annotated return type
     \item Body
 \end{itemize}
 The compiler will perform type inference for untyped components and will verify that typed components are correct.
 
 \subsection{Type Signatures}
-At the core of sslang routine signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
+At the core of sslang type signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
 \begin{itemize}
     \item \texttt{:} (Colon): ``is of type"
     \item \texttt{->} (Right Arrow): ``returns"
@@ -478,25 +479,25 @@ When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the 
     \item \texttt{(a , b) : (Int, Bool)}
 \end{itemize}
 
-Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
+While we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
 
-Top-level definitions can be summarized by the following grammar:
+Top-level definitions can be summarized by the following grammar. Note that parameters may be specified using pattern syntax (\texttt{_} as wildcard, \texttt{()} as unit) and that type annotations may only appear on patterns within parentheses.
 \setlength{\grammarindent}{9em}
 \begin{grammar}
-<topdef> ::= "id" <param_t>$^{+}$ ("->" <type>)$^{?}$ "= \{" <body> "\}"
-\alt "id" <param_t>$^{*}$ ":" <type> "= \{" <body> "\}"
+<def_let> ::= <pat>$^{+}$ <typ_fn> "= \{" <body> "\}"
 
-<param_t> ::= <param_atomic>
-\alt "("<param>")"
-\alt "("<param>("," <param>)$^{+}$")"
+<typ_fn> ::= "->" <type>
+\alt ":" <type>
 
-<param> ::= "("<param>")"
-\alt <param_atomic> (":" <type>)$^{?}$
-\alt "("<param>(","<param>)$^{+}$")"(":" <type>)$^{?}$
+<pat> ::= "id @" <pat>
+\alt <pat_atomic>
 
-<param_atomic> ::= "id"
-\alt "()"
+<pat_atomic> ::= "id"
 \alt "_"
+\alt "()"
+\alt "(" <pat_ann> ("," <pat_ann>)$^{*}$ ")"
+
+<pat_ann> ::= <pat> ":" <typ>$^{?}$
 \end{grammar}
 
 \section{Expressions}
