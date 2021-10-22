@@ -90,7 +90,7 @@ lowerExpr (A.Id  v) k = I.Var (fromString v) (k I.untyped)
 lowerExpr (A.Lit l) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr a@(A.Apply _ _) k | fst (A.collectApp a) == A.Id "new"   = primNew
                             | fst (A.collectApp a) == A.Id "deref" = primDeref
-                            | fst (A.collectApp a) == A.Id "(-)"   = primSub
+                            | fst (A.collectApp a) == A.Id "-"     = primSub
  where
   args      = map (`lowerExpr` id) $ snd $ A.collectApp a
   primNew   = I.Prim I.New args (k I.untyped)
