@@ -116,5 +116,17 @@ spec = do
 
 The entry point of each test is the `spec :: Spec` function, which allows individual test cases to be specified in a monadic context. The `it` combinator should be used to provide a succinct description of the behavior in prose (which is reported by the test driver on success), while `shouldBe` tests that its left operand (actual) is equal to its right operand (expected) using their `Eq` instances. If a test fails, Hspec reports the expected and actual outputs using their `Show` instances, and highlights any differences.
 
+You can also run individual test modules or test cases. For instance, to run only the test cases in `ScanCommentsSpec`, run:
+
+```
+stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/"'
+```
+
+Or to run only the first test case:
+
+```
+stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single-line comments/"'
+```
+
 [hspec]: http://hspec.github.io/
 [hspec-discover]: http://hspec.github.io/hspec-discover.html
