@@ -82,7 +82,7 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : patArgs typFn '=' '{' expr '}'      { categorizeDef $1 $2 $5 }
+  : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
 
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
@@ -95,8 +95,8 @@ patAnn                                --> Pat
   | pat                                 { $1 }
 
 -- | A list of argument patterns consists of a series of juxtaposed patterns.
-patArgs                               --> [Pat]
-  : pat patArgs                         { $1 : $2 }
+pats                                  --> [Pat]
+  : pat pats                            { $1 : $2 }
   | {- nothing -}                       { [] }
 
 -- | Root node of patterns, which cannot be type-annotated without parens.
