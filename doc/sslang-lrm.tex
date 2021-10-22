@@ -448,16 +448,16 @@ A parentheses-enclosed comma-separated list of two or more types
 denotes a tuple, e.g., \lit*{(} \lit*{Int} \lit*{,} \lit*{Int}
 \lit*{)} is a pair of integers.
 
-\section{Top-Level Definitions}
-Top-level definitions in sslang consistent of the following components:
+\section{sslang Top-Level}
+The top-level of sslang source code consists of a series of definitions. These definitions are either function definitions or global variable definitions. They are composed from the following:
 \begin{itemize}
-    \item Identifier name (global variable or routine name)
-    \item Zero or more patterns, possibly type-annotated
+    \item Identifier name (global variable or function name)
+    \item At least one pattern defining parameters for functions. If none, then the definition is for a global variable
     \item Annotated return type
     \item Body
 \end{itemize}
-The compiler will perform type inference for untyped components and will verify that typed components are correct.
 
+Patterns can be simple identifiers, wildcards, tuples, or a mixture of both to deconstruct algebraic data types.
 \subsection{Type Signatures}
 At the core of sslang type signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
 \begin{itemize}
@@ -468,12 +468,14 @@ At the core of sslang type signatures, we have two symbols that provide type inf
 We use these symbols to separate type signatures into two broad syntactic categories:
 \begin{itemize}
     \item \texttt{foo <params> -> <ret-type>}\\
-          Using the ``\texttt{->}" syntax, the return type of the routine is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+          Using the ``\texttt{->}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
     \item \texttt{foo <untyped-params> : <fn-type>}\\
-          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire routine at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
 \end{itemize}
 
-When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
+When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. Note that type annotation is only possible within parenthesis due to the lower precedence of ``\texttt{:}".
+
+sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
 \begin{itemize}
     \item \texttt{(a: Int, b: Bool)}
     \item \texttt{(a , b) : (Int, Bool)}
@@ -481,7 +483,7 @@ When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the 
 
 While we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
 
-Top-level definitions can be summarized by the following grammar. Note that parameters may be specified using pattern syntax (\texttt{_} as wildcard, \texttt{()} as unit) and that type annotations may only appear on patterns within parentheses.
+Top-level definitions can be summarized by the following grammar.
 \setlength{\grammarindent}{9em}
 \begin{grammar}
 <def_let> ::= <pat>$^{+}$ <typ_fn> "= \{" <body> "\}"
@@ -549,12 +551,12 @@ stack-allocate, maybe-unused. Should be less hacky than Haskell's
 Most declarations allow attributes to be placed in square brackets before.  \url{https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/}
 
 \begin{lstlisting}{language=[Sharp]C}
-  
+ 
 [Serializable]
 public class SampleClass
 {
     // Objects of this type can be serialized.
-} 
+ 
 \end{lstlisting}
 
 \subsubsection{Discussions}
