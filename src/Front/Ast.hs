@@ -143,7 +143,7 @@ instance Pretty Pat where
   pretty PatWildcard    = pretty '_'
   pretty (PatId  s    ) = pretty s
   pretty (PatLit l    ) = pretty l
-  pretty (PatAs b p   ) = pretty b <> pretty '@' <> parens (pretty p)
+  pretty (PatAs b p   ) = parens $ pretty b <> pretty '@' <> pretty p
   pretty (PatTup bs   ) = parens $ hsep (punctuate comma $ map pretty bs)
   pretty (PatCon dc ps) = parens $ pretty dc <+> hsep (map pretty ps)
   pretty (PatAnn ty p ) = parens $ pretty p <> colon <+> pretty ty
@@ -154,51 +154,56 @@ instance Pretty TypFn where
   pretty TypNone       = emptyDoc
 
 instance Pretty Typ where
-  pretty (TCon cid                   ) = pretty cid
-  pretty (TApp (TCon "[]") t2        ) = brackets $ pretty t2
-  pretty (TApp (TCon "&" ) t2        ) = pretty "&" <> parens (pretty t2)
-  pretty (TApp t           (TCon cid)) = pretty t <+> pretty cid
-  pretty (TApp t1          t2        ) = pretty t1 <+> parens (pretty t2)
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TArrow t1 t2               ) = pretty t1 <+> rarrow <+> pretty t2
+  pretty (TCon cid           ) = pretty cid
+  pretty (TApp (TCon "[]") t2) = brackets $ pretty t2
+  pretty (TApp (TCon "&" ) t2) = pretty "&" <> pretty t2
+  pretty (TApp t1          t2) = parens $ pretty t1 <+> pretty t2
+  pretty (TArrow t1 t2       ) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where
-  pretty (Id  ident             ) = pretty ident
-  pretty (Lit l                 ) = pretty l
-  pretty (Apply    (Id ident) e ) = pretty ident <+> pretty e
-  pretty (Apply    e1         e2) = parens (pretty e1) <+> pretty e2
-  pretty (OpRegion e1         r ) = parens (pretty e1 <> p r)
-   where
-    p EOR             = emptyDoc
-    p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
-  pretty NoExpr = error "Unexpected NoExpr"
   pretty (Let defs body) =
     pretty "let"
       <+> braces (hsep $ punctuate dbar $ map pretty defs)
       <>  semi
       <+> pretty body
-  pretty (While e1 e2) = pretty "while" <+> pretty e1 <+> braces (pretty e2)
-  pretty (Loop e     ) = pretty "loop" <+> braces (pretty e)
-  pretty (Par  es    ) = pretty "par" <+> braces (hsep $ map pretty es)
+  pretty (Seq e1 e2) = hsep [pretty e1 <> semi, pretty e2]
+  pretty (After e1 v e2) =
+    parens
+      $   pretty "after"
+      <+> pretty e1
+      <+> comma
+      <+> pretty v
+      <+> larrow
+      <+> braces (pretty e2)
+  pretty (Assign     v  e) = parens $ pretty v <+> larrow <+> braces (pretty e)
+  pretty (Constraint e  t) = parens $ pretty e <+> colon <+> pretty t
+  pretty (OpRegion   e1 r) = parens $ pretty e1 <> p r
+   where
+    p EOR             = emptyDoc
+    p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
   pretty (IfElse e1 e2 NoExpr) =
-    pretty "if" <+> pretty e1 <+> braces (pretty e2)
+    parens $ pretty "if" <+> pretty e1 <+> braces (pretty e2)
   pretty (IfElse e1 e2 e3) =
-    pretty "if"
+    parens
+      $   pretty "if"
       <+> pretty e1
       <+> braces (pretty e2)
       <+> pretty "else"
       <+> braces (pretty e3)
-  pretty (After e1 v e2) =
-    pretty "after" <+> pretty e1 <+> comma <+> pretty v <+> larrow <+> braces
-      (pretty e2)
-  pretty (Assign     v e) = pretty v <+> larrow <+> braces (pretty e)
-  pretty (Constraint e t) = pretty e <+> colon <+> pretty t
+  pretty (While e1 e2) =
+    parens $ pretty "while" <+> pretty e1 <+> braces (pretty e2)
+  pretty (Loop e ) = parens $ pretty "loop" <+> braces (pretty e)
+  pretty (Par  es) = parens $ pretty "par" <+> braces (hsep $ map pretty es)
   pretty (Wait vars) =
-    pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
-  pretty (Seq e1 e2) = hsep [pretty e1 <> semi, pretty e2]
-  pretty Break       = pretty "break"
-  pretty (Return e)  = pretty "return" <+> pretty e
+    parens $ pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
+  pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
+  pretty (Id  ident  ) = pretty ident
+  pretty (Lit l      ) = pretty l
+  pretty Break         = pretty "break"
+  pretty (Return e)    = pretty "return" <+> pretty e
+  pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i
