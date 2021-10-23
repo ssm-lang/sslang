@@ -79,6 +79,7 @@ data Expr
   | Wait [Expr]
   | Seq Expr Expr
   | Break
+  | Match Expr [(Pat, Expr)]
   | Return Expr
   deriving (Eq, Show)
 

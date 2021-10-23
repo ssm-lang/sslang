@@ -41,6 +41,7 @@ data TokenType
   | TEq
   | TLarrow
   | TRarrow
+  | TDRarrow
   | TDBar
   | TColon
   | TSemicolon
@@ -97,6 +98,7 @@ instance Pretty TokenType where
   pretty TEq          = pretty "="
   pretty TLarrow      = pretty "->"
   pretty TRarrow      = pretty "<-"
+  pretty TDRarrow     = pretty "=>"
   pretty TDBar        = pretty "||"
   pretty TColon       = pretty ":"
   pretty TSemicolon   = pretty ";"
