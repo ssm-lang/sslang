@@ -12,37 +12,45 @@ import           Front                          ( renderAst )
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
 
-parseAndRender :: String -> String
-parseAndRender = fromRight undefined . bimap error renderAst . parseProgram
+renderAndParse :: Program -> Either String Program
+renderAndParse = parseProgram . renderAst
 
 spec :: Spec
 spec = do
   it "prints a basic function with a loop and some waits" $ do
-    let input = unlines
+    let input = parseProgram $ unlines
           [ "main (clk : &Int) ="
           , "  loop"
           , "    wait clk"
           , "    wait clk"
           , "    wait clk"
           ]
-        pAst1 = parseAndRender input
-        pAst2 = parseAndRender pAst1
-    pAst1 `shouldBe` pAst2
+        output = input >>= renderAndParse
+    input `shouldBe` output
+
   it "prints a function with a postfix type signature" $ do
-    let input = unlines
+    let input = parseProgram $ unlines
           [ "main clk oth: &Int -> &(Int, Int) -> () ="
           , "  wait clk"
           , "  oth <- 5"
           ]
-        pAst1 = parseAndRender input
-        pAst2 = parseAndRender pAst1
-    pAst2 `shouldBe` pAst1
+        output = input >>= renderAndParse
+    input `shouldBe` output
+
   it "prints a function with an inline type signature" $ do
-    let input = unlines
+    let input = parseProgram $ unlines
           [ "main (clk: &Int, oth: &(Int, Int)) -> () ="
           , "  wait clk"
           , "  oth <- 5"
           ]
-        pAst1 = parseAndRender input
-        pAst2 = parseAndRender pAst1
-    pAst2 `shouldBe` pAst1
+        output = input >>= renderAndParse
+    input `shouldBe` output
+
+  it "prints a function with no type signature" $ do
+    let input = parseProgram $ unlines
+          [ "main clk oth ="
+          , "  wait clk"
+          , "  oth <- 5"
+          ]
+        output = input >>= renderAndParse
+    input `shouldBe` output
