@@ -46,7 +46,7 @@
 \section{Documentation Conventions}
 
 In the grammar that follows, literal terminals are printed \lit*{bold
-  monospaced}.  Syntactic categories are written in \<italics>.
+  mono spaced}.  Syntactic categories are written in \<italics>.
 Normal parentheses () are used for grouping, superscripts represent
 $^*$ zero or more and $^+$ one or more, and square brackets []
 indicate character ranges, e.g., [\lit*{A}--\lit*{Z}] indicates all
@@ -62,31 +62,327 @@ Multi-line comments start with \lit*{/*} and end at a matching
 \lit*{*/}.  Multi-line comments nest and may also include
 single-line comments.
 
-\subsection{Indentation and Grouping}
+\subsection{Layout}
 
-\subsection{Lexer States}
+For brevity, sslang allows the programmer to selectively omit braces \texttt{\{} and \texttt{\}} as well as certain separator tokens, and instead convey the same information using \emph{layout} (indentation). Layout-sensitive and layout-insensitive syntax are both supported and mutually compatible, so the meaning of a layout-sensitive program can always specified by adding braces and tokens to produce some equivalent layout-insensitive program. This section describes the procedure by which those tokens are inserted.
 
-The lexer state is maintained in a stack. Elements of the state stack may be one
-of the following:
+Sslang's syntax contains \emph{blocks} surrounded by brace tokens \texttt{\{} and \texttt{\}}. Blocks consist of other syntactic items separated by some \emph{separator} token.
+
+\subsubsection{Implicit Blocks}
+
+Items in sslang's syntax that are surrounded by braces are called \emph{blocks}, and the enclosed items of a block are delimited by some \emph{separator} token (e.g., \texttt{;}). We call blocks whose tokens are inserted by the scanner \emph{implicit} blocks.
+
+In an implicit block, items all share the same indentation; visually, they are vertically aligned. The scanner treats lines with greater indentation (that are not part of an inner block) as part of the previous item; these are called \emph{line continuations}. When the scanner comes across lines with less indentation, an implicit block is ended.
+
+For instance, a user may write:
+
+\begin{lstlisting}
+loop
+  f x
+    y
+  g x
+h x
+\end{lstlisting}
+
+The scanner transforms this input into:
+
+\begin{lstlisting}
+loop
+  { f x y
+  ; g x
+  }
+; h x
+\end{lstlisting}
+
+Implicit blocks are started after \emph{layout} keywords, which come in two flavors: \emph{layout-next-token} keywords, which start blocks at the next token, and \emph{layout-next-line} keywords, which start blocks on the following line.
+
+An example of a layout-next-line keyword is \texttt{if}:
+
+\begin{lstlisting}
+if f x
+  g x
+  g y
+\end{lstlisting}
+
+which is expanded to:
+
+\begin{lstlisting}
+if f x
+  { g x
+  ; g y
+  }
+\end{lstlisting}
+
+A special layout-next-token that behaves slightly differently than those above is \texttt{do} (whose separator is \texttt{;}). If the scanner comes across \texttt{do} token when it would have otherwise started a block on the next line, the scanner instead \emph{replaces} the \texttt{do} with a \texttt{\{}, and immediately starts an implicit block at the next token.
+
+This allows the programmer to write:
+
+\begin{lstlisting}
+if f x do g x
+\end{lstlisting}
+
+Which will be expanded to:
+
+\begin{lstlisting}
+if f x { g x }
+\end{lstlisting}
+
+In any other case, \texttt{do} behaves like a regular layout-next-token, and is used to start implicit blocks. For instance:
+
+\begin{lstlisting}
+f x do g y
+       g x
+\end{lstlisting}
+
+Is expanded to:
+
+\begin{lstlisting}
+f x do { g y
+       ; g x
+       }
+\end{lstlisting}
+
+Sslang recognizes the following layout-next-token keywords:
 
 \begin{itemize}
-
-\item Freeform: The scanner discards whitespace and does not insert
-  grouping tokens
-
-\item InBlock: The scanner is in a block; a separator is inserted in
-  front of each line that starts at the current indentation level.  A
-  line that starts to the left of the current indentation level causes
-  a close-block token to be inserted (i.e., \texttt{\}}) and the
-    current state to be popped.
-
-\item StartBlock: The scanner will start a block (insert a \texttt{\}})
-at the start of the next token and enter the InBlock state
-\item StartBlockNL: The scanner will start a block (insert a
-  \texttt{\}}) at the token that starts the next line and enter the InBlock
-    state
-
+  \item \texttt{loop} with \texttt{;} separating sequenced expressions
+  \item \texttt{=} with \texttt{;} separating sequenced expressions
+  \item \texttt{<-} with \texttt{;} separating sequenced expression
+  \item \texttt{else} with \texttt{;} separating sequenced expression
+  \item \texttt{wait} with \texttt{||} separating sensitized scheduled variables
+  \item \texttt{par} with \texttt{||} separating parallel expressions
+  \item \texttt{let} with \texttt{||} separating mutually recursive definitions
 \end{itemize}
+
+And the following layout-next-line keywords:
+
+\begin{itemize}
+  \item \texttt{if} with \texttt{;} separating sequenced expressions
+  \item \texttt{while} with \texttt{;} separating sequenced expressions
+  \item \texttt{match} with \texttt{|} separating match arms
+\end{itemize}
+
+\subsubsection{Explicit Blocks}
+
+Programmers may also choose to write braces and separators anyway, where allowed by the syntax; these blocks are called \emph{explicit} blocks. Writing explicit blocks effectively turns off the scanner's token insertion for that block (though inner implicit blocks may still be created).
+
+For instance, if the user writes:
+
+\begin{lstlisting}
+loop {
+  f x;
+  wait x
+       y
+}
+\end{lstlisting}
+
+The scanner transforms this into the following token stream:
+
+\begin{lstlisting}
+loop {
+  f x;
+  wait {  x
+       || y
+       }
+}
+\end{lstlisting}
+
+Inside of an explicit block, the scanner does not insert separators and ignores indentation (unless an inner block is started). So the following is legal:
+
+\begin{lstlisting}
+loop
+  loop {
+f x
+;
+g y
+}
+h z
+\end{lstlisting}
+
+And is expanded into the following
+
+\begin{lstlisting}
+loop {
+  loop {
+    f x ;
+    g y
+  }
+};
+h z
+\end{lstlisting}
+
+\subsubsection{Delimited Expressions}
+
+In addition to the braces \texttt{\{\}}, which delimit blocks, sslang also includes other matched delimiters: \texttt{[]} and \texttt{()}. To ensure that any program with matched delimiters remains correctly matched after token insertion, the scanner also keeps track of these delimiter pairs. In particular, if it comes across an explicit closing delimiter, it closes all implicit blocks opened since the corresponding opening delimiter, even if indentation would not have otherwise caused it to do so.
+
+For instance, the following:
+
+\begin{lstlisting}
+(loop
+   wait x)
+\end{lstlisting}
+
+Is expanded as:
+
+\begin{lstlisting}
+(loop
+  { wait {x}})
+\end{lstlisting}
+
+Rather than:
+
+\begin{lstlisting}
+(loop
+  { (wait {x)}
+  }
+\end{lstlisting}
+
+Note, however, that it makes no such consideration for separator tokens. So the following:
+
+\begin{lstlisting}
+loop
+  wait x;
+  f x
+\end{lstlisting}
+
+is expanded into:
+
+\begin{lstlisting}
+loop
+  { wait {x;}
+  ; f x
+  }
+\end{lstlisting}
+
+which the parser shall deem a syntax error.
+
+\begin{lstlisting}
+TODO: turn this into \algorithm or at least something that doesn't look like some text adventure game
+
+What kind of token?
+
+> newline
+
+  About to start new block?
+
+  > yes
+
+    What is the indentation level of the next non-whitespace token?
+
+    > equal to or less than previous block
+
+      Error: block indentation level must be greater than before.
+
+    > greater than previous block
+
+      What is the next non-whitespace token?
+
+      > '{'
+
+        Scan past that next '{', and start explicit block there.
+
+      > anything else
+
+        Insert '{' before next token to start implicit block there.
+
+  > no
+
+    What kind of context are we in?
+
+    > Implicit block
+
+      What is the indentation level?
+
+      > less than implicit block
+
+        Insert '}' to end implicit block.
+
+      > same as implicit block
+
+        Insert separator, continue implicit block.
+
+      > greater than implicit block
+
+        Continue (treated as continuation).
+
+
+    > Explicit block (started by '{')
+
+      Continue (user is responsible for managing explicit blocks).
+
+    > Delimited (started by '[' or '(')
+
+      What is the indentation level?
+
+      > equal to or less than block
+
+        Error: continuation level must be greater than before.
+
+      > greater than block
+
+        Continue (treated as continuation).
+
+> 'do'
+
+  About to start a new block on next line?
+
+  > yes
+
+    Give up on starting that new block; instead, replace with '{' and start implicit block at next token.
+
+  > no
+
+    Emit 'do', and try to start a new block with ';' on next token.
+
+> layout token (e.g., 'loop', '=', 'wait')
+
+  Emit token, and try to start a new block with appropriate separator on next token.
+
+> layoutNL token (e.g., 'if', 'while')
+
+  Emit token, and try to start a new block at the next line of the current block.
+
+> '{'
+
+  About to start new block?
+
+  > yes
+
+    Emit '{' to start explicit block at this column.
+
+  > no
+
+    Emit '{' to start explicit block at this column (probably an error, but let that be handled by parser (?)).
+
+> '[' or '('
+
+  About to start new block?
+
+  > yes
+
+    Insert '{' to start implicit block at this column, before emitting this token to start its explicit block.
+
+  > no
+
+    Emit this token to start its explicit block.
+
+> '}' ']' or ')'
+
+  Can the most recent explicit block/delimited expression (if any) be closed by this token?
+
+  > yes
+
+    Insert enough '}' tokens to close all implicit blocks, before emitting this token to close most recent explicit block.
+
+  > no
+
+    Error: mismatched right delimiter.
+
+> anything else
+
+  Emit token.
+
+\end{lstlisting}
 
 \subsection{User-defined operators}
 
@@ -107,12 +403,13 @@ a look at Agda's user-defined operators.}
 <type-app> ::= <type-app> <type-atom>
 \alt <type-atom>
 
+<type-pre> ::= "&" <type-pre>
+\alt <type-atom>
+
 <type-atom> ::= <type-id>
-\alt "(" <type> ")"
 \alt "(" ")"
 \alt "[" <type> "]"
-\alt "&" <type-atom>
-\alt "(" <type> ("," <type>)$^+$ ")"
+\alt "(" <type> ("," <type>)$^*$ ")"
 
 <type-id> ::= ["A"--"Z"]["a"--"zA"--"Z0"--"9"]$^*$
 \end{grammar}
@@ -151,18 +448,18 @@ A parentheses-enclosed comma-separated list of two or more types
 denotes a tuple, e.g., \lit*{(} \lit*{Int} \lit*{,} \lit*{Int}
 \lit*{)} is a pair of integers.
 
-\section{Routines and Top-Level Definitions}
-Top-level definitions in sslang consistent of the following components:
+\section{sslang Top-Level}
+The top-level of sslang source code consists of a series of definitions. These definitions are either function definitions or global variable definitions. They are composed from the following:
 \begin{itemize}
-    \item Identifier name (global variable or routine name)
-    \item Zero or more parameters, possibly type-annotated
+    \item Identifier name (global variable or function name)
+    \item At least one pattern defining parameters for functions. If none, then the definition is for a global variable
     \item Annotated return type
     \item Body
 \end{itemize}
-The compiler will perform type inference for untyped components and will verify that typed components are correct.
 
+Patterns can be simple identifiers, wildcards, tuples, or a mixture of both to deconstruct algebraic data types.
 \subsection{Type Signatures}
-At the core of sslang routine signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
+At the core of sslang type signatures, we have two symbols that provide type information about a language construct. Their meanings are as follows:
 \begin{itemize}
     \item \texttt{:} (Colon): ``is of type"
     \item \texttt{->} (Right Arrow): ``returns"
@@ -171,36 +468,38 @@ At the core of sslang routine signatures, we have two symbols that provide type 
 We use these symbols to separate type signatures into two broad syntactic categories:
 \begin{itemize}
     \item \texttt{foo <params> -> <ret-type>}\\
-          Using the ``\texttt{->}" syntax, the return type of the routine is denoted at the end of the signature. This is evocative of languages like Python and Rust.
+          Using the ``\texttt{->}" syntax, the return type of the function is denoted at the end of the signature. This is evocative of languages like Python and Rust.
     \item \texttt{foo <untyped-params> : <fn-type>}\\
-          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire routine at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
+          Using the ``\texttt{:}" syntax, we opt for annotating the type of the entire function at the end of the signature instead of typing the parameters individually and the return type separately. This is evocative of Haskell's type signatures. If no parameters are specified, the definition is interpreted as a global variable.
 \end{itemize}
 
-When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
+When annotating parameters, sslang uses the ``\texttt{:}" syntax to specify the type of a parameter. Note that type annotation is only possible within parenthesis due to the lower precedence of ``\texttt{:}".
+
+sslang also supports distributing type annotations over tuple members. As such, the following two type annotations are equivalent:
 \begin{itemize}
     \item \texttt{(a: Int, b: Bool)}
     \item \texttt{(a , b) : (Int, Bool)}
 \end{itemize}
 
-Note that while we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
+While we support these two styles of tuple type annotation, only one form may be used. All identifiers must be type annotated at most once. \\
 
-Top-level definitions can be summarized by the following grammar:
+Top-level definitions can be summarized by the following grammar.
 \setlength{\grammarindent}{9em}
 \begin{grammar}
-<topdef> ::= "id" <param_t>$^{+}$ ("->" <type>)$^{?}$ "= \{" <body> "\}"
-\alt "id" <param_t>$^{*}$ ":" <type> "= \{" <body> "\}"
+<def_let> ::= <pat>$^{+}$ <typ_fn> "= \{" <body> "\}"
 
-<param_t> ::= <param_atomic>
-\alt "("<param>")"
-\alt "("<param>("," <param>)$^{+}$")"
+<typ_fn> ::= "->" <type>
+\alt ":" <type>
 
-<param> ::= "("<param>")"
-\alt <param_atomic> (":" <type>)$^{?}$
-\alt "("<param>(","<param>)$^{+}$")"(":" <type>)$^{?}$
+<pat> ::= "id @" <pat>
+\alt <pat_atomic>
 
-<param_atomic> ::= "id"
-\alt "()"
+<pat_atomic> ::= "id"
 \alt "_"
+\alt "()"
+\alt "(" <pat_ann> ("," <pat_ann>)$^{*}$ ")"
+
+<pat_ann> ::= <pat> ":" <typ>$^{?}$
 \end{grammar}
 
 \section{Expressions}
@@ -252,12 +551,12 @@ stack-allocate, maybe-unused. Should be less hacky than Haskell's
 Most declarations allow attributes to be placed in square brackets before.  \url{https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/}
 
 \begin{lstlisting}{language=[Sharp]C}
-  
+ 
 [Serializable]
 public class SampleClass
 {
     // Objects of this type can be serialized.
-} 
+ 
 \end{lstlisting}
 
 \subsubsection{Discussions}

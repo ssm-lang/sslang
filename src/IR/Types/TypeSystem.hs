@@ -120,12 +120,13 @@ data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
   , arity    :: Arity
   }
+  deriving Show
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
   = VariantNamed [(FieldId, t)] -- ^ A record with named fields
   | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
-  deriving Eq
+  deriving (Show, Eq)
 
 instance Functor TypeDef where
   fmap f TypeDef { variants = vs, arity = a } =

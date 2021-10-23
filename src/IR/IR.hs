@@ -32,6 +32,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
+  deriving Show
 
 {- | Literal values supported by the language.
 
@@ -41,6 +42,7 @@ data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
+  deriving Show
 
 {- | Primitive operations.
 
@@ -70,6 +72,7 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
+  deriving Show
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
@@ -96,8 +99,8 @@ data Primitive
   {- ^ 'Assign r e' instantly assigns value 'e' to reference 'r'. -}
   | After
   {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
-  | Fork
-  {- ^ 'Fork es+' evaluates expressions 'es' concurrently. -}
+  | Par
+  {- ^ 'Par  es+' evaluates expressions 'es' concurrently. -}
   | Wait
   {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
   | Loop
@@ -108,6 +111,7 @@ data Primitive
   {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
+  deriving Show
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
@@ -157,6 +161,7 @@ data Expr t
   {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
   of type 't'.
   -}
+  deriving Show
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -172,6 +177,7 @@ data Alt
   -}
   | AltDefault
   {- ^ 'AltDefault e' matches anything, producing expression 'e'. -}
+  deriving Show
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
@@ -248,7 +254,7 @@ wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
-  wfPrim Fork                (_ : _)   = True
+  wfPrim Par                 (_ : _)   = True
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
   wfPrim Return              [_]       = True

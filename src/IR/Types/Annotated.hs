@@ -1,10 +1,4 @@
-{- |
-
-Types straight from the AST.
-
-For now, just the polymorphic typeclass types.
-
--}
+-- | Type annotations, as collected from the Ast.
 {-# LANGUAGE DerivingVia #-}
 module IR.Types.Annotated
   ( Builtin(..)
@@ -27,6 +21,7 @@ Type annotations can be added using '<>' (from `Semigroup'), while 'mempty'
 represents no type annotation.
 -}
 newtype Type = Type [TypeAnnote]
+  deriving Show
   deriving Eq         via [TypeAnnote]
   deriving Semigroup  via [TypeAnnote]
   deriving Monoid     via [TypeAnnote]
@@ -36,7 +31,7 @@ data TypeAnnote
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
-  deriving Eq
+  deriving (Show, Eq)
 
 -- | `Type' is a type system.
 instance TypeSystem Type where
