@@ -117,6 +117,15 @@ renderAst ast =
         LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
   in  renderShowS (layoutPretty renderOptions (pretty ast)) ""
 
+rarrow :: Doc ann
+rarrow = pretty "->"
+
+larrow :: Doc ann
+larrow = pretty "<-"
+
+dbar :: Doc ann
+dbar = pretty "||"
+
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
@@ -125,36 +134,33 @@ instance Pretty Definition where
     pretty fid
       <+> hsep (map (parens . pretty) formals)
       <+> pretty r
-      <+> pretty '='
-      <+> pretty "{"
-      <+> pretty body
-      <+> pretty "}"
+      <+> equals
+      <+> braces (pretty body)
 
-  pretty (DefPat b body) =
-    pretty b <+> pretty "=" <+> pretty "{" <+> pretty body <+> pretty "}"
+  pretty (DefPat b body) = pretty b <+> equals <+> braces (pretty body)
 
 instance Pretty Pat where
-  pretty PatWildcard     = pretty '_'
-  pretty (PatId  s     ) = pretty s
-  pretty (PatLit l     ) = pretty l
-  pretty (PatAs b p    ) = pretty b <> pretty '@' <> parens (pretty p)
-  pretty (PatTup bs    ) = parens $ hsep (punctuate comma $ map pretty bs)
-  pretty (PatCon dc pat) = pretty dc <+> parens (pretty pat)
-  pretty (PatAnn ty pat) = pretty pat <+> pretty ":" <+> pretty ty
+  pretty PatWildcard    = pretty '_'
+  pretty (PatId  s    ) = pretty s
+  pretty (PatLit l    ) = pretty l
+  pretty (PatAs b p   ) = pretty b <> pretty '@' <> parens (pretty p)
+  pretty (PatTup bs   ) = parens $ hsep (punctuate comma $ map pretty bs)
+  pretty (PatCon dc ps) = parens $ pretty dc <+> hsep (map pretty ps)
+  pretty (PatAnn ty p ) = parens $ pretty p <> colon <+> pretty ty
 
 instance Pretty TypFn where
-  pretty (TypReturn t) = pretty "->" <+> pretty t
-  pretty (TypProper t) = pretty ":" <+> pretty t
-  pretty TypNone       = pretty ": ()" -- TODO(hans): What is this?
+  pretty (TypReturn t) = rarrow <+> pretty t
+  pretty (TypProper t) = colon <+> pretty t
+  pretty TypNone       = emptyDoc
 
 instance Pretty Typ where
   pretty (TCon cid                   ) = pretty cid
-  pretty (TApp (TCon "[]") t2) = pretty "[" <> parens (pretty t2) <> pretty "]"
+  pretty (TApp (TCon "[]") t2        ) = brackets $ pretty t2
   pretty (TApp (TCon "&" ) t2        ) = pretty "&" <> parens (pretty t2)
   pretty (TApp t           (TCon cid)) = pretty t <+> pretty cid
   pretty (TApp t1          t2        ) = pretty t1 <+> parens (pretty t2)
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TArrow t1 t2               ) = pretty t1 <+> pretty "->" <+> pretty t2
+  pretty (TArrow t1 t2               ) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where
@@ -169,49 +175,34 @@ instance Pretty Expr where
   pretty NoExpr = error "Unexpected NoExpr"
   pretty (Let defs body) =
     pretty "let"
-      <+> pretty "{"
-      <+> hsep (map pretty defs)
-      <+> pretty "}"
-      <>  pretty ";"
+      <+> braces (hsep $ punctuate dbar $ map pretty defs)
+      <>  semi
       <+> pretty body
-  pretty (While e1 e2) =
-    pretty "while" <+> pretty e1 <+> pretty "{" <+> pretty e2 <+> pretty "}"
-  pretty (Loop e) = pretty "loop" <+> pretty "{" <+> pretty e <+> pretty "}"
-  pretty (Par es) =
-    pretty "par" <+> pretty "{" <+> hsep (map pretty es) <+> pretty "}"
+  pretty (While e1 e2) = pretty "while" <+> pretty e1 <+> braces (pretty e2)
+  pretty (Loop e     ) = pretty "loop" <+> braces (pretty e)
+  pretty (Par  es    ) = pretty "par" <+> braces (hsep $ map pretty es)
   pretty (IfElse e1 e2 NoExpr) =
-    pretty "if" <+> pretty e1 <+> pretty "{" <+> pretty e2 <+> pretty "}"
+    pretty "if" <+> pretty e1 <+> braces (pretty e2)
   pretty (IfElse e1 e2 e3) =
     pretty "if"
       <+> pretty e1
-      <+> pretty "{"
-      <+> pretty e2
-      <+> pretty "}"
+      <+> braces (pretty e2)
       <+> pretty "else"
-      <+> pretty "{"
-      <+> pretty e3
-      <+> pretty "}"
+      <+> braces (pretty e3)
   pretty (After e1 v e2) =
-    pretty "after"
-      <+> pretty e1
-      <+> pretty ","
-      <+> pretty v
-      <+> pretty "<-"
-      <+> pretty "{"
-      <+> pretty e2
-      <+> pretty "}"
-  pretty (Assign v e) =
-    pretty v <+> pretty "<-" <+> pretty "{" <+> pretty e <+> pretty "}"
-  pretty (Constraint e t) = pretty e <+> pretty ':' <+> pretty t
+    pretty "after" <+> pretty e1 <+> comma <+> pretty v <+> larrow <+> braces
+      (pretty e2)
+  pretty (Assign     v e) = pretty v <+> larrow <+> braces (pretty e)
+  pretty (Constraint e t) = pretty e <+> colon <+> pretty t
   pretty (Wait vars) =
     pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
-  pretty (Seq e1 e2) = hsep [pretty e1 <> pretty ";", pretty e2]
+  pretty (Seq e1 e2) = hsep [pretty e1 <> semi, pretty e2]
   pretty Break       = pretty "break"
-  pretty (Return e)  = pretty "return" <> pretty e
+  pretty (Return e)  = pretty "return" <+> pretty e
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i
-  pretty (LitString s) = pretty '"' <> pretty s <> pretty '"'
+  pretty (LitString s) = dquotes $ pretty s
   pretty (LitRat    r) = pretty $ show r
-  pretty (LitChar   c) = pretty '\'' <> pretty c <> pretty '\''
+  pretty (LitChar   c) = squotes $ pretty c
   pretty LitEvent      = pretty "()"
