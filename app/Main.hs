@@ -25,6 +25,7 @@ import           System.IO                      ( hPrint
                                                 , hPutStr
                                                 , hPutStrLn
                                                 , stderr
+                                                , stdout
                                                 )
 
 data Mode
@@ -110,10 +111,12 @@ main = do
     doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
   ast <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ print ast >> exitSuccess
+  when (optMode opts == DumpAST) $ putStrLn (Front.renderAst ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $ print ast' >> exitSuccess
+  when (optMode opts == DumpASTP)
+    $  putStrLn (Front.renderAst ast')
+    >> exitSuccess
 
   ()    <- doPass $ Front.checkAst ast'
 
