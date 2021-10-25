@@ -349,11 +349,6 @@ instance Pretty Alt where
   pretty (AltLit a) = pretty a
   pretty AltDefault=  pretty "default"
 
-
-{- todo: move this to Identifiers -}
-instance Pretty VarId where
-  pretty p = pretty (show p)
-
 instance (Pretty t) => Pretty (Program t) where
   pretty p =
     let defs = programDefs p in
