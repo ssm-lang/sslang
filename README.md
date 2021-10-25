@@ -2,13 +2,13 @@
 
 A language built atop the Sparse Synchronous Model.
 
-## Build and Development Setup
+## Setup
 
 ### Requirements
 
 We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
 
-### Setup Build Toolchain
+### Setup Development Toolchain
 
 You can install this compiler's build toolchain using [GHCup][ghcup], Haskell's toolchain manager, with the following command:
 
@@ -30,26 +30,25 @@ Package names differ depending on your distro and version, so make sure to read 
 
 The GHCup installation script will also install [GHC][ghc] (Haskell compiler), [Cabal][cabal] (Haskell build system), [Stack][stack] (Haskell project manager), and [HLS][hls] (Haskell language server) automatically. You shouldn't need to use GHCup except to upgrade any of these tools.
 
-[haskell]: https://www.haskell.org/
-[ghc]: https://www.haskell.org/ghc/
-[cabal]: https://www.haskell.org/cabal/
-[stack]: https://docs.haskellstack.org/en/stable/GUIDE/
-[hls]: https://github.com/haskell/haskell-language-server
-[ghcup]: https://www.haskell.org/ghcup/
-
-### Linting and Formatting
-
-This project uses [HLint][hlint] for linting and [Brittany][brittany] for formatting. To install these tools, run:
+With Stack setup, you can now use it to install [HLint][hlint] and [Brittany][brittany], which this project uses for linting and formatting. To install these tools, run:
 
 ```
 stack install hlint
 stack install brittany
 ```
 
+[haskell]: https://www.haskell.org/
+[ghc]: https://www.haskell.org/ghc/
+[cabal]: https://www.haskell.org/cabal/
+[stack]: https://docs.haskellstack.org/en/stable/GUIDE/
+[hls]: https://github.com/haskell/haskell-language-server
+[ghcup]: https://www.haskell.org/ghcup/
 [hlint]: https://hackage.haskell.org/package/hlint
 [brittany]: https://hackage.haskell.org/package/brittany
 
-Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help you lint and format your code. As long as your current working directory is within this repo, you may invoke these scripts directly,
+### Convenience Git Aliases (optional)
+
+Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly,
 or you may set up Git aliases for easier access.
 
 To setup git aliases:
@@ -58,60 +57,81 @@ To setup git aliases:
 git config --local include.path ../.gitconfig
 ```
 
-To lint:
+See `.gitconfig` in the root of this repo for the list of available aliases.
 
-```
-git lint                  # lint all files modified since HEAD
-git lint [<files..>]      # lint specified files
-git lint --since <commit> # lint all files modified since <commit>
-git lint --help           # show help menu
-```
+## Build
 
-To format:
+### Building `sslc`
 
-```
-git fmt                   # format all files modified since HEAD
-git fmt [<files..>]       # format specified files
-git fmt --since <commit>  # format all files modified since <commit>
-git fmt --help            # show help menu
-```
-
-## Building and Testing
-
-Build the compiler (sslc) with:
+Build the compiler with:
 
 ````
 stack build
 ````
 
-## Documentation
+By default, Stack does not link in the test driver, and needs to recompile everything if you later decide to run tests. To work around this behavior, you can ask Stack to link in tests without running them:
 
-Build and view code documentation with
+```
+stack build --test --no-run-tests
+```
+
+If you've set up the convenience Git aliases, then you will be able to use a convenience alias for the above command:
+
+```
+git build
+```
+
+You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to run `build` manually:
+
+```
+git watch
+```
+
+### Running `sslc`
+
+You may run `sslc` using:
+
+```
+stack exec sslc <args..>
+```
+
+If you would like `sslc` to be available on your `PATH` (i.e., installed in `~/.local/bin/`), you may run:
+
+```
+stack install
+```
+
+Then you may invoke it the executable directly:
+
+```
+sslc <args..>
+```
+
+### Building Documentation
+
+Build this repo's code documentation using [Haddock][haddock] by running:
 
 ````
+stack haddock
+````
+
+Haddock documentation is placed in `haddock-out/`. You may view this output in your browser, which can be invoked using:
+
+```
 stack haddock --open
-````
+```
 
-Haddock documentation is placed in, e.g., /mnt/sedwards/group/projects/bdl/sslang/.stack-work/install/x86_64-linux-tinfo6/b3ccde3c8441eeca22b0a903ee50d8515e74811fa5bed474a049e55591dcb5b4/8.10.7/doc/all/index.html
-
-Build the language reference manual (sslang-lrm.pdf) with
-
-````
-cd doc
-make
-````
+The langauge reference manual (`sslang-lrm.pdf`) can be found in the `doc/` folder. Build it by going there and invoking `make`.
 
 ## Testing
 
-To run all tests:
+All existing tests should be passing before merging a PR, and where appropriate, new tests should be added to demonstrate functionality and correctness of your code. Tests may be run using:
 
 ```
 stack test
 ```
 
-All tests should be passing before merging a PR.
-
-New tests can be declared by adding items to the `tests` section in [`package.yaml`](package.yaml). For instance, the scanner test is declared as:
+New test suites can be declared by adding items to the `tests` section in [`package.yaml`](package.yaml). For instance, the scanner test is declared as:
 
 ```yaml
 tests:
@@ -201,3 +221,24 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 
 [hspec]: http://hspec.github.io/
 [hspec-discover]: http://hspec.github.io/hspec-discover.html
+
+### Linting and Formatting
+
+To lint:
+
+```
+git lint                  # lint all files modified since HEAD
+git lint [<files..>]      # lint specified files
+git lint --since <commit> # lint all files modified since <commit>
+git lint --help           # show help menu
+```
+
+To format:
+
+```
+git fmt                   # format all files modified since HEAD
+git fmt [<files..>]       # format specified files
+git fmt --since <commit>  # format all files modified since <commit>
+git fmt --help            # show help menu
+```
+
