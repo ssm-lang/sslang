@@ -37,7 +37,7 @@ data TokenType
   | TMatch
   | TAfter
   | TWait
-  | TNew
+  | TFun
   | TEq
   | TLarrow
   | TRarrow
@@ -93,7 +93,7 @@ instance Pretty TokenType where
   pretty TMatch       = pretty "match"
   pretty TAfter       = pretty "after"
   pretty TWait        = pretty "wait"
-  pretty TNew         = pretty "new"
+  pretty TFun         = pretty "fun"
   pretty TEq          = pretty "="
   pretty TLarrow      = pretty "<-"
   pretty TRarrow      = pretty "->"

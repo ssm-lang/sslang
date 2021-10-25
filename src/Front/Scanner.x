@@ -97,6 +97,7 @@ tokens :-
     \<\-                { layout    TLarrow TSemicolon }
     par                 { layout    TPar    TDBar }
     wait                { layout    TWait   TDBar }
+    fun                 { layout    TFun    TSemicolon }
 
     -- | Keywords that just do as they be.
     after               { keyword TAfter }

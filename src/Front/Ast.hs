@@ -67,6 +67,7 @@ data Expr
   = Id VarId
   | Lit Literal
   | Apply Expr Expr
+  | Lambda [Pat] Expr
   | OpRegion Expr OpRegion
   | NoExpr
   | Let [Definition] Expr
