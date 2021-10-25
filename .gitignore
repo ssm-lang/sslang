@@ -4,6 +4,8 @@ stack.yaml.lock
 *~
 *.cabal
 
+haddock-out/
+
 runtests.log
 regression-tests/out
 
