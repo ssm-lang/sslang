@@ -28,12 +28,12 @@ type Arity = Int
 
 -- | Builtin type constructors that should be preserved across all type systems.
 data Builtin t
-  = Unit          -- ^ Singleton type (())
-  | Void          -- ^ Uninhabited type (!), coerces with anything
-  | Ref t         -- ^ Reference of (&)
-  | Arrow t t     -- ^ Function arrow (a -> b)
-  | Tuple [t]     -- ^ Tuple, where arity must be >= 2
-  | Integral Int  -- ^ Sized integral type
+  = Unit          -- ^ Singleton type @()@
+  | Void          -- ^ Uninhabited type @!@, coerces with anything
+  | Ref t         -- ^ Reference of @&@
+  | Arrow t t     -- ^ Function arrow @a -> b@
+  | Tuple [t]     -- ^ Tuple with two or more fields
+  | Integral Int  -- ^ Two's complement binary type with size in bits
   deriving (Eq, Show)
 
 instance Functor Builtin where
@@ -103,11 +103,13 @@ collectArrow t = case dearrow t of
 
 A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 
+@
   TypeDef { arity = 1
-          , [ ("Cons", [VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])]])
-            , ("Nil", [VariantUnnamed []])
+          , [ ("Cons", VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])])
+            , ("Nil", VariantUnnamed [])
             ]
           }
+@
 
 (Data constructors for identifiers are omitted for brevity.)
 
@@ -118,11 +120,13 @@ data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
   , arity    :: Arity
   }
+  deriving Show
 
+-- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
-  = VariantNamed [(FieldId, t)]
-  | VariantUnnamed [t]
-  deriving Eq
+  = VariantNamed [(FieldId, t)] -- ^ A record with named fields
+  | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
+  deriving (Show, Eq)
 
 instance Functor TypeDef where
   fmap f TypeDef { variants = vs, arity = a } =

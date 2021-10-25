@@ -22,19 +22,19 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           IR.Types.TypeSystem            ( TypeDef(..) )
 
-import           Prelude                 hiding ( (<>)
-                                                , GT
-                                                , LT
-                                                , id
-                                                )
 import           Prettyprinter
 
--- | Top-level compilation unit.
+{- | Top-level compilation unit.
+
+`t' is the type system in use, e.g., "IR.Types.Flat"
+
+-}
 data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
+  deriving Show
 
 {- | Literal values supported by the language.
 
@@ -44,6 +44,7 @@ data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
+  deriving Show
 
 {- | Primitive operations.
 
@@ -73,6 +74,7 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
+  deriving Show
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
@@ -99,8 +101,8 @@ data Primitive
   {- ^ 'Assign r e' instantly assigns value 'e' to reference 'r'. -}
   | After
   {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
-  | Fork
-  {- ^ 'Fork es+' evaluates expressions 'es' concurrently. -}
+  | Par
+  {- ^ 'Par  es+' evaluates expressions 'es' concurrently. -}
   | Wait
   {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
   | Loop
@@ -111,19 +113,23 @@ data Primitive
   {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
+  deriving Show
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
-'t' represents the type of this expression. At various stages, this may
-represent a richer or simpler type system. The type is embedded in each data
-constructor so as to type-annotate the entire expression tree.
+`t' represents the type of this expression, e.g., "IR.Types.Flat". At
+various stages, this may represent a richer or simpler type
+system. The type is embedded in each data constructor so as to
+type-annotate the entire expression tree.
 
 Designed for side effects with call-by-value evaluation order. Basic
 sequencing can be recovered through let-bindings:
 
+@
    let _ = stmt1 in
    let _ = stmt2 in
    ...
+@
 
 Effects of 'stmt1' take place before that of 'stmt2'.
 -}
@@ -157,6 +163,7 @@ data Expr t
   {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
   of type 't'.
   -}
+  deriving Show
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -172,6 +179,7 @@ data Alt
   -}
   | AltDefault
   {- ^ 'AltDefault e' matches anything, producing expression 'e'. -}
+  deriving Show
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
@@ -248,7 +256,7 @@ wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
-  wfPrim Fork                (_ : _)   = True
+  wfPrim Par                 (_ : _)   = True
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
   wfPrim Return              [_]       = True
@@ -269,18 +277,6 @@ wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
 
-instance (Pretty t) => Show (Expr t) where
-  show p = show $ pretty p
-
-instance Show Primitive where
-  show p = show $ pretty p
-
-instance Show Literal where
-  show p = show $ pretty p
-
-instance (Pretty t) => Show (Program t) where
-  show p = show $ pretty p
-
 instance Pretty Literal where
   pretty (LitIntegral i) = pretty "LitInt" <+>pretty (show i)
   pretty (LitBool     b) = pretty "LitBool" <+>pretty (show b)
@@ -294,7 +290,7 @@ instance Pretty Primitive where
   pretty Deref      = pretty "deref"
   pretty Assign     = pretty "<-"
   pretty After      = pretty "after"
-  pretty Fork       = pretty "fork"
+  pretty Par        = pretty "par"
   pretty Wait       = pretty "wait"
   pretty Loop       = pretty "loop"
   pretty Break      = pretty "break"

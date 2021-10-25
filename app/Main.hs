@@ -1,13 +1,14 @@
 module Main where
 
-import qualified Common.Compiler as Compiler
+import qualified Codegen
+import qualified Common.Compiler               as Compiler
 import qualified Front
 import qualified IR
-import qualified Codegen
 
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
+import           Prettyprinter                  ( pretty )
 import           System.Console.GetOpt          ( ArgDescr(NoArg, ReqArg)
                                                 , ArgOrder(RequireOrder)
                                                 , OptDescr(..)
@@ -24,6 +25,7 @@ import           System.IO                      ( hPrint
                                                 , hPutStr
                                                 , hPutStrLn
                                                 , stderr
+                                                , stdout
                                                 )
 
 data Mode
@@ -68,9 +70,10 @@ optionDescriptions =
            ["dump-ir"]
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
-  , Option "" ["generate-c"]
-        (NoArg (\ opt -> return opt { optMode = GenerateC }))
-        "Generate C (default)"
+  , Option ""
+           ["generate-c"]
+           (NoArg (\opt -> return opt { optMode = GenerateC }))
+           "Generate C (default)"
   , Option "m"
            ["module-name"]
            (ReqArg (\mn opt -> return opt { modName = mn }) "<module-name>")
@@ -79,8 +82,8 @@ optionDescriptions =
 
 doPass :: Compiler.Pass a -> IO a
 doPass p = case Compiler.runPass p of
-             Left e -> hPrint stderr e >> exitFailure
-             Right a -> return a
+  Left  e -> hPrint stderr e >> exitFailure
+  Right a -> return a
 
 readInput :: String -> IO String
 readInput "-"      = getContents
@@ -105,31 +108,33 @@ main = do
   inputs <- mapM readInput filenames
 
   when (optMode opts == DumpTokens) $ do
-    doPass (Front.tokenStream (head inputs)) >>= mapM_ print
+    doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
-  ast    <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ print ast >> exitSuccess
+  ast <- doPass $ Front.parseSource (head inputs)
+  when (optMode opts == DumpAST) $ putStrLn (Front.renderAst ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $ print ast' >> exitSuccess
+  when (optMode opts == DumpASTP)
+    $  putStrLn (Front.renderAst ast')
+    >> exitSuccess
 
-  () <- doPass $ Front.checkAst ast'
+  ()    <- doPass $ Front.checkAst ast'
 
-  irA <- doPass $ IR.lowerAst ast'
+  irA   <- doPass $ IR.lowerAst ast'
 
-  irC <- doPass $ IR.inferTypes irA
+  irC   <- doPass $ IR.inferTypes irA
 
-  irP <- doPass $ IR.instantiateClasses irC
+  irP   <- doPass $ IR.instantiateClasses irC
 
-  irY <- doPass $ IR.yieldAbstraction irP
+  irY   <- doPass $ IR.yieldAbstraction irP
 
-  irL <- doPass $ IR.lambdaLift irY
+  irL   <- doPass $ IR.lambdaLift irY
 
-  irI <- doPass $ IR.defunctionalize irL
+  irI   <- doPass $ IR.defunctionalize irL
 
-  irD <- doPass $ IR.inferDrops irI
+  irD   <- doPass $ IR.inferDrops irI
 
-  irM <- doPass $ IR.monomorphize irD
+  irM   <- doPass $ IR.monomorphize irD
 
   when (optMode opts == DumpIR) $ print irC >> exitSuccess
 
