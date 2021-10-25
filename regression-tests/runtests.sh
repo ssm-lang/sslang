@@ -107,7 +107,7 @@ Check() {
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
-    Run $SSLC "--module-name=${basename}" "--generate-h" "$1" ">" "${cheader}" &&
+    # Run $SSLC "--module-name=${basename}" "--generate-h" "$1" ">" "${cheader}" &&
     Run $SSLC "--module-name=${basename}" "--generate-c" "$1" ">" "${csource}" &&
     Run $CC -c -o "${obj}" "${csource}" &&
     if [ -f "${mainsource}" ] ; then

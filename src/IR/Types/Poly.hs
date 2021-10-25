@@ -13,10 +13,11 @@ This type system also does not support type classes or any sort of
 higher-kinded polymorphism. This is due to following restrictions:
 
 - No partially-applied type constructors; whenever a type constructor appears
-  in a type expression, it is fully applied. e.g., `Option` is not allowed.
+  in a type expression, it is fully applied. e.g., @Option@ by itself is
+  not allowed, but @Option Int@ is.
 
 - No abstraction over type constructors; the head (left-most term) of a type
-  application must be a concrete type constructor. e.g., `a b` is not
+  application must be a concrete type constructor. e.g., @'1 '2@ is not
   allowed.
 
 - No quantifiers inside of type expressions; all quantifiers must be
@@ -24,7 +25,7 @@ higher-kinded polymorphism. This is due to following restrictions:
   distinguishes HM from System F, and what makes the former decidable while
   the latter undecidable.
 -}
-module Types.Poly
+module IR.Types.Poly
   ( Type(..)
   , Builtin(..)
   ) where
@@ -32,7 +33,7 @@ module Types.Poly
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
-import           Types.TypeSystem               ( Builtin(..)
+import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
 
@@ -40,12 +41,12 @@ import           Types.TypeSystem               ( Builtin(..)
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
-  | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TCon TConId [Type]              -- ^ Type constructor, e.g., @Option '0@
+  | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
   deriving Eq
 
 -- | 'Type' is a type system.
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
-  injectBuiltin _ = Nothing
+  injectBuiltin _            = Nothing
