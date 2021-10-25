@@ -156,11 +156,11 @@ instance Pretty TypFn where
 
 instance Pretty Typ where
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TCon cid           ) = pretty cid
-  pretty (TApp (TCon "[]") t2) = brackets $ pretty t2
-  pretty (TApp (TCon "&" ) t2) = pretty "&" <> pretty t2
-  pretty (TApp t1          t2) = parens $ pretty t1 <+> pretty t2
-  pretty (TArrow t1 t2       ) = pretty t1 <+> rarrow <+> pretty t2
+  pretty (TCon   cid           ) = pretty cid
+  pretty (TApp   (TCon "[]") t2) = brackets $ pretty t2
+  pretty (TApp   (TCon "&" ) t2) = pretty "&" <> pretty t2
+  pretty (TApp   t1          t2) = parens $ pretty t1 <+> pretty t2
+  pretty (TArrow t1          t2) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where
@@ -199,6 +199,9 @@ instance Pretty Expr where
   pretty (Par  es) = parens $ pretty "par" <+> braces (hsep $ map pretty es)
   pretty (Wait vars) =
     parens $ pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
+  pretty (Lambda ps b) =
+    parens $ pretty "fun" <+> hsep (map (parens . pretty) ps) <+> braces
+      (pretty b)
   pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
   pretty (Id  ident  ) = pretty ident
   pretty (Lit l      ) = pretty l
