@@ -10,8 +10,5 @@
 # but the `--no-run-tests` flag to ensure that test aren't run. Running this
 # instead of `stack build` will allow `stack test` to reuse this command's build
 # artifacts, thus speeding up development cycles.
-#
-# Passing `--haddock` allows it to warn about missing symbols/broken
-# documentation, which is useful for ensuring that documentation integrity.
 
-stack build --test --no-run-tests --haddock "$@"
+stack build --test --no-run-tests "$@"

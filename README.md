@@ -111,9 +111,9 @@ sslc <args..>
 
 Build this repo's code documentation using [Haddock][haddock] by running:
 
-````
+```
 stack haddock
-````
+```
 
 Haddock documentation is placed in `haddock-out/`. You may view this output in your browser, which can be invoked using:
 

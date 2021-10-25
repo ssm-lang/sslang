@@ -3,5 +3,7 @@
     hello = "!$(git rev-parse --show-toplevel)/scripts/hello"
     fmt = "!$(git rev-parse --show-toplevel)/scripts/fmt"
     lint = "!$(git rev-parse --show-toplevel)/scripts/lint"
+
     build = "!$(git rev-parse --show-toplevel)/scripts/build"
-    watch = "!$(git rev-parse --show-toplevel)/scripts/build --file-watch"
+    doc = "!$(git rev-parse --show-toplevel)/scripts/build --haddock"
+    watch = "!$(git rev-parse --show-toplevel)/scripts/build --file-watch --haddock"
