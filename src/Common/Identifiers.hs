@@ -100,6 +100,7 @@ newtype DConId = DConId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 -- | ToIdentifier for low-level identifiers, e.g., @ssm_activate@
 newtype FfiId = FfiId Identifier
