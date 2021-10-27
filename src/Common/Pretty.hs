@@ -12,7 +12,7 @@ module Common.Pretty
   ) where
 
 import           Prettyprinter
-import           Prettyprinter.Internal
+import           Prettyprinter.Render.String
 
 -- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
 typeAnn :: Pretty t => t -> Doc ann -> Doc ann
@@ -44,5 +44,5 @@ block separator = braces . sep . punctuate separator
 
 -- | Format with a document of infinite width, preventing wraparound.
 spaghetti :: Pretty t => t -> String
-spaghetti p = renderShowS (layoutPretty opts (pretty p)) ""
-  where opts = LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
+spaghetti = renderString . layoutPretty opts . pretty
+  where opts = LayoutOptions { layoutPageWidth = Unbounded }
