@@ -47,7 +47,10 @@ spec = do
     input `shouldBe` output
 
   it "prints a function with no type signature" $ do
-    let input =
-          parseProgram $ unlines ["main clk oth =", "  wait clk", "  oth <- 5"]
+    let input = parseProgram $ unlines
+          [ "main clk oth ="
+          , "  wait clk"
+          , "  oth <- 5"
+          ]
         output = input >>= renderAndParse
     input `shouldBe` output
