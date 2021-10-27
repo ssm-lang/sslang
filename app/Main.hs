@@ -5,10 +5,10 @@ import qualified Common.Compiler               as Compiler
 import qualified Front
 import qualified IR
 
+import           Common.Pretty
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
-import           Prettyprinter                  ( pretty )
 import           System.Console.GetOpt          ( ArgDescr(NoArg, ReqArg)
                                                 , ArgOrder(RequireOrder)
                                                 , OptDescr(..)
@@ -25,7 +25,6 @@ import           System.IO                      ( hPrint
                                                 , hPutStr
                                                 , hPutStrLn
                                                 , stderr
-                                                , stdout
                                                 )
 
 data Mode
@@ -111,18 +110,16 @@ main = do
     doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
   ast <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ putStrLn (Front.renderAst ast) >> exitSuccess
+  when (optMode opts == DumpAST) $ putStrLn (spaghetti ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP)
-    $  putStrLn (Front.renderAst ast')
-    >> exitSuccess
+  when (optMode opts == DumpASTP) $  putStrLn (spaghetti ast') >> exitSuccess
 
-  ()    <- doPass $ Front.checkAst ast'
+  ()  <- doPass $ Front.checkAst ast'
 
-  irA   <- doPass $ IR.lowerAst ast'
+  irA <- doPass $ IR.lowerAst ast'
 
-  when (optMode opts == DumpIR) $ print (pretty irA) >> exitSuccess
+  when (optMode opts == DumpIR) $ putStrLn (spaghetti irA) >> exitSuccess
 
   irC   <- doPass $ IR.inferTypes irA
 
