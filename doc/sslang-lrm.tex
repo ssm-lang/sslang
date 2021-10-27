@@ -503,7 +503,135 @@ Top-level definitions can be summarized by the following grammar.
 \end{grammar}
 
 \section{Expressions}
+\subsection{Variables and Literals}
+There are no special rules for referencing variables or literal expressions.
 
+The following expression computes the sum of the variable \texttt{x} (defined elsewhere) and 5:
+\begin{lstlisting}
+x + 5
+\end{lstlisting}
+
+Variables in sslang are simply identifiers composed of alphanumeric characters, underscores, and ticks: \texttt{[a-zA-Z] [a-zA-Z0-9_']*}
+
+There are several literal values for sslang built-in types:
+
+\begin{grammar}
+<literal> ::= ["True"|"False"] \texttt{// Bool}
+\alt ["0"-"9"]$^{+}$ \texttt{// Int}
+\alt ["0"-"9"]$^{+}$"."["0"-"9"]$^{*}$ \texttt{// Rational}
+\alt "()" \texttt{// Event}
+\alt "'"["a"-"zA"-"Z"]"'" \texttt{// Char}
+\alt "\""["a"-"zA"-"Z"]$^{+}$"\"" \texttt{// String}
+\end{grammar}
+\subsection{Application}
+\begin{grammar}
+<app> ::= <expr_atom>$^{+}$
+
+<expr_atom> ::= <literal>
+\alt "(" <expr> ")"
+\end{grammar}
+
+Application in sslang is specified by juxtaposition of at least two expressions. In the following example, the expressions \texttt{x + 5} and \texttt{y} are applied to \texttt{f}, where \texttt{f} could be a data type constructor or a function:
+\begin{lstlisting}
+f (x + 5) y
+\end{lstlisting}
+
+Application via juxtaposition can be performed on adjacent literal expressions and parenthesized complex expressions, as shown in the grammar above.
+\subsection{Operation Regions}
+\fixme{todo}
+\subsection{Let Bindings}
+\begin{grammar}
+<let> ::= "let {" <def_let>$^{+}$ "}"; <expr>
+\end{grammar}
+
+In let blocks, patterns are bound to mutually-recursive expressions. Patterns have a wide range of use cases, from binding simple identifiers to deconstructing algebraic data types. In the let-block below, we demonstrate the use of patterns while binding three expressions:
+\begin{lstlisting}
+let x = 5                  // Simple binding
+    (y, _) = foo           // Tuple structured binding
+    f a b = let c = a + b  // Syntactic sugar for lambda definition
+            c * 2
+...
+\end{lstlisting}
+Note the careful use of indentation in the let block. In the absence of explicit braces, the pattern section creates an indentation block (hence \texttt{x}, \texttt{(y, _)}, and \texttt{f a b} appearing at the same level) and the expression value section creates an indentation block (hence the expressions \texttt{let c = ...} and \texttt{c * 2} appearing at the same level).
+\subsection{Instant and Delayed Reference Assignment}
+\begin{grammar}
+<assign> ::= <expr> "<- {" <expr> "}"
+\alt "after" <expr> "," <expr> "<- {" <expr> "}"
+\end{grammar}
+References in sslang may be assigned to instantly or after some time period. In the following function definition, we showcase both forms of assignment.
+\begin{lstlisting}
+now_and_later (x: &Int) (y: &Bool)
+    x <- let a = 2
+         a + 5
+    after 5 ms , y <- True
+\end{lstlisting}
+Note that similarly to let bindings, the \texttt{<-} assignment operator creates an indentation block, as seen in the instant assignment to \texttt{x}.
+\subsection{If-Else}
+\begin{grammar}
+<if-else> ::= "if" <expr> "{" <expr> "}" ("else" "{" <expr> "}")$^{?}$
+\end{grammar}
+If-else expressions conditionally evaluate blocks. If the predicate expression evaluates to \texttt{True}, the \texttt{if} block is evaluated. If there is an \texttt{else} block provided and the predicate evaluated to \texttt{False}, then the \texttt{else} block is evaluated.
+
+Note that If-else creates indentation blocks. This is shown in the following example:
+\begin{lstlisting}
+if x > 5
+    x <- x * 2
+    f x
+else
+    x <- 0
+\end{lstlisting}
+\subsection{Loops}
+\begin{grammar}
+<loop> ::= "loop {" <expr> "}"
+\alt "while" <expr> "{" <expr> "}"
+\end{grammar}
+sslang loops come in two flavors: unconditional and conditional loops. The former is simply a sequence of expressions that are evaluated until a \texttt{break} expression is encountered The latter is simply while loop that evaluates the sequence of expressions in its body until its condition evaluates to false. The following two code snippets demonstrate how to count to five using these two loop constructs:
+\begin{lstlisting}
+x <- 0
+loop
+  if x == 5
+    break
+  else 
+    x <- x + 1
+    
+y <- 0
+while y != 5
+  y <- y + 1
+ 
+\end{lstlisting}
+\subsection{Lambdas}
+\fixme{todo}
+\subsection{Pattern Matching}
+\fixme{todo}
+\subsection{Forking Routines}
+\begin{grammar}
+<fork> ::= "par {" <expr> ("||" <expr>)$^{*}$ "}"
+\end{grammar}
+Fork expressions take a sequence of routine calls and pauses the current routine's execution until all of the forked routines return. For example:
+\begin{lstlisting}
+foo (a: Ref Int)  (b: Ref Int)
+    par (bar a) || (baz b)
+\end{lstlisting}
+As per SSM Runtime semantics, \texttt{bar} is guaranteed to be executed first because the listed routine calls are evaluated in order.
+\subsection{Waiting}
+\begin{grammar}
+<wait> ::= "wait {" <expr> ("||" <expr>)$^{*}$ "}"
+\end{grammar}
+Wait expressions take a sequence of expressions and pauses the routine's execution until any of the expressions is written to. Take for example the routine \texttt{wait_one_of_two}:
+\begin{lstlisting}
+wait_one_of_two (a: Sched Int)  (b: Sched Int)
+    wait a || b
+\end{lstlisting}
+This routine will block until either \texttt{a} or \texttt{b} are written to, where \texttt{a} and  \texttt{b} are scheduled variables.
+
+\subsection{Sequences}
+\begin{grammar}
+<sequence> ::= <expr> ";" <expr>
+\end{grammar}
+Sequences chain expressions in block-expressions. The value of a sequence is the second expression in the sequence.
+\begin{lstlisting}
+let x = 1 + 1; 5 // The value of x is 5
+\end{lstlisting}
 
 \newpage
 
