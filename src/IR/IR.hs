@@ -231,6 +231,17 @@ instance Comonad Expr where
     Match (extend f s) b (fmap (second $ extend f) as) (f e)
   extend f e@(Prim p es _) = Prim p (fmap (extend f) es) (f e)
 
+instance Foldable Expr where
+  foldMap f (Var  _ t     ) = f t
+  foldMap f (Data _ t     ) = f t
+  foldMap f (Lit  _ t     ) = f t
+  foldMap f (App    l  r t) = foldMap f l <> foldMap f r <> f t
+  foldMap f (Let    xs b t) = mconcat (map (foldMap f . snd) xs) <> foldMap f b <> f t
+  foldMap f (Lambda _  b t) = foldMap f b <> f t
+  foldMap f (Match s _ as t) =
+    foldMap f s <> mconcat (map (foldMap f . snd) as) <> f t
+  foldMap f (Prim _ es t) = mconcat (map (foldMap f) es) <> f t
+
 {- | Predicate of whether an expression "looks about right".
 
 Description left deliberately vague so that we have the flexibility to

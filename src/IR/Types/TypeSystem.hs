@@ -23,6 +23,8 @@ import           Common.Identifiers             ( DConId
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(second) )
 
+import           Common.Pretty
+
 -- | The number of arguments a type constructor will take.
 type Arity = Int
 
@@ -37,12 +39,20 @@ data Builtin t
   deriving (Eq, Show)
 
 instance Functor Builtin where
-  fmap _ Unit        = Unit
-  fmap _ Void        = Void
-  fmap f (Ref t    ) = Ref $ f t
-  fmap f (Arrow l r) = Arrow (f l) (f r)
-  fmap f (Tuple tys) = Tuple $ fmap f tys
-  fmap _ (Integral s) = Integral s
+  fmap _ Unit           = Unit
+  fmap _ Void           = Void
+  fmap f (Ref t       ) = Ref $ f t
+  fmap f (Arrow l r   ) = Arrow (f l) (f r)
+  fmap f (Tuple    tys) = Tuple $ fmap f tys
+  fmap _ (Integral s  ) = Integral s
+
+instance Pretty t => Pretty (Builtin t) where
+  pretty Unit           = pretty "()"
+  pretty Void           = pretty "!"
+  pretty (Ref t       ) = parens $ pretty "&" <> pretty t
+  pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
+  pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
+  pretty (Integral s  ) = pretty $ "Int" ++ show s
 
 {- | A type system must allow us to construct and access underlying builtins.
 
@@ -85,9 +95,9 @@ dearrow t = case injectBuiltin t of
 
 -- | Helper to construct tuples from list of types, accounting for size < 2.
 tuple :: TypeSystem t => [t] -> t
-tuple [] = unit -- Empty tuples are just voids
+tuple []  = unit -- Empty tuples are just voids
 tuple [t] = t   -- Singleton tuples are just tuples.
-tuple ts = projectBuiltin $ Tuple ts
+tuple ts  = projectBuiltin $ Tuple ts
 
 -- | Helper to construct integral type.
 int :: TypeSystem t => Int -> t

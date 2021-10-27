@@ -91,6 +91,9 @@ newtype TVarIdx = TVarIdx Int
 instance Show TVarIdx where
   show (TVarIdx i) = "'" ++ show i
 
+instance Pretty TVarIdx where
+  pretty = pretty . show
+
 -- | ToIdentifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq

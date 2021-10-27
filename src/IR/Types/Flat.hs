@@ -22,10 +22,10 @@ module IR.Types.Flat
   ) where
 
 import           Common.Identifiers             ( TConId )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
-import           Prettyprinter
 
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
@@ -39,10 +39,11 @@ instance TypeSystem Type where
   injectBuiltin _            = Nothing
 
 instance Pretty Type where
-  pretty (TBuiltin a) = pretty "(todo: pretty print builtin type)"
-  pretty (TCon  a) = pretty "(todo: pretty print tcon type)"
+  pretty (TBuiltin a) = pretty a
+  pretty (TCon     a) = pretty a
 
 -- | Flatten a list of type constructors into a
 flattenApp :: TConId -> [Type] -> TConId
 flattenApp t [] = t
-flattenApp t ts = error $ "flat cat: " ++ show t ++ " and " ++ concatMap show ts
+flattenApp t ts =
+  error $ "flat cat: " ++ show t ++ " and " ++ concatMap show ts

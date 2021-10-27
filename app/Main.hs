@@ -122,6 +122,8 @@ main = do
 
   irA   <- doPass $ IR.lowerAst ast'
 
+  when (optMode opts == DumpIR) $ print (pretty irA) >> exitSuccess
+
   irC   <- doPass $ IR.inferTypes irA
 
   irP   <- doPass $ IR.instantiateClasses irC
@@ -135,8 +137,6 @@ main = do
   irD   <- doPass $ IR.inferDrops irI
 
   irM   <- doPass $ IR.monomorphize irD
-
-  when (optMode opts == DumpIR) $ print irC >> exitSuccess
 
   cDefs <- doPass $ Codegen.genIR irM
 
