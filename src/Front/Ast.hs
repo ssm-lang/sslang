@@ -1,8 +1,7 @@
 module Front.Ast where
 
+import           Common.Pretty
 import           Data.List                      ( intersperse )
-import           Prettyprinter
-import           Prettyprinter.Internal
 
 -- | A type variable name (e.g., a, b)
 type TVarId = String
@@ -111,21 +110,6 @@ collectApp :: Expr -> (Expr, [Expr])
 collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])
 
-renderAst :: Program -> String
-renderAst ast =
-  let renderOptions =
-        LayoutOptions { layoutPageWidth = AvailablePerLine 200 1.0 }
-  in  renderShowS (layoutPretty renderOptions (pretty ast)) ""
-
-rarrow :: Doc ann
-rarrow = pretty "->"
-
-larrow :: Doc ann
-larrow = pretty "<-"
-
-dbar :: Doc ann
-dbar = pretty "||"
-
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
@@ -155,11 +139,11 @@ instance Pretty TypFn where
 
 instance Pretty Typ where
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TCon cid           ) = pretty cid
-  pretty (TApp (TCon "[]") t2) = brackets $ pretty t2
-  pretty (TApp (TCon "&" ) t2) = pretty "&" <> pretty t2
-  pretty (TApp t1          t2) = parens $ pretty t1 <+> pretty t2
-  pretty (TArrow t1 t2       ) = pretty t1 <+> rarrow <+> pretty t2
+  pretty (TCon   cid           ) = pretty cid
+  pretty (TApp   (TCon "[]") t2) = brackets $ pretty t2
+  pretty (TApp   (TCon "&" ) t2) = pretty "&" <> pretty t2
+  pretty (TApp   t1          t2) = parens $ pretty t1 <+> pretty t2
+  pretty (TArrow t1          t2) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where

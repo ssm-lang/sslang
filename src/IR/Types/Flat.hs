@@ -22,6 +22,7 @@ module IR.Types.Flat
   ) where
 
 import           Common.Identifiers             ( TConId )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -37,7 +38,12 @@ instance TypeSystem Type where
   injectBuiltin (TBuiltin t) = Just t
   injectBuiltin _            = Nothing
 
+instance Pretty Type where
+  pretty (TBuiltin a) = pretty a
+  pretty (TCon     a) = pretty a
+
 -- | Flatten a list of type constructors into a
 flattenApp :: TConId -> [Type] -> TConId
 flattenApp t [] = t
-flattenApp t ts = error $ "flat cat: " ++ show t ++ " and " ++ concatMap show ts
+flattenApp t ts =
+  error $ "flat cat: " ++ show t ++ " and " ++ concatMap show ts

@@ -24,6 +24,8 @@ import           Data.String                    ( IsString(..) )
 import           Language.C                     ( Id(..) )
 import           Language.C.Quote               ( ToIdent(..) )
 
+import           Prettyprinter                  ( Pretty(..) )
+
 -- | A basic identifier: just a string
 newtype Identifier = Identifier String deriving Eq
 
@@ -49,6 +51,9 @@ instance Semigroup Identifier where
 instance Monoid Identifier where
   mempty = Identifier ""
 
+instance Pretty Identifier where
+  pretty = pretty . ident
+
 -- | Convert between two types of identifiers
 fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
@@ -61,6 +66,7 @@ newtype TConId = TConId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 instance Show TConId where
   show (TConId i) = "Ty" ++ show i
@@ -73,6 +79,7 @@ newtype TVarId = TVarId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 instance Show TVarId where
   show (TVarId i) = "tyvar" ++ show i
@@ -84,6 +91,9 @@ newtype TVarIdx = TVarIdx Int
 instance Show TVarIdx where
   show (TVarIdx i) = "'" ++ show i
 
+instance Pretty TVarIdx where
+  pretty = pretty . show
+
 -- | ToIdentifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq
@@ -93,6 +103,7 @@ newtype DConId = DConId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 -- | ToIdentifier for low-level identifiers, e.g., @ssm_activate@
 newtype FfiId = FfiId Identifier
@@ -103,6 +114,7 @@ newtype FfiId = FfiId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 -- | ToIdentifier for user-defined variable, e.g., @x@
 newtype VarId = VarId Identifier
@@ -113,6 +125,7 @@ newtype VarId = VarId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 -- | ToIdentifier for struct field names, e.g., @len@
 newtype FieldId = FieldId Identifier
@@ -123,6 +136,7 @@ newtype FieldId = FieldId Identifier
   deriving Identifiable via Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
+  deriving Pretty via Identifier
 
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@
 type Binder = Maybe VarId
