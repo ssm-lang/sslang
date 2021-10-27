@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   ssm_tick();
   while (ssm_next_event_time() != SSM_NEVER && ssm_now() < stop_at) {
     ssm_tick();
-    printf("%12lu led: %d\n", ssm_now() * SSM_MILLISECOND, led.value);
+    printf("%12lu led: %d\n", ssm_now() * SSM_MILLISECOND, (led.value>>1)); //unmarshal the led value
   }
   return 0;
 }
