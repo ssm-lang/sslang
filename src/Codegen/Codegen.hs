@@ -658,11 +658,11 @@ unmarshal e = [cexp|($exp:e >> 1 )|]
 
 -- | Generate Optimized C expression for add operation on marshalled values
 marshalAdd :: C.Exp -> C.Exp -> C.Exp
-marshalAdd lhs rhs = [cexp|(($exp:rhs & 0xFE) + $exp:lhs)|]
+marshalAdd lhs rhs = [cexp|(($exp:rhs & 0xFFFFFFFE) + $exp:lhs)|]
 
 -- | Generate Optimized C expression for subtract operation on marshalled values
 marshalSub :: C.Exp -> C.Exp -> C.Exp
-marshalSub lhs rhs = [cexp|($exp:lhs - ($exp:rhs & 0xFE))|]
+marshalSub lhs rhs = [cexp|($exp:lhs - ($exp:rhs & 0xFFFFFFFE))|]
 
 -- | Generate Optimized C expression for bit not on marshalled values
 marshalBitNot :: C.Exp -> C.Exp
