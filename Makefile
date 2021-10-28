@@ -27,7 +27,7 @@ RED = \e[31m
 GREEN = \e[32m
 RESET_COLOR = \e[0m
 
-ARFLAGS = -crU
+ARFLAGS = -cr
 
 all : test-examples test_main
 
