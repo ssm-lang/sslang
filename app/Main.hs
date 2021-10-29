@@ -1,10 +1,11 @@
 module Main where
 
-import qualified Common.Compiler as Compiler
+import qualified Codegen
+import qualified Common.Compiler               as Compiler
 import qualified Front
 import qualified IR
-import qualified Codegen
 
+import           Common.Pretty
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
@@ -68,9 +69,10 @@ optionDescriptions =
            ["dump-ir"]
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
-  , Option "" ["generate-c"]
-        (NoArg (\ opt -> return opt { optMode = GenerateC }))
-        "Generate C (default)"
+  , Option ""
+           ["generate-c"]
+           (NoArg (\opt -> return opt { optMode = GenerateC }))
+           "Generate C (default)"
   , Option "m"
            ["module-name"]
            (ReqArg (\mn opt -> return opt { modName = mn }) "<module-name>")
@@ -79,8 +81,8 @@ optionDescriptions =
 
 doPass :: Compiler.Pass a -> IO a
 doPass p = case Compiler.runPass p of
-             Left e -> hPrint stderr e >> exitFailure
-             Right a -> return a
+  Left  e -> hPrint stderr e >> exitFailure
+  Right a -> return a
 
 readInput :: String -> IO String
 readInput "-"      = getContents
@@ -105,31 +107,33 @@ main = do
   inputs <- mapM readInput filenames
 
   when (optMode opts == DumpTokens) $ do
-    doPass (Front.tokenStream (head inputs)) >>= mapM_ print
+    doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
     exitSuccess
-  ast    <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ print ast >> exitSuccess
+  ast <- doPass $ Front.parseSource (head inputs)
+  when (optMode opts == DumpAST) $ putStrLn (spaghetti ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $ print ast' >> exitSuccess
+  when (optMode opts == DumpASTP) $  putStrLn (spaghetti ast') >> exitSuccess
 
-  () <- doPass $ Front.checkAst ast'
+  ()  <- doPass $ Front.checkAst ast'
 
   irA <- doPass $ IR.lowerAst ast'
 
-  irC <- doPass $ IR.inferTypes irA
+  when (optMode opts == DumpIR) $ putStrLn (spaghetti irA) >> exitSuccess
 
-  irP <- doPass $ IR.instantiateClasses irC
+  irC   <- doPass $ IR.inferTypes irA
 
-  irY <- doPass $ IR.yieldAbstraction irP
+  irP   <- doPass $ IR.instantiateClasses irC
 
-  irL <- doPass $ IR.lambdaLift irY
+  irY   <- doPass $ IR.yieldAbstraction irP
 
-  irI <- doPass $ IR.defunctionalize irL
+  irL   <- doPass $ IR.lambdaLift irY
 
-  irD <- doPass $ IR.inferDrops irI
+  irI   <- doPass $ IR.defunctionalize irL
 
-  irM <- doPass $ IR.monomorphize irD
+  irD   <- doPass $ IR.inferDrops irI
+
+  irM   <- doPass $ IR.monomorphize irD
 
   cDefs <- doPass $ Codegen.genIR irM
 

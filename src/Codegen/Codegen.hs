@@ -214,8 +214,11 @@ genProgram I.Program { I.programDefs = defs } = do -- p@I.Program
 includes :: [C.Definition]
 includes = [cunit|
 $esc:("#include \"ssm.h\"")
-#define ssm_later_unit(l, d, r) ssm_later_event(l, d)
-#define ssm_assign_unit(l, p, r) ssm_assign_event(l, p)
+$esc:("#define ssm_initialize_unit(v) ssm_initialize_event(v)")
+$esc:("#define ssm_later_unit(l, d, r) ssm_later_event(l, d)")
+$esc:("#define ssm_assign_unit(l, p, r) ssm_assign_event(l, p)")
+typedef typename ssm_event_t ssm_unit_t;
+typedef char unit;
 |]
 
 -- | Setup the entry point of the program.
@@ -258,6 +261,7 @@ genStruct :: GenFn C.Definition
 genStruct = do
   name   <- gets fnName
   params <- gets fnParams
+  retTy  <- gets fnRetTy
   locs   <- gets fnLocs
   trigs  <- gets fnMaxWaits
 
@@ -266,6 +270,7 @@ genStruct = do
       $ty:act_t $id:act_member;
 
       $sdecls:(map structField $ genParams params)
+      $ty:(genType retTy) *$id:ret_val;
       $sdecls:(map structField $ genLocals locs)
       $sdecls:(map structField $ genTrigs trigs)
 
@@ -284,6 +289,7 @@ genEnter :: GenFn (C.Definition, C.Definition)
 genEnter = do
   actname <- gets fnName
   params  <- gets fnParams
+  retTy   <- gets fnRetTy
   trigs   <- gets fnMaxWaits
   let act  = [cty|typename $id:act'|]
       act' = act_ actname -- hack to use this typename as expr in macros
@@ -298,6 +304,7 @@ genEnter = do
           , [cparam|$ty:depth_t $id:depth|]
           ]
           ++ map declParam (genParams params)
+          ++ [[cparam|$ty:(genType retTy) *$id:ret_val|]]
   return
     ( [cedecl|$ty:act_t *$id:(enter_ actname)($params:enterParams);|]
     , [cedecl|
@@ -312,6 +319,9 @@ genEnter = do
 
           /* Assign parameters */
           $stms:(concatMap initParam $ genParams params)
+
+          /* Set return value */
+          $id:acts->$id:ret_val = $id:ret_val;
 
           /* Initialize triggers */
           $stms:(map initTrig $ genTrigs trigs)
@@ -446,7 +456,10 @@ genExpr a@(I.App _ _ ty) = do
   yield                         <- genYield
   let tmp = [cexp|$id:acts->$id:tmpName|]
       enterArgs =
-        [[cexp|$id:actg|], [cexp|$id:actg->$id:priority|]]
+        [ [cexp|$id:actg|]
+          , [cexp|$id:actg->$id:priority|]
+          , [cexp|$id:actg->$id:depth|]
+          ]
           ++ argVals
           ++ [[cexp|&$exp:tmp|]]
       call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
@@ -457,16 +470,19 @@ genExpr (I.Prim p es t) = genPrim p es t
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
-genPrim I.New [e, _] refType = do
+genPrim I.New [e] refType = do -- TODO: New with perceus should take two args
   (val, stms)     <- genExpr e
   tmp             <- nextTmp refType
   Just initialize <- return $ genInit refType
   -- TODO: reference counting
-  let alloc = [citems|
+  let alloc =
+        [citems|
           $id:acts->$id:tmp = $id:mem_alloc(sizeof(*$id:acts->$id:tmp));
           $exp:initialize($id:acts->$id:tmp);
-          *$id:acts->$id:tmp.$id:value = $exp:val;
         |]
+          ++ if refType == I.ref I.unit
+               then []
+               else [citems|*$id:acts->$id:tmp.$id:value = $exp:val;|]
   return ([cexp|$id:acts->$id:tmp|], stms ++ alloc)
 genPrim I.Dup [e] _ = do
   -- TODO: reference counting
@@ -513,11 +529,11 @@ genPrim I.After [time, lhs, rhs] _ = do
           $exp:later($exp:lhsVal, $id:now() + $exp:timeUnmarshalled, $exp:rhsVal);
         |]
   return (unit, laterBlock)
-genPrim I.Fork procs _ = do
+genPrim I.Par procs _ = do
   yield <- genYield
   let
     numChildren = length procs
-    forkArgs    = genForkArgs
+    parArgs     = genParArgs
       numChildren
       ([cexp|$id:actg->$id:priority|], [cexp|$id:actg->$id:depth|])
     checkNewDepth = [citems|
@@ -545,7 +561,7 @@ genPrim I.Fork procs _ = do
     -- application (i.e., no thunks), whose left operand is a var.
     genActivate _ = nope
 
-  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip forkArgs procs)
+  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip parArgs procs)
   return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
@@ -564,7 +580,7 @@ genPrim I.Return [e] _ = do
   (val, stms) <- genExpr e
   -- Assign to return argument and jump to leave
   let retBlock = [citems|
-                    $id:acts->$id:ret_val = $exp:val;
+                    *$id:acts->$id:ret_val = $exp:val;
                     goto $id:leave_cleanup;
                  |]
   return (undef, stms ++ retBlock)
@@ -636,6 +652,7 @@ genBinop lhs rhs = do
   (rhsVal, rhsStms) <- genExpr rhs
   return (lhsVal, rhsVal, lhsStms ++ rhsStms)
 
+
 -- | Unmarshal the arguments of a binary operation returned by genBinop
 unmarshalBinOpArgs :: GenFn (C.Exp, C.Exp, [C.BlockItem]) -> GenFn (C.Exp, C.Exp, [C.BlockItem])
 unmarshalBinOpArgs binOp = do
@@ -671,13 +688,18 @@ marshalBitNot val = [cexp|((~$exp:val) | 0x1)|]
 -- | Compute priority and depth arguments for a fork of width 'numChildren'.
 genForkArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
 genForkArgs numChildren (currentPrio, currentDepth) =
+
+-- | Compute priority and depth arguments for a par fork of width 'numChildren'.
+genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
+genParArgs numChildren (currentPrio, currentDepth) =
+
   [ let p = [cexp|$exp:currentPrio + ($int:(i-1) * (1 << $exp:d))|]
         d = [cexp|$exp:currentDepth - $exp:(depthSub numChildren)|]
     in  (p, d)
   | i <- [1 .. numChildren]
   ]
 
--- | How much the depth should be decreased when forking 'numChildren'.
+-- | How much the depth should be decreased when par forking 'numChildren'.
 depthSub :: Int -> C.Exp
 depthSub numChildren = [cexp|$int:ds|]
   where ds = ceiling $ logBase (2 :: Double) $ fromIntegral numChildren :: Int

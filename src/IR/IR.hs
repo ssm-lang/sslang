@@ -22,6 +22,8 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           IR.Types.TypeSystem            ( TypeDef(..) )
 
+import           Common.Pretty
+
 {- | Top-level compilation unit.
 
 `t' is the type system in use, e.g., "IR.Types.Flat"
@@ -32,15 +34,17 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
+  deriving Show
 
 {- | Literal values supported by the language.
 
-Note that these don't carry any connotation of type: '1' just means '1', 
+Note that these don't carry any connotation of type: '1' just means '1',
 -}
 data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
+  deriving Show
 
 {- | Primitive operations.
 
@@ -70,6 +74,7 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
+  deriving Show
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
@@ -96,8 +101,8 @@ data Primitive
   {- ^ 'Assign r e' instantly assigns value 'e' to reference 'r'. -}
   | After
   {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
-  | Fork
-  {- ^ 'Fork es+' evaluates expressions 'es' concurrently. -}
+  | Par
+  {- ^ 'Par  es+' evaluates expressions 'es' concurrently. -}
   | Wait
   {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
   | Loop
@@ -108,6 +113,7 @@ data Primitive
   {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
+  deriving Show
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
@@ -157,6 +163,7 @@ data Expr t
   {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
   of type 't'.
   -}
+  deriving Show
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -172,6 +179,7 @@ data Alt
   -}
   | AltDefault
   {- ^ 'AltDefault e' matches anything, producing expression 'e'. -}
+  deriving Show
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
@@ -223,6 +231,17 @@ instance Comonad Expr where
     Match (extend f s) b (fmap (second $ extend f) as) (f e)
   extend f e@(Prim p es _) = Prim p (fmap (extend f) es) (f e)
 
+instance Foldable Expr where
+  foldMap f (Var  _ t     ) = f t
+  foldMap f (Data _ t     ) = f t
+  foldMap f (Lit  _ t     ) = f t
+  foldMap f (App    l  r t) = foldMap f l <> foldMap f r <> f t
+  foldMap f (Let    xs b t) = mconcat (map (foldMap f . snd) xs) <> foldMap f b <> f t
+  foldMap f (Lambda _  b t) = foldMap f b <> f t
+  foldMap f (Match s _ as t) =
+    foldMap f s <> mconcat (map (foldMap f . snd) as) <> f t
+  foldMap f (Prim _ es t) = mconcat (map (foldMap f) es) <> f t
+
 {- | Predicate of whether an expression "looks about right".
 
 Description left deliberately vague so that we have the flexibility to
@@ -242,13 +261,14 @@ wellFormed (App    f    a _ ) = wellFormed f && wellFormed a
 wellFormed (Match s _ alts _) = wellFormed s && all (wellFormed . snd) alts
 wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
  where
+  wfPrim New                 [_]       = True
   wfPrim Dup                 [_]       = True
   wfPrim Drop                [_]       = True
   wfPrim Reuse               [_]       = True
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
-  wfPrim Fork                (_ : _)   = True
+  wfPrim Par                 (_ : _)   = True
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
   wfPrim Return              [_]       = True
@@ -268,3 +288,76 @@ wellFormed (Prim p es _     ) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLt    ) [_, _]    = True
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
+
+instance Pretty t => Pretty (Program t) where
+  pretty Program { programDefs = ds } = vsep $ map pretty ds
+  -- TODO: type defs
+  -- TODO: how to represent entry point?
+
+instance Pretty t => Pretty (Expr t) where
+  pretty (Var  v t  ) = typeAnn t $ pretty v
+  pretty (Data d t  ) = typeAnn t $ pretty d
+  pretty (Lit  l t  ) = typeAnn t $ pretty l
+  pretty (App l  r t) = typeAnn t $ pretty l <+> pretty r
+  pretty (Let as b t) = typeAnn t $ parens letexpr
+   where
+    letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> pretty b
+    def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
+    def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
+  pretty (Lambda a b t) =
+    typeAnn t $ pretty "fun" <+> pretty a <+> braces (pretty b)
+  pretty (Match s _b as t) = typeAnn t $ pretty "match" <+> pretty s <+> arms
+   where
+    -- Where to add binder?
+    arms = block bar (map arm as)
+    arm (a, e) = pretty a <+> drarrow <+> braces (pretty e)
+  pretty (Prim New   [r] t) = typeAnn t $ pretty "new" <+> pretty r
+  pretty (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> pretty r
+  pretty (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> pretty r
+  pretty (Prim Reuse [r] t) = typeAnn t $ pretty "__reuse" <+> pretty r
+  pretty (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> pretty r
+  pretty (Prim Assign [l, r] t) =
+    typeAnn t $ parens $ pretty l <+> pretty "<-" <+> braces (pretty r)
+  pretty (Prim After [d, l, r] t) = typeAnn t $ parens ae
+   where
+    ae =
+      pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
+        (pretty r)
+  pretty (Prim Par es t) =
+    typeAnn t $ pretty "par" <+> block dbar (map pretty es)
+  pretty (Prim Wait es t) =
+    typeAnn t $ pretty "wait" <+> block dbar (map pretty es)
+  pretty (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (pretty b)
+  pretty (Prim Break []  t) = typeAnn t $ pretty "break"
+  pretty (Prim Return [e] t) =
+    typeAnn t $ pretty "return" <+> braces (pretty e)
+  pretty (Prim (PrimOp po) [l, r] t) =
+    parens $ pretty l <+> pretty po <+> pretty r <> pretty t
+  pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
+
+instance Pretty Alt where
+  pretty (AltData a b) = parens $ pretty a <+> hsep (map pretty b)
+  pretty (AltLit a   ) = pretty a
+  pretty AltDefault    = pretty "_"
+
+instance Pretty Literal where
+  pretty (LitIntegral i) = pretty $ show i
+  pretty (LitBool     b) = pretty $ show b
+  pretty LitEvent        = pretty "()"
+
+instance Pretty PrimOp where
+  pretty PrimNeg    = pretty "-"
+  pretty PrimNot    = pretty "!"
+  pretty PrimBitNot = pretty "~"
+  pretty PrimAdd    = pretty "+"
+  pretty PrimSub    = pretty "-"
+  pretty PrimMul    = pretty "*"
+  pretty PrimDiv    = pretty "/"
+  pretty PrimMod    = pretty "%"
+  pretty PrimBitAnd = pretty "&"
+  pretty PrimBitOr  = pretty "|"
+  pretty PrimEq     = pretty "=="
+  pretty PrimGt     = pretty ">"
+  pretty PrimGe     = pretty ">="
+  pretty PrimLt     = pretty "<"
+  pretty PrimLe     = pretty "<="

@@ -49,6 +49,7 @@ executables:
 
     dependencies:
     - sslang
+    - prettyprinter >= 1.7.0
 
     build-tools:
     - happy
@@ -56,16 +57,27 @@ executables:
 
 tests:
   scanner-test:
-    main:		unit-tests/ScannerTest.hs
+    main: Spec.hs
+    source-dirs:
+    - test/scanner
     dependencies:
     - sslang
-
+    - hspec
   parser-test:
-    main:		unit-tests/ParserTest.hs
+    main: Spec.hs
+    source-dirs:
+    - test/parser
     dependencies:
     - sslang
-
+    - hspec
+  prettyprinter-test:
+    main: Spec.hs
+    source-dirs:
+    - test/prettyprinter
+    dependencies:
+    - sslang
+    - hspec
   regression-test:
-    main:		regression-tests/Runtests.hs
+    main: test/regression/Spec.hs
     dependencies:
     - process

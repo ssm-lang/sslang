@@ -33,6 +33,7 @@ module IR.Types.Poly
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -45,8 +46,12 @@ data Type
   | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
   deriving Eq
 
--- | 'Type' is a type system.
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
   injectBuiltin (TBuiltin t) = Just t
   injectBuiltin _            = Nothing
+
+instance Pretty Type where
+  pretty (TBuiltin b  ) = pretty b
+  pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
+  pretty (TVar tvar   ) = pretty tvar

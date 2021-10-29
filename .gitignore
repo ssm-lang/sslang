@@ -4,7 +4,6 @@ stack.yaml.lock
 *~
 *.cabal
 
-Parser.info
 runtests.log
 regression-tests/out
 

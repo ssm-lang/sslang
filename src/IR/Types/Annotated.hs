@@ -1,10 +1,4 @@
-{- |
-
-Types straight from the AST.
-
-For now, just the polymorphic typeclass types.
-
--}
+-- | Type annotations, as collected from the Ast.
 {-# LANGUAGE DerivingVia #-}
 module IR.Types.Annotated
   ( Builtin(..)
@@ -15,6 +9,7 @@ module IR.Types.Annotated
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -27,6 +22,7 @@ Type annotations can be added using '<>' (from `Semigroup'), while 'mempty'
 represents no type annotation.
 -}
 newtype Type = Type [TypeAnnote]
+  deriving Show
   deriving Eq         via [TypeAnnote]
   deriving Semigroup  via [TypeAnnote]
   deriving Monoid     via [TypeAnnote]
@@ -36,7 +32,7 @@ data TypeAnnote
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
-  deriving Eq
+  deriving (Show, Eq)
 
 -- | `Type' is a type system.
 instance TypeSystem Type where
@@ -50,3 +46,12 @@ instance TypeSystem Type where
 -- | Convenience helper for no type annotations.
 untyped :: Type
 untyped = mempty
+
+instance Pretty Type where
+  pretty (Type (t : _)) = pretty t -- TODO: this only prints the outer-most ann
+  pretty (Type []     ) = pretty "_"
+
+instance Pretty TypeAnnote where
+  pretty (TBuiltin t) = pretty t
+  pretty (TCon t ts ) = parens $ hsep (pretty t : map pretty ts)
+  pretty (TVar v    ) = pretty v
