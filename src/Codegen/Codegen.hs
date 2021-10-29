@@ -685,10 +685,6 @@ marshalSub lhs rhs = [cexp|($exp:lhs - ($exp:rhs & 0xFFFFFFFE))|]
 marshalBitNot :: C.Exp -> C.Exp
 marshalBitNot val = [cexp|((~$exp:val) | 0x1)|]
 
--- | Compute priority and depth arguments for a fork of width 'numChildren'.
-genForkArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
-genForkArgs numChildren (currentPrio, currentDepth) =
-
 -- | Compute priority and depth arguments for a par fork of width 'numChildren'.
 genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
 genParArgs numChildren (currentPrio, currentDepth) =
