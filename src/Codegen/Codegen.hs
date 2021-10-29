@@ -652,7 +652,6 @@ genBinop lhs rhs = do
   (rhsVal, rhsStms) <- genExpr rhs
   return (lhsVal, rhsVal, lhsStms ++ rhsStms)
 
-
 -- | Unmarshal the arguments of a binary operation returned by genBinop
 unmarshalBinOpArgs :: GenFn (C.Exp, C.Exp, [C.BlockItem]) -> GenFn (C.Exp, C.Exp, [C.BlockItem])
 unmarshalBinOpArgs binOp = do
