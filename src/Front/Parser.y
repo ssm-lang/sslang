@@ -36,6 +36,7 @@ import Common.Compiler (ErrorMsg)
   'after' { Token (_, TAfter) }
   'wait'  { Token (_, TWait) }
   'match' { Token (_, TMatch) }
+  'fun'   { Token (_, TFun) }
   '='     { Token (_, TEq) }
   '<-'    { Token (_, TLarrow) }
   '->'    { Token (_, TRarrow) }
@@ -232,6 +233,7 @@ exprBlk                               --> Expr
   | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
   | 'while' exprBlk '{' expr '}'        { While $2 $4 }
   | 'match' exprBlk '{' matchArms '}'   { Match $2 $4 }
+  | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
   | exprApp                             { $1 }
 
 -- | MatchArms rule - TODO update

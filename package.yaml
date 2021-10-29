@@ -70,6 +70,13 @@ tests:
     dependencies:
     - sslang
     - hspec
+  prettyprinter-test:
+    main: Spec.hs
+    source-dirs:
+    - test/prettyprinter
+    dependencies:
+    - sslang
+    - hspec
   regression-test:
     main: test/regression/Spec.hs
     dependencies:

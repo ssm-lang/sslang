@@ -1,7 +1,7 @@
 module Front.Ast where
 
-import           Prelude                 hiding ( (<>) )
-import           Prettyprinter
+import           Common.Pretty
+import           Data.List                      ( intersperse )
 
 -- | A type variable name (e.g., a, b)
 type TVarId = String
@@ -66,6 +66,7 @@ data Expr
   = Id VarId
   | Lit Literal
   | Apply Expr Expr
+  | Lambda [Pat] Expr
   | OpRegion Expr OpRegion
   | NoExpr
   | Let [Definition] Expr
@@ -108,120 +109,94 @@ collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
 collectTApp t = (t, [])
 
 collectApp :: Expr -> (Expr, [Expr])
-collectApp (Apply lhs rhs) = (lf, la ++ [rhs])
-  where (lf, la) = collectApp lhs
-collectApp t = (t, [])
+collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
+collectApp t               = (t, [])
 
 instance Pretty Program where
-  pretty (Program _) = undefined
+  pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
 instance Pretty Definition where
-  pretty = undefined
-    {-
-  pretty (Function id formals body r) =
-    let ret =
-          (case r of
-            ReturnType  t -> pretty "->" <+> pretty t
-            CurriedType t -> pretty ":" <+> pretty t
-          )
-    in  nest
-          2
-          (vsep
-            [ pretty id <> tupled (map pretty formals) <+> ret <+> pretty '='
-            , pretty body
-            ]
-          )
-          -}
+  pretty (DefFn fid formals r body) =
+    pretty fid
+      <+> hsep (map (parens . pretty) formals)
+      <+> pretty r
+      <+> equals
+      <+> braces (pretty body)
+
+  pretty (DefPat b body) = pretty b <+> equals <+> braces (pretty body)
 
 instance Pretty Pat where
-  pretty = undefined
-  {-
-  pretty (Bind id mty) =
-    let prettyId = pretty id
-    in  case mty of
-          Just ty -> prettyId <+> pretty ':' <+> pretty ty
-          Nothing -> prettyId
-  pretty (TupBind binds mty) =
-    let prettyTup = hsep (punctuate comma $ map pretty binds)
-    in  case mty of
-          Just ty -> parens prettyTup <+> pretty ':' <+> pretty ty
-          Nothing -> prettyTup
-  -}
-
-  {-
-  pretty (PId      s) = pretty s
-  pretty (PLiteral l) = pretty l
-  pretty PWildcard    = pretty '_'
-  pretty (PAs  v p )  = pretty v <> pretty '@' <> pretty p
-  pretty (PCon c ps)  = pretty c <+> hsep (map pretty ps)
-  -}
+  pretty PatWildcard    = pretty '_'
+  pretty (PatId  s    ) = pretty s
+  pretty (PatLit l    ) = pretty l
+  pretty (PatAs b p   ) = parens $ pretty b <> pretty '@' <> pretty p
+  pretty (PatTup bs   ) = parens $ hsep (punctuate comma $ map pretty bs)
+  pretty (PatCon dc ps) = parens $ pretty dc <+> hsep (map pretty ps)
+  pretty (PatAnn ty p ) = parens $ pretty p <> colon <+> pretty ty
 
 instance Pretty TypFn where
-  pretty = undefined
+  pretty (TypReturn t) = rarrow <+> pretty t
+  pretty (TypProper t) = colon <+> pretty t
+  pretty TypNone       = emptyDoc
 
 instance Pretty Typ where
-  pretty = undefined
-    {-
-  pretty (TCon id                   ) = pretty id
-  pretty (TApp (TCon "[]") t2) = pretty "[" <> parens (pretty t2) <> pretty "]"
-  pretty (TApp (TCon "&" ) t2       ) = pretty "&" <> parens (pretty t2)
-  pretty (TApp t           (TCon id)) = pretty t <+> pretty id
-  pretty (TApp t1          t2       ) = pretty t1 <+> parens (pretty t2)
-  pretty (TTuple tys) =
-    pretty "(" <> hsep (punctuate comma $ map pretty tys) <> pretty ")"
-  pretty (TArrow t1 t2) = pretty t1 <+> pretty "->" <+> pretty t2
-  -}
+  pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
+  pretty (TCon   cid           ) = pretty cid
+  pretty (TApp   (TCon "[]") t2) = brackets $ pretty t2
+  pretty (TApp   (TCon "&" ) t2) = pretty "&" <> pretty t2
+  pretty (TApp   t1          t2) = parens $ pretty t1 <+> pretty t2
+  pretty (TArrow t1          t2) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where
-  pretty = undefined
-    {-
-  pretty (Id      id         ) = pretty id
-  pretty (Literal l          ) = pretty l
-  pretty (Apply    (Id id) e ) = pretty id <+> pretty e
-  pretty (Apply    e1      e2) = parens (pretty e1) <+> pretty e2
-  pretty (OpRegion e1      r ) = parens (pretty e1 <> p r)
+  pretty (Let defs body) =
+    pretty "let"
+      <+> braces (hsep $ punctuate dbar $ map pretty defs)
+      <>  semi
+      <+> pretty body
+  pretty (Seq e1 e2) = hsep [pretty e1 <> semi, pretty e2]
+  pretty (After e1 v e2) =
+    parens
+      $   pretty "after"
+      <+> pretty e1
+      <+> comma
+      <+> pretty v
+      <+> larrow
+      <+> braces (pretty e2)
+  pretty (Assign     v  e) = parens $ pretty v <+> larrow <+> braces (pretty e)
+  pretty (Constraint e  t) = parens $ pretty e <+> colon <+> pretty t
+  pretty (OpRegion   e1 r) = parens $ pretty e1 <> p r
    where
     p EOR             = emptyDoc
     p (NextOp s e r') = space <> pretty s <+> pretty e <> p r'
-  pretty (As v e) = pretty v <> pretty '@' <> pretty e
-  pretty NoExpr   = emptyDoc
-  pretty (Let defs body) =
-    vsep [pretty "let" <+> align (vsep $ map pretty defs), pretty body]
-  pretty (While e1 e2) =
-    nest 2 $ vsep [pretty "while" <+> pretty e1, pretty e2]
-  pretty (Loop e ) = nest 2 $ vsep [pretty "loop", pretty e]
-  pretty (Par  es) = nest 2 $ vsep $ pretty "par" : map pretty es
   pretty (IfElse e1 e2 NoExpr) =
-    nest 2 $ vsep [pretty "if" <+> pretty e1, pretty e2]
-  pretty (IfElse e1 e2 e3) = vsep
-    [ nest 2 $ vsep [pretty "if" <+> pretty e1, pretty e2]
-    , nest 2 $ vsep [pretty "else", pretty e3]
-    ]
-  pretty (After e1 v e2) =
-    pretty "after"
+    parens $ pretty "if" <+> pretty e1 <+> braces (pretty e2)
+  pretty (IfElse e1 e2 e3) =
+    parens
+      $   pretty "if"
       <+> pretty e1
-      <+> pretty ","
-      <+> pretty v
-      <+> pretty "<-"
-      <+> pretty e2
-  pretty (Assign v e) = pretty v <+> pretty "<-" <+> pretty e
+      <+> braces (pretty e2)
+      <+> pretty "else"
+      <+> braces (pretty e3)
+  pretty (While e1 e2) =
+    parens $ pretty "while" <+> pretty e1 <+> braces (pretty e2)
+  pretty (Loop e ) = parens $ pretty "loop" <+> braces (pretty e)
+  pretty (Par  es) = parens $ pretty "par" <+> braces (hsep $ map pretty es)
   pretty (Wait vars) =
-    pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
-  pretty (New e           ) = pretty "new" <+> pretty e
-  pretty (Constraint e  t ) = pretty e <+> pretty ':' <+> pretty t
-  pretty (Seq        e1 e2) = vsep [pretty e1, pretty e2]
-  pretty Wildcard           = pretty '_'
-  pretty Break              = pretty "break"
-  pretty (Return e)         = pretty "return" <> pretty e
-  -}
+    parens $ pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
+  pretty (Lambda ps b) =
+    parens $ pretty "fun" <+> hsep (map (parens . pretty) ps) <+> braces
+      (pretty b)
+  pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
+  pretty (Id  ident  ) = pretty ident
+  pretty (Lit l      ) = pretty l
+  pretty Break         = pretty "break"
+  pretty (Return e)    = pretty "return" <+> pretty e
+  pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where
-  pretty = undefined
-    {-
-  pretty (IntLit    i) = pretty i
-  pretty (StringLit s) = pretty '"' <> pretty s <> pretty '"'
-  pretty (RatLit    r) = pretty $ show r
-  pretty (CharLit   c) = pretty '\'' <> pretty c <> pretty '\''
-  pretty EventLit      = pretty "()"
-    -}
+  pretty (LitInt    i) = pretty i
+  pretty (LitString s) = dquotes $ pretty s
+  pretty (LitRat    r) = pretty $ show r
+  pretty (LitChar   c) = squotes $ pretty c
+  pretty LitEvent      = pretty "()"

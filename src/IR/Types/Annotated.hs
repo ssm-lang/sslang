@@ -9,6 +9,7 @@ module IR.Types.Annotated
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -45,3 +46,12 @@ instance TypeSystem Type where
 -- | Convenience helper for no type annotations.
 untyped :: Type
 untyped = mempty
+
+instance Pretty Type where
+  pretty (Type (t : _)) = pretty t -- TODO: this only prints the outer-most ann
+  pretty (Type []     ) = pretty "_"
+
+instance Pretty TypeAnnote where
+  pretty (TBuiltin t) = pretty t
+  pretty (TCon t ts ) = parens $ hsep (pretty t : map pretty ts)
+  pretty (TVar v    ) = pretty v

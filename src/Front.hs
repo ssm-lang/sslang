@@ -1,4 +1,9 @@
-module Front where
+module Front
+  ( tokenStream
+  , parseSource
+  , desugarAst
+  , checkAst
+  ) where
 
 import qualified Common.Compiler               as Compiler
 
@@ -27,7 +32,6 @@ desugarAst = return . parseOperators
 
 -- | Check the structure of the AST, throwing errors as necessary
 checkAst :: A.Program -> Compiler.Pass ()
-checkAst prog =
-  if checkTopSignatures prog
+checkAst prog = if checkTopSignatures prog
   then return ()
   else Compiler.throw $ Compiler.AstError "Type signature mismatch" -- TODO: better error message
