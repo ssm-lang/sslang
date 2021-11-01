@@ -3,7 +3,6 @@ module Front
   , parseSource
   , desugarAst
   , checkAst
-  , A.renderAst
   ) where
 
 import qualified Common.Compiler               as Compiler

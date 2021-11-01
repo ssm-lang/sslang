@@ -6,14 +6,14 @@ import           Test.Hspec                     ( Spec(..)
                                                 , shouldBe
                                                 )
 
+import           Common.Pretty                  ( spaghetti )
 import           Data.Bifunctor                 ( bimap )
 import           Data.Either                    ( fromRight )
-import           Front                          ( renderAst )
-import           Front.Ast
+import           Front.Ast                      ( Program )
 import           Front.Parser                   ( parseProgram )
 
 renderAndParse :: Program -> Either String Program
-renderAndParse = parseProgram . renderAst
+renderAndParse = parseProgram . spaghetti
 
 spec :: Spec
 spec = do
