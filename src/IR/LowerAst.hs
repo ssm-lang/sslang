@@ -23,6 +23,29 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( fromJust )
 
+{- | IR type annotation continuation.
+
+In the AST, type annotations appear as first-class expression/pattern nodes that
+wrap other nodes, whereas in the IR, type annotations appear as data that appear
+alongside those notes. Thus a common pattern that emerges from this pass is to
+accummulate a continuation of type annotations via composition while those AST
+annotations are being unwrapped.
+-}
+type AnnotationK = I.Type -> I.Type
+
+-- | Lowers the AST's representation of types into that of the IR.
+lowerType :: A.Typ -> I.Type
+lowerType (  A.TTuple tys    ) = I.tuple $ map lowerType tys
+lowerType (  A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
+lowerType (  A.TCon "Int"    ) = I.int 32
+lowerType (  A.TCon "()"     ) = I.unit
+lowerType (  A.TCon i        ) = I.Type [I.TCon (fromString i) []]
+lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
+  (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
+  (A.TCon "[]", [_arg]) -> error "list types are not yet implemented"
+  (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
+  _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
+
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
@@ -40,8 +63,8 @@ the IR.
 lowerDef :: A.Definition -> (I.Binder, I.Expr I.Type)
 lowerDef (A.DefPat aPat aBody) =
   (lowerPatName aPat, lowerExpr aBody (lowerPatType aPat <>))
-lowerDef (A.DefFn aName aBinds aTy aBody) =
-  (Just $ fromString aName, lowerBinds aBinds headAnn)
+lowerDef (A.DefFn aName aPats aTy aBody) =
+  (Just $ fromString aName, lowerLambda aPats aBody lambdaAnn lambdaRetAnn)
  where
   {- | Where the 'A.TypFn' type annotation should be applied.
 
@@ -56,48 +79,11 @@ lowerDef (A.DefFn aName aBinds aTy aBody) =
   type checker. That is, @let f x : Int = b@ won't fail here, but it will/should
   be caught by the type checker.
   -}
-  headAnn, tailAnn :: I.Type -> I.Type
-  (headAnn, tailAnn) = case aTy of
+  lambdaAnn, lambdaRetAnn :: AnnotationK
+  (lambdaAnn, lambdaRetAnn) = case aTy of
     A.TypProper ty -> ((lowerType ty <>), id)
     A.TypReturn ty -> (id, (lowerType ty <>))
     A.TypNone      -> (id, id)
-
-  -- | Unpack a list of argument patterns into sequence of nested lambdas.
-  lowerBinds :: [A.Pat] -> (I.Type -> I.Type) -> I.Expr I.Type
-  lowerBinds (p : ps) k = I.Lambda lVar lBody lType
-   where
-    lVar  = lowerPatName p
-    lBody = lowerBinds ps id
-    lType = k $ lowerPatType p `I.arrow` extract lBody
-  lowerBinds [] k = lowerExpr aBody (k . tailAnn)
-
--- | Extract an optional identifier from an Ast pattern.
-lowerPatName :: A.Pat -> I.Binder
-lowerPatName (A.PatId v)      = Just $ fromString v
-lowerPatName A.PatWildcard    = Nothing
-lowerPatName (A.PatAnn _ pat) = lowerPatName pat
-lowerPatName _ = error "pattern should be desguared into pattern match"
-
--- | Extracts and lowers possible AST type annotation from a binding.
-lowerPatType :: A.Pat -> I.Type
-lowerPatType (A.PatAs _ b     ) = lowerPatType b
-lowerPatType (A.PatTup bs     ) = I.tuple $ map lowerPatType bs
-lowerPatType (A.PatCon _   _bs) = error "need to perform DConId lookup"
-lowerPatType (A.PatAnn typ p  ) = lowerType typ <> lowerPatType p
-lowerPatType _                  = I.untyped
-
--- | Lowers the AST's representation of types into that of the IR.
-lowerType :: A.Typ -> I.Type
-lowerType (  A.TTuple tys    ) = I.tuple $ map lowerType tys
-lowerType (  A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
-lowerType (  A.TCon "Int"    ) = I.int 32
-lowerType (  A.TCon "()"     ) = I.unit
-lowerType (  A.TCon i        ) = I.Type [I.TCon (fromString i) []]
-lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
-  (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
-  (A.TCon "[]", [_arg]) -> error "list types are not yet implemented"
-  (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
-  _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
 
 {- | Lowers an AST expression into an IR expression.
 
@@ -115,7 +101,7 @@ propogate it elsewhere. This is possible because the IR's type annotations
 'I.Type' form a monoid, where 'I.untyped' is the identity element and '(<>)' is
 the join operation.
 -}
-lowerExpr :: A.Expr -> (I.Type -> I.Type) -> I.Expr I.Type
+lowerExpr :: A.Expr -> AnnotationK -> I.Expr I.Type
 lowerExpr (  A.Id  v    ) k = I.Var (fromString v) (k I.untyped)
 lowerExpr (  A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr a@(A.Apply l r) k = case first lowerPrim (A.collectApp a) of
@@ -123,7 +109,8 @@ lowerExpr a@(A.Apply l r) k = case first lowerPrim (A.collectApp a) of
   (Nothing  , _   ) -> I.App (lowerExpr l id) (lowerExpr r id) (k I.untyped)
 lowerExpr (A.Let ds b) k =
   I.Let (map lowerDef ds) (lowerExpr b id) (k I.untyped)
-lowerExpr (A.While c b) k = I.Prim I.Loop [body] (k I.untyped)
+lowerExpr (A.Lambda ps b) k = lowerLambda ps b k id
+lowerExpr (A.While  c  b) k = I.Prim I.Loop [body] (k I.untyped)
   where body = lowerExpr (A.IfElse c A.Break A.NoExpr `A.Seq` b) id
 lowerExpr (A.Loop b ) k = I.Prim I.Loop [lowerExpr b id] (k I.untyped)
 lowerExpr (A.Par  es) k = I.Prim I.Par (map (`lowerExpr` id) es) (k I.untyped)
@@ -146,6 +133,25 @@ lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
+{- | Unpack a list of patterns into nested (curried) lambdas.
+
+This helper takes two arguments @lambdaAnn, lambdaRetAnn :: I.Type -> I.Type)@,
+which represent annotations that should be applied to the whole lambda
+expression and only the body of the lambda expression. These roughly correspond
+to 'A.TypProper' and 'A.TypReturn' annotations.
+-}
+lowerLambda :: [A.Pat] -> A.Expr -> AnnotationK -> AnnotationK -> I.Expr I.Type
+lowerLambda aPats aBody lambdaAnn lambdaRetAnn = lowerBinds aPats lambdaAnn
+ where
+  -- | Unpack a list of argument patterns into sequence of nested lambdas.
+  lowerBinds :: [A.Pat] -> AnnotationK -> I.Expr I.Type
+  lowerBinds (p : ps) k = I.Lambda lVar lBody lType
+   where
+    lVar  = lowerPatName p
+    lBody = lowerBinds ps id
+    lType = k $ lowerPatType p `I.arrow` extract lBody
+  lowerBinds [] k = lowerExpr aBody (k . lambdaRetAnn)
+
 -- | Lower an AST literal into an IR literal.
 lowerLit :: A.Literal -> I.Literal
 lowerLit (A.LitInt i)     = I.LitIntegral i
@@ -161,3 +167,18 @@ lowerPrim (A.Id "deref") = Just I.Deref
 lowerPrim (A.Id "+"    ) = Just $ I.PrimOp I.PrimAdd
 lowerPrim (A.Id "-"    ) = Just $ I.PrimOp I.PrimSub
 lowerPrim _              = Nothing
+
+-- | Extract an optional identifier from an Ast pattern.
+lowerPatName :: A.Pat -> I.Binder
+lowerPatName (A.PatId v)      = Just $ fromString v
+lowerPatName A.PatWildcard    = Nothing
+lowerPatName (A.PatAnn _ pat) = lowerPatName pat
+lowerPatName _ = error "pattern should be desguared into pattern match"
+
+-- | Extracts and lowers possible AST type annotation from a binding.
+lowerPatType :: A.Pat -> I.Type
+lowerPatType (A.PatAs _ b     ) = lowerPatType b
+lowerPatType (A.PatTup bs     ) = I.tuple $ map lowerPatType bs
+lowerPatType (A.PatCon _   _bs) = error "need to perform DConId lookup"
+lowerPatType (A.PatAnn typ p  ) = lowerType typ <> lowerPatType p
+lowerPatType _                  = I.untyped

@@ -66,6 +66,7 @@ data Expr
   = Id VarId
   | Lit Literal
   | Apply Expr Expr
+  | Lambda [Pat] Expr
   | OpRegion Expr OpRegion
   | NoExpr
   | Let [Definition] Expr
@@ -182,6 +183,9 @@ instance Pretty Expr where
   pretty (Par  es) = parens $ pretty "par" <+> braces (hsep $ map pretty es)
   pretty (Wait vars) =
     parens $ pretty "wait" <+> hsep (punctuate comma $ map pretty vars)
+  pretty (Lambda ps b) =
+    parens $ pretty "fun" <+> hsep (map (parens . pretty) ps) <+> braces
+      (pretty b)
   pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
   pretty (Id  ident  ) = pretty ident
   pretty (Lit l      ) = pretty l
