@@ -4,13 +4,30 @@ A language built atop the Sparse Synchronous Model.
 
 ## Setup
 
-### Requirements
+The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
 
-We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
+- [GHC][ghc]: haskell compiler
+- [Cabal][cabal]: build system
+- [Stack][stack]: project manager
+- [Haddock][haddock]: code documentation generator (packaged with Stack)
+- [HLS][hls]: [language server][lsp] (optional)
+- [Brittany][brittany]: formatter (optional)
+- [Hlint][hlint]: linter (optional)
 
-### Setup Development Toolchain
+This section will guide you through setting up your development environnment with these tools. We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
 
-You can install this compiler's build toolchain using [GHCup][ghcup], Haskell's toolchain manager, with the following command:
+[haskell]: https://www.haskell.org/
+[ghc]: https://www.haskell.org/ghc/
+[cabal]: https://www.haskell.org/cabal/
+[stack]: https://docs.haskellstack.org/en/stable/GUIDE/
+[hls]: https://github.com/haskell/haskell-language-server
+[hlint]: https://hackage.haskell.org/package/hlint
+[brittany]: https://hackage.haskell.org/package/brittany
+[lsp]: https://langserver.org/
+
+### Toolchain Setup
+
+You can easily setup most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
@@ -18,7 +35,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
   sh
 ```
 
-This will run a short but interactive script; make sure to let it know where it should add the `PATH` variable. It will also ask if you would like to install [HLS][hls] (Haskell Language Server); you should do so if you would like to set up IDE features with an LSP-compatible text editor.
+This will run a short but interactive script that installs GHC, Cabal, and Stack; make sure to let it know where it should add the `PATH` variable. GHCup will also ask if you would like to install HLS, which you may use to extend your LSP-compatible editor with IDE features (optional).
 
 The GHCup setup script may also detect that dependencies are missing, and ask you to install them; make sure to do so before proceeding. For instance, if you are running Ubuntu 20.10:
 
@@ -28,42 +45,32 @@ sudo apt install build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgm
 
 Package names differ depending on your distro and version, so make sure to read the suggestion.
 
-The GHCup installation script will also install [GHC][ghc] (Haskell compiler), [Cabal][cabal] (Haskell build system), [Stack][stack] (Haskell project manager), and [HLS][hls] (Haskell language server) automatically. You shouldn't need to use GHCup except to upgrade any of these tools.
-
-With Stack setup, you can now use it to install [HLint][hlint] and [Brittany][brittany], which this project uses for linting and formatting. To install these tools, run:
+You can now use Stack to install [HLint][hlint] and [Brittany][brittany] (optional). To do so, run:
 
 ```
 stack install hlint
 stack install brittany
 ```
 
-[haskell]: https://www.haskell.org/
-[ghc]: https://www.haskell.org/ghc/
-[cabal]: https://www.haskell.org/cabal/
-[stack]: https://docs.haskellstack.org/en/stable/GUIDE/
-[hls]: https://github.com/haskell/haskell-language-server
+<a name="why-ghcup">1</a>: While you can also directly install Stack and use that to manage GHC versions, GHCup is more specialized toward coordinating versioning for just the core components of the toolchain, i.e., GHC, Cabal, Stack, and HLS. You can read more about its rationale [here](https://www.haskell.org/ghcup/about/#faq).
+
 [ghcup]: https://www.haskell.org/ghcup/
-[hlint]: https://hackage.haskell.org/package/hlint
-[brittany]: https://hackage.haskell.org/package/brittany
 
 ### Convenience Git Aliases (optional)
 
-Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly,
-or you may set up Git aliases for easier access.
+Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
 
-To setup git aliases:
+These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). These aliases are defined in [`.gitconfig`](./.gitconfig), and can be set up by running this command from anywhere within this repo:
 
 ```
 git config --local include.path ../.gitconfig
 ```
 
-See `.gitconfig` in the root of this repo for the list of available aliases.
-
 ## Build
 
-### Building `sslc`
+### Building sslc
 
-Build the compiler with:
+Build the sslang compiler, sslc, with:
 
 ````
 stack build
@@ -81,15 +88,23 @@ If you've set up the convenience Git aliases, then you will be able to use a con
 git build
 ```
 
-You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to run `build` manually:
+You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to later run `build` manually:
 
 ```
-git watch
+git build --test --no-run-tests --file-watch
+git watch # equivalent
 ```
 
-### Running `sslc`
+You can also continuously build documentation, though that tends to take considerably longer:
 
-You may run `sslc` using:
+```
+git build --test --no-run-tests --file-watch --haddock
+git watch --haddock # equivalent
+```
+
+### Running sslc
+
+You may run sslc using:
 
 ```
 stack exec sslc <args..>
@@ -101,7 +116,7 @@ If you would like `sslc` to be available on your `PATH` (i.e., installed in `~/.
 stack install
 ```
 
-Then you may invoke it the executable directly:
+Then you may invoke the executable directly:
 
 ```
 sslc <args..>
@@ -224,6 +239,8 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 
 ### Linting and Formatting
 
+To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following Git aliases are provided to help coordinate these tools with your development workflow.
+
 To lint:
 
 ```
@@ -241,4 +258,3 @@ git fmt [<files..>]       # format specified files
 git fmt --since <commit>  # format all files modified since <commit>
 git fmt --help            # show help menu
 ```
-

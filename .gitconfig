@@ -6,4 +6,4 @@
 
     build = "!$(git rev-parse --show-toplevel)/scripts/build"
     doc = "!$(git rev-parse --show-toplevel)/scripts/build --haddock"
-    watch = "!$(git rev-parse --show-toplevel)/scripts/build --file-watch --haddock"
+    watch = "!$(git rev-parse --show-toplevel)/scripts/build --file-watch"
