@@ -600,21 +600,25 @@ genLiteral I.LitEvent            _ = return ([cexp|1|], [])
 genPrimOp :: PrimOp -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
 genPrimOp I.PrimAdd [lhs, rhs] _ = do                   
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
-  return (marshalAdd lhsVal rhsVal, stms)
-genPrimOp I.PrimSub [lhs, rhs] _ = do                   
+  -- all integers are 31 bits + 1 tag bit, so zero tag bit on one argument,
+  -- add together, and the result will be sum with a tag bit of 1.
+  return ([cexp|(($exp:rhsVal & 0xFFFFFFFE) + $exp:lhsVal)|], stms)
+genPrimOp I.PrimSub [lhs, rhs] _ = do
+  -- all integers are 31 bits + 1 tag bit, so zero tag bit on subtrahend,
+  -- subtract, and the result will be difference with a tag bit of 1.                   
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
-  return (marshalSub lhsVal rhsVal, stms)
+  return ([cexp|($exp:lhsVal - ($exp:rhsVal & 0xFFFFFFFE))|], stms)
 genPrimOp I.PrimMul [lhs, rhs] _ = do
-  (lhsVal, rhsVal, stms) <- unmarshalBinOpArgs $ genBinop lhs rhs
+  (lhsVal, rhsVal, stms) <- (\(l,r,ss)->(unmarshal l, unmarshal r, ss)) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal * $exp:rhsVal|], stms)
 genPrimOp I.PrimDiv [lhs, rhs] _ = do
-  (lhsVal, rhsVal, stms) <- unmarshalBinOpArgs $ genBinop lhs rhs
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal / $exp:rhsVal|], stms)
 genPrimOp I.PrimMod [lhs, rhs] _ = do
-  (lhsVal, rhsVal, stms) <- unmarshalBinOpArgs $ genBinop lhs rhs
+  (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal % $exp:rhsVal|], stms)
 genPrimOp I.PrimNeg [opr] _ = do
-  (val, stms) <- unmarshalUnOpArg $ genExpr opr
+  (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|- $exp:val|], stms)
 genPrimOp I.PrimBitAnd [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
@@ -624,12 +628,14 @@ genPrimOp I.PrimBitOr [lhs, rhs] _ = do
   return ([cexp|$exp:lhsVal | $exp:rhsVal|], stms)
 genPrimOp I.PrimBitNot [opr] _ = do                     
   (val, stms) <- genExpr opr
-  return (marshalBitNot val, stms)
+  -- all integers are 31 bits + 1 tag bit, so val XOR (~1)
+  -- flips the 31 bits and keeps the tag bit 1. 
+  return ([cexp|($exp:val ^ 0xFFFFFFFE)|], stms)
 genPrimOp I.PrimEq [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal == $exp:rhsVal|], stms)
 genPrimOp I.PrimNot [opr] _ = do
-  (val, stms) <- unmarshalUnOpArg $ genExpr opr
+  (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
 genPrimOp I.PrimGt [lhs, rhs] _ = do
   (lhsVal, rhsVal, stms) <- genBinop lhs rhs
@@ -652,38 +658,13 @@ genBinop lhs rhs = do
   (rhsVal, rhsStms) <- genExpr rhs
   return (lhsVal, rhsVal, lhsStms ++ rhsStms)
 
-
--- | Unmarshal the arguments of a binary operation returned by genBinop
-unmarshalBinOpArgs :: GenFn (C.Exp, C.Exp, [C.BlockItem]) -> GenFn (C.Exp, C.Exp, [C.BlockItem])
-unmarshalBinOpArgs binOp = do
-  (lhs, rhs, block) <- binOp
-  return (unmarshal lhs, unmarshal rhs, block)
-
--- | Unmarshal argument of a unary operation returned by genExpr
-unmarshalUnOpArg :: GenFn (C.Exp, [C.BlockItem]) -> GenFn (C.Exp, [C.BlockItem])
-unmarshalUnOpArg unOp = do
-  (arg, block) <- unOp
-  return (unmarshal arg, block)
-
 -- | Marshal a C expression evaluating to a 32 bit int
 marshal :: C.Exp -> C.Exp
-marshal e = [cexp|(($exp:e << 1 ) | 0x1)|] 
+marshal e = [cexp|(($exp:e << 1) | 0x1)|] 
 
 -- | Unmarshal a C expression evaluating to a SSLANG 31 bit 
 unmarshal :: C.Exp -> C.Exp
-unmarshal e = [cexp|($exp:e >> 1 )|] 
-
--- | Generate Optimized C expression for add operation on marshalled values
-marshalAdd :: C.Exp -> C.Exp -> C.Exp
-marshalAdd lhs rhs = [cexp|(($exp:rhs & 0xFFFFFFFE) + $exp:lhs)|]
-
--- | Generate Optimized C expression for subtract operation on marshalled values
-marshalSub :: C.Exp -> C.Exp -> C.Exp
-marshalSub lhs rhs = [cexp|($exp:lhs - ($exp:rhs & 0xFFFFFFFE))|]
-
--- | Generate Optimized C expression for bit not on marshalled values
-marshalBitNot :: C.Exp -> C.Exp
-marshalBitNot val = [cexp|((~$exp:val) | 0x1)|]
+unmarshal e = [cexp|($exp:e >> 1)|] 
 
 -- | Compute priority and depth arguments for a par fork of width 'numChildren'.
 genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
