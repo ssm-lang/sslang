@@ -517,16 +517,15 @@ genPrim I.Assign [lhs, rhs] _ = do
         |]
   return (unit, assignBlock)
 genPrim I.After [time, lhs, rhs] _ = do
-  (timeVal, timeStms) <- genExpr time
+  (timeVal, timeStms) <- first unmarshal <$> genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
   Just later          <- return $ genLater $ extract lhs
-  let timeUnmarshalled = unmarshal timeVal
-      laterBlock = [citems|
+  let laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $exp:later($exp:lhsVal, $id:now() + $exp:timeUnmarshalled, $exp:rhsVal);
+          $exp:later($exp:lhsVal, $id:now() + $exp:timeVal, $exp:rhsVal);
         |]
   return (unit, laterBlock)
 genPrim I.Par procs _ = do
