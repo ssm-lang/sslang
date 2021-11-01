@@ -52,7 +52,7 @@ stack install hlint
 stack install brittany
 ```
 
-<a name="why-ghcup">1</a>: While you can also directly install Stack and use that to manage GHC versions, GHCup is more specialized toward coordinating versioning for just the core components of the toolchain, i.e., GHC, Cabal, Stack, and HLS. You can read more about its rationale [here](https://www.haskell.org/ghcup/about/#faq).
+<a name="why-ghcup">1</a>: _While you can also directly install Stack and use that to manage GHC versions, GHCup is more specialized toward coordinating versioning for just the core components of the toolchain, i.e., GHC, Cabal, Stack, and HLS. You can read more about its rationale [here](https://www.haskell.org/ghcup/about/#faq)._
 
 [ghcup]: https://www.haskell.org/ghcup/
 
@@ -130,7 +130,7 @@ Build this repo's code documentation using [Haddock][haddock] by running:
 stack haddock
 ```
 
-Haddock documentation is placed in `haddock-out/`. You may view this output in your browser, which can be invoked using:
+Haddock documentation is placed in `haddock-out/`. You may view this output in your browser, which can be open using:
 
 ```
 stack haddock --open
@@ -138,7 +138,7 @@ stack haddock --open
 
 The langauge reference manual (`sslang-lrm.pdf`) can be found in the `doc/` folder. Build it by going there and invoking `make`.
 
-## Testing
+## Test
 
 All existing tests should be passing before merging a PR, and where appropriate, new tests should be added to demonstrate functionality and correctness of your code. Tests may be run using:
 
@@ -237,7 +237,7 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 [hspec]: http://hspec.github.io/
 [hspec-discover]: http://hspec.github.io/hspec-discover.html
 
-### Linting and Formatting
+## Lint and Format
 
 To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following Git aliases are provided to help coordinate these tools with your development workflow.
 
