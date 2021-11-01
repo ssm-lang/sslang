@@ -34,7 +34,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
-  deriving Show
+  deriving (Eq, Show)
 
 {- | Literal values supported by the language.
 

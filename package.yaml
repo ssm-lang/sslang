@@ -89,3 +89,4 @@ tests:
     - sslang
     - hspec
     - containers
+    - comonad

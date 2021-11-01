@@ -36,6 +36,7 @@ data Builtin t
   | Arrow t t     -- ^ Function arrow @a -> b@
   | Tuple [t]     -- ^ Tuple with two or more fields
   | Integral Int  -- ^ Two's complement binary type with size in bits
+  | Error
   deriving (Eq, Show)
 
 instance Functor Builtin where
@@ -130,7 +131,7 @@ data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
   , arity    :: Arity
   }
-  deriving Show
+  deriving (Show, Eq)
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t

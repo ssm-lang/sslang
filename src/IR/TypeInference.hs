@@ -20,6 +20,7 @@ import           IR.Types.TypeSystem            ( dearrow
                                                 , ref
                                                 , unit
                                                 , void
+                                                , Builtin(..)
                                                 )
 import           Common.Identifiers             ( Binder )
 import           Control.Comonad                ( Comonad(..) )
@@ -47,7 +48,7 @@ addTo ctx (x, t) = M.insert x t ctx
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = do
   defs' <- inferTop emptyCtx (I.programDefs p)
-  return $ ann2Class <$> p { I.programDefs = defs' }
+  return $ anns2Class <$> p { I.programDefs = defs' }
 
 inferTop :: Context -> [(I.VarId, I.Expr Ann.Type)] -> Compiler.Pass ([(I.VarId, I.Expr Ann.Type)])
 inferTop _ [] = return []
@@ -83,10 +84,13 @@ inferExpr ctx (I.Prim I.After [del, lhs, rhs] t) = I.Prim
   [fmap (int 32 <>) del', fmap ((ref $ extract rhs') <>) lhs', rhs']
   (unit <> t)
   where (del', lhs', rhs') = (inferExpr ctx del, inferExpr ctx lhs, inferExpr ctx rhs)
-inferExpr ctx (I.Prim I.Loop               [b] t) = I.Prim I.Loop [inferExpr ctx b] $ unit <> t
+inferExpr ctx (I.Prim I.Loop               es  t) = I.Prim I.Loop (map (inferExpr ctx) es) $ unit <> t -- TODO: enable local ctx (adding to ctx along the way)
+inferExpr ctx (I.Prim I.Wait               rs  t) = I.Prim I.Wait (map (inferExpr ctx) rs) $ unit <> t -- TODO: all the rs must has Ref t type
 inferExpr _   (I.Prim I.Break              []  t) = I.Prim I.Break [] $ void <> t
 inferExpr _   (I.Prim I.Return             []  t) = I.Prim I.Return [] $ void <> t
-inferExpr _   (I.Prim (I.PrimOp I.PrimSub) []  t) = I.Prim I.Return [] $ int 32 <> t
+inferExpr ctx (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  t) =
+  I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32 <> t
+  where (e1', e2') = (inferExpr ctx e1, inferExpr ctx e2)
 inferExpr ctx (I.Prim p                    es  t) = I.Prim p (map (inferExpr ctx) es) t
 inferExpr _   (I.Lit I.LitEvent                t) = I.Lit I.LitEvent $ unit <> t
 inferExpr _   (I.Lit i@(I.LitIntegral _)       t) = I.Lit i $ int 32 <> t
@@ -97,16 +101,17 @@ inferExpr ctx (I.App a b t) = I.App a' b' (retTy <> t)
 inferExpr _ e = e
 
 inferExprLet :: (Context, [(Binder, I.Expr Ann.Type)]) -> (Binder, I.Expr Ann.Type) -> (Context, [(Binder, I.Expr Ann.Type)])
-inferExprLet (ctx, bs) (b, e) = case b of
-  Nothing -> (ctx, (b, e):bs)
-  Just v  -> ((addTo ctx (v, ety)), (b, e'):bs)
-    where
-      (e', ety) = (inferExpr ctx e, extract e')
+inferExprLet (ctx, bs) (b, e) =
+  let (e', ety) = (inferExpr ctx e, extract e') in
+  case b of
+    Nothing -> (ctx, (b, e'):bs)
+    Just v  -> ((addTo ctx (v, ety)), (b, e'):bs)
 
-ann2Class :: Ann.Type -> Classes.Type
-ann2Class (Ann.Type ts) = anns2Class $ head ts
+anns2Class :: Ann.Type -> Classes.Type
+anns2Class (Ann.Type []) = Classes.TBuiltin Error
+anns2Class (Ann.Type ts) = ann2Class $ head ts
 
-anns2Class :: Ann.TypeAnnote -> Classes.Type
-anns2Class (Ann.TBuiltin bty) = Classes.TBuiltin $ fmap ann2Class bty
-anns2Class (Ann.TCon tid tys) = Classes.TCon tid $ fmap ann2Class tys
-anns2Class (Ann.TVar tidx   ) = Classes.TVar tidx
+ann2Class :: Ann.TypeAnnote -> Classes.Type
+ann2Class (Ann.TBuiltin bty) = Classes.TBuiltin $ fmap anns2Class bty
+ann2Class (Ann.TCon tid tys) = Classes.TCon tid $ fmap anns2Class tys
+ann2Class (Ann.TVar tidx   ) = Classes.TVar tidx
