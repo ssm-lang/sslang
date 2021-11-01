@@ -2,8 +2,8 @@ module Tests.InferProgramSpec where
 
 import qualified IR.IR                         as I
 
+import           Common.Pretty                  ( spaghetti )
 import           Common.Compiler                ( runPass )
-import           Front                          ( renderAst )
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
 import           Front.ParseOperators           ( parseOperators )
@@ -22,7 +22,7 @@ import           Test.Hspec                     ( Spec(..)
                                                 )
 
 renderAndParse :: Program -> Either String Program
-renderAndParse = parseProgram . renderAst
+renderAndParse = parseProgram . spaghetti
 
 spec :: Spec
 spec = do
