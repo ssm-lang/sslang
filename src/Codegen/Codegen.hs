@@ -522,7 +522,7 @@ genPrim I.After [time, lhs, rhs] _ = do
   (rhsVal , rhsStms ) <- genExpr rhs
   Just later          <- return $ genLater $ extract lhs
   let timeUnmarshalled = unmarshal timeVal
-  let laterBlock = [citems|
+      laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
