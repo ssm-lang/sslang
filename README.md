@@ -20,7 +20,8 @@ This section will guide you through setting up your development environnment wit
 [ghc]: https://www.haskell.org/ghc/
 [cabal]: https://www.haskell.org/cabal/
 [stack]: https://docs.haskellstack.org/en/stable/GUIDE/
-[hls]: https://github.com/haskell/haskell-language-server
+[haddock]: https://www.haskell.org/haddock/doc/html/index.html
+[hls]: https://haskell-language-server.readthedocs.io/en/latest/
 [hlint]: https://hackage.haskell.org/package/hlint
 [brittany]: https://hackage.haskell.org/package/brittany
 [lsp]: https://langserver.org/
