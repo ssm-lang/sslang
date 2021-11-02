@@ -4,6 +4,7 @@ For now, this module implements a very crude form of pure, syntax-directed type
 inference where type annotations can be locally and immediately inferred,
 without the help of a type environment/context.
 -}
+{-# LANGUAGE DerivingVia #-}
 module IR.TypeInference where
 
 import qualified Data.Map                      as M
@@ -20,95 +21,142 @@ import           IR.Types.TypeSystem            ( dearrow
                                                 , ref
                                                 , unit
                                                 , void
-                                                , Builtin(..)
                                                 )
 import           Common.Identifiers             ( Binder )
 import           Control.Comonad                ( Comonad(..) )
+import           Control.Monad.Except           ( MonadError(..) )
+import           Control.Monad.State.Lazy       ( MonadState
+                                                , StateT(..)
+                                                , evalStateT
+                                                , gets
+                                                , get
+                                                , modify
+                                                )
 import           Data.Maybe                     ( fromJust )
 
--------------------------------------------------------------------------------
--- Typing Environment
--------------------------------------------------------------------------------
+-- | Typing Environment
+newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
 
--- | Typing contexts (Gamma).
-type Context = M.Map I.VarId Ann.Type
+-- Inference Monad
+newtype InferFn a = InferFn (StateT TypeCtx Compiler.Pass a)
+  deriving Functor                      via (StateT TypeCtx Compiler.Pass)
+  deriving Applicative                  via (StateT TypeCtx Compiler.Pass)
+  deriving Monad                        via (StateT TypeCtx Compiler.Pass)
+  deriving MonadFail                    via (StateT TypeCtx Compiler.Pass)
+  deriving (MonadError Compiler.Error)  via (StateT TypeCtx Compiler.Pass)
+  deriving (MonadState TypeCtx)         via (StateT TypeCtx Compiler.Pass)
 
--- | 'emptyCtx' is the empty typing context.
-emptyCtx :: Context
-emptyCtx = M.empty
+runInferFn :: InferFn a -> Compiler.Pass a
+runInferFn (InferFn m) = evalStateT m TypeCtx { varMap = M.empty }
 
--- | 'addTo' adds/replaces the binding for variable @x@ in the typing context @ctx@ with type @t@.
-addTo :: Context -> (I.VarId, Ann.Type) -> Context
-addTo ctx (x, t) = M.insert x t ctx
+insertVar :: I.VarId -> Classes.Type -> InferFn ()
+insertVar v t = modify $ \st -> st { varMap = M.insert v t $ varMap st }
 
--------------------------------------------------------------------------------
--- Inference
--------------------------------------------------------------------------------
+replaceCtx :: TypeCtx -> InferFn ()
+replaceCtx ctx = modify $ \_ -> ctx
+
+lookupVar :: I.VarId -> InferFn (Maybe Classes.Type)
+lookupVar v = M.lookup v <$> gets varMap
 
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
-inferProgram p = do
-  defs' <- inferTop emptyCtx (I.programDefs p)
-  return $ anns2Class <$> p { I.programDefs = defs' }
+inferProgram p = runInferFn $ do
+  defs' <- inferTop $ I.programDefs p
+  return $ I.Program { I.programDefs  = defs'
+                     , I.programEntry = I.programEntry p
+                     , I.typeDefs     = [] -- TODO: something with I.typeDefs p
+                     }
 
-inferTop :: Context -> [(I.VarId, I.Expr Ann.Type)] -> Compiler.Pass ([(I.VarId, I.Expr Ann.Type)])
-inferTop _ [] = return []
-inferTop ctx ((v, e):xs) = do
-  let (e', ety) = (inferExpr ctx e, extract e')
-  xs' <- inferTop (addTo ctx (v, ety)) xs
-  return $ (v, e):xs'
+inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn ([(I.VarId, I.Expr Classes.Type)])
+inferTop [] = return []
+inferTop ((v, e):xs) = do
+  e' <- inferExpr e
+  insertVar v (extract e')
+  xs' <- inferTop xs
+  return $ (v, e'):xs'
 
-inferExpr :: Context -> I.Expr Ann.Type -> I.Expr Ann.Type
-inferExpr ctx (I.Var v t) = case M.lookup v ctx of
-    Nothing -> I.Var v t
-    Just t' -> I.Var v (t' <> t)
-inferExpr ctx (I.Lambda v  b t) = I.Lambda v (inferExpr ctx b) t
-inferExpr ctx (I.Let    vs b t) = I.Let (reverse vs') b' (bty <> t)
-  where
-    (ctx', vs') = foldl inferExprLet (ctx, []) vs
-    (b', bty)  = (inferExpr ctx' b, extract b')
-inferExpr ctx (I.Prim I.New [e] t) = I.Prim I.New [e'] (ref ety <> t)
-  where (e', ety) = (inferExpr ctx e, extract e')
-inferExpr ctx (I.Prim I.Deref [e] t) = I.Prim I.Deref
-                                          [e']
-                                          (fromJust (deref ety) <> t)
-  where (e', ety) = (inferExpr ctx e, extract e')
-inferExpr ctx (I.Prim I.Dup [e] t) = I.Prim I.Dup [e'] (ety <> t)
-  where (e', ety) = (inferExpr ctx e, extract e')
-inferExpr ctx (I.Prim I.Assign [lhs, rhs] t) = I.Prim
-  I.Assign
-  [fmap ((ref $ extract rhs') <>) lhs', rhs']
-  (unit <> t)
-  where (lhs', rhs') = (inferExpr ctx lhs, inferExpr ctx rhs)
-inferExpr ctx (I.Prim I.After [del, lhs, rhs] t) = I.Prim
-  I.After
-  [fmap (int 32 <>) del', fmap ((ref $ extract rhs') <>) lhs', rhs']
-  (unit <> t)
-  where (del', lhs', rhs') = (inferExpr ctx del, inferExpr ctx lhs, inferExpr ctx rhs)
-inferExpr ctx (I.Prim I.Loop               es  t) = I.Prim I.Loop (map (inferExpr ctx) es) $ unit <> t -- TODO: enable local ctx (adding to ctx along the way)
-inferExpr ctx (I.Prim I.Wait               rs  t) = I.Prim I.Wait (map (inferExpr ctx) rs) $ unit <> t -- TODO: all the rs must has Ref t type
-inferExpr _   (I.Prim I.Break              []  t) = I.Prim I.Break [] $ void <> t
-inferExpr _   (I.Prim I.Return             []  t) = I.Prim I.Return [] $ void <> t
-inferExpr ctx (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  t) =
-  I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32 <> t
-  where (e1', e2') = (inferExpr ctx e1, inferExpr ctx e2)
-inferExpr ctx (I.Prim p                    es  t) = I.Prim p (map (inferExpr ctx) es) t
-inferExpr _   (I.Lit I.LitEvent                t) = I.Lit I.LitEvent $ unit <> t
-inferExpr _   (I.Lit i@(I.LitIntegral _)       t) = I.Lit i $ int 32 <> t
-inferExpr ctx (I.App a b t) = I.App a' b' (retTy <> t)
- where
-  (a', b') = (inferExpr ctx a, inferExpr ctx b)
-  retTy    = snd $ fromJust $ dearrow $ extract a'
-inferExpr _ e = e
+inferExpr :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
+inferExpr (I.Var v t) = do
+  record <- lookupVar v
+  case record of
+    Nothing -> do
+      let t' = anns2Class t
+      insertVar v t'
+      return $ I.Var v t'
+    Just t' -> return $ I.Var v t'
+inferExpr (I.Lambda v b t) = do
+  ctx <- get
+  b' <- inferExpr b
+  replaceCtx ctx
+  return $ I.Lambda v b' (anns2Class t)
+inferExpr (I.Let vs b _) = do
+  ctx <- get
+  vs' <- localInferExpr vs
+  b' <- inferExpr b
+  replaceCtx ctx
+  return $ I.Let vs' b' (extract b')
+inferExpr (I.Prim I.New [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.New [e'] $ ref $ extract e'
+inferExpr (I.Prim I.Deref [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.Deref [e'] $ fromJust $ deref $ extract e'
+inferExpr (I.Prim I.Dup [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.Dup [e'] $ extract e'
+inferExpr (I.Prim I.Assign [lhs, rhs] _) = do
+  rhs' <- inferExpr rhs
+  lhs' <- inferExpr lhs
+  let rty = extract rhs'
+  case lhs' of
+    I.Var v _ -> insertVar v (ref rty)
+    _ -> return ()
+  return $ I.Prim I.Assign [(\_ -> (ref rty)) <$> lhs', rhs'] unit
+inferExpr (I.Prim I.After [del, lhs, rhs] _) = do
+  del' <- inferExpr del
+  rhs' <- inferExpr rhs
+  lhs' <- inferExpr lhs
+  let rty = extract rhs'
+  case lhs' of
+    I.Var v _ -> insertVar v (ref rty)
+    _ -> return ()
+  return $ I.Prim I.After [(\_ -> (int 32)) <$> del', (\_ -> (ref rty)) <$> lhs', rhs'] unit
+inferExpr (I.Prim I.Loop es _) = do
+  ctx <- get
+  es' <- mapM inferExpr es
+  replaceCtx ctx
+  return $ I.Prim I.Loop es' unit
+inferExpr (I.Prim I.Wait rs _) = do
+  rs' <- mapM inferExpr rs
+  return $ I.Prim I.Wait rs' unit
+inferExpr (I.Prim I.Break [] _) = return $ I.Prim I.Break [] $ void
+inferExpr (I.Prim I.Return [] _) = return $ I.Prim I.Return [] $ void
+inferExpr (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+  e1' <- inferExpr e1
+  e2' <- inferExpr e2
+  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
+inferExpr (I.Prim p es t) = do
+  es' <- mapM inferExpr es
+  return $ I.Prim p es' (anns2Class t)
+inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
+inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
+inferExpr (I.App a b _) = do
+  a' <- inferExpr a
+  b' <- inferExpr b
+  let retTy = snd $ fromJust $ dearrow $ extract a'
+  return $ I.App a' b' retTy
+inferExpr e = return $ anns2Class <$> e
 
-inferExprLet :: (Context, [(Binder, I.Expr Ann.Type)]) -> (Binder, I.Expr Ann.Type) -> (Context, [(Binder, I.Expr Ann.Type)])
-inferExprLet (ctx, bs) (b, e) =
-  let (e', ety) = (inferExpr ctx e, extract e') in
+localInferExpr :: [(Binder, I.Expr Ann.Type)] -> InferFn ([(Binder, I.Expr Classes.Type)])
+localInferExpr [] = return []
+localInferExpr ((b, e):vs) = do
+  e' <- inferExpr e
   case b of
-    Nothing -> (ctx, (b, e'):bs)
-    Just v  -> ((addTo ctx (v, ety)), (b, e'):bs)
+    Just vid -> insertVar vid (extract e')
+    Nothing -> return ()
+  vs' <- localInferExpr vs
+  return $ (b, e'):vs'
 
 anns2Class :: Ann.Type -> Classes.Type
-anns2Class (Ann.Type []) = Classes.TBuiltin Error
 anns2Class (Ann.Type ts) = ann2Class $ head ts
 
 ann2Class :: Ann.TypeAnnote -> Classes.Type

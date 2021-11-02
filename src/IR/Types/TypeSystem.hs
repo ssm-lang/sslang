@@ -36,7 +36,6 @@ data Builtin t
   | Arrow t t     -- ^ Function arrow @a -> b@
   | Tuple [t]     -- ^ Tuple with two or more fields
   | Integral Int  -- ^ Two's complement binary type with size in bits
-  | Error
   deriving (Eq, Show)
 
 instance Functor Builtin where
@@ -46,7 +45,6 @@ instance Functor Builtin where
   fmap f (Arrow l r   ) = Arrow (f l) (f r)
   fmap f (Tuple    tys) = Tuple $ fmap f tys
   fmap _ (Integral s  ) = Integral s
-  fmap _ Error          = Error
 
 instance Pretty t => Pretty (Builtin t) where
   pretty Unit           = pretty "()"
@@ -55,7 +53,6 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
   pretty (Integral s  ) = pretty $ "Int" ++ show s
-  pretty Error          = pretty "Error"
 
 {- | A type system must allow us to construct and access underlying builtins.
 

@@ -8,8 +8,8 @@ import           Front.Ast
 import           Front.Parser                   ( parseProgram )
 import           Front.ParseOperators           ( parseOperators )
 import           IR.LowerAst                    ( lowerProgram )
-import           IR.TypeInference               ( emptyCtx
-                                                , inferExpr
+import           IR.TypeInference               ( inferExpr
+                                                , inferProgram
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -27,7 +27,7 @@ renderAndParse = parseProgram . spaghetti
 spec :: Spec
 spec = do
 
-  it "inferExpr doubleblink.ssl part 1" $ do
+  it "infers doubleblink.ssl part 1" $ do
     let input = parseProgram $ unlines
           [ "toggle(led : &Int) -> () ="
           , "  (led: &Int) <- (deref (led: &Int): Int)"
@@ -35,12 +35,12 @@ spec = do
         typedInput = case input of
           Left e -> Left "Failed to parse program"
           Right p ->
-            case runPass $ lowerProgram (parseOperators p) of
+            case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
               Left e' -> Left "Failed to lower program"
-              Right p' -> Right $ second (inferExpr emptyCtx) <$> (I.programDefs p')
+              Right p' -> Right p'
     putStrLn $ show typedInput
 
-  it "inferExpr doubleblink.ssl part 2" $ do
+  it "infers doubleblink.ssl part 2" $ do
     let input = parseProgram $ unlines
           [ "slow(led : &Int) -> () ="
           , "  let e1 = (new () : &())"
@@ -61,7 +61,7 @@ spec = do
         typedInput = case input of
           Left e -> Left "Failed to parse program"
           Right p ->
-            case runPass $ lowerProgram (parseOperators p) of
+            case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
               Left e' -> Left "Failed to lower program"
-              Right p' -> Right $ second (inferExpr emptyCtx) <$> (I.programDefs p')
+              Right p' -> Right p'
     putStrLn $ show typedInput
