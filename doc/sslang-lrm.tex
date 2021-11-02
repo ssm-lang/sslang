@@ -503,6 +503,46 @@ Top-level definitions can be summarized by the following grammar.
 \end{grammar}
 
 \section{Expressions}
+We now a present an overview of expressions and language constructs in sslang.
+\begin{grammar}
+<expr> ::= <expr_stm> ";" <expr>
+\alt "let {" <def_let> "}; " <expr>
+\alt <expr_stm>
+
+<expr_stm> ::= <expr_ann> "<- {"  <expr_ann> "}"
+\alt "after" <expr_ann> "," <expr_ann> "<- {"  <expr_ann> "}"
+\alt <expr_ann>
+
+<expr_ann> ::= <expr_ann> ":" <typ>
+\alt <expr_op>
+
+<expr_op> ::= <expr_blk> <expr_op_region>$^{?}$
+
+<expr_blk> ::=  "do {" <expr> "}"
+\alt "loop {" <expr> "}"
+\alt "wait {" <expr_par> "}"
+\alt "par {" <expr_par> "}"
+\alt "if" <expr_blk> "{" <expr> "}" <expr_else>$^{?}$
+\alt "while" <expr_blk> "{" <expr> "}"
+\alt "fun" <pat>$^{+}$ "{" expr "}"
+\alt <expr_app>
+
+<expr_else> ::= "; else {" <expr> "}"
+\alt "else {" <expr> "}"
+
+<expr_app> ::= <expr_app> <expr_atom>
+\alt <expr_atom>
+
+<expr_par> ::= <expr> "||" <expr_par>
+\alt <expr>
+
+<expr_atom> ::= ["True"|"False"] \texttt{// Bool}
+\alt ["0"-"9"]$^{+}$ \texttt{// Int}
+\alt ["0"-"9"]$^{+}$"."["0"-"9"]$^{*}$ \texttt{// Rational}
+\alt "()" \texttt{// Event}
+\alt "'"["a"-"zA"-"Z"]"'" \texttt{// Char}
+\alt "\""["a"-"zA"-"Z"]$^{+}$"\"" \texttt{// String}
+\end{grammar}
 \subsection{Variables and Literals}
 There are no special rules for referencing variables or literal expressions.
 
@@ -537,49 +577,15 @@ f (x + 5) y
 \end{lstlisting}
 
 Application via juxtaposition can be performed on adjacent literal expressions and parenthesized complex expressions, as shown in the grammar above.
+
 \subsection{Operation Regions}
 \fixme{todo}
-\subsection{Let Bindings}
+\subsection{Do-blocks}
 \begin{grammar}
-<let> ::= "let {" <def_let>$^{+}$ "}"; <expr>
+<do> ::= "do {" <expr> "}"
 \end{grammar}
-
-In let blocks, patterns are bound to mutually-recursive expressions. Patterns have a wide range of use cases, from binding simple identifiers to deconstructing algebraic data types. In the let-block below, we demonstrate the use of patterns while binding three expressions:
-\begin{lstlisting}
-let x = 5                  // Simple binding
-    (y, _) = foo           // Tuple structured binding
-    f a b = let c = a + b  // Syntactic sugar for lambda definition
-            c * 2
-...
-\end{lstlisting}
-Note the careful use of indentation in the let block. In the absence of explicit braces, the pattern section creates an indentation block (hence \texttt{x}, \texttt{(y, _)}, and \texttt{f a b} appearing at the same level) and the expression value section creates an indentation block (hence the expressions \texttt{let c = ...} and \texttt{c * 2} appearing at the same level).
-\subsection{Instant and Delayed Reference Assignment}
-\begin{grammar}
-<assign> ::= <expr> "<- {" <expr> "}"
-\alt "after" <expr> "," <expr> "<- {" <expr> "}"
-\end{grammar}
-References in sslang may be assigned to instantly or after some time period. In the following function definition, we showcase both forms of assignment.
-\begin{lstlisting}
-now_and_later (x: &Int) (y: &Bool)
-    x <- let a = 2
-         a + 5
-    after 5 ms , y <- True
-\end{lstlisting}
-Note that similarly to let bindings, the \texttt{<-} assignment operator creates an indentation block, as seen in the instant assignment to \texttt{x}.
-\subsection{If-Else}
-\begin{grammar}
-<if-else> ::= "if" <expr> "{" <expr> "}" ("else" "{" <expr> "}")$^{?}$
-\end{grammar}
-If-else expressions conditionally evaluate blocks. If the predicate expression evaluates to \texttt{True}, the \texttt{if} block is evaluated. If there is an \texttt{else} block provided and the predicate evaluated to \texttt{False}, then the \texttt{else} block is evaluated.
-
-Note that If-else creates indentation blocks. This is shown in the following example:
-\begin{lstlisting}
-if x > 5
-    x <- x * 2
-    f x
-else
-    x <- 0
-\end{lstlisting}
+Do-blocks allow for grouping of expressions in a separate scope.
+The value of do-block expressions is unit.
 \subsection{Loops}
 \begin{grammar}
 <loop> ::= "loop {" <expr> "}"
@@ -599,6 +605,23 @@ while y != 5
   y <- y + 1
  
 \end{lstlisting}
+The value of loop and while expressions is unit.
+\subsection{If-Else}
+\begin{grammar}
+<if-else> ::= "if" <expr> "{" <expr> "}" ("else" "{" <expr> "}")$^{?}$
+\end{grammar}
+If-else expressions conditionally evaluate blocks. If the predicate expression evaluates to \texttt{True}, the \texttt{if} block is evaluated. If there is an \texttt{else} block provided and the predicate evaluated to \texttt{False}, then the \texttt{else} block is evaluated.
+
+Note that If-else creates indentation blocks. This is shown in the following example:
+\begin{lstlisting}
+if x > 5
+    x <- x * 2
+    f x
+else
+    x <- 0
+\end{lstlisting}
+
+The value of an if-else expression is the last expression in either of the blocks. The types of the last expressions in the if and the else block must be the same.
 \subsection{Lambdas}
 \begin{grammar}
 <lambda> ::= "fun" <pat>$^{+}$ "{" <expr> "}"
@@ -613,21 +636,23 @@ The following example demonstrates two ways of defining the same lambda, one usi
 let f x y = x + y;
 f 1 2 == (fun a b { a + b }) 1 2
 \end{lstlisting}
-\subsection{Pattern Matching}
-\fixme{todo}
-\subsection{Forking Routines}
+\subsection{Parallel Execution}
 \begin{grammar}
-<fork> ::= "par {" <expr> ("||" <expr>)$^{*}$ "}"
+<par> ::= "par {" <expr_par> "}"
+<expr_par> ::= <expr> "||" <expr_par>
+\alt <expr>
 \end{grammar}
-Fork expressions take a sequence of routine calls and pauses the current routine's execution until all of the forked routines return. For example:
+Parallel expression execution takes a sequence of routine calls and pauses the current routine's execution until all of the par'd routines return. For example:
 \begin{lstlisting}
 foo (a: Ref Int)  (b: Ref Int)
     par (bar a) || (baz b)
 \end{lstlisting}
 As per SSM Runtime semantics, \texttt{bar} is guaranteed to be executed first because the listed routine calls are evaluated in order.
+
+The value of a par expression is a tuple containing the return values of the par'd routines.
 \subsection{Waiting}
 \begin{grammar}
-<wait> ::= "wait {" <expr> ("||" <expr>)$^{*}$ "}"
+<wait> ::= "wait {" <expr_par> "}"
 \end{grammar}
 Wait expressions take a sequence of expressions and pauses the routine's execution until any of the expressions is written to. Take for example the routine \texttt{wait_one_of_two}:
 \begin{lstlisting}
@@ -636,14 +661,62 @@ wait_one_of_two (a: Sched Int)  (b: Sched Int)
 \end{lstlisting}
 This routine will block until either \texttt{a} or \texttt{b} are written to, where \texttt{a} and  \texttt{b} are scheduled variables.
 
+The value of a wait expression is unit. However, one can check which variable was written to using the \texttt{@} operator.
+\subsection{Type-constrained expressions}
+\begin{grammar}
+<expr_ann> ::= <expr_ann> ":" <typ>
+\end{grammar}
+
+It is possible to type-annotate expressions for documentation purposes or to concretize type-generic expressions.
+
+In the following code sample, we type-constrain a lambda expression:
+\begin{lstlisting}
+((fun x y { x }): Int -> Bool -> Int)
+\end{lstlisting}
+
+\subsection{Instant and Delayed Reference Assignment}
+\begin{grammar}
+<assign> ::= <expr> "<- {" <expr> "}"
+\alt "after" <expr> "," <expr> "<- {" <expr> "}"
+\end{grammar}
+References in sslang may be assigned to instantly or after some time period. In the following function definition, we showcase both forms of assignment.
+\begin{lstlisting}
+now_and_later (x: &Int) (y: &Bool)
+    x <- let a = 2
+         a + 5
+    after 5 ms , y <- True
+\end{lstlisting}
+Note that similarly to let bindings, the \texttt{<-} assignment operator creates an indentation block, as seen in the instant assignment to \texttt{x}.
+
+The value of assignment expressions is unit.
+\subsection{Let Bindings}
+\begin{grammar}
+<let> ::= "let {" <def_let>$^{+}$ "}"; <expr>
+\end{grammar}
+
+In let blocks, patterns are bound to mutually-recursive expressions. Patterns have a wide range of use cases, from binding simple identifiers to deconstructing algebraic data types. In the let-block below, we demonstrate the use of patterns while binding three expressions:
+\begin{lstlisting}
+let x = 5                  // Simple binding
+    (y, _) = foo           // Tuple structured binding
+    f a b = let c = a + b  // Syntactic sugar for lambda definition
+            c * 2
+...
+\end{lstlisting}
+Note the careful use of indentation in the let block. In the absence of explicit braces, the pattern section creates an indentation block (hence \texttt{x}, \texttt{(y, _)}, and \texttt{f a b} appearing at the same level) and the expression value section creates an indentation block (hence the expressions \texttt{let c = ...} and \texttt{c * 2} appearing at the same level).
+
+The value of a let-binding expression is the last expression in the sequence following the bindings.
 \subsection{Sequences}
 \begin{grammar}
-<sequence> ::= <expr> ";" <expr>
+<seq> ::= <expr_stm> ";" <expr>
 \end{grammar}
 Sequences chain expressions in block-expressions. The value of a sequence is the second expression in the sequence.
 \begin{lstlisting}
 (f 1; 5) // The value of the parenthesized expression is 5
 \end{lstlisting}
+
+
+\subsection{Pattern Matching}
+\fixme{todo}
 
 \newpage
 
