@@ -18,7 +18,7 @@
 \date{2021}
 
 \lstdefinelanguage{sslang}{
-  morekeywords={let,if,then,else,while,after,wait,pipe},
+  morekeywords={let,if,else,while,after,wait,fun,do,loop,match,par},
   morecomment=[l]{//},
   morecomment=[s]{/*}{*/},
   columns=flexible,
@@ -600,7 +600,19 @@ while y != 5
  
 \end{lstlisting}
 \subsection{Lambdas}
-\fixme{todo}
+\begin{grammar}
+<lambda> ::= "fun" <pat>$^{+}$ "{" <expr> "}"
+\end{grammar}
+
+Lambda expressions enable programmers to define unnamed functions on-the-fly and use them immediately in other expressions without having to make a top-level definition.
+
+Note that lambdas may take any number of pattern arguments, which allow for deconstruction of data types or specification of "don't-care" arguments with wildcards.
+
+The following example demonstrates two ways of defining the same lambda, one using the syntactic sugar let-style and the other using the \texttt{fun} keyword:
+\begin{lstlisting}
+let f x y = x + y;
+f 1 2 == (fun a b { a + b }) 1 2
+\end{lstlisting}
 \subsection{Pattern Matching}
 \fixme{todo}
 \subsection{Forking Routines}
@@ -630,7 +642,7 @@ This routine will block until either \texttt{a} or \texttt{b} are written to, wh
 \end{grammar}
 Sequences chain expressions in block-expressions. The value of a sequence is the second expression in the sequence.
 \begin{lstlisting}
-let x = 1 + 1; 5 // The value of x is 5
+(f 1; 5) // The value of the parenthesized expression is 5
 \end{lstlisting}
 
 \newpage
