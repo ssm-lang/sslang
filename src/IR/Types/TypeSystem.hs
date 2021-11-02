@@ -46,6 +46,7 @@ instance Functor Builtin where
   fmap f (Arrow l r   ) = Arrow (f l) (f r)
   fmap f (Tuple    tys) = Tuple $ fmap f tys
   fmap _ (Integral s  ) = Integral s
+  fmap _ Error          = Error
 
 instance Pretty t => Pretty (Builtin t) where
   pretty Unit           = pretty "()"
@@ -54,6 +55,7 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
   pretty (Integral s  ) = pretty $ "Int" ++ show s
+  pretty Error          = pretty "Error"
 
 {- | A type system must allow us to construct and access underlying builtins.
 
