@@ -1,9 +1,9 @@
-main ( cout : & Int, x : Int) -> () =
+main ( cout : & Int ) -> () =
   after 10 , (cout : & Int) <- (70 + 2 + 8500 + 5 - 8000 - 505):Int
   wait (cout : & Int)
   after 10 , (cout : & Int) <- (9 + 5 + 10 -5 + 90 - 111 + 103):Int
   wait (cout : & Int)
-  after 10 , (cout : & Int) <- (109-1):Int
+  after 10 , (cout : & Int) <- (109 - 1):Int
   wait (cout : & Int)
   after 10 , (cout : & Int) <- ((deref (cout:&Int):Int) -86 + 4 + 83 +3 -5 +1):Int
   wait (cout : & Int)
