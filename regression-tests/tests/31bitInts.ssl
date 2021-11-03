@@ -1,13 +1,13 @@
-main ( cout : & Int ) -> () =
-  after 10 , (cout : & Int) <- 70 + 2
+main ( cout : & Int, x : Int) -> () =
+  after 10 , (cout : & Int) <- (70 + 2 + 8500 + 5 - 8000 - 505):Int
   wait (cout : & Int)
-  after 10 , (cout : & Int) <- 101
+  after 10 , (cout : & Int) <- (9 + 5 + 10 -5 + 90 - 111 + 103):Int
   wait (cout : & Int)
-  after 10 , (cout : & Int) <- 108
+  after 10 , (cout : & Int) <- (109-1):Int
   wait (cout : & Int)
-  after 10 , (cout : & Int) <- 108
+  after 10 , (cout : & Int) <- ((deref (cout:&Int):Int) -86 + 4 + 83 +3 -5 +1):Int
   wait (cout : & Int)
-  after 10 , (cout : & Int) <- 111
+  after 10 , (cout : & Int) <- (219 - deref (cout:&Int):Int ):Int
   wait (cout : & Int)
   after 10 , (cout : & Int) <- 10
   wait (cout : & Int)
