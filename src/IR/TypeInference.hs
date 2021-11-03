@@ -5,6 +5,7 @@ inference where type annotations can be locally and immediately inferred,
 without the help of a type environment/context.
 -}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE BlockArguments #-}
 module IR.TypeInference where
 
 import qualified Data.Map                      as M
@@ -53,7 +54,7 @@ insertVar :: I.VarId -> Classes.Type -> InferFn ()
 insertVar v t = modify $ \st -> st { varMap = M.insert v t $ varMap st }
 
 replaceCtx :: TypeCtx -> InferFn ()
-replaceCtx ctx = modify $ \_ -> ctx
+replaceCtx ctx = modify $ const ctx
 
 lookupVar :: I.VarId -> InferFn (Maybe Classes.Type)
 lookupVar v = M.lookup v <$> gets varMap
@@ -66,7 +67,7 @@ inferProgram p = runInferFn $ do
                      , I.typeDefs     = [] -- TODO: something with I.typeDefs p
                      }
 
-inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn ([(I.VarId, I.Expr Classes.Type)])
+inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
 inferTop [] = return []
 inferTop ((v, e):xs) = do
   e' <- inferExpr e
@@ -83,16 +84,11 @@ inferExpr (I.Var v t) = do
       insertVar v t'
       return $ I.Var v t'
     Just t' -> return $ I.Var v t'
-inferExpr (I.Lambda v b t) = do
-  ctx <- get
-  b' <- inferExpr b
-  replaceCtx ctx
+inferExpr e@(I.Lambda v b t) = do
+  b' <- withNewScope $ withVty e v t >> inferExpr b
   return $ I.Lambda v b' (anns2Class t)
 inferExpr (I.Let vs b _) = do
-  ctx <- get
-  vs' <- localInferExpr vs
-  b' <- inferExpr b
-  replaceCtx ctx
+  (vs', b') <- withNewScope $ localInferExpr vs b
   return $ I.Let vs' b' (extract b')
 inferExpr (I.Prim I.New [e] _) = do
   e' <- inferExpr e
@@ -103,33 +99,37 @@ inferExpr (I.Prim I.Deref [e] _) = do
 inferExpr (I.Prim I.Dup [e] _) = do
   e' <- inferExpr e
   return $ I.Prim I.Dup [e'] $ extract e'
-inferExpr (I.Prim I.Assign [lhs, rhs] _) = do
-  rhs' <- inferExpr rhs
+inferExpr e@(I.Prim I.Assign [lhs, rhs] _) = do
   lhs' <- inferExpr lhs
-  let rty = extract rhs'
-  case lhs' of
-    I.Var v _ -> insertVar v (ref rty)
-    _ -> return ()
-  return $ I.Prim I.Assign [(\_ -> (ref rty)) <$> lhs', rhs'] unit
-inferExpr (I.Prim I.After [del, lhs, rhs] _) = do
+  rhs' <- inferExpr rhs
+  let rrty = ref $ extract rhs'
+  if extract lhs' == rrty
+    then do
+      case lhs' of
+        I.Var v _ -> insertVar v rrty
+        _ -> return ()
+      return $ I.Prim I.Assign [rrty <$ lhs', rhs'] unit
+    else throwError $ Compiler.TypeError $ "Assign expression has inconsistent type: " ++ show e
+inferExpr e@(I.Prim I.After [del, lhs, rhs] _) = do
   del' <- inferExpr del
   rhs' <- inferExpr rhs
   lhs' <- inferExpr lhs
-  let rty = extract rhs'
-  case lhs' of
-    I.Var v _ -> insertVar v (ref rty)
-    _ -> return ()
-  return $ I.Prim I.After [(\_ -> (int 32)) <$> del', (\_ -> (ref rty)) <$> lhs', rhs'] unit
+  let rrty = ref $ extract rhs'
+  if extract del' == int 32 && extract lhs' == rrty
+    then do
+      case lhs' of
+        I.Var v _ -> insertVar v rrty
+        _ -> return ()
+      return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
+    else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
 inferExpr (I.Prim I.Loop es _) = do
-  ctx <- get
   es' <- mapM inferExpr es
-  replaceCtx ctx
   return $ I.Prim I.Loop es' unit
 inferExpr (I.Prim I.Wait rs _) = do
   rs' <- mapM inferExpr rs
   return $ I.Prim I.Wait rs' unit
-inferExpr (I.Prim I.Break [] _) = return $ I.Prim I.Break [] $ void
-inferExpr (I.Prim I.Return [] _) = return $ I.Prim I.Return [] $ void
+inferExpr (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
+inferExpr (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
 inferExpr (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
@@ -139,22 +139,42 @@ inferExpr (I.Prim p es t) = do
   return $ I.Prim p es' (anns2Class t)
 inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
 inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
-inferExpr (I.App a b _) = do
+inferExpr e@(I.App a b _) = do
   a' <- inferExpr a
   b' <- inferExpr b
-  let retTy = snd $ fromJust $ dearrow $ extract a'
-  return $ I.App a' b' retTy
-inferExpr e = return $ anns2Class <$> e
+  case dearrow $ extract a' of
+    Just (t1, t2) ->
+      if t1 == extract a'
+        then throwError $ Compiler.TypeError $ "App expression has inconsistent type: " ++ show e
+        else return $ I.App a' b' t2
+    Nothing -> throwError $ Compiler.TypeError $ "Unable to type App expression: " ++ show e
+inferExpr e = throwError $ Compiler.TypeError $ "Unable to type unknown expression: " ++ show e
 
-localInferExpr :: [(Binder, I.Expr Ann.Type)] -> InferFn ([(Binder, I.Expr Classes.Type)])
-localInferExpr [] = return []
-localInferExpr ((b, e):vs) = do
+localInferExpr :: [(Binder, I.Expr Ann.Type)] -> I.Expr Ann.Type -> InferFn ([(Binder, I.Expr Classes.Type)], I.Expr Classes.Type)
+localInferExpr [] body = do
+  body' <- inferExpr body
+  return ([], body')
+localInferExpr ((b, e):vs) body = do
   e' <- inferExpr e
   case b of
     Just vid -> insertVar vid (extract e')
     Nothing -> return ()
-  vs' <- localInferExpr vs
-  return $ (b, e'):vs'
+  (vs', body') <- localInferExpr vs body
+  return ((b, e'):vs', body')
+
+withNewScope :: InferFn a -> InferFn a
+withNewScope inf = do
+  ctx <- get
+  x <- inf
+  modify $ const ctx
+  return x
+
+withVty :: I.Expr Ann.Type -> Binder -> Ann.Type -> InferFn ()
+withVty _ Nothing _ = return ()
+withVty e (Just v) t =
+  case dearrow t of
+    Just (vty, _) -> insertVar v (anns2Class vty)
+    Nothing       -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
 
 anns2Class :: Ann.Type -> Classes.Type
 anns2Class (Ann.Type ts) = ann2Class $ head ts
