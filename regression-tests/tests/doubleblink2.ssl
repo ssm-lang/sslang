@@ -4,17 +4,17 @@ toggle(led : &Int) -> () =
 slow(led : &Int) -> () =
   let e1 = new ()
   loop
-    (toggle: &Int -> ()) led
+    toggle led
     after 30 , e1 <- ()
     wait e1
 
 fast(led : &Int) -> () =
-  let e2 = (new () : &())
+  let e2 = new ()
   loop
-    (toggle: &Int -> ()) led
+    toggle led
     after 20 , e2 <- ()
     wait e2
 
 main(led : &Int) -> () =
-  par (slow: &Int -> ()) led
-      (fast: &Int -> ()) led
+  par slow led
+      fast led
