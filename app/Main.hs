@@ -129,6 +129,8 @@ main = do
 
   irL   <- doPass $ IR.lambdaLift irY
 
+  when (True) $ putStrLn "DFGSDFDSF" >> exitSuccess
+
   irI   <- doPass $ IR.defunctionalize irL
 
   irD   <- doPass $ IR.inferDrops irI

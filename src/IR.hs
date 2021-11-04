@@ -15,6 +15,7 @@ import           IR.ClassInstantiation          ( instProgram )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.Monomorphize                ( monoProgram )
 import           IR.TypeInference               ( inferProgram )
+import           IR.LambdaLift                  ( liftProgramLambdas )
 
 lowerAst :: A.Program -> Compiler.Pass (I.Program Ann.Type)
 lowerAst = lowerProgram
@@ -30,7 +31,7 @@ yieldAbstraction :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 yieldAbstraction = return
 
 lambdaLift :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
-lambdaLift = return
+lambdaLift = liftProgramLambdas
 
 defunctionalize :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 defunctionalize = return
