@@ -506,7 +506,7 @@ Top-level definitions can be summarized by the following grammar.
 We now a present an overview of expressions and language constructs in sslang.
 \begin{grammar}
 <expr> ::= <expr_stm> ";" <expr>
-\alt "let {" <def_let> "}; " <expr>
+\alt "let {" <def_let> ("||" <def_let>)$^{+}$ "}; " <expr>
 \alt <expr_stm>
 
 <expr_stm> ::= <expr_ann> "<- {"  <expr_ann> "}"
@@ -520,8 +520,8 @@ We now a present an overview of expressions and language constructs in sslang.
 
 <expr_blk> ::=  "do {" <expr> "}"
 \alt "loop {" <expr> "}"
-\alt "wait {" <expr_par> "}"
-\alt "par {" <expr_par> "}"
+\alt "wait {" <expr> ("||" <expr>)$^{+}$ "}"
+\alt "par {" <expr> ("||" <expr>)$^{+}$ "}"
 \alt "if" <expr_blk> "{" <expr> "}" <expr_else>$^{?}$
 \alt "while" <expr_blk> "{" <expr> "}"
 \alt "fun" <pat>$^{+}$ "{" expr "}"
@@ -533,15 +533,13 @@ We now a present an overview of expressions and language constructs in sslang.
 <expr_app> ::= <expr_app> <expr_atom>
 \alt <expr_atom>
 
-<expr_par> ::= <expr> "||" <expr_par>
-\alt <expr>
-
 <expr_atom> ::= ["True"|"False"] \texttt{// Bool}
 \alt ["0"-"9"]$^{+}$ \texttt{// Int}
 \alt ["0"-"9"]$^{+}$"."["0"-"9"]$^{*}$ \texttt{// Rational}
 \alt "()" \texttt{// Event}
 \alt "'"["a"-"zA"-"Z"]"'" \texttt{// Char}
 \alt "\""["a"-"zA"-"Z"]$^{+}$"\"" \texttt{// String}
+\alt "(" <expr> ")" \texttt{// Parenthesized expression}
 \end{grammar}
 \subsection{Variables and Literals}
 There are no special rules for referencing variables or literal expressions.
@@ -591,7 +589,7 @@ The value of do-block expressions is unit.
 <loop> ::= "loop {" <expr> "}"
 \alt "while" <expr> "{" <expr> "}"
 \end{grammar}
-sslang loops come in two flavors: unconditional and conditional loops. The former is simply a sequence of expressions that are evaluated until a \texttt{break} expression is encountered The latter is simply while loop that evaluates the sequence of expressions in its body until its condition evaluates to false. The following two code snippets demonstrate how to count to five using these two loop constructs:
+sslang loops come in two flavors: unconditional and conditional loops. The former is simply a sequence of expressions that are evaluated until a \texttt{break} expression is encountered The latter is simply while loop that evaluates the sequence of expressions in its body until its condition evaluates to \texttt{False}. The following two code snippets demonstrate how to count to five using these two loop constructs:
 \begin{lstlisting}
 x <- 0
 loop
@@ -638,9 +636,7 @@ f 1 2 == (fun a b { a + b }) 1 2
 \end{lstlisting}
 \subsection{Parallel Execution}
 \begin{grammar}
-<par> ::= "par {" <expr_par> "}"
-<expr_par> ::= <expr> "||" <expr_par>
-\alt <expr>
+<par> ::= "par {" <expr> ("||" <expr>)$^{+}$ "}"
 \end{grammar}
 Parallel expression execution takes a sequence of routine calls and pauses the current routine's execution until all of the par'd routines return. For example:
 \begin{lstlisting}
@@ -652,7 +648,7 @@ As per SSM Runtime semantics, \texttt{bar} is guaranteed to be executed first be
 The value of a par expression is a tuple containing the return values of the par'd routines.
 \subsection{Waiting}
 \begin{grammar}
-<wait> ::= "wait {" <expr_par> "}"
+<wait> ::= "wait {" <expr> ("||" <expr>)$^{+}$ "}"
 \end{grammar}
 Wait expressions take a sequence of expressions and pauses the routine's execution until any of the expressions is written to. Take for example the routine \texttt{wait_one_of_two}:
 \begin{lstlisting}
@@ -691,7 +687,7 @@ Note that similarly to let bindings, the \texttt{<-} assignment operator creates
 The value of assignment expressions is unit.
 \subsection{Let Bindings}
 \begin{grammar}
-<let> ::= "let {" <def_let>$^{+}$ "}"; <expr>
+<let> ::= "let {" <def_let> ("||" <def_let>)$^{+}$ "}"; <expr>
 \end{grammar}
 
 In let blocks, patterns are bound to mutually-recursive expressions. Patterns have a wide range of use cases, from binding simple identifiers to deconstructing algebraic data types. In the let-block below, we demonstrate the use of patterns while binding three expressions:
