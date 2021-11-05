@@ -88,6 +88,10 @@ priority = "priority"
 sv_t :: C.Type
 sv_t = [cty|struct sv|]
 
+-- | The word size as type uint32_t
+word_t :: C.Type
+word_t = [cty|typename uint32_t|]
+
 -- | The conventional name of the payload field in a type-specialized SV.
 value :: CIdent
 value = "value"

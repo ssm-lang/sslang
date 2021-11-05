@@ -586,8 +586,6 @@ genPrim I.Return [e] _ = do
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
-
-
 -- | Generate C value for SSM literal.
 genLiteral :: Literal -> Type -> GenFn (C.Exp, [C.BlockItem])
 genLiteral (I.LitIntegral i    ) _ = return (marshal [cexp|$int:i|], [])
@@ -601,12 +599,12 @@ genPrimOp I.PrimAdd [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <- genBinop lhs rhs
   -- all integers are 31 bits + 1 tag bit, so zero tag bit on one argument,
   -- add together, and the result will be sum with a tag bit of 1.
-  return ([cexp|((((typename uint32_t) $exp:rhsVal) & 0xFFFFFFFE) + ((typename uint32_t) $exp:lhsVal))|], stms)
+  return ([cexp|(((($ty:word_t) $exp:rhsVal) & (~1)) + (($ty:word_t) $exp:lhsVal))|], stms)
 genPrimOp I.PrimSub [lhs, rhs] _ = do
   -- all integers are 31 bits + 1 tag bit, so zero tag bit on subtrahend,
   -- subtract, and the result will be difference with a tag bit of 1.                   
   ((lhsVal, rhsVal), stms) <- genBinop lhs rhs
-  return ([cexp|(((typename uint32_t) $exp:lhsVal) - (((typename uint32_t) $exp:rhsVal) & 0xFFFFFFFE))|], stms)
+  return ([cexp|((($ty:word_t) $exp:lhsVal) - ((($ty:word_t) $exp:rhsVal) & (~1)))|], stms)
 genPrimOp I.PrimMul [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
@@ -632,7 +630,7 @@ genPrimOp I.PrimBitNot [opr] _ = do
   (val, stms) <- genExpr opr
   -- all integers are 31 bits + 1 tag bit, so val XOR (~1)
   -- flips the 31 bits and keeps the tag bit 1. 
-  return ([cexp|($exp:val ^ 0xFFFFFFFE)|], stms)
+  return ([cexp|($exp:val ^ (~1))|], stms)
 genPrimOp I.PrimEq [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <- genBinop lhs rhs
   return ([cexp|$exp:lhsVal == $exp:rhsVal|], stms)
@@ -662,16 +660,15 @@ genBinop lhs rhs = do
 
 -- | Marshal a C expression evaluating to a 32 bit int
 marshal :: C.Exp -> C.Exp
-marshal e = [cexp|((((typename uint32_t) $exp:e) << 1) | 0x1)|]
+marshal e = [cexp|(((($ty:word_t) $exp:e) << 1) | 0x1)|]
 
 -- | Unmarshal a C expression evaluating to a SSLANG 31 bit 
 unmarshal :: C.Exp -> C.Exp
-unmarshal e = [cexp|(((typename uint32_t) $exp:e) >> 1)|]
+unmarshal e = [cexp|((($ty:word_t) $exp:e) >> 1)|]
 
 -- | Compute priority and depth arguments for a par fork of width 'numChildren'.
 genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
 genParArgs numChildren (currentPrio, currentDepth) =
-
   [ let p = [cexp|$exp:currentPrio + ($int:(i-1) * (1 << $exp:d))|]
         d = [cexp|$exp:currentDepth - $exp:(depthSub numChildren)|]
     in  (p, d)

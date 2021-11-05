@@ -11,3 +11,4 @@ main ( cout : & Int ) -> () =
   wait (cout : & Int)
   after 10 , (cout : & Int) <- 10
   wait (cout : & Int)
+  
