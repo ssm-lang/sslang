@@ -540,26 +540,29 @@ We now a present an overview of expressions and language constructs in sslang.
 \alt "'"["a"-"zA"-"Z"]"'" \texttt{// Char}
 \alt "\""["a"-"zA"-"Z"]$^{+}$"\"" \texttt{// String}
 \alt "(" <expr> ")" \texttt{// Parenthesized expression}
+\alt ["a"-"zA"-"Z"] ["a"-"zA"-"Z0"-"9_'"]$^{*}$ \texttt{// Identfier}
 \end{grammar}
-\subsection{Variables and Literals}
-There are no special rules for referencing variables or literal expressions.
+\subsection{Atomic expressions}
+There are no special rules for referencing variables or literals.
 
 The following expression computes the sum of the variable \texttt{x} (defined elsewhere) and 5:
 \begin{lstlisting}
 x + 5
 \end{lstlisting}
-
+% add variables, add parenthesized exprs
 Variables in sslang are simply identifiers composed of alphanumeric characters, underscores, and ticks: \texttt{[a-zA-Z] [a-zA-Z0-9_']*}
 
 There are several literal values for sslang built-in types:
 
 \begin{grammar}
-<literal> ::= ["True"|"False"] \texttt{// Bool}
+<expr_atom> ::= ["True"|"False"] \texttt{// Bool}
 \alt ["0"-"9"]$^{+}$ \texttt{// Int}
 \alt ["0"-"9"]$^{+}$"."["0"-"9"]$^{*}$ \texttt{// Rational}
 \alt "()" \texttt{// Event}
 \alt "'"["a"-"zA"-"Z"]"'" \texttt{// Char}
 \alt "\""["a"-"zA"-"Z"]$^{+}$"\"" \texttt{// String}
+\alt "(" <expr> ")" \texttt{// Parenthesized expression}
+\alt ["a"-"zA"-"Z"] ["a"-"zA"-"Z0"-"9_'"]$^{*}$ \texttt{// Identfier}
 \end{grammar}
 \subsection{Application}
 \begin{grammar}
@@ -582,7 +585,7 @@ Application via juxtaposition can be performed on adjacent literal expressions a
 \begin{grammar}
 <do> ::= "do {" <expr> "}"
 \end{grammar}
-Do-blocks allow for grouping of expressions in a separate scope.
+Do-blocks allow for grouping of expressions without creating a new scope. This is reminiscent of parenthesizing complex expressions.
 The value of do-block expressions is unit.
 \subsection{Loops}
 \begin{grammar}
@@ -619,7 +622,7 @@ else
     x <- 0
 \end{lstlisting}
 
-The value of an if-else expression is the last expression in either of the blocks. The types of the last expressions in the if and the else block must be the same.
+The value of an if-else expression is the last expression in either of the blocks. The types of the last expressions in the \texttt{if} block and the \texttt{else} block  must be the same. When there is no \texttt{else} block provided, the \texttt{if} block must evaluate to a unit type, which means the value of the entire construct is a unit type.
 \subsection{Lambdas}
 \begin{grammar}
 <lambda> ::= "fun" <pat>$^{+}$ "{" <expr> "}"
@@ -634,11 +637,11 @@ The following example demonstrates two ways of defining the same lambda, one usi
 let f x y = x + y;
 f 1 2 == (fun a b { a + b }) 1 2
 \end{lstlisting}
-\subsection{Parallel Execution}
+\subsection{Parallel Evaluation}
 \begin{grammar}
 <par> ::= "par {" <expr> ("||" <expr>)$^{+}$ "}"
 \end{grammar}
-Parallel expression execution takes a sequence of routine calls and pauses the current routine's execution until all of the par'd routines return. For example:
+Parallel expression evaluation takes a sequence of routine calls and pauses the current routine's execution until all of the par'd routines return. For example:
 \begin{lstlisting}
 foo (a: Ref Int)  (b: Ref Int)
     par (bar a) || (baz b)
@@ -665,9 +668,9 @@ The value of a wait expression is unit. However, one can check which variable wa
 
 It is possible to type-annotate expressions for documentation purposes or to concretize type-generic expressions.
 
-In the following code sample, we type-constrain a lambda expression:
+In the following code sample, we type-constrain a lambda expression such that it takes an integer, some other type, but returns an integer:
 \begin{lstlisting}
-((fun x y { x }): Int -> Bool -> Int)
+((fun x y { x }): Int -> a -> Int)
 \end{lstlisting}
 
 \subsection{Instant and Delayed Reference Assignment}
