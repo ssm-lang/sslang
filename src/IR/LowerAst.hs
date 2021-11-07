@@ -128,7 +128,7 @@ lowerExpr (A.Return e    ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
 lowerExpr (A.Match s ps) k = I.Match cond Nothing (fmap f ps) (k I.untyped)
  where
    cond = lowerExpr s id
-   f (a, b) = (lowerAlt a, lowerExpr b k)
+   f (a, b) = (lowerAlt a, lowerExpr b id)
 lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
