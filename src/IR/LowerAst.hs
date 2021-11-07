@@ -125,6 +125,10 @@ lowerExpr (A.Seq l r) k =
   I.Let [(Nothing, lowerExpr l id)] (lowerExpr r id) (k I.untyped)
 lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)
 lowerExpr (A.Return e    ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
+lowerExpr (A.Match s ps) k = I.Match cond Nothing (fmap f ps) (k I.untyped)
+ where
+   cond = lowerExpr s id
+   f (a, b) = (lowerAlt a, lowerExpr b k)
 lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
@@ -132,6 +136,16 @@ lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
   eArm = (I.AltDefault, lowerExpr e id)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
+
+-- | Lower an A.Pat into an I.Alt
+lowerAlt :: A.Pat -> I.Alt
+lowerAlt A.PatWildcard   = I.AltDefault
+lowerAlt (A.PatId _)     = error "I.Alt for A.PatID not implemented yet"
+lowerAlt (A.PatLit l)    = I.AltLit $ lowerLit l
+lowerAlt (A.PatTup _)    = error "I.Alt for A.PatTup not implemented yet"
+lowerAlt (A.PatCon _ _) = error "No way to lower A.DataCons to I.DataCons yet"
+lowerAlt (A.PatAnn _ p)  = lowerAlt p
+lowerAlt (A.PatAs _ p)   = lowerAlt p
 
 {- | Unpack a list of patterns into nested (curried) lambdas.
 
