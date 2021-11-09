@@ -21,6 +21,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , deref
                                                 , int
                                                 , ref
+                                                , tuple
                                                 , unit
                                                 , void
                                                 )
@@ -92,6 +93,18 @@ inferExpr e@(I.Lambda v b t) = do
 inferExpr (I.Let vs b _) = do
   (vs', b') <- withNewScope $ localInferExpr vs b
   return $ I.Let vs' b' (extract b')
+  where
+    localInferExpr bs body = do
+      bs' <- mapM fn bs
+      body' <- inferExpr body
+      return (bs', body')
+      where
+        fn (binding, e) = do
+          e' <- inferExpr e
+          case binding of
+            Just vid -> insertVar vid (extract e')
+            Nothing -> return ()
+          return (binding, e')
 inferExpr e@I.Prim {} = inferPrim e
 inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
 inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
@@ -143,27 +156,19 @@ inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
   return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-inferPrim e@(I.Prim p [] _)
-  | p `elem` [I.Break, I.Return] = return $ I.Prim p [] void
-  | otherwise = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
-inferPrim e@(I.Prim p es _)
-  | p `elem` [I.Loop, I.Wait, I.Par] = do
-      es' <- mapM inferExpr es
-      return $ I.Prim p es' unit
-  | otherwise = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
+inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
+inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
+inferPrim (I.Prim I.Loop es _) = do
+    es' <- mapM inferExpr es
+    return $ I.Prim I.Loop es' unit
+inferPrim (I.Prim I.Wait es _) = do
+    es' <- mapM inferExpr es
+    return $ I.Prim I.Wait es' unit
+inferPrim (I.Prim I.Par es _) = do
+    es' <- mapM inferExpr es
+    let ts = map extract es'
+    return $ I.Prim I.Par es' $ tuple ts
 inferPrim e = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
-
-localInferExpr :: [(Binder, I.Expr Ann.Type)] -> I.Expr Ann.Type -> InferFn ([(Binder, I.Expr Classes.Type)], I.Expr Classes.Type)
-localInferExpr [] body = do
-  body' <- inferExpr body
-  return ([], body')
-localInferExpr ((b, e):vs) body = do
-  e' <- inferExpr e
-  case b of
-    Just vid -> insertVar vid (extract e')
-    Nothing -> return ()
-  (vs', body') <- localInferExpr vs body
-  return ((b, e'):vs', body')
 
 withNewScope :: InferFn a -> InferFn a
 withNewScope inf = do
