@@ -81,3 +81,12 @@ tests:
     main: test/regression/Spec.hs
     dependencies:
     - process
+  typeinference-test:
+    main: Spec.hs
+    source-dirs:
+    - test/typeinference
+    dependencies:
+    - sslang
+    - hspec
+    - containers
+    - comonad

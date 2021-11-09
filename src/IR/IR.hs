@@ -34,7 +34,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
-  deriving Show
+  deriving (Eq, Show)
 
 {- | Literal values supported by the language.
 
@@ -44,7 +44,7 @@ data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
-  deriving Show
+  deriving (Show, Eq)
 
 {- | Primitive operations.
 
@@ -74,7 +74,7 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
-  deriving Show
+  deriving (Show, Eq)
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
@@ -113,7 +113,7 @@ data Primitive
   {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
-  deriving Show
+  deriving (Show, Eq)
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
@@ -163,7 +163,7 @@ data Expr t
   {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
   of type 't'.
   -}
-  deriving Show
+  deriving (Show, Eq)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -179,7 +179,7 @@ data Alt
   -}
   | AltDefault
   {- ^ 'AltDefault e' matches anything, producing expression 'e'. -}
-  deriving Show
+  deriving (Show, Eq)
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
