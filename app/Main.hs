@@ -129,7 +129,7 @@ main = do
 
   irL   <- doPass $ IR.lambdaLift irY
 
-  when (True) $ putStrLn "DFGSDFDSF" >> exitSuccess
+  when (True) $ putStrLn (spaghetti irL) >> exitSuccess
 
   irI   <- doPass $ IR.defunctionalize irL
 
