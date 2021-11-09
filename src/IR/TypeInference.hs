@@ -33,7 +33,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , get
                                                 , modify
                                                 )
-import           Data.Maybe                     ( fromJust )
+import           Data.Maybe                     ( fromJust ) 
 
 -- | Typing Environment
 newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
@@ -90,53 +90,7 @@ inferExpr e@(I.Lambda v b t) = do
 inferExpr (I.Let vs b _) = do
   (vs', b') <- withNewScope $ localInferExpr vs b
   return $ I.Let vs' b' (extract b')
-inferExpr (I.Prim I.New [e] _) = do
-  e' <- inferExpr e
-  return $ I.Prim I.New [e'] $ ref $ extract e'
-inferExpr (I.Prim I.Deref [e] _) = do
-  e' <- inferExpr e
-  return $ I.Prim I.Deref [e'] $ fromJust $ deref $ extract e'
-inferExpr (I.Prim I.Dup [e] _) = do
-  e' <- inferExpr e
-  return $ I.Prim I.Dup [e'] $ extract e'
-inferExpr e@(I.Prim I.Assign [lhs, rhs] _) = do
-  lhs' <- inferExpr lhs
-  rhs' <- inferExpr rhs
-  let rrty = ref $ extract rhs'
-  if extract lhs' == rrty
-    then do
-      case lhs' of
-        I.Var v _ -> insertVar v rrty
-        _ -> return ()
-      return $ I.Prim I.Assign [rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "Assign expression has inconsistent type: " ++ show e
-inferExpr e@(I.Prim I.After [del, lhs, rhs] _) = do
-  del' <- inferExpr del
-  rhs' <- inferExpr rhs
-  lhs' <- inferExpr lhs
-  let rrty = ref $ extract rhs'
-  if extract del' == int 32 && extract lhs' == rrty
-    then do
-      case lhs' of
-        I.Var v _ -> insertVar v rrty
-        _ -> return ()
-      return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
-inferExpr (I.Prim I.Loop es _) = do
-  es' <- mapM inferExpr es
-  return $ I.Prim I.Loop es' unit
-inferExpr (I.Prim I.Wait rs _) = do
-  rs' <- mapM inferExpr rs
-  return $ I.Prim I.Wait rs' unit
-inferExpr (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
-inferExpr (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
-inferExpr (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
-  e1' <- inferExpr e1
-  e2' <- inferExpr e2
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-inferExpr (I.Prim p es t) = do
-  es' <- mapM inferExpr es
-  return $ I.Prim p es' (anns2Class t)
+inferExpr e@I.Prim {} = inferPrim e
 inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
 inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
 inferExpr e@(I.App a b _) = do
@@ -149,6 +103,53 @@ inferExpr e@(I.App a b _) = do
         else return $ I.App a' b' t2
     Nothing -> throwError $ Compiler.TypeError $ "Unable to type App expression: " ++ show e
 inferExpr e = throwError $ Compiler.TypeError $ "Unable to type unknown expression: " ++ show e
+
+inferPrim :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
+inferPrim (I.Prim I.New [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.New [e'] $ ref $ extract e'
+inferPrim (I.Prim I.Deref [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.Deref [e'] $ fromJust $ deref $ extract e'
+inferPrim (I.Prim I.Dup [e] _) = do
+  e' <- inferExpr e
+  return $ I.Prim I.Dup [e'] $ extract e'
+inferPrim e@(I.Prim I.Assign [lhs, rhs] _) = do
+  lhs' <- inferExpr lhs
+  rhs' <- inferExpr rhs
+  let rrty = ref $ extract rhs'
+  if extract lhs' == rrty
+    then do
+      case lhs' of
+        I.Var v _ -> insertVar v rrty
+        _ -> return ()
+      return $ I.Prim I.Assign [rrty <$ lhs', rhs'] unit
+    else throwError $ Compiler.TypeError $ "Assign expression has inconsistent type: " ++ show e
+inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
+  del' <- inferExpr del
+  rhs' <- inferExpr rhs
+  lhs' <- inferExpr lhs
+  let rrty = ref $ extract rhs'
+  if extract del' == int 32 && extract lhs' == rrty
+    then do
+      case lhs' of
+        I.Var v _ -> insertVar v rrty
+        _ -> return ()
+      return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
+    else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
+inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+  e1' <- inferExpr e1
+  e2' <- inferExpr e2
+  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
+inferPrim e@(I.Prim p [] _)
+  | p `elem` [I.Break, I.Return] = return $ I.Prim p [] void
+  | otherwise = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
+inferPrim e@(I.Prim p es _)
+  | p `elem` [I.Loop, I.Wait, I.Par] = do
+      es' <- mapM inferExpr es
+      return $ I.Prim p es' unit
+  | otherwise = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
+inferPrim e = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
 
 localInferExpr :: [(Binder, I.Expr Ann.Type)] -> I.Expr Ann.Type -> InferFn ([(Binder, I.Expr Classes.Type)], I.Expr Classes.Type)
 localInferExpr [] body = do
