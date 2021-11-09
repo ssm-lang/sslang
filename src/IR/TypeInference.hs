@@ -16,7 +16,8 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Classes
 
-import           IR.Types.TypeSystem            ( dearrow
+import           IR.Types.TypeSystem            ( Builtin(..)
+                                                , dearrow
                                                 , deref
                                                 , int
                                                 , ref
@@ -33,7 +34,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , get
                                                 , modify
                                                 )
-import           Data.Maybe                     ( fromJust ) 
+import           Data.Maybe                     ( fromJust )
 
 -- | Typing Environment
 newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
@@ -80,13 +81,14 @@ inferExpr (I.Var v t) = do
   record <- lookupVar v
   case record of
     Nothing -> do
-      let t' = anns2Class t
+      t' <- anns2Class t
       insertVar v t'
       return $ I.Var v t'
     Just t' -> return $ I.Var v t'
 inferExpr e@(I.Lambda v b t) = do
   b' <- withNewScope $ withVty e v t >> inferExpr b
-  return $ I.Lambda v b' (anns2Class t)
+  t' <- anns2Class t
+  return $ I.Lambda v b' t'
 inferExpr (I.Let vs b _) = do
   (vs', b') <- withNewScope $ localInferExpr vs b
   return $ I.Let vs' b' (extract b')
@@ -174,13 +176,31 @@ withVty :: I.Expr Ann.Type -> Binder -> Ann.Type -> InferFn ()
 withVty _ Nothing _ = return ()
 withVty e (Just v) t =
   case dearrow t of
-    Just (vty, _) -> insertVar v (anns2Class vty)
-    Nothing       -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
+    Just (vty, _) -> do
+      vty' <- anns2Class vty
+      insertVar v vty'
+    Nothing -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
 
-anns2Class :: Ann.Type -> Classes.Type
+anns2Class :: Ann.Type -> InferFn Classes.Type
+anns2Class (Ann.Type []) = throwError $ Compiler.TypeError "Cannot change empty Ann type to Classes type"
 anns2Class (Ann.Type ts) = ann2Class $ head ts
 
-ann2Class :: Ann.TypeAnnote -> Classes.Type
-ann2Class (Ann.TBuiltin bty) = Classes.TBuiltin $ fmap anns2Class bty
-ann2Class (Ann.TCon tid tys) = Classes.TCon tid $ fmap anns2Class tys
-ann2Class (Ann.TVar tidx   ) = Classes.TVar tidx
+ann2Class :: Ann.TypeAnnote -> InferFn Classes.Type
+ann2Class (Ann.TBuiltin bty) = case bty of
+  Unit -> return $ Classes.TBuiltin Unit
+  Void -> return $ Classes.TBuiltin Void
+  Integral s -> return $ Classes.TBuiltin $ Integral s
+  Arrow l r -> do
+    l' <- anns2Class l
+    r' <- anns2Class r
+    return $ Classes.TBuiltin $ Arrow l' r'
+  Ref t -> do
+    t' <- anns2Class t
+    return $ Classes.TBuiltin $ Ref t'
+  Tuple tys -> do
+    tys' <- mapM anns2Class tys
+    return $ Classes.TBuiltin $ Tuple tys'
+ann2Class (Ann.TCon tid tys) = do
+  t <- mapM anns2Class tys
+  return $ Classes.TCon tid t
+ann2Class (Ann.TVar tidx   ) = return $ Classes.TVar tidx
