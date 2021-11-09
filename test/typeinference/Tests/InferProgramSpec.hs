@@ -51,14 +51,14 @@ spec = do
           Left e -> Left "Failed to parse program"
           Right p ->
             case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
-              Left e' -> Left "Failed to lower program"
+              Left e' -> Left $ show e'
               Right p' -> Right p'
     print typedInput
 
   it "infers doubleblink2.ssl" $ do
     let input = parseProgram $ unlines
           [ "toggle(led : &Int) -> () ="
-          , "  led <- (1 - deref led)"
+          , "  led <- 1 - deref led"
           , "slow(led : &Int) -> () ="
           , "  let e1 = new ()"
           , "  loop"
@@ -79,6 +79,6 @@ spec = do
           Left e -> Left "Failed to parse program"
           Right p ->
             case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
-              Left e' -> Left "Failed to lower program"
+              Left e' -> Left $ show e'
               Right p' -> Right p'
     print typedInput

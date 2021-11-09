@@ -1,5 +1,5 @@
 toggle(led : &Int) -> () =
-  led <- (1 - deref led)
+  led <- 1 - deref led
 
 slow(led : &Int) -> () =
   let e1 = new ()
