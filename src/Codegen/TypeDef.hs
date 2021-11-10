@@ -1,4 +1,3 @@
-
 {-# LANGUAGE QuasiQuotes #-}
 module Codegen.TypeDef where
 
