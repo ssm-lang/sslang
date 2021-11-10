@@ -257,3 +257,21 @@ mem_alloc = "malloc"
 -- | Free memory.
 mem_free :: CIdent
 mem_free = "free"
+
+-- | GC header field
+tag :: CIdent
+tag = "tag"
+
+-- | GC header field
+ref_count :: CIdent
+ref_count = "ref_count"
+
+-- | GC header field size as type unsigned char
+u_char :: C.Type
+u_char = [cty|unsigned char|]
+
+{----- Algebraic Data Types -----}
+
+-- | Name of an ADT's payload
+payload :: CIdent 
+payload = "payload"
