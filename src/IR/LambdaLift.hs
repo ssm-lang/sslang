@@ -17,6 +17,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 )
 
+import Prettyprinter
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.List (intercalate)
@@ -74,14 +75,17 @@ makeLiftedLambda vs body t = do
   traceM (show vs)
   return (I.Lambda (head vs) liftedBody t)
 
-liftLambdas' :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
-liftLambdas' e = do
-  newScope []
-  liftLambdas e
+liftLambdas' :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
+liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
+  let (vs, body) = I.collectLambda lam
+  newScope $ map (\(Just vi) -> vi) vs
+  liftedBody <- liftLambdas body
+  return $ (v, foldl (\lam' v' -> (I.Lambda v' lam' t)) liftedBody vs)
 
 liftLetBinding :: (I.VarId, I.Expr Poly.Type) -> LiftFn (Maybe (I.VarId, I.Expr Poly.Type))
 liftLetBinding (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
+  traceM "lamda let"
   oldCtx <- get
   newScope $ map (\(Just vi) -> vi) vs
   liftedLamBody <- liftLambdas body
@@ -91,8 +95,8 @@ liftLetBinding (v, lam@(I.Lambda _ _ t)) = do
   addLifted (show v ++ "_lifted_" ++ show freshNum) liftedLam
   modify $ \st -> st { currentScope = currentScope oldCtx, currentFrees = currentScope oldCtx }
   return Nothing
-  
 liftLetBinding (v, e) = do
+  traceM "non-lambda let"
   liftedBody <- liftLambdas e
   return $ Just (v, liftedBody)
 
@@ -106,11 +110,13 @@ liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
   liftedE2 <- liftLambdas e2
   return $ I.App liftedE1 liftedE2 t
-liftLambdas (I.Prim p exprs t) = do
-  liftedExprs <- mapM liftLambdas' exprs
+liftLambdas a@(I.Prim p [l, r] t) = do
+  liftedExprs <- mapM liftLambdas [l, r]
+  traceM (show $ pretty l) -- what is happening?
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
+  traceM "Lambda"
   oldCtx <- get
   newScope $ map (\(Just v) -> v) vs
   liftedLamBody <- liftLambdas body
@@ -122,24 +128,25 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   return (foldl (\app v -> I.App app (I.Var v t) t) (I.Var (I.VarId (Identifier ("anon" ++ (show freshNum)))) t) (S.toList lamFrees))
 liftLambdas lbs@(I.Let bs e t) = do
   let vs = map (\(Just v, _) -> v) bs
-      exprs = map (\(_, e) -> e) bs
-  mapM addCurrentScope vs
+      exprs = map (\(_, e') -> e') bs
+  traceM "Let"
+  mapM_ addCurrentScope vs
   liftedBindings <- mapM liftLetBinding (zip vs exprs)
   liftedExpr <- liftLambdas e
-  return $ I.Let (((map (\(Just (v, e)) -> (Just v, e))) . (filter isJust)) liftedBindings) (liftedExpr) t
+  return $ I.Let (((map (\(Just (v, e')) -> (Just v, e'))) . (filter isJust)) liftedBindings) (liftedExpr) t
 liftLambdas n = return n 
 
 liftProgramLambdas :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 liftProgramLambdas p = runLiftFn $ do
   let defs = I.programDefs p
-      funs = map snd $ filter isFun defs
+      funs = filter isFun defs
       funNames = map fst $ filter isFun defs
       oths = filter (not . isFun) defs
   populateGlobalScope defs
-  funsWithoutLambdas <- mapM liftLambdas funs
+  funsWithLiftedBodies <- mapM liftLambdas' funs
   liftedLambdas <- gets lifted
   traceM "finished Lifting"
-  return $ p { I.programDefs = (liftedLambdas ++ (zip funNames funsWithoutLambdas) ++ oths) }
+  return $ p { I.programDefs = (oths ++ liftedLambdas ++ funsWithLiftedBodies) }
     where
       isFun (_, I.Lambda _ _ _) = True
       isFun _ = False
