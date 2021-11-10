@@ -7,25 +7,25 @@ import qualified IR.Types.TypeSystem           as L
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
-import Common.Identifiers (DConId, ident, fromString)
-import IR.Types.TypeSystem(TypeVariant)
+import Common.Identifiers (DConId, TConId, ident, fromString)
+
 import Codegen.Identifiers
 import Data.Char(toLower)
 import Data.List(intercalate)
+import Data.Bifunctor(first)
 
 
 -- | Generate definitions for SSM type definitions.
-genTypeDef :: L.TypeDef L.Type -> (C.Definition,[C.Definition])
-genTypeDef (L.TypeDef dCons _ ) =   (x, y)
+genTypeDef :: TConId -> L.TypeDef L.Type -> (C.Definition,[C.Definition])
+genTypeDef tconid (L.TypeDef dCons _ ) =   (x, y)
  where x = [cedecl| typedef struct {
                        $sdecls:(map structField $ genGCHeader)
                        union {
                         $sdecls:(structFieldPtr <$> extractDConDecl <$> dCons) 
                        } $id:payload; 
-                     } $id:myTConId;     
+                     } $id:tconid;     
        |]
   
-       myTConId = "Dummy" --change this later!!
        genGCHeader = [(tag,u_char),(ref_count,u_char)]
  
        structField :: (CIdent, C.Type) -> C.FieldGroup
@@ -34,21 +34,41 @@ genTypeDef (L.TypeDef dCons _ ) =   (x, y)
        structFieldPtr :: (CIdent, C.Type) -> C.FieldGroup
        structFieldPtr (n, t) = [csdecl|$ty:t* $id:n;|]
 
-       extractDConDecl :: (DConId,TypeVariant L.Type) -> (CIdent, C.Type)
+       extractDConDecl :: (DConId,L.TypeVariant L.Type) -> (CIdent, C.Type)
        extractDConDecl (a,_) = (n,t) 
-        where n = CIdent $ fromString $ lower a 
-              t = ctype $ CIdent $ fromString $ intercalate "_" [myTConId, ident a]
+        where n = CIdent $ fromString $ lower $ ident a 
+              t = ctype $ CIdent $ fromString $ toCName tconid a
   
-       -- | Helper that turns a DConId into a string 
-       -- | and makes the first letter lowercase 
-       lower :: DConId -> String
-       lower d
-        | null c = ""
-        | otherwise = toLower h:t
-        where c@(h:t) = ident d
-       y = []
+       -- | Helper that makes the first letter lowercase 
+       lower :: String -> String
+       lower "" = ""
+       lower (h:t) = toLower h:t
 
-       
+       y = genDConDef . first (toCName tconid) <$> dCons
+
+       genDConDef :: (String, L.TypeVariant L.Type) -> C.Definition
+       genDConDef (_, L.VariantNamed _) = error "what to do with named fields?"
+       genDConDef (cDConId, L.VariantUnnamed fields)
+        | null fields = error "don't need a struct definition for a packed integer!"
+        | otherwise = let typeNamePairs = zip fields (repeat cDConId) in
+          [cedecl| typedef struct {
+                        $sdecls:(structField <$> snd (foldl extractFieldDecl (0,[]) typeNamePairs))
+                   } $id:cDConId; 
+           |]
+      
+       extractFieldDecl :: (Int, [(CIdent,C.Type)]) -> (L.Type,String) -> (Int, [(CIdent,C.Type)]) 
+       extractFieldDecl _ (L.TBuiltin _, _) = error "what to do with built in types?"
+       extractFieldDecl (num, res) (L.TCon typ, name) = (num+1,(n,t):res)
+        where n = CIdent $ fromString $ ident typ
+              t = ctype $ CIdent $ fromString $ intercalate "_" [lower name, show num]
+       -- | Makes the c struct name for a data constructor
+       -- | Ex: data MyBool a = MyFalse a | MyTrue a
+       -- | yields names  MyBool_myfalse and MyBool_myTrue
+       toCName :: TConId -> DConId -> String 
+       toCName tcon dcon = intercalate "_" [prefix, suffix]
+        where prefix = ident tcon
+              suffix = lower $ ident $ dcon
+                           
 --genTypeDef = error "Not yet implemented"  snakeConcat :: String -> DConId -> String
   -- snakeConcat a b = a ++ "_" ++ lower b
 -- import           Data.Bifunctor                 ( Bifunctor(bimap,first) )
