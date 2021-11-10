@@ -125,7 +125,7 @@ inferExpr (I.Let vs b _) = do
           return (binding, e')
 inferExpr e@I.Prim {} = inferPrim e
 inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
-inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 64)
+inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
 inferExpr e@(I.App a b _) = do
   a' <- inferExpr a
   b' <- inferExpr b
@@ -164,17 +164,21 @@ inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
   rhs' <- inferExpr rhs
   lhs' <- inferExpr lhs
   let rrty = ref $ extract rhs'
-  if extract del' == int 64 && extract lhs' == rrty
+  if extract del' == int 32 && extract lhs' == rrty
     then do
       case lhs' of
         I.Var v _ -> insertVar v rrty
         _ -> return ()
-      return $ I.Prim I.After [(\_ -> int 64) <$> del', rrty <$ lhs', rhs'] unit
+      return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
     else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
 inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 64
+  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
+inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  _) = do
+  e1' <- inferExpr e1
+  e2' <- inferExpr e2
+  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
 inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
 inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
 inferPrim (I.Prim I.Loop es _) = do
