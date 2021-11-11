@@ -2,70 +2,14 @@
 
 A language built atop the Sparse Synchronous Model.
 
-## Setup
 
-The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
+## Quickstart
 
-- [GHC][ghc]: haskell compiler
-- [Cabal][cabal]: build system
-- [Stack][stack]: project manager
-- [Haddock][haddock]: code documentation generator (packaged with Stack)
-- [HLS][hls]: [language server][lsp] (optional)
-- [Brittany][brittany]: formatter (optional)
-- [Hlint][hlint]: linter (optional)
+### Build
 
-This section will guide you through setting up your development environnment with these tools. We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
+### Documentation
 
-[haskell]: https://www.haskell.org/
-[ghc]: https://www.haskell.org/ghc/
-[cabal]: https://www.haskell.org/cabal/
-[stack]: https://docs.haskellstack.org/en/stable/GUIDE/
-[haddock]: https://www.haskell.org/haddock/doc/html/index.html
-[hls]: https://haskell-language-server.readthedocs.io/en/latest/
-[hlint]: https://hackage.haskell.org/package/hlint
-[brittany]: https://hackage.haskell.org/package/brittany
-[lsp]: https://langserver.org/
 
-### Toolchain Setup
-
-You can easily setup most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
-
-```
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
-  BOOTSTRAP_HASKELL_INSTALL_STACK=1 \
-  sh
-```
-
-This will run a short but interactive script that installs GHC, Cabal, and Stack; make sure to let it know where it should add the `PATH` variable. GHCup will also ask if you would like to install HLS, which you may use to extend your LSP-compatible editor with IDE features (optional).
-
-The GHCup setup script may also detect that dependencies are missing, and ask you to install them; make sure to do so before proceeding. For instance, if you are running Ubuntu 20.10:
-
-```
-sudo apt install build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
-```
-
-Package names differ depending on your distro and version, so make sure to read the suggestion.
-
-You can now use Stack to install [HLint][hlint] and [Brittany][brittany] (optional). To do so, run:
-
-```
-stack install hlint
-stack install brittany
-```
-
-<a name="why-ghcup">1</a>: _While you can also directly install Stack and use that to manage GHC versions, GHCup is more specialized toward coordinating versioning for just the core components of the toolchain, i.e., GHC, Cabal, Stack, and HLS. You can read more about its rationale [here](https://www.haskell.org/ghcup/about/#faq)._
-
-[ghcup]: https://www.haskell.org/ghcup/
-
-### Convenience Git Aliases (optional)
-
-Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
-
-These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). These aliases are defined in [`.gitconfig`](./.gitconfig), and can be set up by running this command from anywhere within this repo:
-
-```
-git config --local include.path ../.gitconfig
-```
 
 ## Build
 
