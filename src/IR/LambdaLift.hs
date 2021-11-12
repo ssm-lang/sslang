@@ -25,6 +25,8 @@ import           Data.Maybe                     ( fromJust
 import qualified Data.Set                      as S
 import           Prettyprinter
 
+import GHC.Stack
+
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
   , currentScope :: S.Set I.VarId
@@ -121,7 +123,7 @@ liftLetBinding (v, e) = do
   return $ Just (v, liftedBody)
 -}
 
-liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
+liftLambdas :: (HasCallStack) => I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
   isNotFree <- inCurrentScope v
   if isNotFree
@@ -133,9 +135,8 @@ liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
   liftedE2 <- liftLambdas e2
   return $ I.App liftedE1 liftedE2 t
-liftLambdas a@(I.Prim p [l, r] t) = do
-  liftedExprs <- mapM liftLambdas [l, r]
-  traceM (show $ pretty l) -- what is happening?
+liftLambdas a@(I.Prim p exprs t) = do
+  liftedExprs <- mapM liftLambdas exprs
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
