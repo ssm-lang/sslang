@@ -21,7 +21,7 @@ import Prettyprinter
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.List (intercalate)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, fromJust)
 
 data LiftCtx = LiftCtx { globalScope :: S.Set I.VarId
                        , currentScope :: S.Set I.VarId
@@ -82,6 +82,7 @@ liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   liftedBody <- liftLambdas body
   return $ (v, foldl (\lam' v' -> (I.Lambda v' lam' t)) liftedBody vs)
 
+{-
 liftLetBinding :: (I.VarId, I.Expr Poly.Type) -> LiftFn (Maybe (I.VarId, I.Expr Poly.Type))
 liftLetBinding (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
@@ -99,6 +100,7 @@ liftLetBinding (v, e) = do
   traceM "non-lambda let"
   liftedBody <- liftLambdas e
   return $ Just (v, liftedBody)
+-}
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
@@ -127,13 +129,13 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   modify $ \st -> st { currentScope = currentScope oldCtx, currentFrees = currentScope oldCtx }
   return (foldl (\app v -> I.App app (I.Var v t) t) (I.Var (I.VarId (Identifier ("anon" ++ (show freshNum)))) t) (S.toList lamFrees))
 liftLambdas lbs@(I.Let bs e t) = do
-  let vs = map (\(Just v, _) -> v) bs
+  let vs = map (\(v, _) -> v) bs
       exprs = map (\(_, e') -> e') bs
   traceM "Let"
-  mapM_ addCurrentScope vs
-  liftedBindings <- mapM liftLetBinding (zip vs exprs)
+  mapM_ addCurrentScope (map fromJust vs)
+  liftedLetBodies <- mapM liftLambdas (exprs)
   liftedExpr <- liftLambdas e
-  return $ I.Let (((map (\(Just (v, e')) -> (Just v, e'))) . (filter isJust)) liftedBindings) (liftedExpr) t
+  return $ I.Let (zip vs liftedLetBodies) (liftedExpr) t
 liftLambdas n = return n 
 
 liftProgramLambdas :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
