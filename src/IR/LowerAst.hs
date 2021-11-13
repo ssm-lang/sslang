@@ -51,7 +51,7 @@ lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
   { I.programEntry = fromString "main"
   , I.programDefs  = map (first fromJust . lowerDef) ds
-  , I.typeDefs     = [error "Typedefs are not yet implemented"]
+  , I.typeDefs     = []
   }
 
 {- | Lower an 'A.Definition' into a name and bound expression.

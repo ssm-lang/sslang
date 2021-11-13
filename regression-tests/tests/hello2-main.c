@@ -35,7 +35,7 @@ void step_cout(ssm_act_t *sact)
 	  ssm_leave((ssm_act_t *) act, sizeof(cout_act_t));
 	  return;
 	}
-	putchar(act->cout->value);
+	putchar(act->cout->value >>1); // unmarshal value before sending to C IO function
       }
     }
   }
