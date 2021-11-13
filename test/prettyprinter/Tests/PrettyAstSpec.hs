@@ -54,3 +54,13 @@ spec = do
           ]
         output = input >>= renderAndParse
     input `shouldBe` output
+
+  it "prints a function with a pattern match" $ do
+    let input = parseProgram $ unlines
+          [ "main (x: Int, clk : &Int) ="
+          , "  match x"
+          , "    id => wait clk"
+          , "    _ => wait clk"
+          ]
+        output = input >>= renderAndParse
+    input `shouldBe` output
