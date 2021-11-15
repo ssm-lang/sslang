@@ -1,6 +1,7 @@
 module Tests.InferProgramSpec where
 
 import qualified IR.IR                         as I
+import qualified IR.Types.Classes              as C
 
 import           Common.Pretty                  ( spaghetti )
 import           Common.Compiler                ( runPass )
@@ -24,13 +25,20 @@ import           Test.Hspec                     ( Spec(..)
 renderAndParse :: Program -> Either String Program
 renderAndParse = parseProgram . spaghetti
 
+lowerAndInfer :: Either String Program -> Either String (I.Program C.Type)
+lowerAndInfer (Left e) = Left "Failed to parse program"
+lowerAndInfer (Right p) =
+  case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
+    Left e' -> Left $ show e'
+    Right p' -> Right p'
+
 spec :: Spec
 spec = do
 
-  it "infers doubleblink.ssl" $ do
-    let input = parseProgram $ unlines
+  it "infers programs with minimal type annotations" $ do
+    let fully = parseProgram $ unlines
           [ "toggle(led : &Int) -> () ="
-          , "  (led: &Int) <- (deref (led: &Int): Int)"
+          , "  (led: &Int) <- (1 - deref (led: &Int): Int)"
           , "slow(led : &Int) -> () ="
           , "  let e1 = (new () : &())"
           , "  loop"
@@ -47,16 +55,7 @@ spec = do
           , "  par ((slow: &Int -> ()) (led: &Int): ())"
           , "      ((fast: &Int -> ()) (led: &Int): ())"
           ]
-        typedInput = case input of
-          Left e -> Left "Failed to parse program"
-          Right p ->
-            case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
-              Left e' -> Left $ show e'
-              Right p' -> Right p'
-    print typedInput
-
-  it "infers doubleblink2.ssl" $ do
-    let input = parseProgram $ unlines
+        minimal = parseProgram $ unlines
           [ "toggle(led : &Int) -> () ="
           , "  led <- 1 - deref led"
           , "slow(led : &Int) -> () ="
@@ -75,10 +74,6 @@ spec = do
           , "  par slow led"
           , "      fast led"
           ]
-        typedInput = case input of
-          Left e -> Left "Failed to parse program"
-          Right p ->
-            case runPass $ lowerProgram (parseOperators p) >>= inferProgram of
-              Left e' -> Left $ show e'
-              Right p' -> Right p'
-    print typedInput
+        typedFully = lowerAndInfer fully
+        typedMinimal = lowerAndInfer minimal
+    typedFully `shouldBe` typedMinimal
