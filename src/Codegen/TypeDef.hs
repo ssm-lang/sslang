@@ -11,64 +11,105 @@ import Common.Identifiers (DConId, TConId, ident, fromString)
 
 import Codegen.Identifiers
 import Data.Char(toLower)
-import Data.List(intercalate)
-import Data.Bifunctor(first)
+import Data.List(partition,maximumBy)
+import Data.Bifunctor(second)
+
+
+{-
+
+// data MyBool = MyTrue int | MyFalse int int 
+
+enum myBoolTag {MyTrueTag = 0, MyFalseTag};
+
+struct MyBool{
+	struct ssm_mm_md header;
+	struct ssm_object_t* payload[2]; //max number of fields	
+};
+
+data Type
+  = TBuiltin (Builtin Type) -- ^ Builtin types
+  | TCon TConId             -- ^ Type constructors
+  deriving (Eq, Show)
+data TypeDef t = TypeDef
+  { variants :: [(DConId, TypeVariant t)]
+  , arity    :: Arity
+  }
+  deriving Show
+
+
+
+
+    = VariantNamed [(FieldId, t)] -- ^ A record with named fields
+  | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
+  maximumBy :: Foldable t => (a -> a -> Ordering) -> t a -> a 
+
+  enum
+    An enum member. The argument must have type CEnum.
+enums
+    An list of enum members. The argument must have type [CEnum].
+     $sdecls:(structField <$> snd (foldl extractFieldDecl (0,[]) typeNamePairs))
+     structField :: (CIdent, C.Type) -> C.FieldGroup
+-}
+
 
 
 -- | Generate definitions for SSM type definitions.
-genTypeDef :: TConId -> L.TypeDef L.Type -> (C.Definition,[C.Definition])
-genTypeDef tconid (L.TypeDef dCons _ ) =   (x, y)
- where x = [cedecl| typedef struct {
-                       $sdecls:(map structField $ genGCHeader)
-                       union {
-                        $sdecls:(structFieldPtr <$> extractDConDecl <$> dCons) 
-                       } $id:payload; 
+genTypeDef :: TConId -> L.TypeDef L.Type -> (C.Definition, C.Definition)
+genTypeDef tconid (L.TypeDef dCons _ ) =   (tags, structDef)
+ where structDef = [cedecl| typedef struct {
+                       $ty:ssm_mm_md* $id:header;
+                       $ty:ssm_object_t* $id:payload[1]; 
                      } $id:tconid;     
-       |]
-  
-       genGCHeader = [(tag,u_char),(ref_count,u_char)]
- 
-       structField :: (CIdent, C.Type) -> C.FieldGroup
-       structField (n, t) = [csdecl|$ty:t $id:n;|]
+                   |]
+       tags = [cedecl| enum $id:enumName {
+                          dummy = 0, dummy1, dummy2
+                       };  
+             |]
+       (big, small) = partition (\(_,sz)-> sz >= 32) $ augmentWSize <$> dCons
+       (packed, medium) = smallEnough small
+       maxNumFields = maximumBy (\(_,sz1) (_,sz2) -> sz1 `compare` sz2)  (big ++ medium) 
+       enumName = CIdent $ fromString $ lower $ ident tconid
+       tagged = small ++ big ++ medium
 
-       structFieldPtr :: (CIdent, C.Type) -> C.FieldGroup
-       structFieldPtr (n, t) = [csdecl|$ty:t* $id:n;|]
+       -- | categorize data constructor as either small enough or too big  to be represented in 31 bits 
+       smallEnough :: [((DConId, L.TypeVariant L.Type),Int)] ->
+                   ([((DConId, L.TypeVariant L.Type),Int)], [((DConId, L.TypeVariant L.Type),Int)])
+       smallEnough candidates = partition (\(_,sz)-> (sz+tagBits) < 32 ) candidates
+                          where tagBits = q+r where (q,r) = quotRem (length candidates) 2
 
-       extractDConDecl :: (DConId,L.TypeVariant L.Type) -> (CIdent, C.Type)
-       extractDConDecl (a,_) = (n,t) 
-        where n = CIdent $ fromString $ lower $ ident a 
-              t = ctype $ CIdent $ fromString $ toCName tconid a
-  
+                   
+       -- | augment data constructor with size info in bits
+       augmentWSize:: (DConId, L.TypeVariant L.Type) -> ((DConId, L.TypeVariant L.Type),Int)
+       augmentWSize (dconid, fields) = ((dconid, fields), dConSize fields)
+
+       -- | return the size in bits of a given data constructor
+       dConSize :: (L.TypeVariant L.Type) -> Int
+       dConSize (L.VariantNamed fields) = sum $ fieldSize.snd <$> fields
+       dConSize (L.VariantUnnamed fields) = sum $ fieldSize <$> fields
+
+       -- | return the size in bits of a given field
+       -- | assume all built-in types are one word for now
+       fieldSize:: L.Type -> Int
+       fieldSize (L.TBuiltin _) = 32
+       fieldSize (L.TCon _) = 32
+
        -- | Helper that makes the first letter lowercase 
        lower :: String -> String
        lower "" = ""
        lower (h:t) = toLower h:t
+       
+ 
 
-       y = genDConDef . first (toCName tconid) <$> dCons
 
-       genDConDef :: (String, L.TypeVariant L.Type) -> C.Definition
-       genDConDef (_, L.VariantNamed _) = error "what to do with named fields?"
-       genDConDef (cDConId, L.VariantUnnamed fields)
-        | null fields = error "don't need a struct definition for a packed integer!"
-        | otherwise = let typeNamePairs = zip fields (repeat cDConId) in
-          [cedecl| typedef struct {
-                        $sdecls:(structField <$> snd (foldl extractFieldDecl (0,[]) typeNamePairs))
-                   } $id:cDConId; 
-           |]
-      
-       extractFieldDecl :: (Int, [(CIdent,C.Type)]) -> (L.Type,String) -> (Int, [(CIdent,C.Type)]) 
-       extractFieldDecl _ (L.TBuiltin _, _) = error "what to do with built in types?"
-       extractFieldDecl (num, res) (L.TCon typ, name) = (num+1,(n,t):res)
-        where n = CIdent $ fromString $ ident typ
-              t = ctype $ CIdent $ fromString $ intercalate "_" [lower name, show num]
-       -- | Makes the c struct name for a data constructor
-       -- | Ex: data MyBool a = MyFalse a | MyTrue a
-       -- | yields names  MyBool_myfalse and MyBool_myTrue
-       toCName :: TConId -> DConId -> String 
-       toCName tcon dcon = intercalate "_" [prefix, suffix]
-        where prefix = ident tcon
-              suffix = lower $ ident $ dcon
-                           
+
+
+
+-- | Determine which (if any) data constructors of the ADT 
+-- | will be represented as a word vs an object on heap
+
+
+
+
 --genTypeDef = error "Not yet implemented"  snakeConcat :: String -> DConId -> String
   -- snakeConcat a b = a ++ "_" ++ lower b
 -- import           Data.Bifunctor                 ( Bifunctor(bimap,first) )
