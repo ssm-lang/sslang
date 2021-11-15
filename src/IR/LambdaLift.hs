@@ -17,22 +17,15 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Debug.Trace
 
-import           Data.List                      ( intercalate )
-import qualified Data.Map                      as M
-import           Data.Maybe                     ( fromJust
-                                                , isJust
-                                                )
+import           Data.Maybe                     ( fromJust )
 import qualified Data.Set                      as S
-import           Prettyprinter
 
-import GHC.Stack
 
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
   , currentScope :: S.Set I.VarId
   , currentFrees :: S.Set I.VarId
   , lifted       :: [(I.VarId, I.Expr Poly.Type)]
-  , toAdjust     :: M.Map I.VarId I.VarId
   , anonCount    :: Int
   }
 
@@ -51,7 +44,6 @@ runLiftFn (LiftFn m) = evalStateT
           , currentScope = S.empty
           , currentFrees = S.empty
           , lifted       = []
-          , toAdjust     = M.empty
           , anonCount    = 0
           }
 
@@ -102,28 +94,9 @@ liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   newScope $ map (\(Just vi) -> vi) vs
   liftedBody <- liftLambdas body
   return (v, foldl (\lam' v' -> I.Lambda v' lam' t) liftedBody vs)
+liftLambdas' _ = error "Expected top-level lambda binding"
 
-{-
-liftLetBinding :: (I.VarId, I.Expr Poly.Type) -> LiftFn (Maybe (I.VarId, I.Expr Poly.Type))
-liftLetBinding (v, lam@(I.Lambda _ _ t)) = do
-  let (vs, body) = I.collectLambda lam
-  traceM "lamda let"
-  oldCtx <- get
-  newScope $ map (\(Just vi) -> vi) vs
-  liftedLamBody <- liftLambdas body
-  lamFrees <- gets currentFrees
-  liftedLam <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs) liftedLamBody t
-  freshNum <- getFresh
-  addLifted (show v ++ "_lifted_" ++ show freshNum) liftedLam
-  modify $ \st -> st { currentScope = currentScope oldCtx, currentFrees = currentScope oldCtx }
-  return Nothing
-liftLetBinding (v, e) = do
-  traceM "non-lambda let"
-  liftedBody <- liftLambdas e
-  return $ Just (v, liftedBody)
--}
-
-liftLambdas :: (HasCallStack) => I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
+liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
   isNotFree <- inCurrentScope v
   if isNotFree
@@ -135,7 +108,7 @@ liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
   liftedE2 <- liftLambdas e2
   return $ I.App liftedE1 liftedE2 t
-liftLambdas a@(I.Prim p exprs t) = do
+liftLambdas (I.Prim p exprs t) = do
   liftedExprs <- mapM liftLambdas exprs
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
@@ -158,7 +131,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
            (I.Var (I.VarId (Identifier ("anon" ++ show freshNum))) t)
            (S.toList lamFrees)
     )
-liftLambdas lbs@(I.Let bs e t) = do
+liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
       exprs = map snd bs
   traceM "Let"
@@ -182,31 +155,3 @@ liftProgramLambdas p = runLiftFn $ do
  where
   isFun (_, I.Lambda{}) = True
   isFun _               = False
-  {-
-liftProgramLambdas
-  :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
-liftProgramLambdas p = do
-  let defs = I.programDefs p
-      globalScope = map (\(v, _) -> v) defs
-      funs = filter isFun defs
-      freeVars = map (getFrees (S.fromList globalScope) (S.fromList globalScope)) (map snd funs)
-  traceM (show $ zip (map (\(v, _) -> v) funs) freeVars)
-  return p
-    where
-      isFun (_, I.Lambda _ _ _) = True
-      isFun _ = False
-      getFrees scp gs (I.Var v _) = if S.member (v) scp then [] else [show v]
-      getFrees scp gs (I.App e1 e2 _) = getFrees scp gs e1 ++ getFrees scp gs e2
-      getFrees scp gs (I.Let binds e _) = let newScp = foldl (\s (Just v, _) -> S.insert (v) s) scp binds in
-                                        (concatMap (getLetFrees newScp gs) binds) ++ getFrees newScp gs e
-      getFrees scp gs lam@(I.Lambda _ _ _) = let (vs, body) = I.collectLambda lam 
-                                                 newScp = foldl (\s (Just v) -> S.insert v s) gs vs in
-                                             trace (intercalate "\n" (getFrees newScp gs body) ++ "\n--") []
-      getFrees scp gs (I.Match _ _ _ _) = undefined
-      getFrees scp gs (I.Prim _ es _) = concatMap (getFrees scp gs) es
-      getFrees _ _ _ = []
-      getLetFrees scp gs (Just v, lam@(I.Lambda _ _ _ )) = let (vs, body) = I.collectLambda lam
-                                                               newScp = foldl (\s (Just v) -> S.insert v s) gs vs in
-                                                           trace (show v ++ ":\n" ++ (intercalate "\n" (getFrees newScp gs body) ++ "\n--")) [] 
-      getLetFrees scp gs (Just _, e) = getFrees scp gs e
--}
