@@ -14,7 +14,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , get
                                                 , gets
                                                 , modify
-                                                , when
+                                                , unless
                                                 )
 import           Debug.Trace
 
@@ -99,8 +99,8 @@ liftLambdas' _ = error "Expected top-level lambda binding"
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
-  isNotFree <- inCurrentScope v
-  when isNotFree $ addFreeVar v
+  inScope <- inCurrentScope v
+  unless inScope $ addFreeVar v
   return n
 liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
