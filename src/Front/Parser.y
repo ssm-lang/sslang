@@ -36,9 +36,12 @@ import Common.Compiler (ErrorMsg)
   'after' { Token (_, TAfter) }
   'wait'  { Token (_, TWait) }
   'fun'   { Token (_, TFun) }
+  'match' { Token (_, TMatch) }
   '='     { Token (_, TEq) }
   '<-'    { Token (_, TLarrow) }
   '->'    { Token (_, TRarrow) }
+  '=>'    { Token (_, TDRarrow) }
+  '|'     { Token (_, TBar) }
   '||'    { Token (_, TDBar) }
   ':'     { Token (_, TColon) }
   ';'     { Token (_, TSemicolon) }
@@ -230,7 +233,17 @@ exprBlk                               --> Expr
   | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
   | 'while' exprBlk '{' expr '}'        { While $2 $4 }
   | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
+  | 'match' exprBlk '{' matchArms '}'   { Match $2 $4 }
   | exprApp                             { $1 }
+
+-- | Arms of a pattern match.
+matchArms                             --> [(Pat, Expr)]
+  : matchArm '|' matchArms              { $1 : $3 }
+  | matchArm                            { [$1] }
+
+-- | Each individual arm of a pattern match.
+matchArm                              --> (Pat, Expr)
+  : pat '=>' '{' expr '}'               { ($1, $4) }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr

@@ -130,7 +130,7 @@ data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
   , arity    :: Arity
   }
-  deriving Show
+  deriving (Show, Eq)
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t

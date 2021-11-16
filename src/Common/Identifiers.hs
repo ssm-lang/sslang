@@ -27,7 +27,7 @@ import           Language.C.Quote               ( ToIdent(..) )
 import           Prettyprinter                  ( Pretty(..) )
 
 -- | A basic identifier: just a string
-newtype Identifier = Identifier String deriving Eq
+newtype Identifier = Identifier String deriving (Eq, Ord)
 
 -- | Turn a general identifier into a string
 class IsString i => Identifiable i where
@@ -119,6 +119,7 @@ newtype FfiId = FfiId Identifier
 -- | ToIdentifier for user-defined variable, e.g., @x@
 newtype VarId = VarId Identifier
   deriving Eq
+  deriving Ord via Identifier
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
