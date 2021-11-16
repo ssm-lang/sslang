@@ -11,7 +11,6 @@ import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
-                                                , get
                                                 , gets
                                                 , modify
                                                 , unless
@@ -97,6 +96,16 @@ liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   return (v, foldl (\lam' v' -> I.Lambda v' lam' t) liftedBody vs)
 liftLambdas' _ = error "Expected top-level lambda binding"
 
+descend :: LiftFn a -> LiftFn (a, S.Set VarId)
+descend lb = do
+  savedScope    <- gets currentScope
+  savedFrees    <- gets currentFrees
+  liftedLamBody <- lb
+  lamFrees      <- gets currentFrees
+  modify $ \st ->
+    st { currentScope = savedScope, currentFrees = savedFrees }
+  return (liftedLamBody, lamFrees)
+
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
   inScope <- inCurrentScope v
@@ -112,18 +121,13 @@ liftLambdas (I.Prim p exprs t) = do
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
   traceM "Lambda"
-  oldCtx <- get
-  newScope $ catMaybes vs
-  liftedLamBody <- liftLambdas body
-  lamFrees      <- gets currentFrees
-  liftedLam     <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs)
-                                    liftedLamBody
-                                    t
+  (liftedLamBody, lamFrees) <-
+    descend $ newScope (catMaybes vs) >> liftLambdas body
+  liftedLam <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs)
+                                liftedLamBody
+                                t
   freshName <- getFresh
   addLifted freshName liftedLam
-  modify $ \st -> st { currentScope = currentScope oldCtx
-                     , currentFrees = currentScope oldCtx
-                     }
   return $ foldl (\app v -> I.App app (I.Var v t) t)
                  (I.Var (I.VarId (Identifier freshName)) t)
                  (S.toList lamFrees)
