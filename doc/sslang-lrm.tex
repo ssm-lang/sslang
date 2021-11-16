@@ -525,7 +525,7 @@ We now a present an overview of expressions and language constructs in sslang.
 \alt "if" <expr_blk> "{" <expr> "}" <expr_else>$^{?}$
 \alt "while" <expr_blk> "{" <expr> "}"
 \alt "fun" <pat>$^{+}$ "{" expr "}"
-\alt "match" <expr_blk> "{"< match_arms> "}"
+\alt "match" <expr_blk> "{" (  <pat> "=>" "{" <expr> "}" )$^{+}$ "}"
 \alt <expr_app>
 
 <expr_else> ::= "; else {" <expr> "}"
@@ -717,12 +717,7 @@ Sequences chain expressions in block-expressions. The value of a sequence is the
 
 \subsection{Pattern Matching}
 \begin{grammar}
-<match> ::= "match" <expr_blk> "{" <match_arms> "}"
-
-<match_arms> ::= match_arm "|" match_arms
-\alt match_arm
-
-<match_arm> ::= <pat> "=>" "{" <expr> "}"
+<match> ::=  "match" <expr_blk> "{" (  <pat> "=>" "{" <expr> "}" )$^{+}$ "}"
 \end{grammar}
 
 Pattern matches are a succinct way to handle of a variety of cases for the expression in the match clause, known as the scrutinee. If the scrutinee satisfies the pattern in a match arm, the expression in the match arm is evaluated; otherwise, the expression in that arm is not evaluated.
