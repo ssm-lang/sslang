@@ -14,10 +14,11 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , get
                                                 , gets
                                                 , modify
+                                                , when
                                                 )
 import           Debug.Trace
 
-import           Data.Maybe                     ( fromJust )
+import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
 
 
@@ -59,11 +60,11 @@ addCurrentScope :: I.VarId -> LiftFn ()
 addCurrentScope v =
   modify $ \st -> st { currentScope = S.insert v $ currentScope st }
 
-getFresh :: LiftFn Int
+getFresh :: LiftFn String
 getFresh = do
   curCount <- gets anonCount
   modify $ \st -> st { anonCount = anonCount st + 1 }
-  return curCount
+  return $ "anon" ++ show curCount
 
 addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
 addLifted name lam =
@@ -91,7 +92,7 @@ liftLambdas'
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
 liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
-  newScope $ map (\(Just vi) -> vi) vs
+  newScope $ catMaybes vs
   liftedBody <- liftLambdas body
   return (v, foldl (\lam' v' -> I.Lambda v' lam' t) liftedBody vs)
 liftLambdas' _ = error "Expected top-level lambda binding"
@@ -99,11 +100,8 @@ liftLambdas' _ = error "Expected top-level lambda binding"
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v _) = do
   isNotFree <- inCurrentScope v
-  if isNotFree
-    then return n
-    else do
-      addFreeVar v
-      return n
+  when isNotFree $ addFreeVar v
+  return n
 liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
   liftedE2 <- liftLambdas e2
@@ -115,27 +113,26 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
   traceM "Lambda"
   oldCtx <- get
-  newScope $ map (\(Just v) -> v) vs
+  newScope $ catMaybes vs
   liftedLamBody <- liftLambdas body
   lamFrees      <- gets currentFrees
   liftedLam     <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs)
                                     liftedLamBody
                                     t
-  freshNum <- getFresh
-  addLifted ("anon" ++ show freshNum) liftedLam
+  freshName <- getFresh
+  addLifted freshName liftedLam
   modify $ \st -> st { currentScope = currentScope oldCtx
                      , currentFrees = currentScope oldCtx
                      }
-  return
-    (foldl (\app v -> I.App app (I.Var v t) t)
-           (I.Var (I.VarId (Identifier ("anon" ++ show freshNum))) t)
-           (S.toList lamFrees)
-    )
+  return $ foldl (\app v -> I.App app (I.Var v t) t)
+                 (I.Var (I.VarId (Identifier freshName)) t)
+                 (S.toList lamFrees)
+
 liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
       exprs = map snd bs
   traceM "Let"
-  mapM_ (addCurrentScope . fromJust) vs
+  mapM_ addCurrentScope (catMaybes vs)
   liftedLetBodies <- mapM liftLambdas exprs
   liftedExpr      <- liftLambdas e
   return $ I.Let (zip vs liftedLetBodies) liftedExpr t
