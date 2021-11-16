@@ -23,24 +23,20 @@ OBJECTS = $(patsubst src/%.c, build/%.o, $(SOURCES))
 EXAMPLES = $(wildcard examples/*.c)
 EXAMPLEEXES = $(patsubst examples/%.c, build/%, $(EXAMPLES))
 
-RED = \e[31m
-GREEN = \e[32m
-RESET_COLOR = \e[0m
-
 ARFLAGS = -cr
 
 all : test-examples test_main
 
 test_main : build/test_main
-	./build/test_main > build/test_main.out || echo "${RED}TEST_MAIN FAILED${RESET_COLOR}"
+	./build/test_main > build/test_main.out || echo "TEST_MAIN FAILED"
 	@(diff test/test_main.out build/test_main.out && \
-	echo "${GREEN}TEST_MAIN PASSED${RESET_COLOR}") || \
-	echo "${RED}TEST_MAIN OUTPUT DIFFERS${RESET_COLOR}"
+	echo "TEST_MAIN PASSED") || \
+	echo "TEST_MAIN OUTPUT DIFFERS"
 test-examples : examples
 	./runexamples > build/examples.out
 	@(diff test/examples.out build/examples.out && \
-	echo "${GREEN}EXAMPLES PASSED${RESET_COLOR}") || \
-	echo "${RED}EXAMPLE OUTPUT DIFFERS${RESET_COLOR}"
+	echo "EXAMPLES PASSED") || \
+	echo "EXAMPLE OUTPUT DIFFERS"
 
 build/test_main : test/test_main.c build/libssm.a
 	$(CC) $(CFLAGS) -o $@ test/test_main.c -Lbuild -lssm
