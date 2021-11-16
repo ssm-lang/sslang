@@ -210,7 +210,7 @@ git config --local include.path ../.gitconfig
 
 Though these convenience aliases are optional, they help outline a recommended command-line workflow that you may wish to follow.
 
-[git-aliases]: #git-alias-setup-optional
+[convenience-aliases]: #git-alias-setup-optional
 
 ## Developing `sslc`
 
@@ -381,7 +381,7 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 
 ### Linting and Formatting
 
-To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following [convenience aliases][setup-git-alias] are provided to coordinate with your development workflow.
+To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following [convenience aliases][convenience-aliases] are provided to coordinate with your development workflow.
 
 To lint:
 
