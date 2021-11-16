@@ -22,7 +22,6 @@
 
 <!-- vim-markdown-toc -->
 
-<a name="guidelines"/>
 ## Contributing Guidelines
 
 These guidelines are here to ensure that we maintain a clean, linear Git
@@ -142,7 +141,6 @@ Here's a diagram to help you illustrate where everything should take place:
                                                      git commit ...
 ```
 
-<a name="setup"/>
 ## Development Environment Setup
 
 The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
@@ -167,7 +165,6 @@ This section will guide you through setting up your development environnment wit
 [brittany]: https://hackage.haskell.org/package/brittany
 [lsp]: https://langserver.org/
 
-<a name="setup-toolchain"/>
 ### Build Toolchain Setup
 
 You can easily setup most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
@@ -192,7 +189,6 @@ Package names differ depending on your distro and version, so make sure to read 
 
 [ghcup]: https://www.haskell.org/ghcup/
 
-<a name="setup-dev-tools"/>
 ### Development Tools Setup (optional)
 
 If you are helping develop sslc, you may find it helpful to have [HLint][hlint] and [Brittany][brittany] available. You can install these with Stack:
@@ -202,7 +198,6 @@ stack install hlint
 stack install brittany
 ```
 
-<a name="setup-git-alias"/>
 ### Git Alias Setup (optional)
 
 Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
@@ -215,12 +210,10 @@ git config --local include.path ../.gitconfig
 
 Though these convenience aliases are optional, they help outline a recommended command-line workflow that you may wish to follow.
 
-[git-aliases]: #setup-git-alias
+[git-aliases]: #git-alias-setup-optional
 
-<a name="develop"/>
 ## Developing `sslc`
 
-<a name="build"/>
 ### Building sslc
 
 You can build sslc by running:
@@ -250,7 +243,6 @@ git build --test --no-run-tests --file-watch --haddock
 git watch --haddock # equivalent convenience alias
 ```
 
-<a name="run"/>
 ### Running sslc
 
 You may run sslc using:
@@ -272,7 +264,6 @@ All existing tests should be passing before merging a PR, and where appropriate,
 stack test
 ```
 
-<a name="doc"/>
 ### Building Code Documentation
 
 Code documentation for this compiler is generated using [Haddock][haddock]. You can build the documentation by running:
