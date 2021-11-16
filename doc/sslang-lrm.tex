@@ -525,7 +525,7 @@ We now a present an overview of expressions and language constructs in sslang.
 \alt "if" <expr_blk> "{" <expr> "}" <expr_else>$^{?}$
 \alt "while" <expr_blk> "{" <expr> "}"
 \alt "fun" <pat>$^{+}$ "{" expr "}"
-\alt "match" <exprBlk> "{"< matchArms> "}"
+\alt "match" <expr_blk> "{"< match_arms> "}"
 \alt <expr_app>
 
 <expr_else> ::= "; else {" <expr> "}"
@@ -717,15 +717,17 @@ Sequences chain expressions in block-expressions. The value of a sequence is the
 
 \subsection{Pattern Matching}
 \begin{grammar}
-<exprBlk> ::= "match" <exprBlk> "{" <matchArms> "}"
+<match> ::= "match" <expr_blk> "{" <match_arms> "}"
 
-<matchArms> ::= matchArm "|" matchArms
-\alt matchArm
+<match_arms> ::= match_arm "|" match_arms
+\alt match_arm
 
-<matchArm> ::= <pat> "=>" "{" <expr> "}"
+<match_arm> ::= <pat> "=>" "{" <expr> "}"
 \end{grammar}
 
 Pattern matches are a succinct way to handle of a variety of cases for the expression in the match clause, known as the scrutinee. If the scrutinee satisfies the pattern in a match arm, the expression in the match arm is evaluated; otherwise, the expression in that arm is not evaluated.
+
+The below code sample checks if the scrutinee \texttt{x} is \texttt{Some a}; if it is, \texttt{y} is set to \texttt{1}. Otherwise, if \texttt{x} is \texttt{None},\texttt{y} is set to \texttt{2}. Pattern matches are an elegant way to handle multiple cases of \texttt{if} statements. They also allow for the destruction of complex algebraic data types via comparison to the patterns in the match arms.
 
 \begin{lstlisting}
 y = 0
@@ -734,8 +736,6 @@ match x // Match clause
     (Some a)  => y <- 1 // Arm if x is Some a
     None      => y <- 2 // Arm if x is None
 \end{lstlisting}
-
-This expression checks if the scrutinee \texttt{x} is \texttt{Some a}; if it is, \texttt{y} is set to \texttt{1}. Otherwise, if \texttt{x} is \texttt{None},\texttt{y} is set to \texttt{2}. Pattern matches can also be expressed as \texttt{if-else} statements. However, pattern matches are a much more elegant way to handle multiple cases, especially when we are matching on types.
 
 \newpage
 
