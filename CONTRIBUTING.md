@@ -1,5 +1,27 @@
 # Contributing
 
+## Table of Contents
+
+<!-- vim-markdown-toc GFM -->
+
+* [Contributing Guidelines](#contributing-guidelines)
+  * [Rules](#rules)
+  * [Recommended Git Workflow](#recommended-git-workflow)
+* [Development Environment Setup](#development-environment-setup)
+  * [Build Toolchain Setup](#build-toolchain-setup)
+  * [Development Tools Setup (optional)](#development-tools-setup-optional)
+  * [Git Alias Setup (optional)](#git-alias-setup-optional)
+* [Developing `sslc`](#developing-sslc)
+  * [Building sslc](#building-sslc)
+  * [Running sslc](#running-sslc)
+  * [Building Code Documentation](#building-code-documentation)
+  * [Adding Test Suites](#adding-test-suites)
+  * [Adding Regression Tests](#adding-regression-tests)
+  * [Adding New Unit Tests](#adding-new-unit-tests)
+  * [Linting and Formatting](#linting-and-formatting)
+
+<!-- vim-markdown-toc -->
+
 <a name="guidelines"/>
 ## Contributing Guidelines
 
@@ -121,8 +143,6 @@ Here's a diagram to help you illustrate where everything should take place:
 ```
 
 <a name="setup"/>
-
-
 ## Development Environment Setup
 
 The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
@@ -187,46 +207,50 @@ stack install brittany
 
 Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
 
-These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). These aliases are defined in [`.gitconfig`](./.gitconfig), and can be set up by running this command from anywhere within this repo:
+These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). They are defined in [`.gitconfig`](./.gitconfig), and can be set up by running the following command inside of this repo:
 
 ```
 git config --local include.path ../.gitconfig
 ```
+
+Though these convenience aliases are optional, they help outline a recommended command-line workflow that you may wish to follow.
 
 [git-aliases]: #setup-git-alias
 
 <a name="develop"/>
 ## Developing `sslc`
 
+<a name="build"/>
 ### Building sslc
 
 You can build sslc by running:
 
-````
+```
 stack build
-````
+```
 
 By default, Stack does not link in the test driver, and needs to recompile everything if you later decide to run tests. To work around this behavior, you can ask Stack to link in tests without running them:
 
 ```
 stack build --test --no-run-tests
-git build # equivalent
+git build # equivalent convenience alias
 ```
 
 You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to later run `build` manually:
 
 ```
 git build --test --no-run-tests --file-watch
-git watch # equivalent
+git watch # equivalent convenience alias
 ```
 
-You can also continuously build documentation, though that takes considerably longer:
+You can also continuously build code documentation, though that takes considerably longer, and is not recommended unless you are actively working on documentation:
 
 ```
 git build --test --no-run-tests --file-watch --haddock
-git watch --haddock # equivalent
+git watch --haddock # equivalent convenience alias
 ```
 
+<a name="run"/>
 ### Running sslc
 
 You may run sslc using:
@@ -248,6 +272,7 @@ All existing tests should be passing before merging a PR, and where appropriate,
 stack test
 ```
 
+<a name="doc"/>
 ### Building Code Documentation
 
 Code documentation for this compiler is generated using [Haddock][haddock]. You can build the documentation by running:
@@ -363,9 +388,9 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 [hspec]: http://hspec.github.io/
 [hspec-discover]: http://hspec.github.io/hspec-discover.html
 
-## Lint and Format
+### Linting and Formatting
 
-To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following Git aliases are provided to help coordinate these tools with your development workflow.
+To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following [convenience aliases][setup-git-alias] are provided to coordinate with your development workflow.
 
 To lint:
 
