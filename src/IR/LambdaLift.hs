@@ -15,7 +15,6 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 , unless
                                                 )
-import           Debug.Trace
 
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
@@ -84,7 +83,6 @@ makeLiftedLambda
 makeLiftedLambda [] body _ = return body
 makeLiftedLambda vs body t = do
   liftedBody <- makeLiftedLambda (tail vs) body t
-  traceM (show vs)
   return (I.Lambda (head vs) liftedBody t)
 
 liftLambdas'
@@ -102,8 +100,7 @@ descend lb = do
   savedFrees    <- gets currentFrees
   liftedLamBody <- lb
   lamFrees      <- gets currentFrees
-  modify $ \st ->
-    st { currentScope = savedScope, currentFrees = savedFrees }
+  modify $ \st -> st { currentScope = savedScope, currentFrees = savedFrees }
   return (liftedLamBody, lamFrees)
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
@@ -120,7 +117,6 @@ liftLambdas (I.Prim p exprs t) = do
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
-  traceM "Lambda"
   (liftedLamBody, lamFrees) <-
     descend $ newScope (catMaybes vs) >> liftLambdas body
   liftedLam <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs)
@@ -135,7 +131,6 @@ liftLambdas lam@(I.Lambda _ _ t) = do
 liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
       exprs = map snd bs
-  traceM "Let"
   mapM_ addCurrentScope (catMaybes vs)
   liftedLetBodies <- mapM liftLambdas exprs
   liftedExpr      <- liftLambdas e
@@ -151,7 +146,6 @@ liftProgramLambdas p = runLiftFn $ do
   populateGlobalScope defs
   funsWithLiftedBodies <- mapM liftLambdas' funs
   liftedLambdas        <- gets lifted
-  traceM "finished Lifting"
   return $ p { I.programDefs = oths ++ liftedLambdas ++ funsWithLiftedBodies }
  where
   isFun (_, I.Lambda{}) = True

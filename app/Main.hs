@@ -32,6 +32,7 @@ data Mode
   | DumpAST     -- ^ AST before operator parsing
   | DumpASTP    -- ^ AST after operators are parsed
   | DumpIR      -- ^ Intermediate representation
+  | DumpIRLifted      -- ^ Intermediate representation with lifted lambdas
   | GenerateC   -- ^ Generate C backend
   deriving (Eq, Show)
 
@@ -69,6 +70,10 @@ optionDescriptions =
            ["dump-ir"]
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
+  , Option ""
+           ["dump-lifted-ir"]
+           (NoArg (\opt -> return opt { optMode = DumpIRLifted }))
+           "Print the IR with lifted lambdas"
   , Option ""
            ["generate-c"]
            (NoArg (\opt -> return opt { optMode = GenerateC }))
@@ -113,7 +118,7 @@ main = do
   when (optMode opts == DumpAST) $ putStrLn (spaghetti ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $  putStrLn (spaghetti ast') >> exitSuccess
+  when (optMode opts == DumpASTP) $ putStrLn (spaghetti ast') >> exitSuccess
 
   ()  <- doPass $ Front.checkAst ast'
 
@@ -121,15 +126,15 @@ main = do
 
   when (optMode opts == DumpIR) $ putStrLn (spaghetti irA) >> exitSuccess
 
-  irC   <- doPass $ IR.inferTypes irA
+  irC <- doPass $ IR.inferTypes irA
 
-  irP   <- doPass $ IR.instantiateClasses irC
+  irP <- doPass $ IR.instantiateClasses irC
 
-  irY   <- doPass $ IR.yieldAbstraction irP
+  irY <- doPass $ IR.yieldAbstraction irP
 
-  irL   <- doPass $ IR.lambdaLift irY
+  irL <- doPass $ IR.lambdaLift irY
 
-  when (True) $ putStrLn (spaghetti irL) >> exitSuccess
+  when (optMode opts == DumpIRLifted) $ putStrLn (spaghetti irL) >> exitSuccess
 
   irI   <- doPass $ IR.defunctionalize irL
 
