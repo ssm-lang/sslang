@@ -169,7 +169,7 @@ This section will guide you through setting up your development environnment wit
 
 You can easily setup most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
 
-```
+```shell
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
   BOOTSTRAP_HASKELL_INSTALL_STACK=1 \
   sh
@@ -179,7 +179,7 @@ This will run a short but interactive script that installs GHC, Cabal, and Stack
 
 The GHCup setup script may also detect that dependencies are missing, and ask you to install them; make sure to do so before proceeding. For instance, if you are running Ubuntu 20.10:
 
-```
+```shell
 sudo apt install build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
 ```
 
@@ -193,7 +193,7 @@ Package names differ depending on your distro and version, so make sure to read 
 
 If you are helping develop sslc, you may find it helpful to have [HLint][hlint] and [Brittany][brittany] available. You can install these with Stack:
 
-```
+```shell
 stack install hlint
 stack install brittany
 ```
@@ -204,7 +204,7 @@ Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory,
 
 These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). They are defined in [`.gitconfig`](./.gitconfig), and can be set up by running the following command inside of this repo:
 
-```
+```shell
 git config --local include.path ../.gitconfig
 ```
 
@@ -218,27 +218,27 @@ Though these convenience aliases are optional, they help outline a recommended c
 
 You can build sslc by running:
 
-```
+```shell
 stack build
 ```
 
 By default, Stack does not link in the test driver, and needs to recompile everything if you later decide to run tests. To work around this behavior, you can ask Stack to link in tests without running them:
 
-```
+```shell
 stack build --test --no-run-tests
 git build # equivalent convenience alias
 ```
 
 You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to later run `build` manually:
 
-```
+```shell
 git build --test --no-run-tests --file-watch
 git watch # equivalent convenience alias
 ```
 
 You can also continuously build code documentation, though that takes considerably longer, and is not recommended unless you are actively working on documentation:
 
-```
+```shell
 git build --test --no-run-tests --file-watch --haddock
 git watch --haddock # equivalent convenience alias
 ```
@@ -247,20 +247,20 @@ git watch --haddock # equivalent convenience alias
 
 You may run sslc using:
 
-```
+```shell
 stack exec sslc <args..>
 ```
 
 You can optionally install `sslc` to `~/.local/bin/`, so that you can invoke it directly (as long as `~/.local/bin/` is in your `PATH`):
 
-```
+```shell
 stack install
 sslc <args..>
 ```
 
 All existing tests should be passing before merging a PR, and where appropriate, new tests should be added to demonstrate functionality and correctness of your code. Tests may be run using:
 
-```
+```shell
 stack test
 ```
 
@@ -268,13 +268,13 @@ stack test
 
 Code documentation for this compiler is generated using [Haddock][haddock]. You can build the documentation by running:
 
-```
+```shell
 stack haddock
 ```
 
 This generates the documentation in `haddock-out/`, in the form of a navigable static website (similar to what is found on [Hackage](https://hackage.haskell.org/)). You may view the HTML files in there using your browser. You can also ask that Haddock open your browser automatically:
 
-```
+```shell
 stack haddock --open
 ```
 
@@ -284,7 +284,7 @@ The langauge reference manual is maintained separately in the [`doc/`](doc) fold
 
 All existing tests should be passing before merging a PR, and where appropriate, new tests should be added to demonstrate functionality and correctness of your code. Tests may be run using:
 
-```
+```shell
 stack test
 ```
 
@@ -304,7 +304,7 @@ tests:
 
 To run an individual test, you may specify `sslang:<test-name>` as a parameter to `stack test`. For instance, to run the scanner test:
 
-```
+```shell
 stack test sslang:scanner-test
 ```
 
@@ -314,8 +314,8 @@ By convention, the `main` module of tests for Haskell projects is typically name
 
 Test with, e.g.,
 
-````
-cd regression-tests ; ./runtests.sh
+````shell
+cd regression-tests && ./runtests.sh
 ````
 
 TODO: Stephen to write more about `runtests.sh`.
@@ -366,13 +366,13 @@ The entry point of each test is the `spec :: Spec` function, which allows indivi
 
 You can also run individual test modules or test cases. For instance, to run only the test cases in `ScanCommentsSpec`, run:
 
-```
+```shell
 stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/"'
 ```
 
 Or to run only a specific test case:
 
-```
+```shell
 stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single-line comments/"'
 ```
 
@@ -385,7 +385,7 @@ To keep code on the main branch clean and consistent, you should always make sur
 
 To lint:
 
-```
+```shell
 git lint                  # lint all files modified since HEAD
 git lint [<files..>]      # lint specified files
 git lint --since <commit> # lint all files modified since <commit>
@@ -394,7 +394,7 @@ git lint --help           # show help menu
 
 To format:
 
-```
+```shell
 git fmt                   # format all files modified since HEAD
 git fmt [<files..>]       # format specified files
 git fmt --since <commit>  # format all files modified since <commit>
