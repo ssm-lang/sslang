@@ -15,16 +15,17 @@ module Common.Identifiers
   , FfiId(..)
   , VarId(..)
   , FieldId(..)
+  , ClassId(..)
   , Binder
   , Identifier(..)
   ) where
 
-import           Data.String                    ( IsString(..) )
+import           Data.String                              ( IsString(..) )
 
-import           Language.C                     ( Id(..) )
-import           Language.C.Quote               ( ToIdent(..) )
+import           Language.C                               ( Id(..) )
+import           Language.C.Quote                         ( ToIdent(..) )
 
-import           Prettyprinter                  ( Pretty(..) )
+import           Prettyprinter                            ( Pretty(..) )
 
 -- | A basic identifier: just a string
 newtype Identifier = Identifier String deriving (Eq, Ord)
@@ -130,6 +131,16 @@ newtype VarId = VarId Identifier
 
 -- | ToIdentifier for struct field names, e.g., @len@
 newtype FieldId = FieldId Identifier
+  deriving Eq
+  deriving Show via Identifier
+  deriving ToIdent via Identifier
+  deriving IsString via Identifier
+  deriving Identifiable via Identifier
+  deriving Semigroup via Identifier
+  deriving Monoid via Identifier
+  deriving Pretty via Identifier
+
+newtype ClassId = ClassId Identifier
   deriving Eq
   deriving Show via Identifier
   deriving ToIdent via Identifier

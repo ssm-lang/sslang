@@ -11,16 +11,21 @@ module IR.IR
   , DConId(..)
   , wellFormed
   , collectLambda
+  , ClassDef(..)
+  , InstDef(..)
   ) where
-import           Common.Identifiers             ( Binder
-                                                , DConId(..)
-                                                , TConId(..)
-                                                , VarId(..)
-                                                )
+import           Common.Identifiers                       ( Binder
+                                                          , ClassId(..)
+                                                          , DConId(..)
+                                                          , TConId(..)
+                                                          , VarId(..)
+                                                          )
 
-import           Control.Comonad                ( Comonad(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
-import           IR.Types.TypeSystem            ( TypeDef(..) )
+import           Control.Comonad                          ( Comonad(..) )
+import           Data.Bifunctor                           ( Bifunctor(..) )
+import           IR.Types.TypeSystem                      ( InstConstraint(..)
+                                                          , TypeDef(..)
+                                                          )
 
 import           Common.Pretty
 
@@ -33,9 +38,22 @@ data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
+  , classDefs    :: [ClassDef t]
+  , instDefs     :: [InstDef t]
+  }
+  deriving Show
+
+data ClassDef t = ClassDef
+  { className    :: ClassId
+  , classMethods :: [(VarId, t)]
   }
   deriving (Eq, Show)
 
+data InstDef t = InstDef
+  { instConstraint :: InstConstraint t
+  , instMethods    :: [(VarId, Expr t)]
+  }
+  deriving Show
 {- | Literal values supported by the language.
 
 Note that these don't carry any connotation of type: '1' just means '1',
@@ -186,12 +204,24 @@ collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
 
+instance Functor ClassDef where
+  fmap f cdef@ClassDef { className = _, classMethods = cms } =
+    cdef { classMethods = fmap (second f) cms }
+
+instance Functor InstDef where
+  fmap f idef@InstDef { instConstraint = ic, instMethods = ims } = idef
+    { instConstraint = fmap f ic
+    , instMethods    = fmap (second $ fmap f) ims
+    }
+
 instance Functor Program where
-  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
-    Program { programEntry = e
-            , programDefs  = fmap (second $ fmap f) defs
-            , typeDefs     = fmap (second $ fmap f) tds
-            }
+  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds, classDefs = cds, instDefs = ids }
+    = Program { programEntry = e
+              , programDefs  = fmap (second $ fmap f) defs
+              , typeDefs     = fmap (second $ fmap f) tds
+              , classDefs    = fmap (fmap f) cds
+              , instDefs     = fmap (fmap f) ids
+              }
 
 instance Functor Expr where
   fmap f (Var  v t      ) = Var v (f t)

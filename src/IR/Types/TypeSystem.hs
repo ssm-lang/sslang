@@ -18,10 +18,11 @@ Types.Flat: concrete only
 -}
 module IR.Types.TypeSystem where
 
-import           Common.Identifiers             ( DConId
-                                                , FieldId
-                                                )
-import           Data.Bifunctor                 ( Bifunctor(second) )
+import           Common.Identifiers                       ( ClassId
+                                                          , DConId
+                                                          , FieldId
+                                                          )
+import           Data.Bifunctor                           ( Bifunctor(second) )
 
 import           Common.Pretty
 
@@ -132,11 +133,17 @@ data TypeDef t = TypeDef
   }
   deriving (Show, Eq)
 
+data InstConstraint t = IsIn t ClassId
+  deriving Show
+
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
   = VariantNamed [(FieldId, t)] -- ^ A record with named fields
   | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
   deriving (Show, Eq)
+
+instance Functor InstConstraint where
+  fmap f (IsIn t cid) = IsIn (f t) cid
 
 instance Functor TypeDef where
   fmap f TypeDef { variants = vs, arity = a } =
