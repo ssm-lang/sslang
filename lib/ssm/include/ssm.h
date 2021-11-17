@@ -111,24 +111,18 @@ enum ssm_error_t {
   SSM_PLATFORM_ERROR
 };
 
-#ifndef SSM_SECOND
-/** Ticks in a second
- *
- * Override this according to your platform
- */
-#define SSM_SECOND 1000000000L
-#endif
-
 /** Ticks per nanosecond */
-#define SSM_NANOSECOND  (SSM_SECOND/1000000000L)
+#define SSM_NANOSECOND 1L
 /** Ticks per microsecond */
-#define SSM_MICROSECOND (SSM_SECOND/1000000L)
+#define SSM_MICROSECOND (SSM_NANOSECOND * 1000L)
 /** Ticks per millisecond */
-#define SSM_MILLISECOND (SSM_SECOND/1000L)
+#define SSM_MILLISECOND (SSM_MICROSECOND * 1000L)
+/** Ticks per second */
+#define SSM_SECOND (SSM_MILLISECOND * 1000L)
 /** Ticks per minute */
-#define SSM_MINUTE      (SSM_SECOND*60L)
+#define SSM_MINUTE (SSM_SECOND * 60L)
 /** Ticks per hour */
-#define SSM_HOUR        (SSM_SECOND*3600L)
+#define SSM_HOUR (SSM_MINUTE * 60L)
 
 /** Absolute time; never to overflow. */
 typedef uint64_t ssm_time_t;
