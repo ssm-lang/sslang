@@ -1,0 +1,6 @@
+main(led : & Int) -> () =
+  loop
+    after 50 , led <- 1
+    wait led
+    after 50 , led <- 0
+    wait led
