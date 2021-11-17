@@ -1,0 +1,45 @@
+#!/bin/sh
+
+usage_exit() {
+	echo "Usage: $0 [-o outdir] file..." >&2
+	exit 1
+}
+
+if [ "$#" -lt 1 ] || [ "$1" == "-h" ]; then
+	usage_exit
+fi
+
+if [ "$1" == "-o" ]; then
+	if [ "$#" -lt 3 ]; then
+		usage_exit
+	fi
+	DEST_DIR="$2"
+	shift 2
+else
+	DEST_DIR="$(basename -s .ssl "$1")"
+fi
+
+test -z "$SSLC" && SSLC="$(which sslc)"
+if ! [ -x "$SSLC" ]; then
+	echo "sslc not found; abort" >&2
+	exit 1
+fi
+
+test -z "$SSM_PIO_TEMPLATE" && SSM_PIO_TEMPLATE="$HOME"/.local/share/ssm/pio-template
+if ! [ -d "$SSM_PIO_TEMPLATE" ]; then
+	echo "platformio template not found; abort" >&2
+	exit 1
+fi
+
+if [ -e "$DEST_DIR" ]; then
+	if ! diff -rq -x .pio -x src "$SSM_PIO_TEMPLATE" "$DEST_DIR" > /dev/null 2>&1; then
+		echo "non-template '$DEST_DIR' exists; abort" >&2
+		exit 1
+	fi
+else
+	cp -r "$SSM_PIO_TEMPLATE" "$DEST_DIR"
+fi
+
+mkdir -p "$DEST_DIR"/src
+rm -f "$DEST_DIR"/src/*
+exec "$SSLC" --generate-c "$@" > "$DEST_DIR"/src/main.c

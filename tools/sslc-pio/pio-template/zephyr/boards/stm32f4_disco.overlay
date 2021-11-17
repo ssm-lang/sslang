@@ -1,0 +1,12 @@
+/ {
+     aliases {
+	  ssm-timer = &counter2;
+     };
+};
+
+&timers2 {
+	counter2: counter {
+		status = "okay";
+		st,prescaler = <0>;
+	};
+};
