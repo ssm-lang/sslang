@@ -456,10 +456,11 @@ genExpr a@(I.App _ _ ty) = do
     (I.Data tag t, args) -> do
       (fieldVals, evalStms) <- unzip <$> mapM genExpr args
       tmpName               <- nextTmp t
-      -- Want check if integer or pointer, but that info comes from typedef.hs!
-      -- Either need size and tag number passed in after call to genTypeDef,
+      -- Problem: cannot recover all the info needed from data constructor alone
+      -- Solution: Either need size and pointer/integer status passed in after call to genTypeDef,
       -- or need to generate macros in genTypeDef 
-      let maxArgs = 4::Int -- maxArgs information comes from typedef.hs (same issue)
+      -- assume pointer representation and size 4 for now...
+      let maxArgs = 4::Int 
       let alloc = [[citem|$id:tmpName = ssm_new($int:maxArgs,$id:tag);|]]
       let initField =
             (\x y i -> [citem|$id:x->payload[$int:(i::Int)] = $exp:y;|])
