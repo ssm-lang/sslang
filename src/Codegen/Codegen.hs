@@ -436,10 +436,8 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
 genExpr (I.Var n _) = do
   -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
   return ([cexp|$id:acts->$id:n|], [])
-genExpr (I.Data _ t) = do
-  tmpName <- nextTmp t
-  return ([cexp|$id:tmpName|], [])
-genExpr (I.Lit l t              ) = genLiteral l t
+genExpr (I.Data _ _) = fail "genExpr (I.Data _ _) should never be reached."
+genExpr (I.Lit l t) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
@@ -456,16 +454,20 @@ genExpr a@(I.App _ _ ty) = do
     (I.Data tag t, args) -> do
       (fieldVals, evalStms) <- unzip <$> mapM genExpr args
       tmpName               <- nextTmp t
+      let decl = [[citem|$ty:ssm_object_t* $id:tmpName;|]]
+      -- How to tell if pointer or integer?
+      -- How to tell max number of args out of all possible data constructors?
       -- Problem: cannot recover all the info needed from data constructor alone
       -- Solution: Either need size and pointer/integer status passed in after call to genTypeDef,
       -- or need to generate macros in genTypeDef 
       -- assume pointer representation and size 4 for now...
-      let maxArgs = 4::Int 
+      let maxArgs = 4 :: Int
       let alloc = [[citem|$id:tmpName = ssm_new($int:maxArgs,$id:tag);|]]
       let initField =
-            (\x y i -> [citem|$id:x->payload[$int:(i::Int)] = $exp:y;|])
+            (\x y i -> [citem|$id:x->$id:payload[$int:(i::Int)] = $exp:y;|])
       let initFields = zipWith (initField tmpName) fieldVals [0, 1 ..]
-      return ([cexp|$id:tmpName|], concat evalStms ++ alloc ++ initFields)
+      return
+        ([cexp|$id:tmpName|], decl ++ concat evalStms ++ alloc ++ initFields)
     (fn, args) -> do
       (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
       tmpName                       <- nextTmp ty

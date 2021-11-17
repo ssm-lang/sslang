@@ -257,3 +257,21 @@ mem_alloc = "malloc"
 -- | Free memory.
 mem_free :: CIdent
 mem_free = "free"
+
+{----- Algebraic Data Types -----}
+
+-- | Type of a generic ADT
+ssm_object_t :: C.Type
+ssm_object_t = [cty|struct ssm_object_t|]
+
+-- | Type of an ADT's memory management header
+ssm_mm_md :: C.Type
+ssm_mm_md = [cty|struct ssm_mm_md|]
+
+-- | Name of an ADT's memory management header
+header :: CIdent
+header = "header"
+
+-- | Name of an ADT's payload
+payload :: CIdent 
+payload = "payload"
