@@ -74,7 +74,8 @@ See [the detailed documentation](@ref all)
  * pointer if the linker does not find a definition for this symbol in any
  * object file.
  */
-void ssm_throw(int reason, const char *file, int line, const char *func);
+void ssm_throw(int reason, const char *file, int line, const char *func)
+  __attribute__((weak));
 
 /** Invoked when a process must terminate, e.g., when memory or queue space is
  * exhausted. Not expected to return.
@@ -83,7 +84,13 @@ void ssm_throw(int reason, const char *file, int line, const char *func);
  * Default behavior is to exit with reason as the exit code, but can be
  * overridden by defining ssm_throw.
  */
-#define SSM_THROW(reason) ssm_throw(reason, __FILE__, __LINE__, __func__)
+#define SSM_THROW(reason) \
+    do \
+      if (ssm_throw) \
+        ssm_throw(reason, __FILE__, __LINE__, __func__); \
+      else \
+        for(;;); \
+    while (0)
 
 /** Error codes, indicating reason for failure.
  *
