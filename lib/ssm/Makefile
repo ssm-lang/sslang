@@ -64,7 +64,9 @@ build/libssm.a : $(INCLUDES) $(OBJECTS)
 	rm -f build/libssm.a
 	$(AR) $(ARFLAGS) build/libssm.a $(OBJECTS)
 
-build/%.o : src/%.c $(INCLUDES)
+$(OBJECTS) : $(INCLUDES) $(SOURCES)
+
+build/%.o : src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 examples : $(EXAMPLEEXES)
