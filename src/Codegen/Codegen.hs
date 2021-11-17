@@ -436,8 +436,10 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
 genExpr (I.Var n _) = do
   -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
   return ([cexp|$id:acts->$id:n|], [])
-genExpr (I.Data _ _             ) = nope
-genExpr (I.Lit  l t             ) = genLiteral l t
+genExpr (I.Data _ t) = do
+  tmpName <- nextTmp t
+  return ([cexp|$id:tmpName|], [])
+genExpr (I.Lit l t              ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
@@ -450,20 +452,33 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr a@(I.App _ _ ty) = do
-  let (fn, args) = I.collectApp a
-  (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-  tmpName                       <- nextTmp ty
-  yield                         <- genYield
-  let tmp = [cexp|$id:acts->$id:tmpName|]
-      enterArgs =
-        [ [cexp|$id:actg|]
-          , [cexp|$id:actg->$id:priority|]
-          , [cexp|$id:actg->$id:depth|]
-          ]
-          ++ argVals
-          ++ [[cexp|&$exp:tmp|]]
-      call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
-  return (tmp, concat evalStms ++ call ++ yield)
+  case I.collectApp a of
+    (I.Data tag t, args) -> do
+      (fieldVals, evalStms) <- unzip <$> mapM genExpr args
+      tmpName               <- nextTmp t
+      -- Want check if integer or pointer, but that info comes from typedef.hs!
+      -- Either need size and tag number passed in after call to genTypeDef,
+      -- or need to generate macros in genTypeDef 
+      let maxArgs = 4::Int -- maxArgs information comes from typedef.hs (same issue)
+      let alloc = [[citem|$id:tmpName = ssm_new($int:maxArgs,$id:tag);|]]
+      let initField =
+            (\x y i -> [citem|$id:x->payload[$int:(i::Int)] = $exp:y;|])
+      let initFields = zipWith (initField tmpName) fieldVals [0, 1 ..]
+      return ([cexp|$id:tmpName|], concat evalStms ++ alloc ++ initFields)
+    (fn, args) -> do
+      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
+      tmpName                       <- nextTmp ty
+      yield                         <- genYield
+      let tmp = [cexp|$id:acts->$id:tmpName|]
+          enterArgs =
+            [ [cexp|$id:actg|]
+              , [cexp|$id:actg->$id:priority|]
+              , [cexp|$id:actg->$id:depth|]
+              ]
+              ++ argVals
+              ++ [[cexp|&$exp:tmp|]]
+          call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
+      return (tmp, concat evalStms ++ call ++ yield)
 genExpr I.Match{}       = nope
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
@@ -599,12 +614,18 @@ genPrimOp I.PrimAdd [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <- genBinop lhs rhs
   -- all integers are 31 bits + 1 tag bit, so zero tag bit on one argument,
   -- add together, and the result will be sum with a tag bit of 1.
-  return ([cexp|(((($ty:word_t) $exp:rhsVal) & (~1)) + (($ty:word_t) $exp:lhsVal))|], stms)
+  return
+    ( [cexp|(((($ty:word_t) $exp:rhsVal) & (~1)) + (($ty:word_t) $exp:lhsVal))|]
+    , stms
+    )
 genPrimOp I.PrimSub [lhs, rhs] _ = do
   -- all integers are 31 bits + 1 tag bit, so zero tag bit on subtrahend,
   -- subtract, and the result will be difference with a tag bit of 1.                   
   ((lhsVal, rhsVal), stms) <- genBinop lhs rhs
-  return ([cexp|((($ty:word_t) $exp:lhsVal) - ((($ty:word_t) $exp:rhsVal) & (~1)))|], stms)
+  return
+    ( [cexp|((($ty:word_t) $exp:lhsVal) - ((($ty:word_t) $exp:rhsVal) & (~1)))|]
+    , stms
+    )
 genPrimOp I.PrimMul [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
