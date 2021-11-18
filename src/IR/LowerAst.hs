@@ -46,7 +46,7 @@ lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
   (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
   _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
 
--- | Lower an AST 'Program' into IR.
+-- | Lower an AST program into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
   { I.programEntry = fromString "main"
@@ -54,7 +54,7 @@ lowerProgram (A.Program ds) = return $ I.Program
   , I.typeDefs     = []
   }
 
-{- | Lower an 'A.Definition' into a name and bound expression.
+{- | Lower an AST definition into a name and bound expression in the IR.
 
 Upon encountering a function definition 'A.DefFn', the args are unpacked in
 a series of nested anonymous functions 'I.Lambda', bound to the function name in
@@ -85,7 +85,7 @@ lowerDef (A.DefFn aName aPats aTy aBody) =
     A.TypReturn ty -> (id, (lowerType ty <>))
     A.TypNone      -> (id, id)
 
-{- | Lowers an AST expression into an IR expression.
+{- | Lowers an AST expression.
 
 Performs the following desugaring inline:
 
@@ -137,7 +137,7 @@ lowerExpr (A.IfElse c t e) k = I.Match cond [tArm, eArm] (k I.untyped)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
--- | Lower an A.Pat into an I.Alt
+-- | Lower an AST pattern.
 lowerAlt :: A.Pat -> I.Alt
 lowerAlt A.PatWildcard  = I.AltDefault Nothing
 lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
@@ -166,7 +166,7 @@ lowerLambda aPats aBody lambdaAnn lambdaRetAnn = lowerBinds aPats lambdaAnn
     lType = k $ lowerPatType p `I.arrow` extract lBody
   lowerBinds [] k = lowerExpr aBody (k . lambdaRetAnn)
 
--- | Lower an AST literal into an IR literal.
+-- | Lower an AST literal.
 lowerLit :: A.Literal -> I.Literal
 lowerLit (A.LitInt i)     = I.LitIntegral i
 lowerLit A.LitEvent       = I.LitEvent

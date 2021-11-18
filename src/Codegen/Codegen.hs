@@ -80,7 +80,7 @@ data GenFnState = GenFnState
 
 {- | Translation monad for procedures, with derived typeclass instances.
 
-We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
+We declare @GenFn@ as a newtype so that we can implement @MonadFail@ for it,
 allowing us to use monadic pattern matching.
 -}
 newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
@@ -125,7 +125,7 @@ addLocal l = modify $ \st -> st { fnLocs = l : fnLocs st }
 maxWait :: Int -> GenFn ()
 maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
 
--- | Allocate a temp variable of given 'Type', registered as a local variable.
+-- | Allocate a temp variable of given @Type@, registered as a local variable.
 nextTmp :: Type -> GenFn VarId
 nextTmp ty = do
   t <- fromId . tmp_ <$> gets fnTmps
@@ -133,9 +133,9 @@ nextTmp ty = do
   addLocal (t, ty)
   return t
 
-{- | Determines whether the given 'VarId' can be found in the activation record.
+{- | Determines whether the given @VarId@ can be found in the activation record.
 
-Returns true iff 'name' appears as local variable or as a parameter.
+Returns true iff @name@ appears as local variable or as a parameter.
 -}
 isLocalVar :: VarId -> GenFn Bool
 isLocalVar name = do
@@ -165,19 +165,19 @@ builtinId (I.Tuple    _) = todo
 builtinId (I.Integral s) = int_ s
 builtinId (I.Ref      t) = sv_ $ typeId t -- NOTE: this does not add pointers
 
--- | Translate an SSM 'Type' to a 'C.Type'.
+-- | Generate a C type from an IR type.
 genType :: Type -> C.Type
 genType typ = ptrs_ typ $ ctype $ typeId typ
 
--- | Obtain the initialize method for a given SSM scheduled variable 'Type'.
+-- | Obtain the initialize method for a given SSM scheduled variable type.
 genInit :: Type -> Maybe C.Exp
 genInit ty = cexpr . initialize_ . typeId <$> I.deref ty
 
--- | Obtain the assign method for a given SSM scheduled variable 'Type'.
+-- | Obtain the assign method for a given SSM scheduled variable type.
 genAssign :: Type -> Maybe C.Exp
 genAssign ty = cexpr . assign_ . typeId <$> I.deref ty
 
--- | Obtain the later method for a given SSM scheduled variable 'Type'.
+-- | Obtain the later method for a given SSM scheduled variable type.
 genLater :: Type -> Maybe C.Exp
 genLater ty = cexpr . later_ . typeId <$> I.deref ty
 
@@ -253,7 +253,7 @@ genTop (name, l@(I.Lambda _ _ ty)) =
 genTop (_, I.Lit _ _) = todo
 genTop (_, _        ) = nope
 
-{- | Generate struct definition for an SSM 'Procedure'.
+{- | Generate struct definition for an SSM top-level function.
 
 This is where local variables, triggers, and parameter values are stored.
 -}
@@ -280,7 +280,7 @@ genStruct = do
   structField :: (CIdent, C.Type) -> C.FieldGroup
   structField (n, t) = [csdecl|$ty:t $id:n;|]
 
-{- | Generate the enter function for an SSM 'Procedure' and its signature.
+{- | Generate the enter function for an SSM top-level function.
 
 Its struct is allocated and initialized (partially; local variables' values are
 left uninitialized).
@@ -331,7 +331,7 @@ genEnter = do
       |]
     )
 
-{- | Generate the step function for an SSM 'Procedure'.
+{- | Generate the step function for an SSM top-level function.
 
 This function just defines the function definition and switch statement that
 wraps the statements of the procedure. The heavy lifting is performed by
@@ -666,7 +666,7 @@ marshal e = [cexp|(((($ty:word_t) $exp:e) << 1) | 0x1)|]
 unmarshal :: C.Exp -> C.Exp
 unmarshal e = [cexp|((($ty:word_t) $exp:e) >> 1)|]
 
--- | Compute priority and depth arguments for a par fork of width 'numChildren'.
+-- | Compute priority and depth arguments for a par fork of given child width.
 genParArgs :: Int -> (C.Exp, C.Exp) -> [(C.Exp, C.Exp)]
 genParArgs numChildren (currentPrio, currentDepth) =
   [ let p = [cexp|$exp:currentPrio + ($int:(i-1) * (1 << $exp:d))|]
@@ -675,7 +675,7 @@ genParArgs numChildren (currentPrio, currentDepth) =
   | i <- [1 .. numChildren]
   ]
 
--- | How much the depth should be decreased when par forking 'numChildren'.
+-- | How much the depth should be decreased when par forking number of children.
 depthSub :: Int -> C.Exp
 depthSub numChildren = [cexp|$int:ds|]
   where ds = ceiling $ logBase (2 :: Double) $ fromIntegral numChildren :: Int
