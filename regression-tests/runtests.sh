@@ -81,12 +81,8 @@ Check() {
     reffile=`echo $1 | sed 's/[.][^.]*$//'`
     basedir=`dirname $1`
 
-    # If the library isn't there, build it
-    if [ ! -f "${SSMLIBDIR}/libssm.a" ] ; then
-	Run mkdir -p out &&
-	Run make -C "$SSMDIR" build/libssm.a "1>&2"
-    fi
-    
+    Run make -C "$SSMDIR" build/libssm.a "1>&2"
+
     echo -n "$basename..."
 
     echo 1>&2
