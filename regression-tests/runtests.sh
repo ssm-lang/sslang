@@ -81,8 +81,6 @@ Check() {
     reffile=`echo $1 | sed 's/[.][^.]*$//'`
     basedir=`dirname $1`
 
-    Run make -C "$SSMDIR" build/libssm.a "1>&2"
-
     echo -n "$basename..."
 
     echo 1>&2
@@ -189,6 +187,8 @@ then
 else
     files="tests/*.ssl"
 fi
+
+Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do
