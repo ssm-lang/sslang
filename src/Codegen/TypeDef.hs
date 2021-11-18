@@ -14,7 +14,7 @@ import           Common.Identifiers             ( DConId
                                                 )
 
 import           Codegen.Identifiers
-import           Data.Char                      ( toLower )
+import           Data.Function                  ( on )
 import           Data.List                      ( maximumBy
                                                 , partition
                                                 )
@@ -23,65 +23,61 @@ import           Data.List                      ( maximumBy
 genTypeDef :: TConId -> L.TypeDef L.Type -> (C.Definition, C.Definition)
 genTypeDef tconid (L.TypeDef dCons _) = (tags, structDef)
  where
-  structDef = [cedecl| typedef struct {
-                       $ty:ssm_mm_md* $id:header;
-                       $ty:ssm_object_t* $id:payload[($ty:word_t ) $uint:maxNumFields]; 
-                     } $id:tconid;     
-                   |]
+  {- | Return the size in bits of a given field 
+  (assume all built-in types are one word for now)
+  -}
+  fieldSize :: L.Type -> Int
+  fieldSize (L.TBuiltin _) = 32
+  fieldSize (L.TCon     _) = 32
+
+  -- | Return the size in bits of a given data constructor
+  dConSize :: (DConId, L.TypeVariant L.Type) -> Int
+  dConSize (_, L.VariantNamed fields  ) = sum $ fieldSize . snd <$> fields
+  dConSize (_, L.VariantUnnamed fields) = sum $ fieldSize <$> fields
+
+  -- | Distinguish heap objects from possible int objects
+  (heapObjs, possibleIntObjs) = partition ((>= 32) . dConSize) dCons
+
+  -- | Incorporate tag, then partition list based on whether each 'DCon is still < 32 bits 
+  smallEnough
+    :: [(DConId, L.TypeVariant L.Type)]
+    -> ([(DConId, L.TypeVariant L.Type)], [(DConId, L.TypeVariant L.Type)])
+  smallEnough candidates = partition ((< 32) . dataBitsPlus tagBits) candidates
+   where
+    dataBitsPlus :: Int -> (DConId, L.TypeVariant L.Type) -> Int
+    dataBitsPlus bits dcon = bits + dConSize dcon
+    tagBits = q + r where (q, r) = length candidates `quotRem` 2
+
+  -- | Idenfity int objects by considering the space needed for tag bits
+  (moreHeapObs, intObjs) = smallEnough possibleIntObjs
+
+  -- | Arrange data constructors from smallest to largest tag value
+  tagged                 = intObjs ++ moreHeapObs ++ heapObjs
+
+  -- | Define enum name as 'TConId ++ Tag 
+  enumName               = CIdent $ fromString $ ident tconid ++ "Tag"
+
+  -- | Turn 'DConId into an elt of a c enumerated type
+  toCEnum :: DConId -> C.CEnum
+  toCEnum n = [cenum|$id:n|]
+
+  -- | Define contents of enum as a list of 'DConId s, starting with 0
+  enumElts =
+    [cenum|$id:(fst $ head tagged) = 0|] : (toCEnum . fst <$> tail tagged)
+
+  -- | Create c Definition for c enum of ADT's tag values
   tags = [cedecl| enum $id:enumName {
                           $enums:(enumElts)
                        };  
              |]
 
-  -- | find any data constructors that hold less than 32 bits of data
-  (big, small ) = partition (\(_, sz) -> sz >= 32) $ augmentWSize <$> dCons
-  -- | find any data constructors that are < 32 bits when including their tag bits
-  (_  , medium) = smallEnough small
-  -- | arrange data constructors from smallest to largest tag value
-  tagged        = small ++ medium ++ big
-
-  -- | define parts of the c definitions
-  enumName      = CIdent $ fromString $ lower $ ident tconid
-  enumElts =
-    [cenum|$id:(fst $ fst $ head tagged)|]
-      : (toCEnum . fst . fst <$> tail tagged)
+  -- | Find the size of the largest 'DCon
   maxNumFields =
-    snd $ maximumBy (\(_, sz1) (_, sz2) -> sz1 `compare` sz2) (big ++ medium)
+    dConSize $ maximumBy (compare `on` dConSize) (heapObjs ++ moreHeapObs)
 
-  -- | helper functions
-
-  -- | turn DConId into an elt of a c enumerated type
-  toCEnum :: DConId -> C.CEnum
-  toCEnum n = [cenum|$id:n|]
-
-  -- | categorize data constructor as either small enough or too big to be represented in 31 bits
-  -- | when taking into account the tag bits
-  smallEnough
-    :: [((DConId, L.TypeVariant L.Type), Int)]
-    -> ( [((DConId, L.TypeVariant L.Type), Int)]
-       , [((DConId, L.TypeVariant L.Type), Int)]
-       )
-  smallEnough candidates = partition (\(_, sz) -> (sz + tagBits) < 32)
-                                     candidates
-    where tagBits = q + r where (q, r) = quotRem (length candidates) 2
-
-  -- | augment data constructor with size info in bits
-  augmentWSize
-    :: (DConId, L.TypeVariant L.Type) -> ((DConId, L.TypeVariant L.Type), Int)
-  augmentWSize (dconid, fields) = ((dconid, fields), dConSize fields)
-
-  -- | return the size in bits of a given data constructor
-  dConSize :: L.TypeVariant L.Type -> Int
-  dConSize (L.VariantNamed   fields) = sum $ fieldSize . snd <$> fields
-  dConSize (L.VariantUnnamed fields) = sum $ fieldSize <$> fields
-
-  -- | return the size in bits of a given field
-  -- | assume all built-in types are one word for now
-  fieldSize :: L.Type -> Int
-  fieldSize (L.TBuiltin _) = 32
-  fieldSize (L.TCon     _) = 32
-
-  -- | Helper that makes the first letter lowercase 
-  lower :: String -> String
-  lower ""      = ""
-  lower (h : t) = toLower h : t
+  -- | Create c defintion for c struct representing the ADT
+  structDef = [cedecl| typedef struct {
+                       $ty:ssm_mm_md $id:header;
+                       $ty:ssm_object_t $id:payload[($ty:word_t ) $uint:maxNumFields]; 
+                     } $id:tconid;     
+                   |]
