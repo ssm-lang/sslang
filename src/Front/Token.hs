@@ -1,3 +1,4 @@
+-- | Tokens passed between the lexer and the parser.
 {-# LANGUAGE NamedFieldPuns #-}
 module Front.Token where
 

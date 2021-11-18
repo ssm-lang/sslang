@@ -1,3 +1,4 @@
+-- | Generate C type definitions for IR type definitions.
 module Codegen.TypeDef where
 
 import qualified IR.Types.Flat                 as L

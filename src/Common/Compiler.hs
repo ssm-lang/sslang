@@ -1,3 +1,4 @@
+-- | Common utilities used across the compiler pipeline.
 {-# LANGUAGE DerivingVia #-}
 module Common.Compiler
   ( ErrorMsg

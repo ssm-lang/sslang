@@ -1,3 +1,4 @@
+-- | The sslang IR and its pretty-printer.
 module IR.IR
   ( Program(..)
   , Binder

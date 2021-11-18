@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK prune #-}
 {- | Translate SSM program to C compilation unit.
 
 What is expected of the IR:

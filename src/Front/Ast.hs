@@ -1,3 +1,9 @@
+{- | Definition and pretty-printer of front-end AST.
+
+This syntax tree is designed to closely resemble the structure accepted by the
+parser. Desugaring should take place in the form of AST-to-AST transformations,
+rather than being performed in the parser.
+-}
 module Front.Ast where
 
 import           Common.Pretty
@@ -102,12 +108,13 @@ data Literal
   | LitEvent
   deriving (Eq, Show)
 
--- | Collect a curried application into the function and its list of arguments.
+-- | Collect a curried type application into the type con and a list of args.
 collectTApp :: Typ -> (Typ, [Typ])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
 
+-- | Collect a curried application into the function and a list of args.
 collectApp :: Expr -> (Expr, [Expr])
 collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])

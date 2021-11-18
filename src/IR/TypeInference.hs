@@ -40,7 +40,7 @@ import           Data.Maybe                     ( fromJust )
 -- | Typing Environment
 newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
 
--- Inference Monad
+-- | Inference Monad
 newtype InferFn a = InferFn (StateT TypeCtx Compiler.Pass a)
   deriving Functor                      via (StateT TypeCtx Compiler.Pass)
   deriving Applicative                  via (StateT TypeCtx Compiler.Pass)
@@ -211,12 +211,12 @@ withVty e (Just v) t =
       insertVar v vty'
     Nothing -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
 
--- | Transfrom an Ann.Type to Classes.Type.
+-- | Transfrom an 'Ann.Type' to 'Classes.Type'.
 anns2Class :: Ann.Type -> InferFn Classes.Type
 anns2Class (Ann.Type []) = throwError $ Compiler.TypeError "Cannot change empty Ann type to Classes type"
 anns2Class (Ann.Type ts) = ann2Class $ head ts
 
-{- Transfrom an Ann.TypeAnnote to Classes.Type.
+{- | Transform an 'Ann.TypeAnnote' to 'Classes.Type'.
 
 Since we are doing this in a monadic way, and Builtin is also a Functor, we have
 to do explicit pattern matching on the `Ann.TBuiltin bty` case to transform

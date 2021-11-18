@@ -34,7 +34,7 @@ data TypeAnnote
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
   deriving (Show, Eq)
 
--- | `Type' is a type system.
+-- | 'Type' is a type system.
 instance TypeSystem Type where
   projectBuiltin = Type . (: []) . TBuiltin
 

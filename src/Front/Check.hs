@@ -1,3 +1,4 @@
+-- | Various passes which check the AST (perhaps should be restructured)
 module Front.Check where
 
 import qualified Front.Ast                     as A

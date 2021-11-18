@@ -1,3 +1,4 @@
+-- | Flatten all type constructors to be nullary.
 module IR.Monomorphize where
 
 import qualified Common.Compiler               as Compiler
@@ -6,6 +7,7 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Flat                 as Flat
 import qualified IR.Types.Poly                 as Poly
 
+-- | Monomorphize an IR program.
 monoProgram :: I.Program Poly.Type -> Compiler.Pass (I.Program Flat.Type)
 monoProgram = return . fmap poly2Flat
  where

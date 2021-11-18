@@ -98,6 +98,7 @@ value = "value"
 
 {- libssm Symbols -}
 
+-- | C macro to access enclosing struct @container_of(ptr, type, member)@
 container_of :: CIdent
 container_of = "container_of"
 
@@ -157,9 +158,11 @@ now = "ssm_now"
 never :: CIdent
 never = "SSM_NEVER"
 
+-- | Name of root priority constant
 root_priority :: CIdent
 root_priority = "SSM_ROOT_PRIORITY"
 
+-- | Name of root depth constant
 root_depth :: CIdent
 root_depth = "SSM_ROOT_DEPTH"
 
@@ -197,9 +200,11 @@ enter_ routineName = "enter_" <> fromId routineName
 trig_ :: Int -> CIdent
 trig_ i = "__trig_" <> fromString (show i)
 
+-- | Name mangler for temporary variable
 tmp_ :: Int -> CIdent
 tmp_ i = "__tmp_" <> fromString (show i)
 
+-- | Name mangler for argument
 arg_ :: Int -> CIdent
 arg_ i = "__arg_" <> fromString (show i)
 
@@ -225,19 +230,19 @@ ret_val = "__return_val"
 
 {---- Type identifiers ----}
 
--- | Name of the scheduled variable type for an SSM `Type`.
+-- | Name of the scheduled variable type for an SSM type.
 sv_ :: Identifiable a => a -> CIdent
 sv_ ty = "ssm_" <> fromId ty <> "_t"
 
--- | Name of the initialize method for an SSM `Type`.
+-- | Name of the initialize method for an SSM type.
 initialize_ :: Identifiable a => a -> CIdent
 initialize_ ty = "ssm_initialize_" <> fromId ty
 
--- | Name of the assign method for an SSM `Type`.
+-- | Name of the assign method for an SSM type.
 assign_ :: Identifiable a => a -> CIdent
 assign_ ty = "ssm_assign_" <> fromId ty
 
--- | Name of the later method for an SSM `Type`.
+-- | Name of the later method for an SSM type.
 later_ :: Identifiable a => a -> CIdent
 later_ ty = "ssm_later_" <> fromId ty
 
@@ -245,6 +250,7 @@ later_ ty = "ssm_later_" <> fromId ty
 sv :: CIdent
 sv = "sv"
 
+-- | Name of integer type with specified width
 int_ :: Int -> CIdent
 int_ s = "i" <> fromString (show s)
 

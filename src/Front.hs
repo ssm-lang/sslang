@@ -1,3 +1,4 @@
+-- | Entry point for the front-end portion of the compiler pipeline.
 module Front
   ( tokenStream
   , parseSource

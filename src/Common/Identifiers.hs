@@ -1,9 +1,9 @@
-{-# LANGUAGE DerivingVia #-}
 {- | The types of identifiers used across the compiler.
 
 These are defined as newtypes (rather than as type aliases) so that they cannot
 be accidentally compared with one another.
 -}
+{-# LANGUAGE DerivingVia #-}
 module Common.Identifiers
   ( Identifiable(..)
   , IsString(..)
@@ -26,10 +26,10 @@ import           Language.C.Quote               ( ToIdent(..) )
 
 import           Prettyprinter                  ( Pretty(..) )
 
--- | A basic identifier: just a string
+-- | A basic identifier; wraps a 'String'.
 newtype Identifier = Identifier String deriving (Eq, Ord)
 
--- | Turn a general identifier into a string
+-- | Turn a general identifier into a 'String'.
 class IsString i => Identifiable i where
   ident :: i -> String
 
@@ -54,11 +54,11 @@ instance Monoid Identifier where
 instance Pretty Identifier where
   pretty = pretty . ident
 
--- | Convert between two types of identifiers
+-- | Convert between two types of identifiers.
 fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
 
--- | ToIdentifier for type constructors, e.g., @Option@
+-- | Identifier for type constructors, e.g., @Option@
 newtype TConId = TConId Identifier
   deriving Eq
   deriving ToIdent via Identifier
@@ -71,7 +71,7 @@ newtype TConId = TConId Identifier
 instance Show TConId where
   show (TConId i) = "Ty" ++ show i
 
--- | ToIdentifier for type variable, e.g., @a@
+-- | Identifier for type variable, e.g., @a@
 newtype TVarId = TVarId Identifier
   deriving Eq
   deriving ToIdent via Identifier
@@ -94,7 +94,7 @@ instance Show TVarIdx where
 instance Pretty TVarIdx where
   pretty = pretty . show
 
--- | ToIdentifier for data constructors, e.g., @None@
+-- | Identifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq
   deriving Show via Identifier
@@ -105,7 +105,7 @@ newtype DConId = DConId Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
 
--- | ToIdentifier for low-level identifiers, e.g., @ssm_activate@
+-- | Identifier for low-level identifiers, e.g., @ssm_activate@
 newtype FfiId = FfiId Identifier
   deriving Eq
   deriving Show via Identifier
@@ -116,7 +116,7 @@ newtype FfiId = FfiId Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
 
--- | ToIdentifier for user-defined variable, e.g., @x@
+-- | Identifier for user-defined variable, e.g., @x@
 newtype VarId = VarId Identifier
   deriving Eq
   deriving Ord via Identifier
@@ -128,7 +128,7 @@ newtype VarId = VarId Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
 
--- | ToIdentifier for struct field names, e.g., @len@
+-- | Identifier for struct field names, e.g., @len@
 newtype FieldId = FieldId Identifier
   deriving Eq
   deriving Show via Identifier
@@ -139,5 +139,5 @@ newtype FieldId = FieldId Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
 
--- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@
+-- | A name to be bound; @Nothing@ represents a wildcard, e.g., @let _ = ...@
 type Binder = Maybe VarId

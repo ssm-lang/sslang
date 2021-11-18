@@ -1,3 +1,4 @@
+-- | Remove type classes from IR, leaving behind only parametric polymorphism
 module IR.ClassInstantiation where
 
 import qualified Common.Compiler               as Compiler
@@ -6,6 +7,7 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Classes              as Classes
 import qualified IR.Types.Poly                 as Poly
 
+-- | Instantiate the type classes of an IR program.
 instProgram :: I.Program Classes.Type -> Compiler.Pass (I.Program Poly.Type)
 instProgram = return . fmap class2Poly
  where
