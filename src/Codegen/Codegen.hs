@@ -487,11 +487,41 @@ genExpr a@I.App{} = do
       return
         (tmp, concat argStms ++ alloc ++ initFields)
     _            -> fail $ "Cannot apply this expression: " ++ show fn
-genExpr (I.Match s _as _t)
-  | extract s == I.int 32 = nope
-  | otherwise             = error "Cannot handle general matches yet"
+genExpr (I.Match s as t) = do
+  (sExp, sStm) <- genExpr s
+  tagOf <- genTag $ extract s
+  tmp          <- nextTmp t
+  let mkCase (alt, arm) = do
+        labelCase         <- genAlt sExp alt
+        (armExp, armStms) <- genExpr arm
+        return [citems|
+          $stm:(labelCase armStms)
+          $exp:tmp = $exp:armExp;
+          break;
+        |]
+  cases <- concat <$> mapM mkCase as
+  return (tmp, sStm ++ [citems|switch($exp:(tagOf sExp)) {$items:cases}|])
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
+
+genTag :: Type -> GenFn (C.Exp -> C.Exp)
+genTag t
+  | t == I.int 32 = return id
+  | otherwise = error "TODO: use type information to lookup tag accessor for eExp"
+
+genAlt :: C.Exp -> I.Alt -> GenFn ([C.BlockItem] -> C.Stm)
+genAlt _scrut (I.AltData _dcon _fields) =
+  error "TODO: make `case _dconEnum:` and add _fields as vars"
+genAlt _ (I.AltLit (I.LitIntegral i)) =
+  return $ \blk -> [cstm|case $int:i: {$items:blk}|]
+genAlt _ (I.AltLit (I.LitBool True)) = -- TODO: deprecate LitBool
+  return $ \blk -> [cstm|default: {$items:blk}|]
+genAlt _ (I.AltLit (I.LitBool False)) = -- TODO: deprecate LitBool
+  return $ \blk -> [cstm|case 0: {$items:blk}|]
+genAlt _ (I.AltLit I.LitEvent) = return $ \blk -> [cstm|default: {$items:blk}|]
+genAlt scrut (I.AltDefault b) = do
+  mapM_ (`addVar` scrut) b
+  return $ \blk -> [cstm|default: {$items:blk}|]
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
