@@ -40,7 +40,10 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( isJust )
+import           Data.Functor                   ( (<&>) )
+import qualified Data.Map                      as M
+import           Data.Maybe                     ( mapMaybe )
+import           Debug.Trace
 
 -- | Possible, but temporarily punted for the sake of expediency.
 todo :: a
@@ -66,16 +69,18 @@ type Binder = I.Binder
 The information here is populated while generating the step function, so that
 should be computed first, before this information is used to generate the act
 struct and enter definitions.
+
 -}
 data GenFnState = GenFnState
-  { fnName     :: VarId             -- ^ Function name
-  , fnParams   :: [(Binder, Type)]  -- ^ Function parameters
-  , fnRetTy    :: Type              -- ^ Function return type
-  , fnBody     :: Expr              -- ^ Function body
-  , fnLocs     :: [(VarId, Type)]   -- ^ Function local variables
-  , fnMaxWaits :: Int               -- ^ Number of triggers needed for waiting
-  , fnCases    :: Int               -- ^ Yield point counter
-  , fnTmps     :: Int               -- ^ Temporary variable name counter
+  { fnName     :: VarId              -- ^ Function name
+  , fnParams   :: [(CIdent, C.Type)] -- ^ Function parameters
+  , fnBody     :: Expr               -- ^ Function body
+  , fnMaxWaits :: Int                -- ^ Number of triggers needed for waiting
+  , fnCases    :: Int                -- ^ Yield point counter
+  , fnTmps     :: Int                -- ^ Temporary variable name counter
+  , fnRetTy    :: C.Type             -- ^ Function return type
+  , fnVars     :: M.Map VarId C.Exp  -- ^ Variables
+  , fnLocs     :: [(CIdent, C.Type)] -- ^ Locals
   }
 
 {- | Translation monad for procedures, with derived typeclass instances.
@@ -99,16 +104,25 @@ runGenFn
   -> Expr                   -- ^ Body of procedure
   -> GenFn a                -- ^ Translation monad to run
   -> Compiler.Pass a        -- ^ Pass on errors to caller
-runGenFn name params ret body (GenFn tra) = evalStateT tra $ GenFnState
+runGenFn name params retTy body (GenFn tra) = evalStateT tra $ GenFnState
   { fnName     = name
-  , fnParams   = params
-  , fnRetTy    = ret
   , fnBody     = body
-  , fnLocs     = []
   , fnMaxWaits = 0
   , fnCases    = 0
   , fnTmps     = 0
+  , fnParams   = zipWith genArg [0 ..] params
+  , fnRetTy    = genType retTy
+  , fnLocs     = []
+  , fnVars     = M.fromList $ map genVar $ mapMaybe fst params
   }
+ where
+  genArg i = bimap (maybe (arg_ i) fromId) genType
+  genVar v = (v, genLocId v)
+
+-- | Translate a list of SSM parameters to C parameters.
+genParams :: [(Binder, Type)] -> [(CIdent, C.Type)]
+genParams = zipWith genArg [0 ..]
+  where genArg i = bimap (maybe (arg_ i) fromId) genType
 
 -- | Read and increment the number of cases in a procedure, i.e., fnCases++.
 nextCase :: GenFn Int
@@ -117,31 +131,31 @@ nextCase = do
   modify $ \st -> st { fnCases = n + 1 }
   return n
 
+-- | Register a variable name with the expression corresponding to it.
+addVar :: VarId -> C.Exp -> GenFn ()
+addVar v e = modify $ \st -> st { fnVars = M.insert v e $ fnVars st }
+
 -- | Register a local variable, to be declared in activation record.
-addLocal :: (VarId, Type) -> GenFn ()
-addLocal l = modify $ \st -> st { fnLocs = l : fnLocs st }
+addLocal :: (VarId, C.Type) -> GenFn C.Exp
+addLocal l@(v, _) = do
+  addVar v $ genLocId v
+  modify $ \st -> st { fnLocs = first fromId l : fnLocs st }
+  return $ genLocId v
+
+-- | Obtain the expression corresponding to some variable.
+getVar :: VarId -> GenFn (Maybe C.Exp)
+getVar v = gets fnVars <&> M.lookup v
 
 -- | Register number of wait statements track of number of triggers needed.
 maxWait :: Int -> GenFn ()
 maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
 
 -- | Allocate a temp variable of given 'Type', registered as a local variable.
-nextTmp :: Type -> GenFn VarId
+nextTmp :: C.Type -> GenFn C.Exp
 nextTmp ty = do
   t <- fromId . tmp_ <$> gets fnTmps
   modify $ \st -> st { fnTmps = fnTmps st + 1 }
   addLocal (t, ty)
-  return t
-
-{- | Determines whether the given 'VarId' can be found in the activation record.
-
-Returns true iff 'name' appears as local variable or as a parameter.
--}
-isLocalVar :: VarId -> GenFn Bool
-isLocalVar name = do
-  params <- gets fnParams
-  locs   <- gets fnLocs
-  return $ isJust (lookup (Just name) params) || isJust (lookup name locs)
 
 {-------- Type compilation --------}
 
@@ -181,18 +195,12 @@ genAssign ty = cexpr . assign_ . typeId <$> I.deref ty
 genLater :: Type -> Maybe C.Exp
 genLater ty = cexpr . later_ . typeId <$> I.deref ty
 
--- | Translate a list of SSM parameters to C parameters.
-genParams :: [(Binder, Type)] -> [(CIdent, C.Type)]
-genParams = zipWith genArg [0 ..]
-  where genArg i = bimap (maybe (arg_ i) fromId) genType
-
--- | Translate a list of SSM local declarations to C declarations.
-genLocals :: [(VarId, Type)] -> [(CIdent, C.Type)]
-genLocals = map $ bimap fromId genType
-
 -- | Generate declarations for @numTrigs@ triggers.
 genTrigs :: Int -> [(CIdent, C.Type)]
 genTrigs numTrigs = zip (map trig_ [1 .. numTrigs]) (repeat trigger_t)
+
+genLocId :: VarId -> C.Exp
+genLocId v = [cexp|$id:acts->$id:v|]
 
 -- | The constant unit value, the singleton inhabitant of the type Unit.
 unit :: C.Exp
@@ -269,9 +277,9 @@ genStruct = do
     typedef struct {
       $ty:act_t $id:act_member;
 
-      $sdecls:(map structField $ genParams params)
-      $ty:(genType retTy) *$id:ret_val;
-      $sdecls:(map structField $ genLocals locs)
+      $sdecls:(map structField params)
+      $ty:retTy *$id:ret_val;
+      $sdecls:(map structField locs)
       $sdecls:(map structField $ genTrigs trigs)
 
     } $id:(act_ name);
@@ -303,8 +311,8 @@ genEnter = do
           , [cparam|$ty:priority_t $id:priority|]
           , [cparam|$ty:depth_t $id:depth|]
           ]
-          ++ map declParam (genParams params)
-          ++ [[cparam|$ty:(genType retTy) *$id:ret_val|]]
+          ++ map declParam params
+          ++ [[cparam|$ty:retTy *$id:ret_val|]]
   return
     ( [cedecl|$ty:act_t *$id:(enter_ actname)($params:enterParams);|]
     , [cedecl|
@@ -318,7 +326,7 @@ genEnter = do
           $ty:act *$id:acts = $id:container_of($id:actg, $id:act', $id:act_member);
 
           /* Assign parameters */
-          $stms:(concatMap initParam $ genParams params)
+          $stms:(concatMap initParam params)
 
           /* Set return value */
           $id:acts->$id:ret_val = $id:ret_val;
@@ -429,19 +437,16 @@ yields, even if this is not usually necessary. We leave it to later compiler
 passes to optimize this.
 -}
 genExpr :: Expr -> GenFn (C.Exp, [C.BlockItem])
-genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
-  -- NOTE: Any identifiers of I.Arrow type must refer to a (global) function, so
-  -- we just return a handle to its enter function.
-  return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
-  -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
-  return ([cexp|$id:acts->$id:n|], [])
-genExpr (I.Data _ _) = fail "genExpr (I.Data _ _) should never be reached."
-genExpr (I.Lit l t) = genLiteral l t
+  traceM $ "Obtaining var " ++ show n
+  Just e <- getVar n
+  return (e, [])
+genExpr (I.Data _ _) = error "TODO: nullary data constructors"
+genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
-  addLocal (n, extract d)
+  loc               <- addLocal (n, genType $ extract d)
   (defVal, defStms) <- genExpr d
-  let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
+  let defInit = [citems|$exp:loc = $exp:defVal;|]
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ defInit ++ bodyStms)
 genExpr (I.Let [(Nothing, d)] b _) = do
@@ -449,30 +454,14 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
-genExpr a@(I.App _ _ ty) = do
-  case I.collectApp a of
-    (I.Data tag t, args) -> do
-      (fieldVals, evalStms) <- unzip <$> mapM genExpr args
-      tmpName               <- nextTmp t
-      let decl = [[citem|$ty:ssm_object_t* $id:tmpName;|]]
-      -- How to tell if pointer or integer?
-      -- How to tell max number of args out of all possible data constructors?
-      -- Problem: cannot recover all the info needed from data constructor alone
-      -- Solution: Either need size and pointer/integer status passed in after call to genTypeDef,
-      -- or need to generate macros in genTypeDef 
-      -- assume pointer representation and size 4 for now...
-      let maxArgs = 4 :: Int
-      let alloc = [[citem|$id:tmpName = ssm_new($int:maxArgs,$id:tag);|]]
-      let initField =
-            (\x y i -> [citem|$id:x->$id:payload[$int:(i::Int)] = $exp:y;|])
-      let initFields = zipWith (initField tmpName) fieldVals [0, 1 ..]
-      return
-        ([cexp|$id:tmpName|], decl ++ concat evalStms ++ alloc ++ initFields)
-    (fn, args) -> do
-      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-      tmpName                       <- nextTmp ty
-      yield                         <- genYield
-      let tmp = [cexp|$id:acts->$id:tmpName|]
+genExpr a@I.App{} = do
+  let (fn, args) = I.collectApp a
+  (argVals, argStms) <- unzip <$> mapM genExpr args
+  case fn of
+    (I.Var n _) -> do
+      tmp   <- nextTmp $ genType $ extract a
+      yield <- genYield
+      let enterFn = [cexp|$id:(enter_ n)|]
           enterArgs =
             [ [cexp|$id:actg|]
               , [cexp|$id:actg->$id:priority|]
@@ -480,9 +469,27 @@ genExpr a@(I.App _ _ ty) = do
               ]
               ++ argVals
               ++ [[cexp|&$exp:tmp|]]
-          call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
-      return (tmp, concat evalStms ++ call ++ yield)
-genExpr I.Match{}       = nope
+          call = [citems|$id:activate($exp:enterFn($args:enterArgs));|]
+      return (tmp, concat argStms ++ call ++ yield)
+    (I.Data tag _) -> do
+      tmp               <- nextTmp [cty|$ty:ssm_object_t *|]
+      -- How to tell if pointer or integer?
+      -- How to tell max number of args out of all possible data constructors?
+      -- Problem: cannot recover all the info needed from data constructor alone
+      -- Solution: Either need size and pointer/integer status passed in after call to genTypeDef,
+      -- or need to generate macros in genTypeDef 
+      -- assume pointer representation and size 4 for now...
+      let maxArgs = 4 :: Int
+      let alloc = [[citem|$exp:tmp = ssm_new($int:maxArgs,$id:tag);|]]
+      let initField =
+            (\y i -> [citem|$exp:tmp->$id:payload[$int:(i::Int)] = $exp:y;|])
+      let initFields = zipWith initField argVals [0, 1 ..]
+      return
+        (tmp, concat argStms ++ alloc ++ initFields)
+    _            -> fail $ "Cannot apply this expression: " ++ show fn
+genExpr (I.Match s _as _t)
+  | extract s == I.int 32 = nope
+  | otherwise             = error "Cannot handle general matches yet"
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
 
@@ -490,18 +497,18 @@ genExpr (I.Prim p es t) = genPrim p es t
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
 genPrim I.New [e] refType = do -- TODO: New with perceus should take two args
   (val, stms)     <- genExpr e
-  tmp             <- nextTmp refType
+  tmp             <- nextTmp $ genType refType
   Just initialize <- return $ genInit refType
   -- TODO: reference counting
   let alloc =
         [citems|
-          $id:acts->$id:tmp = $id:mem_alloc(sizeof(*$id:acts->$id:tmp));
-          $exp:initialize($id:acts->$id:tmp);
+          $exp:tmp = $id:mem_alloc(sizeof(*$exp:tmp));
+          $exp:initialize($exp:tmp);
         |]
           ++ if refType == I.ref I.unit
                then []
-               else [citems|*$id:acts->$id:tmp.$id:value = $exp:val;|]
-  return ([cexp|$id:acts->$id:tmp|], stms ++ alloc)
+               else [citems|*$exp:tmp.$id:value = $exp:val;|]
+  return (tmp, stms ++ alloc)
 genPrim I.Dup [e] _ = do
   -- TODO: reference counting
   (_val, _stms) <- genExpr e
@@ -557,23 +564,25 @@ genPrim I.Par procs _ = do
                         if ($id:actg->$id:depth < $exp:(depthSub numChildren))
                           $id:throw($id:exhausted_priority);
                       |]
-
     genActivate
       :: ((C.Exp, C.Exp), Expr) -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
     genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
       let (fn, args) = I.collectApp a
-      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-      tmpName                       <- nextTmp ty
-      let tmp = [cexp|$id:acts->$id:tmpName|]
-          enterArgs =
-            [[cexp|$id:actg|], prioArg, depthArg]
-              ++ argVals
-              ++ [[cexp|&$exp:tmp|]]
-      return
-        ( tmp
-        , concat evalStms
-        , [citem|$id:activate($exp:fnEnter($args:enterArgs));|]
-        )
+      (argVals, argStms) <- unzip <$> mapM genExpr args
+      case fn of
+        (I.Var n _) -> do
+          tmp <- nextTmp $ genType ty
+          let enterFn = [cexp|$id:(enter_ n)|]
+              enterArgs =
+                [[cexp|$id:actg|], prioArg, depthArg]
+                  ++ argVals
+                  ++ [[cexp|&$exp:tmp|]]
+          return
+            ( tmp
+            , concat argStms
+            , [citem|$id:activate($exp:enterFn($args:enterArgs));|]
+            )
+        _ -> fail "Cannont evaluate non-application"
     -- For now, we only support forking expressions that have a top-level
     -- application (i.e., no thunks), whose left operand is a var.
     genActivate _ = nope

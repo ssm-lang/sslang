@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Convenience wrapper around `stack build` command, for development only.
+#
+# This exists because Stack trips over itself in between running `stack build`
+# and `stack test` (https://github.com/commercialhaskell/stack/issues/4977),
+# failing to reuse build artifacts when the test driver is linked in. This
+# results in absurdly long test times.
+#
+# Here, we pass the `--test` flag to ensure that the test driver is linked in,
+# but the `--no-run-tests` flag to ensure that test aren't run. Running this
+# instead of `stack build` will allow `stack test` to reuse this command's build
+# artifacts, thus speeding up development cycles.
+
+stack build --test --no-run-tests "$@"
