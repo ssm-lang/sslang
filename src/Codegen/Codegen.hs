@@ -474,40 +474,40 @@ genExpr a@I.App{} = do
     (I.Data _ _) -> undefined
     _            -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
-  (sExp, sStm) <- genScrut s
+  (sExp, sStm) <- genExpr s
+  tagOf <- genTag $ extract s
   tmp          <- nextTmp t
-  let genCase (alt, arm) = do
-        casek             <- genAlt sExp alt
+  let mkCase (alt, arm) = do
+        labelCase         <- genAlt sExp alt
         (armExp, armStms) <- genExpr arm
-        let armCase = casek [cstm|{$items:armStms}|]
-        return [citems|$stm:armCase $exp:tmp = $exp:armExp; break;|]
-  cases <- concat <$> mapM genCase as
-  return (tmp, sStm ++ [citems|switch($exp:sExp) {$items:cases}|])
+        return [citems|
+          $stm:(labelCase armStms)
+          $exp:tmp = $exp:armExp;
+          break;
+        |]
+  cases <- concat <$> mapM mkCase as
+  return (tmp, sStm ++ [citems|switch($exp:(tagOf sExp)) {$items:cases}|])
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
 
-genScrut :: Expr -> GenFn (C.Exp, [C.BlockItem])
-genScrut scrut = do
-  (sExp, sStm) <- genExpr scrut
-  if extract scrut == I.int 32 -- TODO: check for any integral value
-    then do
-      return (sExp, sStm) -- Switch directly on value
-    else do
-      error "TODO: use type information to lookup tag accessor for eExp"
+genTag :: Type -> GenFn (C.Exp -> C.Exp)
+genTag t
+  | t == I.int 32 = return id
+  | otherwise = error "TODO: use type information to lookup tag accessor for eExp"
 
-genAlt :: C.Exp -> I.Alt -> GenFn (C.Stm -> C.Stm)
+genAlt :: C.Exp -> I.Alt -> GenFn ([C.BlockItem] -> C.Stm)
 genAlt _scrut (I.AltData _dcon _fields) =
   error "TODO: make `case _dconEnum:` and add _fields as vars"
 genAlt _ (I.AltLit (I.LitIntegral i)) =
-  return $ \stm -> [cstm|case $int:i: $stm:stm|]
+  return $ \blk -> [cstm|case $int:i: {$items:blk}|]
 genAlt _ (I.AltLit (I.LitBool True)) = -- TODO: deprecate LitBool
-  return $ \stm -> [cstm|default: $stm:stm|]
+  return $ \blk -> [cstm|default: {$items:blk}|]
 genAlt _ (I.AltLit (I.LitBool False)) = -- TODO: deprecate LitBool
-  return $ \stm -> [cstm|case 0: $stm:stm|]
-genAlt _ (I.AltLit I.LitEvent) = return $ \stm -> [cstm|default: $stm:stm|]
+  return $ \blk -> [cstm|case 0: {$items:blk}|]
+genAlt _ (I.AltLit I.LitEvent) = return $ \blk -> [cstm|default: {$items:blk}|]
 genAlt scrut (I.AltDefault b) = do
   mapM_ (`addVar` scrut) b
-  return $ \stm -> [cstm|default: $stm:stm|]
+  return $ \blk -> [cstm|default: {$items:blk}|]
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
