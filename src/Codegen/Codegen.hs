@@ -136,10 +136,10 @@ addVar :: VarId -> C.Exp -> GenFn ()
 addVar v e = modify $ \st -> st { fnVars = M.insert v e $ fnVars st }
 
 -- | Register a local variable, to be declared in activation record.
-addLocal :: (VarId, Type) -> GenFn C.Exp
+addLocal :: (VarId, C.Type) -> GenFn C.Exp
 addLocal l@(v, _) = do
   addVar v $ genLocId v
-  modify $ \st -> st { fnLocs = bimap fromId genType l : fnLocs st }
+  modify $ \st -> st { fnLocs = first fromId l : fnLocs st }
   return $ genLocId v
 
 -- | Obtain the expression corresponding to some variable.
@@ -151,7 +151,7 @@ maxWait :: Int -> GenFn ()
 maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
 
 -- | Allocate a temp variable of given 'Type', registered as a local variable.
-nextTmp :: Type -> GenFn C.Exp
+nextTmp :: C.Type -> GenFn C.Exp
 nextTmp ty = do
   t <- fromId . tmp_ <$> gets fnTmps
   modify $ \st -> st { fnTmps = fnTmps st + 1 }
@@ -444,7 +444,7 @@ genExpr (I.Var n _) = do
 genExpr (I.Data _ _             ) = nope
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
-  loc               <- addLocal (n, extract d)
+  loc               <- addLocal (n, genType $ extract d)
   (defVal, defStms) <- genExpr d
   let defInit = [citems|$exp:loc = $exp:defVal;|]
   (bodyVal, bodyStms) <- genExpr b
@@ -459,7 +459,7 @@ genExpr a@I.App{} = do
   (argVals, argStms) <- unzip <$> mapM genExpr args
   case fn of
     (I.Var n _) -> do
-      tmp   <- nextTmp $ extract a
+      tmp   <- nextTmp $ genType $ extract a
       yield <- genYield
       let enterFn = [cexp|$id:(enter_ n)|]
           enterArgs =
@@ -483,7 +483,7 @@ genExpr (I.Prim p es t) = genPrim p es t
 genPrim :: Primitive -> [Expr] -> Type -> GenFn (C.Exp, [C.BlockItem])
 genPrim I.New [e] refType = do -- TODO: New with perceus should take two args
   (val, stms)     <- genExpr e
-  tmp             <- nextTmp refType
+  tmp             <- nextTmp $ genType refType
   Just initialize <- return $ genInit refType
   -- TODO: reference counting
   let alloc =
@@ -557,7 +557,7 @@ genPrim I.Par procs _ = do
       (argVals, argStms) <- unzip <$> mapM genExpr args
       case fn of
         (I.Var n _) -> do
-          tmp <- nextTmp ty
+          tmp <- nextTmp $genType ty
           let enterFn = [cexp|$id:(enter_ n)|]
               enterArgs =
                 [[cexp|$id:actg|], prioArg, depthArg]
