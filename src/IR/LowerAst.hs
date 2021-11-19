@@ -102,8 +102,9 @@ propogate it elsewhere. This is possible because the IR's type annotations
 the join operation.
 -}
 lowerExpr :: A.Expr -> AnnotationK -> I.Expr I.Type
-lowerExpr (  A.Id  v    ) k = I.Var (fromString v) (k I.untyped)
-lowerExpr (  A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
+lowerExpr (  A.Id   v   ) k = I.Var (fromString v) (k I.untyped)
+lowerExpr (  A.DCon v   ) k = I.Data (fromString v) (k I.untyped)
+lowerExpr (  A.Lit  l   ) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr a@(A.Apply l r) k = case first lowerPrim (A.collectApp a) of
   (Just prim, args) -> I.Prim prim (map (`lowerExpr` id) args) (k I.untyped)
   (Nothing  , _   ) -> I.App (lowerExpr l id) (lowerExpr r id) (k I.untyped)
@@ -143,7 +144,8 @@ lowerAlt A.PatWildcard  = I.AltDefault Nothing
 lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
 lowerAlt (A.PatLit l  ) = I.AltLit $ lowerLit l
 lowerAlt (A.PatTup _  ) = error "I.Alt for A.PatTup not implemented yet"
-lowerAlt (A.PatCon _ _) = error "No way to lower A.DataCons to I.DataCons yet"
+lowerAlt (A.PatCon _  ) = error "No way to lower A.PatCon to I.DataCons yet"
+lowerAlt (A.PatApp _  ) = error "No way to lower A.PatApp to I.DataCons yet"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
 lowerAlt (A.PatAs  _ p) = lowerAlt p
 
@@ -191,8 +193,10 @@ lowerPatName _ = error "pattern should be desguared into pattern match"
 
 -- | Extracts and lowers possible AST type annotation from a binding.
 lowerPatType :: A.Pat -> I.Type
-lowerPatType (A.PatAs _ b     ) = lowerPatType b
-lowerPatType (A.PatTup bs     ) = I.tuple $ map lowerPatType bs
-lowerPatType (A.PatCon _   _bs) = error "need to perform DConId lookup"
-lowerPatType (A.PatAnn typ p  ) = lowerType typ <> lowerPatType p
-lowerPatType _                  = I.untyped
+lowerPatType (A.PatAs _ b) = lowerPatType b
+lowerPatType (A.PatTup bs) = I.tuple $ map lowerPatType bs
+-- lowerPatType (A.PatCon _dcon) = error "need to perform DConId lookup"
+lowerPatType (A.PatApp _ps) =
+  error "FIXME: unsure how to lower applicative patterns"
+lowerPatType (A.PatAnn typ p) = lowerType typ <> lowerPatType p
+lowerPatType _                = I.untyped

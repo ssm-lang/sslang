@@ -32,15 +32,15 @@ checkTopSignatures (A.Program defns) = all checkAnnotations defns
   countCurried _               = 0
 
   annotatedOnce :: A.Pat -> Bool
-  annotatedOnce (A.PatAs _ p) = annotatedOnce p
-  annotatedOnce (A.PatTup ps) = all annotatedOnce ps
-  annotatedOnce (A.PatCon _ ps) = all annotatedOnce ps
+  annotatedOnce (A.PatAs _ p ) = annotatedOnce p
+  annotatedOnce (A.PatTup ps ) = all annotatedOnce ps
+  annotatedOnce (A.PatApp ps ) = all annotatedOnce ps
   annotatedOnce (A.PatAnn _ p) = notAnnotated p
-  annotatedOnce _ = False
+  annotatedOnce _              = False
 
-  notAnnotated :: A.Pat  -> Bool
-  notAnnotated (A.PatAs _ p) = notAnnotated p
-  notAnnotated (A.PatTup ps) = all notAnnotated ps
-  notAnnotated (A.PatCon _ ps) = all notAnnotated ps
+  notAnnotated :: A.Pat -> Bool
+  notAnnotated (A.PatAs _ p ) = notAnnotated p
+  notAnnotated (A.PatTup ps ) = all notAnnotated ps
+  notAnnotated (A.PatApp ps ) = all notAnnotated ps
   notAnnotated (A.PatAnn _ _) = False
-  notAnnotated _ = True
+  notAnnotated _              = True

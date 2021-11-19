@@ -94,6 +94,11 @@ variable.
 defLet                                --> Definition
   : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
 
+-- | A list of juxtaposed pattersn.
+pats
+  : pat pats                            { $1 : $2 }
+  | {- nothing -}                       { [] }
+
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
   : patAnn ',' patTups                  { $1 : $3 }
@@ -101,13 +106,17 @@ patTups                              --> [Pat]
 
 -- | Tuple pattern, which consist of a pattern and an optional type annotation.
 patAnn                                --> Pat
-  : pat ':' typ                         { PatAnn $3 $1 }
-  | pat                                 { $1 }
+  : patsApp ':' typ                     { PatAnn $3 $1 }
+  | patsApp                             { $1 }
 
--- | A list of argument patterns consists of a series of juxtaposed patterns.
-pats                                  --> [Pat]
-  : pat pats                            { $1 : $2 }
-  | {- nothing -}                       { [] }
+-- | Data constructor pattern with juxtaposed fields.
+patsApp                               --> Pat
+  : pats1                               { normalize id PatApp $1 }
+
+-- | Non-empty list of juxtaposed patterns.
+pats1                                 --> [Pat]
+  : pat pats1                           { $1 : $2 }
+  | pat                                 { [$1] }
 
 -- | Root node of patterns, which cannot be type-annotated without parens.
 pat                                   --> Pat
@@ -127,8 +136,8 @@ patAtom                               --> Pat
   : '_'                                 { PatWildcard }
   | '(' patTups ')'                     { normalize id PatTup $2 }
   | '(' ')'                             { PatLit LitEvent }
+  | int                                 { PatLit $ LitInt $1 }
   | id                                  { PatId $1 }
-  -- TODO: actually support literal patterns
 
 -- | Root node for type annotation.
 typ                                   --> Typ

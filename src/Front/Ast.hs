@@ -35,10 +35,11 @@ data Definition
 data Pat
   = PatWildcard         -- ^ Match anything, i.e., @_@
   | PatId VarId         -- ^ Bind value to variable, e.g., @v@
+  | PatCon DConId       -- ^ Match on data constructor, e.g., @Some@
   | PatLit Literal      -- ^ Literal match, e.g., @1@
   | PatAs VarId Pat     -- ^ Pattern alias, e.g., @a \@ <pat>@
   | PatTup [Pat]        -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
-  | PatCon DConId [Pat] -- ^ Match on data constructor, e.g., @Some <pat>@
+  | PatApp [Pat]        -- ^ Match on multiple patterns, e.g., @Some a@
   | PatAnn Typ Pat      -- ^ Match with type annotation, e.g., @<pat>: Type@
   deriving (Eq, Show)
 
@@ -64,6 +65,7 @@ data Typ
 -- | An expression
 data Expr
   = Id VarId
+  | DCon DConId
   | Lit Literal
   | Apply Expr Expr
   | Lambda [Pat] Expr
@@ -126,13 +128,14 @@ instance Pretty Definition where
   pretty (DefPat b body) = pretty b <+> equals <+> braces (pretty body)
 
 instance Pretty Pat where
-  pretty PatWildcard    = pretty '_'
-  pretty (PatId  s    ) = pretty s
-  pretty (PatLit l    ) = pretty l
-  pretty (PatAs b p   ) = parens $ pretty b <> pretty '@' <> pretty p
-  pretty (PatTup bs   ) = parens $ hsep (punctuate comma $ map pretty bs)
-  pretty (PatCon dc ps) = parens $ pretty dc <+> hsep (map pretty ps)
-  pretty (PatAnn ty p ) = parens $ pretty p <> colon <+> pretty ty
+  pretty PatWildcard   = pretty '_'
+  pretty (PatId  s   ) = pretty s
+  pretty (PatCon d   ) = pretty d
+  pretty (PatApp ps  ) = parens $ hsep $ map pretty ps
+  pretty (PatLit l   ) = pretty l
+  pretty (PatAs b p  ) = parens $ pretty b <> pretty '@' <> pretty p
+  pretty (PatTup bs  ) = parens $ hsep (punctuate comma $ map pretty bs)
+  pretty (PatAnn ty p) = parens $ pretty p <> colon <+> pretty ty
 
 instance Pretty TypFn where
   pretty (TypReturn t) = rarrow <+> pretty t
@@ -188,8 +191,9 @@ instance Pretty Expr where
     parens $ pretty "fun" <+> hsep (map (parens . pretty) ps) <+> braces
       (pretty b)
   pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
-  pretty (Id  ident  ) = pretty ident
-  pretty (Lit l      ) = pretty l
+  pretty (Id   ident ) = pretty ident
+  pretty (DCon ident ) = pretty ident
+  pretty (Lit  l     ) = pretty l
   pretty Break         = pretty "break"
   pretty (Return e  )  = pretty "return" <+> pretty e
   pretty (Match s as)  = parens $ pretty "match" <+> pretty s <+> braces
