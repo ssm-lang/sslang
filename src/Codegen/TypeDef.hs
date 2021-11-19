@@ -15,13 +15,29 @@ import           Common.Identifiers             ( DConId
 
 import           Codegen.Identifiers
 import           Data.Function                  ( on )
-import           Data.List                      ( maximumBy
+import           Data.List as A                 ( maximumBy
                                                 , partition
                                                 )
+import Data.Map as M
+
+data TypeDefInfo = TypeDefInfo
+  { dconType :: M.Map String String
+  , typeSize :: M.Map String Int
+  , isPointer :: M.Map String Bool
+  , tag :: M.Map String Int
+  }
+
+combineTypeDefInfo :: TypeDefInfo -> TypeDefInfo -> TypeDefInfo
+combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags 
+ where
+   typ = dconType a `M.union` dconType b
+   sz = typeSize a `M.union` typeSize b
+   isPtr = isPointer a `M.union` isPointer b
+   tags = tag a `M.union` tag b
 
 -- | Generate definitions for SSM type definitions.
-genTypeDef :: TConId -> L.TypeDef L.Type -> (C.Definition, C.Definition)
-genTypeDef tconid (L.TypeDef dCons _) = (tags, structDef)
+genTypeDef :: TConId -> L.TypeDef L.Type -> ([C.Definition], TypeDefInfo)
+genTypeDef tconid (L.TypeDef dCons _) = ([tags,structDef],info)
  where
   {- | Return the size in bits of a given field 
   (assume all built-in types are one word for now)
@@ -36,13 +52,13 @@ genTypeDef tconid (L.TypeDef dCons _) = (tags, structDef)
   dConSize (_, L.VariantUnnamed fields) = sum $ fieldSize <$> fields
 
   -- | Distinguish heap objects from possible int objects
-  (heapObjs, possibleIntObjs) = partition ((>= 32) . dConSize) dCons
+  (heapObjs, possibleIntObjs) = A.partition ((>= 32) . dConSize) dCons
 
   -- | Incorporate tag, then partition list based on whether each 'DCon is still < 32 bits 
   smallEnough
     :: [(DConId, L.TypeVariant L.Type)]
     -> ([(DConId, L.TypeVariant L.Type)], [(DConId, L.TypeVariant L.Type)])
-  smallEnough candidates = partition ((< 32) . dataBitsPlus tagBits) candidates
+  smallEnough candidates = A.partition ((< 32) . dataBitsPlus tagBits) candidates
    where
     dataBitsPlus :: Int -> (DConId, L.TypeVariant L.Type) -> Int
     dataBitsPlus bits dcon = bits + dConSize dcon
@@ -81,3 +97,17 @@ genTypeDef tconid (L.TypeDef dCons _) = (tags, structDef)
                        $ty:ssm_object_t $id:payload[($ty:word_t ) $uint:maxNumFields]; 
                      } $id:tconid;     
                    |]
+  -- | save information about each data constructor in a lookup table
+  theInts = zip (ident.fst<$> intObjs) (repeat False)
+  thePtrs = zip (ident.fst<$> moreHeapObs ++ heapObjs) (repeat True)
+  -- | save corresponding 'TCon for each 'DCon
+  dConTyp =  M.fromList $ zip (ident.fst <$> dCons) (repeat (ident tconid))
+  -- | save the size of type 'TCon
+  typSize = M.fromList [(ident tconid,maxNumFields)]
+  -- | save whether each 'DCon is a pointer or integer
+  isPtr = M.fromList $ theInts ++ thePtrs
+  -- } save tag of each 'DCon
+  tagMap =  M.fromList $ zip (ident.fst <$> tagged) [0::Int,1..]
+
+  info = TypeDefInfo dConTyp typSize isPtr tagMap
+
