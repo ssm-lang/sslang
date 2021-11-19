@@ -490,7 +490,7 @@ genExpr a@I.App{} = do
 genExpr (I.Match s as t) = do
   (sExp, sStm) <- genExpr s
   tagOf <- genTag $ extract s
-  tmp          <- nextTmp t
+  tmp          <- nextTmp $ genType t
   let mkCase (alt, arm) = do
         labelCase         <- genAlt sExp alt
         (armExp, armStms) <- genExpr arm
