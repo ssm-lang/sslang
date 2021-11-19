@@ -1,0 +1,9 @@
+[alias]
+    root = rev-parse --show-toplevel
+    hello = "!$(git rev-parse --show-toplevel)/scripts/hello"
+    fmt = "!$(git rev-parse --show-toplevel)/scripts/fmt"
+    lint = "!$(git rev-parse --show-toplevel)/scripts/lint"
+
+    build = "!$(git rev-parse --show-toplevel)/scripts/build"
+    doc = "!$(git rev-parse --show-toplevel)/scripts/build --haddock"
+    watch = "!$(git rev-parse --show-toplevel)/scripts/build --file-watch"

@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# Lint repo. Returns non-zero status code if there are hlint errors or warnings.
+
+set -euf
+
+is_alias="${GIT_PREFIX+y}"
+pwd="${GIT_PREFIX:-$(pwd)}"
+
+haskell_lint_cmd=("hlint")
+haskell_check_fmt_cmd=("brittany" "--check-mode")
+haskell_check_fmt=y
+haskell_files=()
+has_errors=0
+
+git_since=""
+
+function usage () {
+  echo
+  if [ "$is_alias" == "y" ] ; then
+    echo "Usage: git lint [-h|--help] [--since <commit|branch|HEAD>] [<files..>]"
+  else
+    echo "Usage: $0 [-h|--help] [--since <commit|branch|HEAD>] [<files..>]"
+  fi
+  echo
+  echo "Runs linter on specified files."
+  echo
+  echo "If no arguments are given, --since HEAD is assumed, which just lints"
+  echo "files modified since the most recent commit."
+  echo
+  echo "Arguments:"
+  echo
+  echo "  -h. --help          Show this help menu."
+  echo "  --since <commit>    Lint all files modified since <commit>. Can also"
+  echo "                      be a branch name or HEAD."
+  echo
+  echo "But if you just really want to just lint all files in this repo:"
+  echo
+  echo "    hlint ."
+}
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ $# -gt 0 ]; then
+  while [ $# -gt 0 ] ; do
+    case "$1" in
+      "-h" | "--help" )
+        usage
+        exit 0
+        ;;
+      "--since")
+        shift
+        git_since="$1"
+        :
+        ;;
+      *".hs")
+        haskell_files+=("$pwd/$1")
+        ;;
+      -* )
+        echo "Warn: unknown argument: $1. Ignoring."
+        ;;
+      *)
+        echo "Warn: unknown file type: $1. Refusing to lint."
+        ;;
+    esac
+    shift
+  done
+else
+  git_since="HEAD"
+fi
+
+if [ -n "$git_since" ] ; then
+  while read -r file ; do
+    case "$file" in
+      *".hs")
+        haskell_files+=("$file")
+        ;;
+    esac
+  done < <(git diff "$git_since" --name-only)
+fi
+
+if [ "${#haskell_files[@]}" -eq 0 ] ; then
+  echo
+  echo "Nothing to lint."
+fi
+
+if ! which hlint >/dev/null 2>/dev/null ; then
+    echo "Install hlint first:"
+    echo
+    echo "    stack install hlint"
+    echo
+    exit 1
+fi
+
+if ! which brittany >/dev/null 2>/dev/null ; then
+    echo "Install brittany:"
+    echo
+    echo "    stack install brittany"
+    echo
+    haskell_check_fmt=n
+fi
+
+for file in "${haskell_files[@]}" ; do
+  echo "Linting $file ... "
+  echo
+  if ! "${haskell_lint_cmd[@]}" "$file" ; then
+    has_errors=1
+  fi
+  if [ "$haskell_check_fmt" == "y" ] ; then
+    echo "Checking if $file needs to be formatted ... "
+    if ! "${haskell_check_fmt_cmd[@]}" "$file" >/dev/null; then
+      has_errors=1
+      echo "$file needs to be formatted."
+    fi
+  fi
+  echo
+done
+
+exit $has_errors

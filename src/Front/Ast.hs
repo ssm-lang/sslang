@@ -80,6 +80,7 @@ data Expr
   | Wait [Expr]
   | Seq Expr Expr
   | Break
+  | Match Expr [(Pat, Expr)]
   | Return Expr
   deriving (Eq, Show)
 
@@ -190,8 +191,12 @@ instance Pretty Expr where
   pretty (Id  ident  ) = pretty ident
   pretty (Lit l      ) = pretty l
   pretty Break         = pretty "break"
-  pretty (Return e)    = pretty "return" <+> pretty e
-  pretty NoExpr        = error "Unexpected NoExpr"
+  pretty (Return e  )  = pretty "return" <+> pretty e
+  pretty (Match s as)  = parens $ pretty "match" <+> pretty s <+> braces
+    (hsep $ punctuate bar $ map prettyPatExprTup as)
+   where
+    prettyPatExprTup (p, e) = pretty p <+> pretty "=>" <+> braces (pretty e)
+  pretty NoExpr = error "Unexpected NoExpr"
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i

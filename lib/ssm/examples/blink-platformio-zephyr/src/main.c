@@ -184,7 +184,9 @@ void ssm_tick_thread_body(void *p1, void *p2, void *p3)
 
     ssm_time_t wake = ssm_next_event_time();
     if (wake != SSM_NEVER) {
-      ssm_timer_cfg.ticks = wake;
+      const struct counter_config_info *config =
+          (const struct counter_config_info *)ssm_timer_dev->config;
+      ssm_timer_cfg.ticks = wake * config->freq / NSEC_PER_SEC;
       int r = counter_set_channel_alarm(ssm_timer_dev, 0, &ssm_timer_cfg);
       switch (r) {
       case -ENOTSUP:

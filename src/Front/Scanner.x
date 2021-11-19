@@ -95,6 +95,7 @@ tokens :-
     loop                { layout    TLoop   TSemicolon }
     \=                  { layout    TEq     TSemicolon }
     \<\-                { layout    TLarrow TSemicolon }
+    \=\>                { layout    TDRarrow TSemicolon}
     par                 { layout    TPar    TDBar }
     wait                { layout    TWait   TDBar }
     fun                 { layoutNL  TFun    TSemicolon }

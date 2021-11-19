@@ -51,7 +51,7 @@ lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = return $ I.Program
   { I.programEntry = fromString "main"
   , I.programDefs  = map (first fromJust . lowerDef) ds
-  , I.typeDefs     = [error "Typedefs are not yet implemented"]
+  , I.typeDefs     = []
   }
 
 {- | Lower an 'A.Definition' into a name and bound expression.
@@ -123,15 +123,29 @@ lowerExpr (A.Wait exprs) k =
   I.Prim I.Wait (map (`lowerExpr` id) exprs) (k I.untyped)
 lowerExpr (A.Seq l r) k =
   I.Let [(Nothing, lowerExpr l id)] (lowerExpr r id) (k I.untyped)
-lowerExpr A.Break          k = I.Prim I.Break [] (k I.untyped)
-lowerExpr (A.Return e    ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
-lowerExpr (A.IfElse c t e) k = I.Match cond Nothing [tArm, eArm] (k I.untyped)
+lowerExpr A.Break        k = I.Prim I.Break [] (k I.untyped)
+lowerExpr (A.Return e  ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
+lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
+ where
+  cond = lowerExpr s id
+  f (a, b) = (lowerAlt a, lowerExpr b id)
+lowerExpr (A.IfElse c t e) k = I.Match cond [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
   tArm = (I.AltLit (I.LitBool True), lowerExpr t id)
-  eArm = (I.AltDefault, lowerExpr e id)
+  eArm = (I.AltDefault Nothing, lowerExpr e id)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
+
+-- | Lower an A.Pat into an I.Alt
+lowerAlt :: A.Pat -> I.Alt
+lowerAlt A.PatWildcard  = I.AltDefault Nothing
+lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
+lowerAlt (A.PatLit l  ) = I.AltLit $ lowerLit l
+lowerAlt (A.PatTup _  ) = error "I.Alt for A.PatTup not implemented yet"
+lowerAlt (A.PatCon _ _) = error "No way to lower A.DataCons to I.DataCons yet"
+lowerAlt (A.PatAnn _ p) = lowerAlt p
+lowerAlt (A.PatAs  _ p) = lowerAlt p
 
 {- | Unpack a list of patterns into nested (curried) lambdas.
 
