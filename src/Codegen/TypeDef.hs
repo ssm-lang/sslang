@@ -27,6 +27,12 @@ data TypeDefInfo = TypeDefInfo
   , tag :: M.Map String Int
   }
 
+instance Semigroup TypeDefInfo where
+  a <> b = combineTypeDefInfo a b
+
+instance Monoid TypeDefInfo where
+  mempty = TypeDefInfo empty empty empty empty
+
 combineTypeDefInfo :: TypeDefInfo -> TypeDefInfo -> TypeDefInfo
 combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags 
  where
@@ -108,6 +114,7 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tags,structDef],info)
   isPtr = M.fromList $ theInts ++ thePtrs
   -- } save tag of each 'DCon
   tagMap =  M.fromList $ zip (ident.fst <$> tagged) [0::Int,1..]
-
+  -- | save compelete lookup table
   info = TypeDefInfo dConTyp typSize isPtr tagMap
+
 
