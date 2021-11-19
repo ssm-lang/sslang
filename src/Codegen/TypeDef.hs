@@ -103,18 +103,19 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tags,structDef],info)
                        $ty:ssm_object_t $id:payload[($ty:word_t ) $uint:maxNumFields]; 
                      } $id:tconid;     
                    |]
-  -- | save information about each data constructor in a lookup table
+
+  -- | Save information about each data constructor in a lookup table
   theInts = zip (ident.fst<$> intObjs) (repeat False)
   thePtrs = zip (ident.fst<$> moreHeapObs ++ heapObjs) (repeat True)
-  -- | save corresponding 'TCon for each 'DCon
+  -- | Save corresponding 'TCon for each 'DCon
   dConTyp =  M.fromList $ zip (ident.fst <$> dCons) (repeat (ident tconid))
-  -- | save the size of type 'TCon
+  -- | Save the size of type 'TCon
   typSize = M.fromList [(ident tconid,maxNumFields)]
-  -- | save whether each 'DCon is a pointer or integer
+  -- | Save whether each 'DCon is a pointer or integer
   isPtr = M.fromList $ theInts ++ thePtrs
-  -- } save tag of each 'DCon
+  -- | Save tag of each 'DCon
   tagMap =  M.fromList $ zip (ident.fst <$> tagged) [0::Int,1..]
-  -- | save compelete lookup table
+  -- | Save compelete lookup table
   info = TypeDefInfo dConTyp typSize isPtr tagMap
 
 
