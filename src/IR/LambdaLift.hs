@@ -155,8 +155,9 @@ liftLambdas lam@(I.Lambda _ _ t) = do
     (M.toList lamFreeTypes)
     (exprType liftedLam)
  where
-  applyFreesToLambda app ((v', t') : vs) (Poly.TBuiltin (Poly.Arrow tl tr)) =
-    applyFreesToLambda (I.App app (I.Var v' t') tl) vs tr
+  applyFreesToLambda app ((v', t') : vs) (Poly.TBuiltin (Poly.Arrow _ tr)) =
+    -- TODO(hans): We could assert t' == tl
+    applyFreesToLambda (I.App app (I.Var v' t') tr) vs tr
   applyFreesToLambda app [] _ = app
   applyFreesToLambda _   _  _ = error "Expected longer arrow type"
 
