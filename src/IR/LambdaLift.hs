@@ -176,7 +176,8 @@ liftLambdas (I.Match s arms t) = do
   liftedMatch <- liftLambdas s
   liftedArms  <- mapM liftLambdasInArm arms
   return $ I.Match liftedMatch liftedArms t
-liftLambdas n = return n
+liftLambdas lit@I.Lit{}  = return lit
+liftLambdas dat@I.Data{} = return dat
 
 liftProgramLambdas
   :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
