@@ -108,14 +108,13 @@ makeLiftedLambda ((v, t) : vs) body = do
 
 liftLambdas'
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
-liftLambdas' (v, lam@I.Lambda{}) = do
+liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
+      vs'        = zipArgsWithArrow vs t
   newScope $ catMaybes vs
-  liftedBody <- liftLambdas body
-  return (v, updateBody lam liftedBody)
- where
-  updateBody (I.Lambda v' b' t') b = I.Lambda v' (updateBody b' b) t'
-  updateBody _                   b = b
+  liftedBody   <- liftLambdas body
+  liftedLambda <- makeLiftedLambda vs' liftedBody
+  return (v, liftedLambda)
 liftLambdas' _ = error "Expected top-level lambda binding"
 
 descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
