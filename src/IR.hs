@@ -14,7 +14,7 @@ import qualified IR.Types.Poly                 as Poly
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.Monomorphize                ( monoProgram )
-import           IR.TypeInference               ( inferProgram )
+import           IR.HM                          ( inferProgram )
 
 lowerAst :: A.Program -> Compiler.Pass (I.Program Ann.Type)
 lowerAst = lowerProgram

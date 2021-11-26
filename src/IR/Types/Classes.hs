@@ -26,7 +26,7 @@ data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

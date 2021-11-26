@@ -61,6 +61,7 @@ fromId = fromString . ident
 -- | ToIdentifier for type constructors, e.g., @Option@
 newtype TConId = TConId Identifier
   deriving Eq
+  deriving Ord
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -74,6 +75,7 @@ instance Show TConId where
 -- | ToIdentifier for type variable, e.g., @a@
 newtype TVarId = TVarId Identifier
   deriving Eq
+  deriving Ord
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -86,10 +88,10 @@ instance Show TVarId where
 
 -- | de Bruijn index for type variables, e.g., @'0@
 newtype TVarIdx = TVarIdx Int
-  deriving Eq
+  deriving (Eq, Ord)
 
 instance Show TVarIdx where
-  show (TVarIdx i) = "'" ++ show i
+  show (TVarIdx i) = show i
 
 instance Pretty TVarIdx where
   pretty = pretty . show
@@ -97,6 +99,7 @@ instance Pretty TVarIdx where
 -- | ToIdentifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
