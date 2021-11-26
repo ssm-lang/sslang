@@ -22,6 +22,8 @@ import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
 
+import Debug.Trace
+import Prettyprinter
 
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
@@ -114,12 +116,9 @@ liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
       vs'        = zipArgsWithArrow vs t
   newScope $ catMaybes vs
   liftedBody <- liftLambdas body
-  return
-    ( v
-    , foldl (\lam' (v', t') -> I.Lambda v' lam' $ makeArrow t' lam')
-            liftedBody
-            vs'
-    )
+  traceM (show v ++ "and body type " ++ show (pretty $exprType liftedBody))
+  liftedLambda <- makeLiftedLambda vs' liftedBody
+  return (v, liftedLambda)
 liftLambdas' _ = error "Expected top-level lambda binding"
 
 descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
