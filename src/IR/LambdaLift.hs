@@ -7,6 +7,7 @@ import qualified IR.IR                         as I
 
 import qualified IR.Types.Poly                 as Poly
 
+import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -37,16 +38,6 @@ newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
   deriving MonadFail                    via (StateT LiftCtx Compiler.Pass)
   deriving (MonadError Compiler.Error)  via (StateT LiftCtx Compiler.Pass)
   deriving (MonadState LiftCtx)         via (StateT LiftCtx Compiler.Pass)
-
-exprType :: I.Expr Poly.Type -> Poly.Type
-exprType (I.Lambda _ _ t) = t
-exprType (I.App    _ _ t) = t
-exprType (I.Lit _ t     ) = t
-exprType (I.Var _ t     ) = t
-exprType (I.Prim _ _ t  ) = t
-exprType (I.Let  _ _ t  ) = t
-exprType (I.Data _ t    ) = t
-exprType (I.Match _ _ t ) = t
 
 zipArgsWithArrow :: [Binder] -> Poly.Type -> [(Binder, Poly.Type)]
 zipArgsWithArrow (b : bs) (Poly.TBuiltin (Poly.Arrow t ts)) =
@@ -97,7 +88,7 @@ newScope vs = modify $ \st -> st
 
 makeArrow :: Poly.Type -> I.Expr Poly.Type -> Poly.Type
 makeArrow lhsType rhsExpr =
-  Poly.TBuiltin $ Poly.Arrow lhsType (exprType rhsExpr)
+  Poly.TBuiltin $ Poly.Arrow lhsType (extract rhsExpr)
 
 makeLiftedLambda
   :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
@@ -166,9 +157,9 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   freshName <- getFresh
   addLifted freshName liftedLam
   return $ applyFreesToLambda
-    (I.Var (I.VarId (Identifier freshName)) (exprType liftedLam))
+    (I.Var (I.VarId (Identifier freshName)) (extract liftedLam))
     (M.toList lamFreeTypes)
-    (exprType liftedLam)
+    (extract liftedLam)
  where
   applyFreesToLambda app ((v', t') : vs) (Poly.TBuiltin (Poly.Arrow _ tr)) =
     -- TODO(hans): We could assert t' == tl
