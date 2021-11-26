@@ -1,0 +1,20 @@
+toggle(led) =
+  led <- 1 - deref led
+
+slow(led) =
+  let e1 = new ()
+  loop
+    toggle led
+    after 30 , e1 <- ()
+    wait e1
+
+fast(led) =
+  let e2 = new ()
+  loop
+    toggle led
+    after 20 , e2 <- ()
+    wait e2
+
+main(led) =
+  par slow led
+      fast led
