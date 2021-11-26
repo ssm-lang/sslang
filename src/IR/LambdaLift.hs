@@ -16,6 +16,8 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , unless
                                                 )
 
+import qualified Data.Bifunctor                as B
+import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
 
@@ -23,7 +25,7 @@ import qualified Data.Set                      as S
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
   , currentScope :: S.Set I.VarId
-  , currentFrees :: S.Set I.VarId
+  , freeTypes    :: M.Map I.VarId Poly.Type
   , lifted       :: [(I.VarId, I.Expr Poly.Type)]
   , anonCount    :: Int
   }
@@ -36,12 +38,26 @@ newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
   deriving (MonadError Compiler.Error)  via (StateT LiftCtx Compiler.Pass)
   deriving (MonadState LiftCtx)         via (StateT LiftCtx Compiler.Pass)
 
+exprType :: I.Expr Poly.Type -> Poly.Type
+exprType (I.Lambda _ _ t) = t
+exprType (I.App    _ _ t) = t
+exprType (I.Lit _ t     ) = t
+exprType (I.Var _ t     ) = t
+exprType (I.Prim _ _ t  ) = t
+exprType (I.Let  _ _ t  ) = t
+
+zipArgsWithArrow :: [Binder] -> Poly.Type -> [(Binder, Poly.Type)]
+zipArgsWithArrow (b : bs) (Poly.TBuiltin (Poly.Arrow t ts)) =
+  (b, t) : zipArgsWithArrow bs ts
+zipArgsWithArrow [] _ = []
+zipArgsWithArrow _  _ = error "Expected longer arrow type"
+
 runLiftFn :: LiftFn a -> Compiler.Pass a
 runLiftFn (LiftFn m) = evalStateT
   m
   LiftCtx { globalScope  = S.empty
           , currentScope = S.empty
-          , currentFrees = S.empty
+          , freeTypes    = M.empty
           , lifted       = []
           , anonCount    = 0
           }
@@ -68,45 +84,54 @@ addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
 addLifted name lam =
   modify $ \st -> st { lifted = (I.VarId (Identifier name), lam) : lifted st }
 
-addFreeVar :: I.VarId -> LiftFn ()
-addFreeVar v =
-  modify $ \st -> st { currentFrees = S.insert v $ currentFrees st }
+addFreeVar :: I.VarId -> Poly.Type -> LiftFn ()
+addFreeVar v t = modify $ \st -> st { freeTypes = M.insert v t $ freeTypes st }
 
 newScope :: [I.VarId] -> LiftFn ()
 newScope vs = modify $ \st -> st
   { currentScope = S.union (globalScope st) (S.fromList vs)
-  , currentFrees = S.empty
+  , freeTypes    = M.empty
   }
 
+makeArrow :: Poly.Type -> I.Expr Poly.Type -> Poly.Type
+makeArrow lhsType rhsExpr =
+  Poly.TBuiltin $ Poly.Arrow lhsType (exprType rhsExpr)
+
 makeLiftedLambda
-  :: [I.Binder] -> I.Expr Poly.Type -> Poly.Type -> LiftFn (I.Expr Poly.Type)
-makeLiftedLambda [] body _ = return body
-makeLiftedLambda vs body t = do
-  liftedBody <- makeLiftedLambda (tail vs) body t
-  return (I.Lambda (head vs) liftedBody t)
+  :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
+makeLiftedLambda []            body = return body
+makeLiftedLambda ((v, t) : vs) body = do
+  liftedBody <- makeLiftedLambda vs body
+  return (I.Lambda v liftedBody $ makeArrow t liftedBody)
 
 liftLambdas'
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
 liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
+      vs'        = zipArgsWithArrow vs t
   newScope $ catMaybes vs
   liftedBody <- liftLambdas body
-  return (v, foldl (\lam' v' -> I.Lambda v' lam' t) liftedBody vs)
+  return
+    ( v
+    , foldl (\lam' (v', t') -> I.Lambda v' lam' $ makeArrow t' lam')
+            liftedBody
+            vs'
+    )
 liftLambdas' _ = error "Expected top-level lambda binding"
 
-descend :: LiftFn a -> LiftFn (a, S.Set VarId)
+descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
 descend lb = do
-  savedScope    <- gets currentScope
-  savedFrees    <- gets currentFrees
-  liftedLamBody <- lb
-  lamFrees      <- gets currentFrees
-  modify $ \st -> st { currentScope = savedScope, currentFrees = savedFrees }
-  return (liftedLamBody, lamFrees)
+  savedScope     <- gets currentScope
+  savedFreeTypes <- gets freeTypes
+  liftedLamBody  <- lb
+  lamFreeTypes   <- gets freeTypes
+  modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
+  return (liftedLamBody, lamFreeTypes)
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
-liftLambdas n@(I.Var v _) = do
+liftLambdas n@(I.Var v t) = do
   inScope <- inCurrentScope v
-  unless inScope $ addFreeVar v
+  unless inScope $ addFreeVar v t
   return n
 liftLambdas (I.App e1 e2 t) = do
   liftedE1 <- liftLambdas e1
@@ -117,16 +142,23 @@ liftLambdas (I.Prim p exprs t) = do
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
-  (liftedLamBody, lamFrees) <-
+      vs'        = zipArgsWithArrow vs t
+  (liftedLamBody, lamFreeTypes) <-
     descend $ newScope (catMaybes vs) >> liftLambdas body
-  liftedLam <- makeLiftedLambda (map Just (S.toList lamFrees) ++ vs)
-                                liftedLamBody
-                                t
+  liftedLam <- makeLiftedLambda
+    (map (B.first Just) (M.toList lamFreeTypes) ++ vs')
+    liftedLamBody
   freshName <- getFresh
   addLifted freshName liftedLam
-  return $ foldl (\app v -> I.App app (I.Var v t) t)
-                 (I.Var (I.VarId (Identifier freshName)) t)
-                 (S.toList lamFrees)
+  return $ applyFreesToLambda
+    (I.Var (I.VarId (Identifier freshName)) (exprType liftedLam))
+    (M.toList lamFreeTypes)
+    (exprType liftedLam)
+ where
+  applyFreesToLambda app ((v', t') : vs) (Poly.TBuiltin (Poly.Arrow tl tr)) =
+    applyFreesToLambda (I.App app (I.Var v' t') tl) vs tr
+  applyFreesToLambda app [] _ = app
+  applyFreesToLambda _   _  _ = error "Expected longer arrow type"
 
 liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
