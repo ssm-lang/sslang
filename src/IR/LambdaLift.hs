@@ -47,7 +47,7 @@ exprType (I.Var _ t      ) = t
 exprType (I.Prim _ _ t   ) = t
 exprType (I.Let  _ _ t   ) = t
 exprType (I.Data _ t     ) = t
-exprType (I.Match _ _ _ t) = t
+exprType (I.Match _ _ t) = t
 
 zipArgsWithArrow :: [Binder] -> Poly.Type -> [(Binder, Poly.Type)]
 zipArgsWithArrow (b : bs) (Poly.TBuiltin (Poly.Arrow t ts)) =
@@ -132,20 +132,20 @@ descend body = do
   return (liftedBody, freeTypesBody)
 
 liftLambdasInArm
-  :: Binder -> (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
-liftLambdasInArm sb (I.AltLit l, arm) = do
+  :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
+liftLambdasInArm (I.AltLit l, arm) = do
   (liftedArm, armFrees) <-
-    descend $ F.forM_ sb addCurrentScope >> liftLambdas arm
+    descend $ return () >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
-liftLambdasInArm sb (I.AltDefault, arm) = do
+liftLambdasInArm (I.AltDefault b, arm) = do
   (liftedArm, armFrees) <-
-    descend $ F.forM_ sb addCurrentScope >> liftLambdas arm
+    descend $ F.forM_ b addCurrentScope >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltDefault, liftedArm)
-liftLambdasInArm sb (I.AltData d bs, arm) = do
+  return (I.AltDefault b, liftedArm)
+liftLambdasInArm (I.AltData d bs, arm) = do
   (liftedArm, armFrees) <-
-    descend $ mapM_ addCurrentScope (catMaybes (sb : bs)) >> liftLambdas arm
+    descend $ mapM_ addCurrentScope (catMaybes bs) >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltData d bs, liftedArm)
 
@@ -189,10 +189,10 @@ liftLambdas (I.Let bs e t) = do
   liftedLetBodies <- mapM liftLambdas exprs
   liftedExpr      <- liftLambdas e
   return $ I.Let (zip vs liftedLetBodies) liftedExpr t
-liftLambdas (I.Match s sb arms t) = do
+liftLambdas (I.Match s arms t) = do
   liftedMatch <- liftLambdas s
-  liftedArms  <- mapM (liftLambdasInArm sb) arms
-  return $ I.Match liftedMatch sb liftedArms t
+  liftedArms  <- mapM liftLambdasInArm arms
+  return $ I.Match liftedMatch liftedArms t
 liftLambdas n = return n
 
 liftProgramLambdas
