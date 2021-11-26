@@ -6,6 +6,7 @@ import           Common.Identifiers
 import qualified IR.IR                         as I
 
 import qualified IR.Types.Poly                 as Poly
+import           IR.Types.TypeSystem            ( dearrow )
 
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -156,16 +157,13 @@ liftLambdas lam@(I.Lambda _ _ t) = do
     liftedLamBody
   freshName <- getFresh
   addLifted freshName liftedLam
-  return $ applyFreesToLambda
-    (I.Var (I.VarId (Identifier freshName)) (extract liftedLam))
-    (M.toList lamFreeTypes)
-    (extract liftedLam)
+  return $ foldl applyFree
+                 (I.Var (I.VarId (Identifier freshName)) (extract liftedLam))
+                 (M.toList lamFreeTypes)
  where
-  applyFreesToLambda app ((v', t') : vs) (Poly.TBuiltin (Poly.Arrow _ tr)) =
-    -- TODO(hans): We could assert t' == tl
-    applyFreesToLambda (I.App app (I.Var v' t') tr) vs tr
-  applyFreesToLambda app [] _ = app
-  applyFreesToLambda _   _  _ = error "Expected longer arrow type"
+  applyFree app (v', t') = case dearrow $ extract app of
+    Just (_, tr) -> I.App app (I.Var v' t') tr
+    Nothing      -> app
 
 liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
