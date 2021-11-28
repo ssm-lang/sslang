@@ -6,7 +6,9 @@ import           Common.Identifiers
 import qualified IR.IR                         as I
 
 import qualified IR.Types.Poly                 as Poly
-import           IR.Types.TypeSystem            ( dearrow )
+import           IR.Types.TypeSystem            ( arrow
+                                                , dearrow
+                                                )
 
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -87,16 +89,12 @@ newScope vs = modify $ \st -> st
   , freeTypes    = M.empty
   }
 
-makeArrow :: Poly.Type -> I.Expr Poly.Type -> Poly.Type
-makeArrow lhsType rhsExpr =
-  Poly.TBuiltin $ Poly.Arrow lhsType (extract rhsExpr)
-
 makeLiftedLambda
   :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 makeLiftedLambda []            body = return body
 makeLiftedLambda ((v, t) : vs) body = do
   liftedBody <- makeLiftedLambda vs body
-  return (I.Lambda v liftedBody $ makeArrow t liftedBody)
+  return (I.Lambda v liftedBody $ arrow t (extract liftedBody))
 
 liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
