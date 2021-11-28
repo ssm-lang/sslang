@@ -92,30 +92,31 @@ descend body = do
   modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
   return (liftedBody, freeTypesBody)
 
+extractLifted :: LiftFn a -> LiftFn (a, [(I.VarId, I.Expr Poly.Type)])
+extractLifted body = do
+  liftedBody <- body
+  newTopDefs <- gets lifted
+  modify $ \st -> st { lifted = [] }
+  return (liftedBody, newTopDefs)
+
 liftProgramLambdas
   :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 liftProgramLambdas p = runLiftFn $ do
   let defs = I.programDefs p
-      funs = filter isFun defs
-      oths = filter (not . isFun) defs
   populateGlobalScope defs
-  funsWithLiftedBodies <- mapM liftLambdasTop funs
-  liftedLambdas        <- gets lifted
-  return $ p { I.programDefs = oths ++ liftedLambdas ++ funsWithLiftedBodies }
- where
-  isFun (_, I.Lambda{}) = True
-  isFun _               = False
+  liftedProgramDefs <- mapM liftLambdasTop defs
+  return $ p { I.programDefs = concat liftedProgramDefs }
 
 liftLambdasTop
-  :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
+  :: (I.VarId, I.Expr Poly.Type) -> LiftFn [(I.VarId, I.Expr Poly.Type)]
 liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
   newScope $ catMaybes vs
-  liftedBody <- liftLambdas body
+  (liftedBody, newTopDefs) <- extractLifted $ liftLambdas body
   let liftedLambda = I.makeLambdaChain vs' liftedBody
-  return (v, liftedLambda)
-liftLambdasTop _ = error "Expected top-level lambda binding"
+  return $ newTopDefs ++ [(v, liftedLambda)]
+liftLambdasTop topDef = return [topDef]
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v t) = do
