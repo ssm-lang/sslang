@@ -84,12 +84,28 @@ newScope vs = modify $ \st -> st
   , freeTypes    = M.empty
   }
 
-makeLiftedLambda
-  :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
-makeLiftedLambda []            body = return body
-makeLiftedLambda ((v, t) : vs) body = do
-  liftedBody <- makeLiftedLambda vs body
-  return (I.Lambda v liftedBody $ arrow t (extract liftedBody))
+descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
+descend body = do
+  savedScope     <- gets currentScope
+  savedFreeTypes <- gets freeTypes
+  liftedBody     <- body
+  freeTypesBody  <- gets freeTypes
+  modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
+  return (liftedBody, freeTypesBody)
+
+liftProgramLambdas
+  :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
+liftProgramLambdas p = runLiftFn $ do
+  let defs = I.programDefs p
+      funs = filter isFun defs
+      oths = filter (not . isFun) defs
+  populateGlobalScope defs
+  funsWithLiftedBodies <- mapM liftLambdasTop funs
+  liftedLambdas        <- gets lifted
+  return $ p { I.programDefs = oths ++ liftedLambdas ++ funsWithLiftedBodies }
+ where
+  isFun (_, I.Lambda{}) = True
+  isFun _               = False
 
 liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
@@ -101,32 +117,6 @@ liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   liftedLambda <- makeLiftedLambda vs' liftedBody
   return (v, liftedLambda)
 liftLambdasTop _ = error "Expected top-level lambda binding"
-
-descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
-descend body = do
-  savedScope     <- gets currentScope
-  savedFreeTypes <- gets freeTypes
-  liftedBody     <- body
-  freeTypesBody  <- gets freeTypes
-  modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
-  return (liftedBody, freeTypesBody)
-
-liftLambdasInArm
-  :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
-liftLambdasInArm (I.AltLit l, arm) = do
-  (liftedArm, armFrees) <- descend $ liftLambdas arm
-  modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltLit l, liftedArm)
-liftLambdasInArm (I.AltDefault b, arm) = do
-  (liftedArm, armFrees) <-
-    descend $ F.forM_ b addCurrentScope >> liftLambdas arm
-  modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltDefault b, liftedArm)
-liftLambdasInArm (I.AltData d bs, arm) = do
-  (liftedArm, armFrees) <-
-    descend $ mapM_ addCurrentScope (catMaybes bs) >> liftLambdas arm
-  modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltData d bs, liftedArm)
 
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v t) = do
@@ -157,7 +147,6 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   applyFree app (v', t') = case dearrow $ extract app of
     Just (_, tr) -> I.App app (I.Var v' t') tr
     Nothing      -> app
-
 liftLambdas (I.Let bs e t) = do
   let vs    = map fst bs
       exprs = map snd bs
@@ -172,16 +161,26 @@ liftLambdas (I.Match s arms t) = do
 liftLambdas lit@I.Lit{}  = return lit
 liftLambdas dat@I.Data{} = return dat
 
-liftProgramLambdas
-  :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
-liftProgramLambdas p = runLiftFn $ do
-  let defs = I.programDefs p
-      funs = filter isFun defs
-      oths = filter (not . isFun) defs
-  populateGlobalScope defs
-  funsWithLiftedBodies <- mapM liftLambdasTop funs
-  liftedLambdas        <- gets lifted
-  return $ p { I.programDefs = oths ++ liftedLambdas ++ funsWithLiftedBodies }
- where
-  isFun (_, I.Lambda{}) = True
-  isFun _               = False
+liftLambdasInArm
+  :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
+liftLambdasInArm (I.AltLit l, arm) = do
+  (liftedArm, armFrees) <- descend $ liftLambdas arm
+  modify $ \st -> st { freeTypes = armFrees }
+  return (I.AltLit l, liftedArm)
+liftLambdasInArm (I.AltDefault b, arm) = do
+  (liftedArm, armFrees) <-
+    descend $ F.forM_ b addCurrentScope >> liftLambdas arm
+  modify $ \st -> st { freeTypes = armFrees }
+  return (I.AltDefault b, liftedArm)
+liftLambdasInArm (I.AltData d bs, arm) = do
+  (liftedArm, armFrees) <-
+    descend $ mapM_ addCurrentScope (catMaybes bs) >> liftLambdas arm
+  modify $ \st -> st { freeTypes = armFrees }
+  return (I.AltData d bs, liftedArm)
+
+makeLiftedLambda
+  :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
+makeLiftedLambda []            body = return body
+makeLiftedLambda ((v, t) : vs) body = do
+  liftedBody <- makeLiftedLambda vs body
+  return (I.Lambda v liftedBody $ arrow t (extract liftedBody))
