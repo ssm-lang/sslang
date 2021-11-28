@@ -7,6 +7,7 @@ import qualified IR.IR                         as I
 
 import qualified IR.Types.Poly                 as Poly
 import           IR.Types.TypeSystem            ( arrow
+                                                , collectArrow
                                                 , dearrow
                                                 )
 
@@ -41,12 +42,6 @@ newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
   deriving MonadFail                    via (StateT LiftCtx Compiler.Pass)
   deriving (MonadError Compiler.Error)  via (StateT LiftCtx Compiler.Pass)
   deriving (MonadState LiftCtx)         via (StateT LiftCtx Compiler.Pass)
-
-zipArgsWithArrow :: [Binder] -> Poly.Type -> [(Binder, Poly.Type)]
-zipArgsWithArrow (b : bs) (Poly.TBuiltin (Poly.Arrow t ts)) =
-  (b, t) : zipArgsWithArrow bs ts
-zipArgsWithArrow [] _ = []
-zipArgsWithArrow _  _ = error "Expected longer arrow type"
 
 runLiftFn :: LiftFn a -> Compiler.Pass a
 runLiftFn (LiftFn m) = evalStateT
@@ -100,7 +95,7 @@ liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
 liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
-      vs'        = zipArgsWithArrow vs t
+      vs'        = zip vs $ fst (collectArrow t)
   newScope $ catMaybes vs
   liftedBody   <- liftLambdas body
   liftedLambda <- makeLiftedLambda vs' liftedBody
@@ -147,7 +142,7 @@ liftLambdas (I.Prim p exprs t) = do
   return $ I.Prim p liftedExprs t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
-      vs'        = zipArgsWithArrow vs t
+      vs'        = zip vs $ fst (collectArrow t)
   (liftedLamBody, lamFreeTypes) <-
     descend $ newScope (catMaybes vs) >> liftLambdas body
   liftedLam <- makeLiftedLambda
