@@ -6,8 +6,7 @@ import           Common.Identifiers
 import qualified IR.IR                         as I
 
 import qualified IR.Types.Poly                 as Poly
-import           IR.Types.TypeSystem            ( arrow
-                                                , collectArrow
+import           IR.Types.TypeSystem            ( collectArrow
                                                 , dearrow
                                                 )
 
@@ -113,8 +112,8 @@ liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
   newScope $ catMaybes vs
-  liftedBody   <- liftLambdas body
-  liftedLambda <- makeLiftedLambda vs' liftedBody
+  liftedBody <- liftLambdas body
+  let liftedLambda = I.makeLambdaChain vs' liftedBody
   return (v, liftedLambda)
 liftLambdasTop _ = error "Expected top-level lambda binding"
 
@@ -135,9 +134,9 @@ liftLambdas lam@(I.Lambda _ _ t) = do
       vs'        = zip vs $ fst (collectArrow t)
   (liftedLamBody, lamFreeTypes) <-
     descend $ newScope (catMaybes vs) >> liftLambdas body
-  liftedLam <- makeLiftedLambda
-    (map (B.first Just) (M.toList lamFreeTypes) ++ vs')
-    liftedLamBody
+  let liftedLam = I.makeLambdaChain
+        (map (B.first Just) (M.toList lamFreeTypes) ++ vs')
+        liftedLamBody
   freshName <- getFresh
   addLifted freshName liftedLam
   return $ foldl applyFree
@@ -176,10 +175,3 @@ liftLambdasInArm (I.AltData d bs, arm) = do
     descend $ mapM_ addCurrentScope (catMaybes bs) >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltData d bs, liftedArm)
-
-makeLiftedLambda
-  :: [(I.Binder, Poly.Type)] -> I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
-makeLiftedLambda []            body = return body
-makeLiftedLambda ((v, t) : vs) body = do
-  liftedBody <- makeLiftedLambda vs body
-  return (I.Lambda v liftedBody $ arrow t (extract liftedBody))
