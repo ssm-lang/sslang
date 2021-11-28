@@ -55,7 +55,7 @@ runLiftFn (LiftFn m) = evalStateT
 
 populateGlobalScope :: [(I.VarId, I.Expr Poly.Type)] -> LiftFn ()
 populateGlobalScope defs = do
-  let globalNames = map fst defs
+  let (globalNames, _) = unzip defs
   modify $ \st -> st { globalScope = S.fromList globalNames }
 
 inCurrentScope :: I.VarId -> LiftFn Bool
@@ -148,8 +148,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
     Just (_, tr) -> I.App app (I.Var v' t') tr
     Nothing      -> app
 liftLambdas (I.Let bs e t) = do
-  let vs    = map fst bs
-      exprs = map snd bs
+  let (vs, exprs) = unzip bs
   mapM_ addCurrentScope (catMaybes vs)
   liftedLetBodies <- mapM liftLambdas exprs
   liftedExpr      <- liftLambdas e
