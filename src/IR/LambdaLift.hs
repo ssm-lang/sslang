@@ -98,16 +98,16 @@ makeLiftedLambda ((v, t) : vs) body = do
   liftedBody <- makeLiftedLambda vs body
   return (I.Lambda v liftedBody $ makeArrow t liftedBody)
 
-liftLambdas'
+liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn (I.VarId, I.Expr Poly.Type)
-liftLambdas' (v, lam@(I.Lambda _ _ t)) = do
+liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zipArgsWithArrow vs t
   newScope $ catMaybes vs
   liftedBody   <- liftLambdas body
   liftedLambda <- makeLiftedLambda vs' liftedBody
   return (v, liftedLambda)
-liftLambdas' _ = error "Expected top-level lambda binding"
+liftLambdasTop _ = error "Expected top-level lambda binding"
 
 descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
 descend body = do
@@ -186,7 +186,7 @@ liftProgramLambdas p = runLiftFn $ do
       funs = filter isFun defs
       oths = filter (not . isFun) defs
   populateGlobalScope defs
-  funsWithLiftedBodies <- mapM liftLambdas' funs
+  funsWithLiftedBodies <- mapM liftLambdasTop funs
   liftedLambdas        <- gets lifted
   return $ p { I.programDefs = oths ++ liftedLambdas ++ funsWithLiftedBodies }
  where
