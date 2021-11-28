@@ -1,5 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
-module IR.LambdaLift where
+module IR.LambdaLift
+  ( liftProgramLambdas
+  ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
@@ -26,6 +28,7 @@ import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
 
+-- | Lifting Environment
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
   , currentScope :: S.Set I.VarId
@@ -34,6 +37,7 @@ data LiftCtx = LiftCtx
   , anonCount    :: Int
   }
 
+-- Lift Monad
 newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
   deriving Functor                      via (StateT LiftCtx Compiler.Pass)
   deriving Applicative                  via (StateT LiftCtx Compiler.Pass)
@@ -42,6 +46,7 @@ newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
   deriving (MonadError Compiler.Error)  via (StateT LiftCtx Compiler.Pass)
   deriving (MonadState LiftCtx)         via (StateT LiftCtx Compiler.Pass)
 
+-- | Run a LiftFn computation.
 runLiftFn :: LiftFn a -> Compiler.Pass a
 runLiftFn (LiftFn m) = evalStateT
   m
@@ -52,37 +57,45 @@ runLiftFn (LiftFn m) = evalStateT
           , anonCount    = 0
           }
 
+-- | Extract top level definition names that compose program's global scope.
 populateGlobalScope :: [(I.VarId, I.Expr Poly.Type)] -> LiftFn ()
 populateGlobalScope defs = do
   let (globalNames, _) = unzip defs
   modify $ \st -> st { globalScope = S.fromList globalNames }
 
+-- | Check if an identifier is in the current program scope.
 inCurrentScope :: I.VarId -> LiftFn Bool
 inCurrentScope v = S.member v <$> gets currentScope
 
+-- | Add an identifier to the current program scope.
 addCurrentScope :: I.VarId -> LiftFn ()
 addCurrentScope v =
   modify $ \st -> st { currentScope = S.insert v $ currentScope st }
 
+-- | Get a fresh variable name
 getFresh :: LiftFn String
 getFresh = do
   curCount <- gets anonCount
   modify $ \st -> st { anonCount = anonCount st + 1 }
   return $ "anon" ++ show curCount
 
+-- | Store a new lifted lambda to later add to the program's top level definitions.
 addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
 addLifted name lam =
   modify $ \st -> st { lifted = (I.VarId (Identifier name), lam) : lifted st }
 
+-- | Register a (free variable, type) mapping for the current program scope.
 addFreeVar :: I.VarId -> Poly.Type -> LiftFn ()
 addFreeVar v t = modify $ \st -> st { freeTypes = M.insert v t $ freeTypes st }
 
+-- | Update lift environment before entering a new scope (e.g. lambda body, match arm).
 newScope :: [I.VarId] -> LiftFn ()
 newScope vs = modify $ \st -> st
   { currentScope = S.union (globalScope st) (S.fromList vs)
   , freeTypes    = M.empty
   }
 
+-- | Context management for lifting new scopes (restore information after lifting the body).
 descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
 descend body = do
   savedScope     <- gets currentScope
@@ -92,6 +105,7 @@ descend body = do
   modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
   return (liftedBody, freeTypesBody)
 
+-- | Context management for lifting top level lambda definitions.
 extractLifted :: LiftFn a -> LiftFn (a, [(I.VarId, I.Expr Poly.Type)])
 extractLifted body = do
   liftedBody <- body
@@ -99,6 +113,11 @@ extractLifted body = do
   modify $ \st -> st { lifted = [] }
   return (liftedBody, newTopDefs)
 
+{- | Entry-point to lambda lifting.
+
+Maps over top level definitions and lifts out lambda definitions to create a new
+Program with the relative order of user definitions preserved.
+-}
 liftProgramLambdas
   :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 liftProgramLambdas p = runLiftFn $ do
@@ -107,6 +126,7 @@ liftProgramLambdas p = runLiftFn $ do
   liftedProgramDefs <- mapM liftLambdasTop defs
   return $ p { I.programDefs = concat liftedProgramDefs }
 
+-- | Given a top-level definition, lift out any lambda definitions.
 liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn [(I.VarId, I.Expr Poly.Type)]
 liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
@@ -118,6 +138,14 @@ liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   return $ newTopDefs ++ [(v, liftedLambda)]
 liftLambdasTop topDef = return [topDef]
 
+{- | Lifting logic for IR expressions.
+
+As we traverse over IR expressions, we note down any bindings we encounter so
+that we can detect free variables. For lambda definitions, we use free
+variables to create a new top-level lifted equivalent and then adjust the
+callsite by partially-applying the new lifted lambda with those free variables
+from the surrounding the scope.
+-}
 liftLambdas :: I.Expr Poly.Type -> LiftFn (I.Expr Poly.Type)
 liftLambdas n@(I.Var v t) = do
   inScope <- inCurrentScope v
@@ -160,6 +188,7 @@ liftLambdas (I.Match s arms t) = do
 liftLambdas lit@I.Lit{}  = return lit
 liftLambdas dat@I.Data{} = return dat
 
+-- | Entry point for traversing the arms of match expressions.
 liftLambdasInArm
   :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
 liftLambdasInArm (I.AltLit l, arm) = do
