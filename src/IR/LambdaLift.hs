@@ -96,7 +96,9 @@ newScope vs = modify $ \st -> st
   }
 
 -- | Context management for lifting new scopes (restore information after lifting the body).
-descend :: LiftFn a -> LiftFn (a, M.Map VarId Poly.Type)
+descend
+  :: LiftFn (I.Expr Poly.Type)
+  -> LiftFn (I.Expr Poly.Type, M.Map VarId Poly.Type)
 descend body = do
   savedScope     <- gets currentScope
   savedFreeTypes <- gets freeTypes
@@ -106,7 +108,9 @@ descend body = do
   return (liftedBody, freeTypesBody)
 
 -- | Context management for lifting top level lambda definitions.
-extractLifted :: LiftFn a -> LiftFn (a, [(I.VarId, I.Expr Poly.Type)])
+extractLifted
+  :: LiftFn (I.Expr Poly.Type)
+  -> LiftFn (I.Expr Poly.Type, [(I.VarId, I.Expr Poly.Type)])
 extractLifted body = do
   liftedBody <- body
   newTopDefs <- gets lifted
