@@ -33,7 +33,7 @@ instance Semigroup TypeDefInfo where
   (<>) = combineTypeDefInfo
 
 instance Monoid TypeDefInfo where
-  mempty = TypeDefInfo empty empty empty empty empty
+  mempty = TypeDefInfo M.empty M.empty M.empty M.empty M.empty
 
 combineTypeDefInfo :: TypeDefInfo -> TypeDefInfo -> TypeDefInfo
 combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags intInits
@@ -83,9 +83,9 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
       -- | Arrange data constructors from smallest to largest tag value
       tagList                       = ident . fst <$> (small ++ big)
       -- | Compare size of each data constructor to a word
-      (greater       , lessThan   ) = A.partition ((>= 32) . dConSize) dataCons
+      (greater       , lessThan   ) = partition ((>= 32) . dConSize) dataCons
       -- | Will each data constructor still be smaller than a word after including tag bits?
-      (notSmallEnough, smallEnough) = A.partition isSmallEnough lessThan
+      (notSmallEnough, smallEnough) = partition isSmallEnough lessThan
        where
         isSmallEnough = (< 32) . (tagBits +) . dConSize
         tagBits       = q + r where (q, r) = length lessThan `quotRem` 2
