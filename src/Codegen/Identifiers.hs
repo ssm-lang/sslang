@@ -258,9 +258,17 @@ mem_alloc = "malloc"
 mem_free :: CIdent
 mem_free = "free"
 
+-- | Call to allocate memory for an ADT
+ssm_new :: CIdent
+ssm_new = "ssm_new"
+
 {----- Algebraic Data Types -----}
 
--- | Type of a generic ADT
+-- | Type of a generic ssm value (either pointer or integer)
+ssm_value_t :: C.Type 
+ssm_value_t = [cty|typename ssm_value_t|]
+
+-- | Type of a generic ADT on the heap
 ssm_object_t :: C.Type
 ssm_object_t = [cty|struct ssm_object_t|]
 
