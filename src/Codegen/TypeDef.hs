@@ -16,11 +16,10 @@ import           Common.Identifiers             ( DConId
 
 import           Codegen.Identifiers
 import           Data.Function                  ( on )
-import           Data.List                     as A
-                                                ( maximumBy
+import           Data.List                      ( maximumBy
                                                 , partition
                                                 )
-import           Data.Map                      as M
+import qualified Data.Map                      as M
 
 data TypeDefInfo = TypeDefInfo
   { dconType  :: M.Map DConId TConId
@@ -31,7 +30,7 @@ data TypeDefInfo = TypeDefInfo
   }
 
 instance Semigroup TypeDefInfo where
-  a <> b = combineTypeDefInfo a b
+  (<>) = combineTypeDefInfo
 
 instance Monoid TypeDefInfo where
   mempty = TypeDefInfo empty empty empty empty empty
@@ -66,8 +65,7 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
   enumName     = CIdent $ fromString $ ident tconid ++ "Tag"
   -- | Define contents of enum as a list of 'DConId s, starting with 0
   enumElts =
-    [cenum|$id:(head dConTags) = 0|]
-      : ((\n -> [cenum|$id:n|]) <$> tail dConTags)
+    [cenum|$id:(head dConTags) = 0|] : ((\n -> [cenum|$id:n|]) <$> tail dConTags)
 
   -- | Distinguish heap objects from int objects, and return a list of tags
   (heapObjs, intObjs, dConTags) = analyze dCons
@@ -138,7 +136,7 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
         ptrTagFunc :: VarId -> C.Exp
         ptrTagFunc v = [cexp|$id:v.$id:header.tag|]
       -- | Save initialization for each integer 'DCon (assume 0 fields for now)
-      initVals   = M.fromList intInitVals
+      initVals    = M.fromList intInitVals
       intInitVals = intInitVal . fst <$> intgrs
        where
         intInitVal :: DConId -> (DConId, C.Exp)
