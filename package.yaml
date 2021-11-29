@@ -90,3 +90,12 @@ tests:
     - hspec
     - containers
     - comonad
+  ir-to-ir-test:
+    main: Spec.hs
+    source-dirs:
+    - test/ir-to-ir
+    dependencies:
+    - sslang
+    - hspec
+    - containers
+    - comonad
