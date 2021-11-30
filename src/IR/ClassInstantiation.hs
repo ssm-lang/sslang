@@ -12,25 +12,25 @@ import qualified IR.Types.Poly                 as Poly
 import           IR.Types.TypeSystem                      ( TypeDef(..) )
 
 instProgram :: I.Program Classes.Type -> Compiler.Pass (I.Program Poly.Type)
-instProgram p@I.Program { I.programEntry = pEntry, I.programDefs = pdefs, I.typeDefs = tdefs, I.classDefs = cdefs, I.instDefs = idefs }
-  = return $ I.Program { I.programEntry = pEntry
-                       , I.programDefs  = instInsts idefs pdefs
-                       , I.typeDefs     = ctdefs ++ tdefs'
-                       , I.classDefs    = []
-                       , I.instDefs     = []
-                       }
- where
-  ctdefs = instClasses cdefs
-  tdefs' = fmap (second $ fmap class2Poly) tdefs
+instProgram I.Program { I.programEntry = pEntry, I.programDefs = pdefs, I.typeDefs = tdefs, I.classDefs = cdefs, I.instDefs = idefs }
+    = return $ I.Program { I.programEntry = pEntry
+                         , I.programDefs  = instInsts idefs pdefs
+                         , I.typeDefs     = ctdefs ++ tdefs'
+                         , I.classDefs    = []
+                         , I.instDefs     = []
+                         }
+  where
+    ctdefs = instClasses cdefs
+    tdefs' = fmap (second $ fmap class2Poly) tdefs
 
 instClasses :: [I.ClassDef Classes.Type] -> [(TConId, TypeDef Poly.Type)]
-instClasses = undefined
+instClasses _ = []
 
 instInsts
-  :: [I.InstDef Classes.Type]
-  -> [(VarId, I.Expr Classes.Type)]
-  -> [(VarId, I.Expr Poly.Type)]
-instInsts = undefined
+    :: [I.InstDef Classes.Type]
+    -> [(VarId, I.Expr Classes.Type)]
+    -> [(VarId, I.Expr Poly.Type)]
+instInsts _ = fmap (second $ fmap class2Poly)
 
 
 class2Poly :: Classes.Type -> Poly.Type

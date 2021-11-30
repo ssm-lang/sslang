@@ -7,17 +7,21 @@ module IR.IR
   , Expr(..)
   , Alt(..)
   , collectApp
+  , ClassId(..)
   , VarId(..)
+  , TVarId(..)
   , DConId(..)
   , wellFormed
   , collectLambda
   , ClassDef(..)
   , InstDef(..)
+  , InstConstraint(..)
   ) where
 import           Common.Identifiers                       ( Binder
                                                           , ClassId(..)
                                                           , DConId(..)
                                                           , TConId(..)
+                                                          , TVarId(..)
                                                           , VarId(..)
                                                           )
 
@@ -45,6 +49,7 @@ data Program t = Program
 
 data ClassDef t = ClassDef
   { className    :: ClassId
+  , classTVar    :: TVarId
   , classMethods :: [(VarId, t)]
   }
   deriving (Eq, Show)

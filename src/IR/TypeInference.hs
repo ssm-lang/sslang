@@ -16,26 +16,26 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Classes
 
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , dearrow
-                                                , deref
-                                                , int
-                                                , ref
-                                                , tuple
-                                                , unit
-                                                , void
-                                                )
-import           Common.Identifiers             ( Binder )
-import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad.Except           ( MonadError(..) )
-import           Control.Monad.State.Lazy       ( MonadState
-                                                , StateT(..)
-                                                , evalStateT
-                                                , gets
-                                                , get
-                                                , modify
-                                                )
-import           Data.Maybe                     ( fromJust )
+import           Common.Identifiers                       ( Binder )
+import           Control.Comonad                          ( Comonad(..) )
+import           Control.Monad.Except                     ( MonadError(..) )
+import           Control.Monad.State.Lazy                 ( MonadState
+                                                          , StateT(..)
+                                                          , evalStateT
+                                                          , get
+                                                          , gets
+                                                          , modify
+                                                          )
+import           Data.Maybe                               ( fromJust )
+import           IR.Types.TypeSystem                      ( Builtin(..)
+                                                          , dearrow
+                                                          , deref
+                                                          , int
+                                                          , ref
+                                                          , tuple
+                                                          , unit
+                                                          , void
+                                                          )
 
 -- | Typing Environment
 newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
@@ -72,6 +72,8 @@ inferProgram p = runInferFn $ do
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
                      , I.typeDefs     = [] -- TODO: something with I.typeDefs p
+                     , I.classDefs    = []
+                     , I.instDefs     = []
                      }
 
 {- | Top level inference.
@@ -80,13 +82,14 @@ This will infer the (VarId, Expr) pair sequentially and add the infered types
 into the type context so that these info can be used when infering the following
 expressions.
 -}
-inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
-inferTop [] = return []
-inferTop ((v, e):xs) = do
+inferTop
+  :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
+inferTop []            = return []
+inferTop ((v, e) : xs) = do
   e' <- inferExpr e
   insertVar v (extract e')
   xs' <- inferTop xs
-  return $ (v, e'):xs'
+  return $ (v, e') : xs'
 
 {- | Infer a single expression @e@.
 
@@ -111,31 +114,42 @@ inferExpr e@(I.Lambda v b t) = do
 inferExpr (I.Let vs b _) = do
   (vs', b') <- withNewScope $ localInferExpr vs b
   return $ I.Let vs' b' (extract b')
-  where
-    localInferExpr bs body = do
-      bs' <- mapM fn bs
-      body' <- inferExpr body
-      return (bs', body')
-      where
-        fn (binding, e) = do
-          e' <- inferExpr e
-          case binding of
-            Just vid -> insertVar vid (extract e')
-            Nothing -> return ()
-          return (binding, e')
-inferExpr e@I.Prim {} = inferPrim e
-inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
-inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
-inferExpr e@(I.App a b _) = do
+ where
+  localInferExpr bs body = do
+    bs'   <- mapM fn bs
+    body' <- inferExpr body
+    return (bs', body')
+   where
+    fn (binding, e) = do
+      e' <- inferExpr e
+      case binding of
+        Just vid -> insertVar vid (extract e')
+        Nothing  -> return ()
+      return (binding, e')
+inferExpr e@I.Prim{}                      = inferPrim e
+inferExpr (  I.Lit I.LitEvent          _) = return $ I.Lit I.LitEvent unit
+inferExpr (  I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
+inferExpr e@(I.App a b _                ) = do
   a' <- inferExpr a
   b' <- inferExpr b
   case dearrow $ extract a' of
-    Just (t1, t2) ->
-      if t1 == extract a'
-        then throwError $ Compiler.TypeError $ "App expression has inconsistent type: " ++ show e
-        else return $ I.App a' b' t2
-    Nothing -> throwError $ Compiler.TypeError $ "Unable to type App expression: " ++ show e
-inferExpr e = throwError $ Compiler.TypeError $ "Unable to type unknown expression: " ++ show e
+    Just (t1, t2) -> if t1 == extract a'
+      then
+        throwError
+        $  Compiler.TypeError
+        $  "App expression has inconsistent type: "
+        ++ show e
+      else return $ I.App a' b' t2
+    Nothing ->
+      throwError
+        $  Compiler.TypeError
+        $  "Unable to type App expression: "
+        ++ show e
+inferExpr e =
+  throwError
+    $  Compiler.TypeError
+    $  "Unable to type unknown expression: "
+    ++ show e
 
 -- | Infer the type of a Primitive expression.
 inferPrim :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
@@ -156,9 +170,13 @@ inferPrim e@(I.Prim I.Assign [lhs, rhs] _) = do
     then do
       case lhs' of
         I.Var v _ -> insertVar v rrty
-        _ -> return ()
+        _         -> return ()
       return $ I.Prim I.Assign [rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "Assign expression has inconsistent type: " ++ show e
+    else
+      throwError
+      $  Compiler.TypeError
+      $  "Assign expression has inconsistent type: "
+      ++ show e
 inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
   del' <- inferExpr del
   rhs' <- inferExpr rhs
@@ -168,52 +186,61 @@ inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
     then do
       case lhs' of
         I.Var v _ -> insertVar v rrty
-        _ -> return ()
+        _         -> return ()
       return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
-inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+    else
+      throwError
+      $  Compiler.TypeError
+      $  "After expression has inconsistent type: "
+      ++ show e
+inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2] _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
   return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  _) = do
+inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
   return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
-inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
+inferPrim (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] void
 inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
-inferPrim (I.Prim I.Loop es _) = do
-    es' <- mapM inferExpr es
-    return $ I.Prim I.Loop es' unit
+inferPrim (I.Prim I.Loop   es _) = do
+  es' <- mapM inferExpr es
+  return $ I.Prim I.Loop es' unit
 inferPrim (I.Prim I.Wait es _) = do
-    es' <- mapM inferExpr es
-    return $ I.Prim I.Wait es' unit
+  es' <- mapM inferExpr es
+  return $ I.Prim I.Wait es' unit
 inferPrim (I.Prim I.Par es _) = do
-    es' <- mapM inferExpr es
-    let ts = map extract es'
-    return $ I.Prim I.Par es' $ tuple ts
-inferPrim e = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
+  es' <- mapM inferExpr es
+  let ts = map extract es'
+  return $ I.Prim I.Par es' $ tuple ts
+inferPrim e =
+  throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
 
 -- | Helper function to support local modificaton of type context.
 withNewScope :: InferFn a -> InferFn a
 withNewScope inf = do
   ctx <- get
-  x <- inf
+  x   <- inf
   modify $ const ctx
   return x
 
 -- | Helper function to do type inference with the knowledge of the correct type for a binding.
 withVty :: I.Expr Ann.Type -> Binder -> Ann.Type -> InferFn ()
-withVty _ Nothing _ = return ()
-withVty e (Just v) t =
-  case dearrow t of
-    Just (vty, _) -> do
-      vty' <- anns2Class vty
-      insertVar v vty'
-    Nothing -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
+withVty _ Nothing  _ = return ()
+withVty e (Just v) t = case dearrow t of
+  Just (vty, _) -> do
+    vty' <- anns2Class vty
+    insertVar v vty'
+  Nothing ->
+    throwError
+      $  Compiler.TypeError
+      $  "Lambda wasn't annotated (or it wasn't an arrow type): "
+      ++ show e
 
 -- | Transfrom an Ann.Type to Classes.Type.
 anns2Class :: Ann.Type -> InferFn Classes.Type
-anns2Class (Ann.Type []) = throwError $ Compiler.TypeError "Cannot change empty Ann type to Classes type"
+anns2Class (Ann.Type []) =
+  throwError $ Compiler.TypeError "Cannot change empty Ann type to Classes type"
 anns2Class (Ann.Type ts) = ann2Class $ head ts
 
 {- Transfrom an Ann.TypeAnnote to Classes.Type.
@@ -224,10 +251,10 @@ to do explicit pattern matching on the `Ann.TBuiltin bty` case to transform
 -}
 ann2Class :: Ann.TypeAnnote -> InferFn Classes.Type
 ann2Class (Ann.TBuiltin bty) = case bty of
-  Unit -> return $ Classes.TBuiltin Unit
-  Void -> return $ Classes.TBuiltin Void
+  Unit       -> return $ Classes.TBuiltin Unit
+  Void       -> return $ Classes.TBuiltin Void
   Integral s -> return $ Classes.TBuiltin $ Integral s
-  Arrow l r -> do
+  Arrow l r  -> do
     l' <- anns2Class l
     r' <- anns2Class r
     return $ Classes.TBuiltin $ Arrow l' r'
@@ -240,4 +267,4 @@ ann2Class (Ann.TBuiltin bty) = case bty of
 ann2Class (Ann.TCon tid tys) = do
   t <- mapM anns2Class tys
   return $ Classes.TCon tid t
-ann2Class (Ann.TVar tidx   ) = return $ Classes.TVar tidx
+ann2Class (Ann.TVar tidx) = return $ Classes.TVar tidx

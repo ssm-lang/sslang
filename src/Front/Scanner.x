@@ -57,6 +57,7 @@ tokens :-
     @newline            ;
 
     -- First non-whitespace character of line.
+
     ()                  { firstLineToken }
   }
 
@@ -95,10 +96,12 @@ tokens :-
     loop                { layout    TLoop   TSemicolon }
     \=                  { layout    TEq     TSemicolon }
     \<\-                { layout    TLarrow TSemicolon }
-    \=\>                { layout    TDRarrow TSemicolon}
+    \=\>                { layout    TDRarrow TSemicolon }
     par                 { layout    TPar    TDBar }
     wait                { layout    TWait   TDBar }
     fun                 { layoutNL  TFun    TSemicolon }
+    class               { layoutNL  TClass  TSemicolon }
+    instance            { layoutNL  TInstance TSemicolon }
 
     -- | Keywords that just do as they be.
     after               { keyword TAfter }

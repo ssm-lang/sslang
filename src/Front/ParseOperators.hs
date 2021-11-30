@@ -4,11 +4,12 @@ module Front.ParseOperators
   ) where
 
 import qualified Data.Map.Strict               as Map
-import           Front.Ast                      ( Definition(..)
-                                                , Expr(..)
-                                                , OpRegion(..)
-                                                , Program(..)
-                                                )
+import           Front.Ast                                ( Definition(..)
+                                                          , Expr(..)
+                                                          , OpRegion(..)
+                                                          , Program(..)
+                                                          , TopDef(..)
+                                                          )
 
 data Fixity = Infixl Int String
             | Infixr Int String
@@ -22,8 +23,12 @@ defaultOps =
   [Infixl 6 "+", Infixl 6 "-", Infixl 7 "*", Infixl 8 "/", Infixr 8 "^"]
 
 parseOperators :: Program -> Program
-parseOperators (Program decls) = Program $ map (parseOps defaultOps) decls
+parseOperators (Program topdefs) = Program $ map parseOperators' topdefs
  where
+  parseOperators' (TopDef decl) = TopDef $ parseOps defaultOps decl
+  parseOperators' (TopInst (tcid, tconid, decls)) =
+    TopInst (tcid, tconid, map (parseOps defaultOps) decls)
+  parseOperators' top = top
   parseOps fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
   parseOps fs (DefPat b e    ) = DefPat b $ parseExprOps fs e
 
