@@ -61,6 +61,7 @@ fromId = fromString . ident
 -- | ToIdentifier for type constructors, e.g., @Option@
 newtype TConId = TConId Identifier
   deriving Eq
+  deriving Ord
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -97,6 +98,7 @@ instance Pretty TVarIdx where
 -- | ToIdentifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
