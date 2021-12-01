@@ -125,16 +125,16 @@ collectApp t               = (t, [])
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
--- TODO: probably not correct
 instance Pretty TopDef where
-  pretty (TopDef   d               ) = pretty d
-  pretty (TopClass (tcid, tvid, ms)) = pretty tcid <+> pretty tvid <+> braces
-    (hsep $ punctuate semi $ map
-      (\(vid, typann) -> pretty vid <+> pretty typann)
-      ms
-    )
+  pretty (TopDef d) = pretty d
+  pretty (TopClass (tcid, tvid, ms)) =
+    pretty "class" <+> pretty tcid <+> pretty tvid <+> braces
+      (hsep $ punctuate semi $ map
+        (\(vid, typann) -> pretty vid <+> pretty typann)
+        ms
+      )
   pretty (TopInst (tcid, tconid, ds)) =
-    pretty tcid <+> pretty tconid <+> braces
+    pretty "instance" <+> pretty tcid <+> pretty tconid <+> braces
       (hsep $ punctuate semi $ map pretty ds)
 
 instance Pretty Definition where
