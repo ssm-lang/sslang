@@ -134,7 +134,7 @@ data TypeDef t = TypeDef
   deriving (Show, Eq)
 
 data InstConstraint t = IsIn t ClassId
-  deriving Show
+  deriving (Eq, Show)
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t

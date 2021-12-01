@@ -45,7 +45,7 @@ data Program t = Program
   , classDefs    :: [ClassDef t]
   , instDefs     :: [InstDef t]
   }
-  deriving Show
+  deriving (Eq, Show)
 
 data ClassDef t = ClassDef
   { className    :: ClassId
@@ -58,7 +58,7 @@ data InstDef t = InstDef
   { instConstraint :: InstConstraint t
   , instMethods    :: [(VarId, Expr t)]
   }
-  deriving Show
+  deriving (Eq, Show)
 {- | Literal values supported by the language.
 
 Note that these don't carry any connotation of type: '1' just means '1',
