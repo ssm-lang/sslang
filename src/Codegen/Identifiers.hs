@@ -265,8 +265,16 @@ ssm_new = "ssm_new"
 {----- Algebraic Data Types -----}
 
 -- | Type of a generic ssm value (either pointer or integer)
-ssm_value_t :: C.Type 
+ssm_value_t :: C.Type
 ssm_value_t = [cty|typename ssm_value_t|]
+
+-- | Name of an ssm values's pointer field
+heapObj :: CIdent
+heapObj = "heapObj"
+
+-- | Name of an ssm values's integer field
+intVal :: CIdent
+intVal = "intVal"
 
 -- | Type of a generic ADT on the heap
 ssm_object_t :: C.Type
@@ -281,5 +289,5 @@ header :: CIdent
 header = "header"
 
 -- | Name of an ADT's payload
-payload :: CIdent 
+payload :: CIdent
 payload = "payload"

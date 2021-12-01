@@ -441,7 +441,7 @@ genExpr (I.Var n _) = do
   traceM $ "Obtaining var " ++ show n
   Just e <- getVar n
   return (e, [])
-genExpr (I.Data _ _) = error "TODO: nullary data constructors"
+genExpr (I.Data _ _             ) = error "TODO: nullary data constructors"
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   loc               <- addLocal (n, genType $ extract d)
@@ -453,7 +453,7 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   (_      , defStms ) <- genExpr d -- Throw away value
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
-genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
+genExpr I.Let{}   = fail "Cannot handle mutually recursive bindings"
 genExpr a@I.App{} = do
   let (fn, args) = I.collectApp a
   (argVals, argStms) <- unzip <$> mapM genExpr args
@@ -472,7 +472,7 @@ genExpr a@I.App{} = do
           call = [citems|$id:activate($exp:enterFn($args:enterArgs));|]
       return (tmp, concat argStms ++ call ++ yield)
     (I.Data tag _) -> do
-      tmp               <- nextTmp [cty|$ty:ssm_object_t *|]
+      tmp <- nextTmp [cty|$ty:ssm_value_t|]
       -- How to tell if pointer or integer?
       -- How to tell max number of args out of all possible data constructors?
       -- Problem: cannot recover all the info needed from data constructor alone
@@ -480,16 +480,19 @@ genExpr a@I.App{} = do
       -- or need to generate macros in genTypeDef 
       -- assume pointer representation and size 4 for now...
       let maxArgs = 4 :: Int
-      let alloc = [[citem|$exp:tmp = ssm_new($int:maxArgs,$id:tag);|]]
-      let initField =
-            (\y i -> [citem|$exp:tmp->$id:payload[$int:(i::Int)] = $exp:y;|])
+      let alloc =
+            [[citem|$exp:tmp.$id:heapObj = ssm_new($int:maxArgs,$id:tag);|]]
+      let
+        initField =
+          (\y i ->
+            [citem|$exp:tmp.$id:heapObj->$id:payload[$int:(i::Int)] = $exp:y;|]
+          )
       let initFields = zipWith initField argVals [0, 1 ..]
-      return
-        (tmp, concat argStms ++ alloc ++ initFields)
-    _            -> fail $ "Cannot apply this expression: " ++ show fn
+      return (tmp, concat argStms ++ alloc ++ initFields)
+    _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
   (sExp, sStm) <- genExpr s
-  tagOf <- genTag $ extract s
+  tagOf        <- genTag $ extract s
   tmp          <- nextTmp $ genType t
   let mkCase (alt, arm) = do
         labelCase         <- genAlt sExp alt
@@ -507,7 +510,8 @@ genExpr (I.Prim p es t) = genPrim p es t
 genTag :: Type -> GenFn (C.Exp -> C.Exp)
 genTag t
   | t == I.int 32 = return id
-  | otherwise = error "TODO: use type information to lookup tag accessor for eExp"
+  | otherwise = error
+    "TODO: use type information to lookup tag accessor for eExp"
 
 genAlt :: C.Exp -> I.Alt -> GenFn ([C.BlockItem] -> C.Stm)
 genAlt _scrut (I.AltData _dcon _fields) =

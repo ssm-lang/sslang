@@ -27,22 +27,24 @@ data TypeDefInfo = TypeDefInfo
   , isPointer :: M.Map DConId Bool
   , tag       :: M.Map DConId (VarId -> C.Exp)
   , intInit   :: M.Map DConId C.Exp
+  , ptrFields :: M.Map DConId (VarId -> Int -> C.Exp)
   }
 
 instance Semigroup TypeDefInfo where
   (<>) = combineTypeDefInfo
 
 instance Monoid TypeDefInfo where
-  mempty = TypeDefInfo M.empty M.empty M.empty M.empty M.empty
+  mempty = TypeDefInfo M.empty M.empty M.empty M.empty M.empty M.empty
 
 combineTypeDefInfo :: TypeDefInfo -> TypeDefInfo -> TypeDefInfo
-combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags intInits
+combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags intInits fieldz
  where
   typ      = dconType a `M.union` dconType b
   sz       = typeSize a `M.union` typeSize b
   isPtr    = isPointer a `M.union` isPointer b
   tags     = tag a `M.union` tag b
   intInits = intInit a `M.union` intInit b
+  fieldz   = ptrFields a `M.union` ptrFields b
 
 -- | Generate definitions for SSM type definitions.
 genTypeDef :: TConId -> L.TypeDef L.Type -> ([C.Definition], TypeDefInfo)
@@ -65,7 +67,8 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
   enumName     = CIdent $ fromString $ ident tconid ++ "Tag"
   -- | Define contents of enum as a list of 'DConId s, starting with 0
   enumElts =
-    [cenum|$id:(head dConTags) = 0|] : ((\n -> [cenum|$id:n|]) <$> tail dConTags)
+    [cenum|$id:(head dConTags) = 0|]
+      : ((\n -> [cenum|$id:n|]) <$> tail dConTags)
 
   -- | Distinguish heap objects from int objects, and return a list of tags
   (heapObjs, intObjs, dConTags) = analyze dCons
@@ -116,6 +119,7 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
       , isPointer = isPtr
       , tag       = readTagFuncs
       , intInit   = initVals
+      , ptrFields = pFields
       }
      where
       -- | Save ('DCon,'TCon) as key-value pairs
@@ -141,3 +145,9 @@ genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
        where
         intInitVal :: DConId -> (DConId, C.Exp)
         intInitVal tg = (tg, [cexp|(($id:tg << 1)&0x1)|])
+      -- | Save C expressions for accessing heap object fields
+      pFields = M.fromList $ zip (fst <$> intgrs) (repeat accessField)
+       where
+        accessField :: (VarId -> Int -> C.Exp)
+        accessField nm index =
+          [cexp|($id:nm).$id:heapObj->$id:payload[$uint:index]|]
