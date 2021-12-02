@@ -47,8 +47,8 @@ combineTypeDefInfo a b = TypeDefInfo typ sz isPtr tags intInits fieldz
   fieldz   = ptrFields a `M.union` ptrFields b
 
 -- | Generate definitions for SSM type definitions.
-genTypeDef :: TConId -> L.TypeDef L.Type -> ([C.Definition], TypeDefInfo)
-genTypeDef tconid (L.TypeDef dCons _) = ([tagEnum, structDef], info)
+genTypeDef :: (TConId, L.TypeDef L.Type) -> ([C.Definition], TypeDefInfo)
+genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum, structDef], info)
  where
   -- | Create C Definition for enum of ADT's tag values
   tagEnum = [cedecl| enum $id:enumName {

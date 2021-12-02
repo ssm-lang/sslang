@@ -31,6 +31,10 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 
+import           Codegen.TypeDef                ( TypeDefInfo
+                                                , genTypeDef
+                                                , intInit
+                                                )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
@@ -81,6 +85,7 @@ data GenFnState = GenFnState
   , fnRetTy    :: C.Type             -- ^ Function return type
   , fnVars     :: M.Map VarId C.Exp  -- ^ Variables
   , fnLocs     :: [(CIdent, C.Type)] -- ^ Locals
+  , adtInfo    :: TypeDefInfo        -- ^ ADT information
   }
 
 {- | Translation monad for procedures, with derived typeclass instances.
@@ -102,19 +107,22 @@ runGenFn
   -> [(Binder, Type)]       -- ^ Names and types of parameters to procedure
   -> Type                   -- ^ Name and type of return parameter of procedure
   -> Expr                   -- ^ Body of procedure
+  -> TypeDefInfo            -- ^ ADT information
   -> GenFn a                -- ^ Translation monad to run
   -> Compiler.Pass a        -- ^ Pass on errors to caller
-runGenFn name params retTy body (GenFn tra) = evalStateT tra $ GenFnState
-  { fnName     = name
-  , fnBody     = body
-  , fnMaxWaits = 0
-  , fnCases    = 0
-  , fnTmps     = 0
-  , fnParams   = zipWith genArg [0 ..] params
-  , fnRetTy    = genType retTy
-  , fnLocs     = []
-  , fnVars     = M.fromList $ map genVar $ mapMaybe fst params
-  }
+runGenFn name params retTy body adtinfo (GenFn tra) =
+  evalStateT tra $ GenFnState
+    { fnName     = name
+    , fnBody     = body
+    , fnMaxWaits = 0
+    , fnCases    = 0
+    , fnTmps     = 0
+    , fnParams   = zipWith genArg [0 ..] params
+    , fnRetTy    = genType retTy
+    , fnLocs     = []
+    , adtInfo    = adtinfo
+    , fnVars     = M.fromList $ map genVar $ mapMaybe fst params
+    }
  where
   genArg i = bimap (maybe (arg_ i) fromId) genType
   genVar v = (v, genLocId v)
@@ -212,11 +220,17 @@ undef = [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
+--([C.Definition], TypeDefInfo)
+
 -- | Generate a C compilation from an SSM program.
 genProgram :: Program -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs } = do -- p@I.Program
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
-  return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
+genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
+  let genAdt = (\acc adt -> acc <> genTypeDef adt)
+  in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
+      in  do -- p@I.Program
+            (cdecls, cdefs) <-
+              bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
+            return $ includes ++ adts ++ cdecls ++ cdefs  -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -248,9 +262,13 @@ Each top-level function in a program is turned into three components:
 
 Items (2) and (3) include both declarations and definitions.
 -}
-genTop :: (VarId, Expr) -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body $ do
+
+genTop
+  :: TypeDefInfo
+  -> (VarId, Expr)
+  -> Compiler.Pass ([C.Definition], [C.Definition])
+genTop info (name, l@(I.Lambda _ _ ty)) =
+  runGenFn (fromId name) (zip argIds argTys) retTy body info $ do
     (stepDecl , stepDefn ) <- genStep
     (enterDecl, enterDefn) <- genEnter
     structDefn             <- genStruct
@@ -258,8 +276,8 @@ genTop (name, l@(I.Lambda _ _ ty)) =
  where
   (argIds, body ) = I.collectLambda l
   (argTys, retTy) = I.collectArrow ty
-genTop (_, I.Lit _ _) = todo
-genTop (_, _        ) = nope
+genTop _ (_, I.Lit _ _) = todo
+genTop _ (_, _        ) = nope
 
 {- | Generate struct definition for an SSM 'Procedure'.
 
@@ -441,8 +459,12 @@ genExpr (I.Var n _) = do
   traceM $ "Obtaining var " ++ show n
   Just e <- getVar n
   return (e, [])
-genExpr (I.Data _ _             ) = error "TODO: nullary data constructors"
-genExpr (I.Lit  l t             ) = genLiteral l t
+genExpr (I.Data tag _) = do
+  info <- gets adtInfo
+  case M.lookup tag (intInit info) of
+    Just a -> return (a, [])
+    _      -> fail "Couldn't find nullary data constructor"
+genExpr (I.Lit l t              ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   loc               <- addLocal (n, genType $ extract d)
   (defVal, defStms) <- genExpr d
@@ -472,6 +494,7 @@ genExpr a@I.App{} = do
           call = [citems|$id:activate($exp:enterFn($args:enterArgs));|]
       return (tmp, concat argStms ++ call ++ yield)
     (I.Data tag _) -> do
+      -- test <- gets adtInfo
       tmp <- nextTmp [cty|$ty:ssm_value_t|]
       -- How to tell if pointer or integer?
       -- How to tell max number of args out of all possible data constructors?
