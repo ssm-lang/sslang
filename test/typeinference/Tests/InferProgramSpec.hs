@@ -88,10 +88,10 @@ spec = do
         typedMinimal = lowerAndInfer minimal
     typedFully `shouldBe` typedMinimal
 
-  {- A lit of trivky functions to verify the correctness of type inference.
+  {- A list of tricky functions to verify the correctness of type inference.
 
-  For now, I hardcode all the expected result. We should fix that later.
-  Uncomment the print statement to verify the inference result.
+  For now, I hardcode all the expected results. We should fix that later.
+  Uncomment the print statement to output the inference result for each function.
   -}
   it "infers id function" $ do
     let minimal = parseProgram $ unlines
