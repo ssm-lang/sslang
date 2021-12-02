@@ -18,3 +18,4 @@ fast(led) =
 main(led) =
   par slow led
       fast led
+  ()

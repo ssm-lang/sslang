@@ -91,7 +91,7 @@ newtype TVarIdx = TVarIdx Int
   deriving (Eq, Ord)
 
 instance Show TVarIdx where
-  show (TVarIdx i) = show i
+  show (TVarIdx i) = "t" ++ show i
 
 instance Pretty TVarIdx where
   pretty = pretty . show
