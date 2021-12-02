@@ -10,6 +10,7 @@ For now, just the polymorphic types.
 module IR.Types.Classes
   ( Builtin(..)
   , Type(..)
+  , Scheme(..)
   ) where
 
 import           Common.Identifiers             ( TConId
@@ -27,6 +28,15 @@ data Type
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
   deriving (Eq, Show, Ord)
+
+-- | Type scheme.
+data Scheme = Forall [TVarIdx] Type
+  deriving (Eq, Ord)
+
+instance Show Scheme where
+  show (Forall [] t) = "Forall . " ++ show t
+  show (Forall args t)
+    = "Forall " ++ unwords (map show args) ++ " . " ++ show t
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
