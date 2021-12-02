@@ -32,8 +32,11 @@ import qualified Language.C.Syntax             as C
 
 
 import           Codegen.TypeDef                ( TypeDefInfo
+                                                , dconType
                                                 , genTypeDef
                                                 , intInit
+                                                , isPointer
+                                                , typeSize
                                                 )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -494,24 +497,23 @@ genExpr a@I.App{} = do
           call = [citems|$id:activate($exp:enterFn($args:enterArgs));|]
       return (tmp, concat argStms ++ call ++ yield)
     (I.Data tag _) -> do
-      -- test <- gets adtInfo
-      tmp <- nextTmp [cty|$ty:ssm_value_t|]
-      -- How to tell if pointer or integer?
-      -- How to tell max number of args out of all possible data constructors?
-      -- Problem: cannot recover all the info needed from data constructor alone
-      -- Solution: Either need size and pointer/integer status passed in after call to genTypeDef,
-      -- or need to generate macros in genTypeDef 
-      -- assume pointer representation and size 4 for now...
-      let maxArgs = 4 :: Int
-      let alloc =
-            [[citem|$exp:tmp.$id:heapObj = ssm_new($int:maxArgs,$id:tag);|]]
-      let
-        initField =
-          (\y i ->
-            [citem|$exp:tmp.$id:heapObj->$id:payload[$int:(i::Int)] = $exp:y;|]
-          )
-      let initFields = zipWith initField argVals [0, 1 ..]
-      return (tmp, concat argStms ++ alloc ++ initFields)
+      info <- gets adtInfo
+      case M.lookup tag (isPointer info) of
+        Nothing    -> fail "Couldn't find tag"
+        Just False -> fail "Cannot handle integer types with fields yet"
+        Just True  -> do
+          tmp <- nextTmp [cty|$ty:ssm_value_t|]
+          let (Just typ) = M.lookup tag (dconType info)
+          let (Just sz)  = M.lookup typ (typeSize info)
+          let alloc =
+                [[citem|$exp:tmp.$id:heapObj = ssm_new($int:sz,$id:tag);|]]
+          let
+            initField =
+              (\y i ->
+                [citem|$exp:tmp.$id:heapObj->$id:payload[$int:(i::Int)] = $exp:y;|]
+              )
+          let initFields = zipWith initField argVals [0, 1 ..]
+          return (tmp, concat argStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
   (sExp, sStm) <- genExpr s
