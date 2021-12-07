@@ -192,10 +192,9 @@ collectLambda e = ([], e)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
 makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
-makeLambdaChain [] body = body
-makeLambdaChain ((v, ty) : vs) body =
-  let liftedBody = makeLambdaChain vs body
-  in  Lambda v liftedBody $ arrow ty (extract liftedBody)
+makeLambdaChain []   body = body
+makeLambdaChain args body = foldr chain body args
+  where chain (v, t) b = Lambda v b $ t `arrow` extract b
 
 instance Functor Program where
   fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
