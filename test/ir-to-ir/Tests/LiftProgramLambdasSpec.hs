@@ -82,3 +82,27 @@ spec = do
         nestedToLifted = lowerAndLift nonLiftedProgram
         liftedToLifted = lowerAndLift liftedProgram
     nestedToLifted `shouldBe` liftedToLifted
+
+  it "lifts nested lambdas with free variables" $ do
+    let nonLiftedProgram = parseProgram $ unlines
+          [ "foo (x: Int) (y: Int) -> Int ="
+          , "  let z = 5"
+          , "      g (a: Int) -> Int ="
+          , "        let h (b: Int) -> Int = a + b + x"
+          , "        h z"
+          , "  g y"
+          ]
+        liftedProgram = parseProgram $ unlines
+          [ "anon0 (a: Int) (x: Int) (b: Int) -> Int ="
+          , "  a + b + x"
+          , "anon1 (x: Int) (z: Int) (a: Int) -> Int ="
+          , "  let h = anon0 a x"
+          , "  h z"
+          , "foo (x: Int) (y: Int) -> Int ="
+          , "  let z = 5"
+          , "      g = anon1 x z"
+          , "  g y"
+          ]
+        nestedToLifted = lowerAndLift nonLiftedProgram
+        liftedToLifted = lowerAndLift liftedProgram
+    nestedToLifted `shouldBe` liftedToLifted
