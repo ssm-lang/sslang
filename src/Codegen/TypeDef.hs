@@ -117,8 +117,8 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
         -> C.Exp
         -> C.Exp
       readTagFunc ps ints val
-        | null ps   = intTagFunc val
-        | null ints = ptrTagFunc val
+        | null ps   = intTagFunc val -- always integer
+        | null ints = ptrTagFunc val -- always heap object
         | otherwise = tagFunc (isInt val) (intTagFunc val) (ptrTagFunc val)
        where
         intTagFunc :: C.Exp -> C.Exp
