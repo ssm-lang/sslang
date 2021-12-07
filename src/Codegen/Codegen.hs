@@ -223,8 +223,6 @@ undef = [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
---([C.Definition], TypeDefInfo)
-
 -- | Generate a C compilation from an SSM program.
 genProgram :: Program -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
@@ -464,9 +462,7 @@ genExpr (I.Var n _) = do
   return (e, [])
 genExpr (I.Data tag _) = do
   info <- gets adtInfo
-  case M.lookup tag (intInit info) of
-    Just a -> return (a, [])
-    _      -> fail "Couldn't find nullary data constructor"
+  let Just initExpr = M.lookup tag (intInit info) in return (initExpr, [])
 genExpr (I.Lit l t              ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   loc               <- addLocal (n, genType $ extract d)
