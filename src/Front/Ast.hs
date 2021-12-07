@@ -1,7 +1,7 @@
 module Front.Ast where
 
 import           Common.Pretty
-import           Data.List                      ( intersperse )
+import           Data.List                                ( intersperse )
 
 -- | A type variable name (e.g., a, b)
 type TVarId = String
@@ -22,7 +22,27 @@ type VarId = String
 type OperatorId = String
 
 -- | A complete program: a list of declarations
-newtype Program = Program [Definition]
+newtype Program = Program [Top]
+  deriving (Eq, Show)
+
+-- | A top-level definition can be: definition, class or instance
+data Top = TopDef Definition
+         | TopClass ClassDef
+         | TopInst InstDef
+         deriving (Eq, Show)
+
+data ClassDef = ClassDef
+  { className    :: TClassId
+  , classTVar    :: TVarId
+  , classMethods :: [(VarId, TypAnn)]
+  }
+  deriving (Eq, Show)
+
+data InstDef = InstDef
+  { instClassName :: TClassId
+  , instTCon      :: TConId
+  , instMethods   :: [Definition]
+  }
   deriving (Eq, Show)
 
 -- | A value definition
@@ -115,6 +135,18 @@ collectApp t               = (t, [])
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
+instance Pretty Top where
+  pretty (TopDef d) = pretty d
+  pretty (TopClass (ClassDef tcid tvid ms)) =
+    pretty "class" <+> pretty tcid <+> pretty tvid <+> braces
+      (hsep $ punctuate semi $ map
+        (\(vid, typann) -> pretty vid <+> pretty typann)
+        ms
+      )
+  pretty (TopInst (InstDef tcid tconid ds)) =
+    pretty "instance" <+> pretty tcid <+> pretty tconid <+> braces
+      (hsep $ punctuate semi $ map pretty ds)
+
 instance Pretty Definition where
   pretty (DefFn fid formals r body) =
     pretty fid
@@ -126,7 +158,8 @@ instance Pretty Definition where
   pretty (DefPat b body) = pretty b <+> equals <+> braces (pretty body)
 
 instance Pretty Pat where
-  pretty PatWildcard    = pretty '_'
+
+  pretty PatWildcard    = pretty "_"
   pretty (PatId  s    ) = pretty s
   pretty (PatLit l    ) = pretty l
   pretty (PatAs b p   ) = parens $ pretty b <> pretty '@' <> pretty p

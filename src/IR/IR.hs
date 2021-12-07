@@ -7,20 +7,29 @@ module IR.IR
   , Expr(..)
   , Alt(..)
   , collectApp
+  , ClassId(..)
   , VarId(..)
+  , TVarId(..)
   , DConId(..)
   , wellFormed
   , collectLambda
+  , ClassDef(..)
+  , InstDef(..)
+  , InstConstraint(..)
   ) where
-import           Common.Identifiers             ( Binder
-                                                , DConId(..)
-                                                , TConId(..)
-                                                , VarId(..)
-                                                )
+import           Common.Identifiers                       ( Binder
+                                                          , ClassId(..)
+                                                          , DConId(..)
+                                                          , TConId(..)
+                                                          , TVarId(..)
+                                                          , VarId(..)
+                                                          )
 
-import           Control.Comonad                ( Comonad(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
-import           IR.Types.TypeSystem            ( TypeDef(..) )
+import           Control.Comonad                          ( Comonad(..) )
+import           Data.Bifunctor                           ( Bifunctor(..) )
+import           IR.Types.TypeSystem                      ( InstConstraint(..)
+                                                          , TypeDef(..)
+                                                          )
 
 import           Common.Pretty
 
@@ -30,12 +39,26 @@ import           Common.Pretty
 
 -}
 data Program t = Program
-  { programEntry :: VarId
-  , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef t)]
+  { programEntry   :: VarId
+  , programDefs    :: [(VarId, Expr t)]
+  , programTypes   :: [(TConId, TypeDef t)]
+  , programClasses :: [ClassDef t]
+  , programInsts   :: [InstDef t]
   }
   deriving (Eq, Show)
 
+data ClassDef t = ClassDef
+  { className    :: ClassId
+  , classTVar    :: TVarId
+  , classMethods :: [(VarId, t)]
+  }
+  deriving (Eq, Show)
+
+data InstDef t = InstDef
+  { instConstraint :: InstConstraint t
+  , instMethods    :: [(VarId, Expr t)]
+  }
+  deriving (Eq, Show)
 {- | Literal values supported by the language.
 
 Note that these don't carry any connotation of type: '1' just means '1',
@@ -186,12 +209,24 @@ collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
 
+instance Functor ClassDef where
+  fmap f cdef@ClassDef { className = _, classMethods = cms } =
+    cdef { classMethods = fmap (second f) cms }
+
+instance Functor InstDef where
+  fmap f idef@InstDef { instConstraint = ic, instMethods = ims } = idef
+    { instConstraint = fmap f ic
+    , instMethods    = fmap (second $ fmap f) ims
+    }
+
 instance Functor Program where
-  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
-    Program { programEntry = e
-            , programDefs  = fmap (second $ fmap f) defs
-            , typeDefs     = fmap (second $ fmap f) tds
-            }
+  fmap f Program { programEntry = e, programDefs = defs, programTypes = tds, programClasses = cds, programInsts = ids }
+    = Program { programEntry   = e
+              , programDefs    = fmap (second $ fmap f) defs
+              , programTypes   = fmap (second $ fmap f) tds
+              , programClasses = fmap (fmap f) cds
+              , programInsts   = fmap (fmap f) ids
+              }
 
 instance Functor Expr where
   fmap f (Var  v t      ) = Var v (f t)

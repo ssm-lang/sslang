@@ -17,11 +17,11 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as I
 import qualified IR.Types.TypeSystem           as I
 
-import           Common.Identifiers             ( fromString )
+import           Common.Identifiers                       ( fromString )
 
-import           Control.Comonad                ( Comonad(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( fromJust )
+import           Control.Comonad                          ( Comonad(..) )
+import           Data.Bifunctor                           ( Bifunctor(..) )
+import           Data.Maybe                               ( fromJust )
 
 {- | IR type annotation continuation.
 
@@ -48,10 +48,29 @@ lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
-lowerProgram (A.Program ds) = return $ I.Program
-  { I.programEntry = fromString "main"
-  , I.programDefs  = map (first fromJust . lowerDef) ds
-  , I.typeDefs     = []
+lowerProgram (A.Program tops) = return $ I.Program
+  { I.programEntry   = fromString "main"
+  , I.programDefs = [ first fromJust . lowerDef $ def | (A.TopDef def) <- tops ]
+  , I.programTypes   = []
+  , I.programClasses = [ lowerClass cls | (A.TopClass cls) <- tops ]
+  , I.programInsts   = [ lowerInst inst | (A.TopInst inst) <- tops ]
+  }
+
+-- | Lower TopClass
+lowerClass :: A.ClassDef -> I.ClassDef I.Type
+lowerClass (A.ClassDef tcid tvid ms) = I.ClassDef
+  { I.className    = fromString tcid
+  , I.classTVar    = fromString tvid
+  , I.classMethods = map (bimap fromString lowerType) ms
+  }
+
+-- | Lower TopInst
+-- TODO: first argument of instConstraint needs some more thinking
+lowerInst :: A.InstDef -> I.InstDef I.Type
+lowerInst (A.InstDef tcid tconid ds) = I.InstDef
+  { I.instConstraint = I.IsIn (I.Type [I.TCon (fromString tconid) []])
+                              (fromString tcid)
+  , I.instMethods    = map (first fromJust . lowerDef) ds
   }
 
 {- | Lower an 'A.Definition' into a name and bound expression.

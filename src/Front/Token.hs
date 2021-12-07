@@ -1,11 +1,11 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module Front.Token where
 
-import           Prettyprinter                  ( (<+>)
-                                                , Pretty(..)
-                                                , fill
-                                                , viaShow
-                                                )
+import           Prettyprinter                            ( (<+>)
+                                                          , Pretty(..)
+                                                          , fill
+                                                          , viaShow
+                                                          )
 
 -- | Tokens extracted from source text.
 newtype Token = Token (Span, TokenType)
@@ -38,6 +38,8 @@ data TokenType
   | TAfter
   | TWait
   | TFun
+  | TClass
+  | TInstance
   | TEq
   | TLarrow
   | TRarrow
@@ -95,6 +97,8 @@ instance Pretty TokenType where
   pretty TAfter       = pretty "after"
   pretty TWait        = pretty "wait"
   pretty TFun         = pretty "fun"
+  pretty TClass       = pretty "class"
+  pretty TInstance    = pretty "instance"
   pretty TEq          = pretty "="
   pretty TDRarrow     = pretty "=>"
   pretty TLarrow      = pretty "<-"

@@ -36,6 +36,8 @@ import Common.Compiler (ErrorMsg)
   'after' { Token (_, TAfter) }
   'wait'  { Token (_, TWait) }
   'fun'   { Token (_, TFun) }
+  'class' { Token (_, TClass) }
+  'instance' { Token (_, TInstance) }
   'match' { Token (_, TMatch) }
   '='     { Token (_, TEq) }
   '<-'    { Token (_, TLarrow) }
@@ -66,7 +68,7 @@ import Common.Compiler (ErrorMsg)
 %%
 -- | Root node of sslang program parser.
 program                               --> Program
-  : defTop                              { Program $1 }
+  : defTops                             { Program $1 }
   -- TODO: support empty program
 
 {- | Top-level definitions.
@@ -77,9 +79,15 @@ indeed semantically) distinct from actual let-bindings (@defLets@).
 They are separated with '||' rather than ';' because the latter somehow causes
 shift-reduce conflicts.
 -}
-defTop                                --> [Definition]
-  : defLet '||' defTop                  { $1 : $3 }
-  | defLet                              { [$1] }
+
+defTops                               --> [Top]
+  : defTop '||' defTops                 { $1 : $3 }
+  | defTop                              { [$1] }
+
+defTop                                --> Top
+  : defLet                              { TopDef $1 }
+  | defClass                            { TopClass $1 }
+  | defInst                             { TopInst $1 }
 
 -- | Mutually recursive block of let-definitions.
 defLets                               --> [Definition]
@@ -93,6 +101,24 @@ variable.
 -}
 defLet                                --> Definition
   : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
+
+-- | Single class definition.
+defClass                              --> ClassDef
+  : 'class' id id '{' methodDecls '}'    { ClassDef $2 $3 $5 }
+
+-- | Class method declatation
+methodDecls                           --> [(VarId, TypeAnn)]
+  : id ':' typ ';' methodDecls          { ($1, $3) : $5 }
+  | id ':' typ                          { [($1, $3)] }
+
+-- | Single instance definition
+defInst                               --> InstDef
+  : 'instance' id id '{' methodDefs '}' { InstDef $2 $3 $5 }
+
+-- | Instance method definitions
+methodDefs                            --> [Definition]
+  : defLet ';' methodDefs               { $1 : $3 }
+  | defLet                              { [$1] }
 
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
