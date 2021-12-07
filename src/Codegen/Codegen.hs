@@ -38,6 +38,7 @@ import           Codegen.TypeDef                ( TypeDefInfo
                                                 , isPointer
                                                 , tag
                                                 , typeSize
+                                                , ptrFields
                                                 )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -502,12 +503,13 @@ genExpr a@I.App{} = do
           tmp <- nextTmp [cty|$ty:ssm_value_t|]
           let (Just typ) = M.lookup tg (dconType info)
           let (Just sz)  = M.lookup typ (typeSize info)
+          let (Just field) = M.lookup tg (ptrFields info)
           let alloc =
-                [[citem|$exp:tmp.$id:heapObj = ssm_new($int:sz,$id:tg);|]]
+                [[citem|$exp:tmp.$id:heap_ptr = ssm_new($int:sz,$id:tg);|]]
           let
             initField =
               (\y i ->
-                [citem|$exp:tmp.$id:heapObj->$id:payload[$int:(i::Int)] = $exp:y;|]
+                [citem| $exp:(field tmp i) = $exp:y;|]
               )
           let initFields = zipWith initField argVals [0, 1 ..]
           return (tmp, concat argStms ++ alloc ++ initFields)

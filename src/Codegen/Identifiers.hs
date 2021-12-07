@@ -269,24 +269,24 @@ ssm_value_t :: C.Type
 ssm_value_t = [cty|typename ssm_value_t|]
 
 -- | Name of an ssm values's pointer field
-heapObj :: CIdent
-heapObj = "heapObj"
+heap_ptr :: CIdent
+heap_ptr = "heap_ptr"
 
 -- | Name of an ssm values's integer field
-intVal :: CIdent
-intVal = "intVal"
+packed_val :: CIdent
+packed_val = "packed_val"
 
 -- | Type of a generic ADT on the heap
-ssm_object_t :: C.Type
-ssm_object_t = [cty|struct ssm_object_t|]
+ssm_object :: C.Type
+ssm_object = [cty|struct ssm_object_t|]
 
 -- | Type of an ADT's memory management header
 ssm_mm_md :: C.Type
-ssm_mm_md = [cty|struct ssm_mm_md|]
+ssm_mm_md = [cty|struct ssm_mm|]
 
 -- | Name of an ADT's memory management header
-header :: CIdent
-header = "header"
+mm :: CIdent
+mm = "mm"
 
 -- | Name of an ADT's payload
 payload :: CIdent
