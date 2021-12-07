@@ -117,7 +117,11 @@ descend body = do
   savedFreeTypes <- gets freeTypes
   liftedBody     <- body
   freeTypesBody  <- gets freeTypes
-  modify $ \st -> st { currentScope = savedScope, freeTypes = savedFreeTypes }
+  modify $ \st -> st
+    { currentScope = savedScope
+    , freeTypes    = M.union (S.foldl (flip M.delete) freeTypesBody savedScope)
+                             savedFreeTypes
+    }
   return (liftedBody, freeTypesBody)
 
 -- | Context management for lifting top level lambda definitions.
@@ -128,7 +132,7 @@ extractLifted body = do
   liftedBody <- body
   newTopDefs <- gets lifted
   modify $ \st -> st { lifted = [] }
-  return (liftedBody, newTopDefs)
+  return (liftedBody, reverse newTopDefs)
 
 {- | Entry-point to lambda lifting.
 
