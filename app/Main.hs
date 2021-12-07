@@ -28,12 +28,12 @@ import           System.IO                      ( hPrint
                                                 )
 
 data Mode
-  = DumpTokens  -- ^ Token stream before parsing
-  | DumpAST     -- ^ AST before operator parsing
-  | DumpASTP    -- ^ AST after operators are parsed
-  | DumpIR      -- ^ Intermediate representation
-  | DumpIRLifted      -- ^ Intermediate representation with lifted lambdas
-  | GenerateC   -- ^ Generate C backend
+  = DumpTokens            -- ^ Token stream before parsing
+  | DumpAST               -- ^ AST before operator parsing
+  | DumpASTP              -- ^ AST after operators are parsed
+  | DumpIR                -- ^ Intermediate representation
+  | DumpIRLambdasLifted   -- ^ Intermediate representation with lifted lambdas
+  | GenerateC             -- ^ Generate C backend
   deriving (Eq, Show)
 
 data Options = Options
@@ -71,8 +71,8 @@ optionDescriptions =
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
   , Option ""
-           ["dump-lifted-ir"]
-           (NoArg (\opt -> return opt { optMode = DumpIRLifted }))
+           ["dump-lambdas-lifted-ir"]
+           (NoArg (\opt -> return opt { optMode = DumpIRLambdasLifted }))
            "Print the IR with lifted lambdas"
   , Option ""
            ["generate-c"]
@@ -134,7 +134,7 @@ main = do
 
   irL <- doPass $ IR.lambdaLift irY
 
-  when (optMode opts == DumpIRLifted) $ putStrLn (spaghetti irL) >> exitSuccess
+  when (optMode opts == DumpIRLambdasLifted) $ putStrLn (spaghetti irL) >> exitSuccess
 
   irI   <- doPass $ IR.defunctionalize irL
 
