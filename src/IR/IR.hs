@@ -39,11 +39,11 @@ import           Common.Pretty
 
 -}
 data Program t = Program
-  { programEntry :: VarId
-  , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef t)]
-  , classDefs    :: [ClassDef t]
-  , instDefs     :: [InstDef t]
+  { programEntry   :: VarId
+  , programDefs    :: [(VarId, Expr t)]
+  , programTypes   :: [(TConId, TypeDef t)]
+  , programClasses :: [ClassDef t]
+  , programInsts   :: [InstDef t]
   }
   deriving (Eq, Show)
 
@@ -220,12 +220,12 @@ instance Functor InstDef where
     }
 
 instance Functor Program where
-  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds, classDefs = cds, instDefs = ids }
-    = Program { programEntry = e
-              , programDefs  = fmap (second $ fmap f) defs
-              , typeDefs     = fmap (second $ fmap f) tds
-              , classDefs    = fmap (fmap f) cds
-              , instDefs     = fmap (fmap f) ids
+  fmap f Program { programEntry = e, programDefs = defs, programTypes = tds, programClasses = cds, programInsts = ids }
+    = Program { programEntry   = e
+              , programDefs    = fmap (second $ fmap f) defs
+              , programTypes   = fmap (second $ fmap f) tds
+              , programClasses = fmap (fmap f) cds
+              , programInsts   = fmap (fmap f) ids
               }
 
 instance Functor Expr where

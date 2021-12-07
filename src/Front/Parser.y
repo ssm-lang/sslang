@@ -68,7 +68,7 @@ import Common.Compiler (ErrorMsg)
 %%
 -- | Root node of sslang program parser.
 program                               --> Program
-  : defTop                              { Program $1 }
+  : defTops                             { Program $1 }
   -- TODO: support empty program
 
 {- | Top-level definitions.
@@ -79,13 +79,15 @@ indeed semantically) distinct from actual let-bindings (@defLets@).
 They are separated with '||' rather than ';' because the latter somehow causes
 shift-reduce conflicts.
 -}
-defTop                                --> [TopDef]
-  : defLet '||' defTop                  { TopDef $1 : $3 }
-  | defLet                              { [TopDef $1] }
-  | defClass '||' defTop                { TopClass $1 : $3 }
-  | defClass                            { [TopClass $1] }
-  | defInst '||' defTop                 { TopInst $1 : $3 }
-  | defInst                             { [TopInst $1] }
+
+defTops                               --> [Top]
+  : defTop '||' defTops                 { $1 : $3 }
+  | defTop                              { [$1] }
+
+defTop                                --> Top
+  : defLet                              { TopDef $1 }
+  | defClass                            { TopClass $1 }
+  | defInst                             { TopInst $1 }
 
 -- | Mutually recursive block of let-definitions.
 defLets                               --> [Definition]
@@ -101,8 +103,8 @@ defLet                                --> Definition
   : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
 
 -- | Single class definition.
-defClass                              --> TopClass
-  : 'class' id id '{' methodDecls '}'    { ($2, $3, $5) }
+defClass                              --> ClassDef
+  : 'class' id id '{' methodDecls '}'    { ClassDef $2 $3 $5 }
 
 -- | Class method declatation
 methodDecls                           --> [(VarId, TypeAnn)]
@@ -110,8 +112,8 @@ methodDecls                           --> [(VarId, TypeAnn)]
   | id ':' typ                          { [($1, $3)] }
 
 -- | Single instance definition
-defInst                               --> TopInst
-  : 'instance' id id '{' methodDefs '}' { ($2, $3, $5) }
+defInst                               --> InstDef
+  : 'instance' id id '{' methodDefs '}' { InstDef $2 $3 $5 }
 
 -- | Instance method definitions
 methodDefs                            --> [Definition]

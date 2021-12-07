@@ -12,12 +12,12 @@ import qualified IR.Types.Poly                 as Poly
 import           IR.Types.TypeSystem                      ( TypeDef(..) )
 
 instProgram :: I.Program Classes.Type -> Compiler.Pass (I.Program Poly.Type)
-instProgram I.Program { I.programEntry = pEntry, I.programDefs = pdefs, I.typeDefs = tdefs, I.classDefs = cdefs, I.instDefs = idefs }
-    = return $ I.Program { I.programEntry = pEntry
-                         , I.programDefs  = instInsts idefs pdefs
-                         , I.typeDefs     = ctdefs ++ tdefs'
-                         , I.classDefs    = []
-                         , I.instDefs     = []
+instProgram I.Program { I.programEntry = pEntry, I.programDefs = pdefs, I.programTypes = tdefs, I.programClasses = cdefs, I.programInsts = idefs }
+    = return $ I.Program { I.programEntry   = pEntry
+                         , I.programDefs    = instInsts idefs pdefs
+                         , I.programTypes   = ctdefs ++ tdefs'
+                         , I.programClasses = []
+                         , I.programInsts   = []
                          }
   where
     ctdefs = instClasses cdefs

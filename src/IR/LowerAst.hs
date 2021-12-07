@@ -48,35 +48,17 @@ lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
-lowerProgram (A.Program []) = return $ I.Program
-  { I.programEntry = fromString "main"
-  , I.programDefs  = []
-  , I.typeDefs     = []
-  , I.classDefs    = []
-  , I.instDefs     = []
+lowerProgram (A.Program tops) = return $ I.Program
+  { I.programEntry   = fromString "main"
+  , I.programDefs = [ first fromJust . lowerDef $ def | (A.TopDef def) <- tops ]
+  , I.programTypes   = []
+  , I.programClasses = [ lowerClass cls | (A.TopClass cls) <- tops ]
+  , I.programInsts   = [ lowerInst inst | (A.TopInst inst) <- tops ]
   }
-lowerProgram (A.Program (A.TopDef d : tds)) =
-  let rest = lowerProgram (A.Program tds)
-  in  do
-        rest' <- rest
-        return $ rest'
-          { I.programDefs = (first fromJust . lowerDef $ d)
-                              : I.programDefs rest'
-          }
-lowerProgram (A.Program ((A.TopClass topclass) : tds)) =
-  let rest = lowerProgram (A.Program tds)
-  in  do
-        rest' <- rest
-        return $ rest' { I.classDefs = lowerClass topclass : I.classDefs rest' }
-lowerProgram (A.Program ((A.TopInst topinst) : tds)) =
-  let rest = lowerProgram (A.Program tds)
-  in  do
-        rest' <- rest
-        return $ rest' { I.instDefs = lowerInst topinst : I.instDefs rest' }
 
 -- | Lower TopClass
-lowerClass :: A.TopClass -> I.ClassDef I.Type
-lowerClass (tcid, tvid, ms) = I.ClassDef
+lowerClass :: A.ClassDef -> I.ClassDef I.Type
+lowerClass (A.ClassDef tcid tvid ms) = I.ClassDef
   { I.className    = fromString tcid
   , I.classTVar    = fromString tvid
   , I.classMethods = map (bimap fromString lowerType) ms
@@ -84,8 +66,8 @@ lowerClass (tcid, tvid, ms) = I.ClassDef
 
 -- | Lower TopInst
 -- TODO: first argument of instConstraint needs some more thinking
-lowerInst :: A.TopInst -> I.InstDef I.Type
-lowerInst (tcid, tconid, ds) = I.InstDef
+lowerInst :: A.InstDef -> I.InstDef I.Type
+lowerInst (A.InstDef tcid tconid ds) = I.InstDef
   { I.instConstraint = I.IsIn (I.Type [I.TCon (fromString tconid) []])
                               (fromString tcid)
   , I.instMethods    = map (first fromJust . lowerDef) ds

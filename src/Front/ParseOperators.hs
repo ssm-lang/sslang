@@ -6,9 +6,10 @@ module Front.ParseOperators
 import qualified Data.Map.Strict               as Map
 import           Front.Ast                                ( Definition(..)
                                                           , Expr(..)
+                                                          , InstDef(..)
                                                           , OpRegion(..)
                                                           , Program(..)
-                                                          , TopDef(..)
+                                                          , Top(..)
                                                           )
 
 data Fixity = Infixl Int String
@@ -26,8 +27,8 @@ parseOperators :: Program -> Program
 parseOperators (Program topdefs) = Program $ map parseOperators' topdefs
  where
   parseOperators' (TopDef decl) = TopDef $ parseOps defaultOps decl
-  parseOperators' (TopInst (tcid, tconid, decls)) =
-    TopInst (tcid, tconid, map (parseOps defaultOps) decls)
+  parseOperators' (TopInst (InstDef tcid tconid decls)) =
+    TopInst $ InstDef tcid tconid (map (parseOps defaultOps) decls)
   parseOperators' top = top
   parseOps fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
   parseOps fs (DefPat b e    ) = DefPat b $ parseExprOps fs e

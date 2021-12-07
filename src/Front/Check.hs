@@ -19,10 +19,10 @@ this checks (it doesn't check any nested let-definitions).
 checkTopSignatures :: A.Program -> Bool
 checkTopSignatures (A.Program topdefs) = all checkTopDef topdefs
  where
-  checkTopDef :: A.TopDef -> Bool
-  checkTopDef (A.TopDef  d         ) = checkAnnotations d
-  checkTopDef (A.TopInst (_, _, ds)) = all checkAnnotations ds
-  checkTopDef _                      = True
+  checkTopDef :: A.Top -> Bool
+  checkTopDef (A.TopDef  d                 ) = checkAnnotations d
+  checkTopDef (A.TopInst (A.InstDef _ _ ds)) = all checkAnnotations ds
+  checkTopDef _                              = True
   checkAnnotations :: A.Definition -> Bool
   checkAnnotations (A.DefFn _ binds (A.TypReturn _) _) =
     all annotatedOnce binds

@@ -22,18 +22,28 @@ type VarId = String
 type OperatorId = String
 
 -- | A complete program: a list of declarations
-newtype Program = Program [TopDef]
+newtype Program = Program [Top]
   deriving (Eq, Show)
 
 -- | A top-level definition can be: definition, class or instance
-data TopDef = TopDef Definition
-            | TopClass TopClass
-            | TopInst TopInst
-            deriving (Eq, Show)
+data Top = TopDef Definition
+         | TopClass ClassDef
+         | TopInst InstDef
+         deriving (Eq, Show)
 
-type TopClass = (TClassId, TVarId, [(VarId, TypAnn)])
+data ClassDef = ClassDef
+  { className    :: TClassId
+  , classTVar    :: TVarId
+  , classMethods :: [(VarId, TypAnn)]
+  }
+  deriving (Eq, Show)
 
-type TopInst = (TClassId, TConId, [Definition])
+data InstDef = InstDef
+  { instClassName :: TClassId
+  , instTCon      :: TConId
+  , instMethods   :: [Definition]
+  }
+  deriving (Eq, Show)
 
 -- | A value definition
 data Definition
@@ -125,15 +135,15 @@ collectApp t               = (t, [])
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
-instance Pretty TopDef where
+instance Pretty Top where
   pretty (TopDef d) = pretty d
-  pretty (TopClass (tcid, tvid, ms)) =
+  pretty (TopClass (ClassDef tcid tvid ms)) =
     pretty "class" <+> pretty tcid <+> pretty tvid <+> braces
       (hsep $ punctuate semi $ map
         (\(vid, typann) -> pretty vid <+> pretty typann)
         ms
       )
-  pretty (TopInst (tcid, tconid, ds)) =
+  pretty (TopInst (InstDef tcid tconid ds)) =
     pretty "instance" <+> pretty tcid <+> pretty tconid <+> braces
       (hsep $ punctuate semi $ map pretty ds)
 

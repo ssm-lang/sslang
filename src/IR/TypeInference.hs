@@ -69,11 +69,11 @@ lookupVar v = M.lookup v <$> gets varMap
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   defs' <- inferTop $ I.programDefs p
-  return $ I.Program { I.programDefs  = defs'
-                     , I.programEntry = I.programEntry p
-                     , I.typeDefs     = [] -- TODO: something with I.typeDefs p
-                     , I.classDefs    = []
-                     , I.instDefs     = []
+  return $ I.Program { I.programDefs    = defs'
+                     , I.programEntry   = I.programEntry p
+                     , I.programTypes   = [] -- TODO: something with I.typeDefs p
+                     , I.programClasses = []
+                     , I.programInsts   = []
                      }
 
 {- | Top level inference.
