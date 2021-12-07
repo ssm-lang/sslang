@@ -23,7 +23,7 @@ data TypeDefInfo = TypeDefInfo
   { dconType  :: M.Map DConId TConId
   , typeSize  :: M.Map TConId Int
   , isPointer :: M.Map DConId Bool
-  , tag       :: M.Map DConId (C.Exp -> C.Exp)
+  , tag       :: M.Map TConId (C.Exp -> C.Exp)
   , intInit   :: M.Map DConId C.Exp
   , ptrFields :: M.Map DConId (C.Exp -> Int -> C.Exp)
   }
@@ -109,17 +109,25 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       isPtr        = M.fromList $ intDCons ++ heapDCons
       intDCons     = zip (fst <$> intgrs) (repeat False)
       heapDCons    = zip (fst <$> ptrs) (repeat True)
-      -- | Save read tag func for each 'DCon
-      readTagFuncs = M.fromList $ intTagFuncs ++ heapTagFuncs
-      intTagFuncs  = zip (fst <$> intgrs) (repeat intTagFunc)
+      -- | Save extract-tag function
+      readTagFuncs = M.fromList [(tconid, readTagFunc ptrs intgrs)]
+      readTagFunc
+        :: [(DConId, L.TypeVariant L.Type)]
+        -> [(DConId, L.TypeVariant L.Type)]
+        -> C.Exp
+        -> C.Exp
+      readTagFunc ps ints val
+        | null ps   = intTagFunc val
+        | null ints = ptrTagFunc val
+        | otherwise = tagFunc (isInt val) (intTagFunc val) (ptrTagFunc val)
        where
         intTagFunc :: C.Exp -> C.Exp
         intTagFunc v = [cexp| (($exp:v >> $uint:(tagBits+1)) & (tagBits+1))|]
-        tagBits = length intDCons
-      heapTagFuncs = zip (fst <$> ptrs) (repeat ptrTagFunc)
-       where
+          where tagBits = length intDCons
         ptrTagFunc :: C.Exp -> C.Exp
         ptrTagFunc v = [cexp|$exp:v.$id:header.tag|]
+        tagFunc cond a b = [cexp| (($exp:cond) ? ($exp:a) : ($exp:b)) |]
+        isInt v = [cexp| (($exp:v) & 0x1 == 0x1) |]
       -- | Save initialization for each integer 'DCon (assume 0 fields for now)
       initVals    = M.fromList intInitVals
       intInitVals = intInitVal . fst <$> intgrs

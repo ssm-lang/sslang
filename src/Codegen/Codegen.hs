@@ -36,6 +36,7 @@ import           Codegen.TypeDef                ( TypeDefInfo
                                                 , genTypeDef
                                                 , intInit
                                                 , isPointer
+                                                , tag
                                                 , typeSize
                                                 )
 import           Control.Comonad                ( Comonad(..) )
@@ -460,9 +461,9 @@ genExpr (I.Var n _) = do
   traceM $ "Obtaining var " ++ show n
   Just e <- getVar n
   return (e, [])
-genExpr (I.Data tag _) = do
+genExpr (I.Data tg _) = do
   info <- gets adtInfo
-  let Just initExpr = M.lookup tag (intInit info) in return (initExpr, [])
+  let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
 genExpr (I.Lit l t              ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   loc               <- addLocal (n, genType $ extract d)
@@ -492,17 +493,17 @@ genExpr a@I.App{} = do
               ++ [[cexp|&$exp:tmp|]]
           call = [citems|$id:activate($exp:enterFn($args:enterArgs));|]
       return (tmp, concat argStms ++ call ++ yield)
-    (I.Data tag _) -> do
+    (I.Data tg _) -> do
       info <- gets adtInfo
-      case M.lookup tag (isPointer info) of
+      case M.lookup tg (isPointer info) of
         Nothing    -> fail "Couldn't find tag"
         Just False -> fail "Cannot handle integer types with fields yet"
         Just True  -> do
           tmp <- nextTmp [cty|$ty:ssm_value_t|]
-          let (Just typ) = M.lookup tag (dconType info)
+          let (Just typ) = M.lookup tg (dconType info)
           let (Just sz)  = M.lookup typ (typeSize info)
           let alloc =
-                [[citem|$exp:tmp.$id:heapObj = ssm_new($int:sz,$id:tag);|]]
+                [[citem|$exp:tmp.$id:heapObj = ssm_new($int:sz,$id:tg);|]]
           let
             initField =
               (\y i ->
@@ -529,10 +530,10 @@ genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
 
 genTag :: Type -> GenFn (C.Exp -> C.Exp)
-genTag t
-  | t == I.int 32 = return id
-  | otherwise = error
-    "TODO: use type information to lookup tag accessor for eExp"
+genTag (I.TCon tconid) = do
+  info <- gets adtInfo
+  let Just t = M.lookup tconid (tag info) in return t
+genTag _ = return id
 
 genAlt :: C.Exp -> I.Alt -> GenFn ([C.BlockItem] -> C.Stm)
 genAlt _scrut (I.AltData _dcon _fields) =
