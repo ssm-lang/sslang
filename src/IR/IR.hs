@@ -11,6 +11,7 @@ module IR.IR
   , DConId(..)
   , wellFormed
   , collectLambda
+  , makeLambdaChain
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -20,7 +21,10 @@ import           Common.Identifiers             ( Binder
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           IR.Types.TypeSystem            ( TypeDef(..) )
+import           IR.Types.TypeSystem            ( TypeDef(..)
+                                                , TypeSystem
+                                                , arrow
+                                                )
 
 import           Common.Pretty
 
@@ -185,6 +189,11 @@ collectLambda :: Expr t -> ([Binder], Expr t)
 collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
+
+-- | Create a lambda chain given a list of argument-type pairs and a body.
+makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
+makeLambdaChain args body = foldr chain body args
+  where chain (v, t) b = Lambda v b $ t `arrow` extract b
 
 instance Functor Program where
   fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
