@@ -303,7 +303,7 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Var  v t  ) = typeAnn t $ pretty v
   pretty (Data d t  ) = typeAnn t $ pretty d
   pretty (Lit  l t  ) = typeAnn t $ pretty l
-  pretty (App l  r t) = typeAnn t $ pretty l <+> pretty r
+  pretty (App l  r t) = typeAnn t $ parens (pretty l <+> pretty r)
   pretty (Let as b t) = typeAnn t $ parens letexpr
    where
     letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> pretty b
@@ -337,7 +337,7 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Prim Return [e] t) =
     typeAnn t $ pretty "return" <+> braces (pretty e)
   pretty (Prim (PrimOp po) [l, r] t) =
-    parens $ pretty l <+> pretty po <+> pretty r <> pretty t
+    typeAnn t $ parens (pretty l <+> pretty po <+> pretty r)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
 instance Pretty Alt where
