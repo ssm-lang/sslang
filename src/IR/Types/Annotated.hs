@@ -49,7 +49,7 @@ untyped = mempty
 
 instance Pretty Type where
   pretty (Type (t : _)) = pretty t -- TODO: this only prints the outer-most ann
-  pretty (Type []     ) = pretty "_"
+  pretty (Type []     ) = emptyDoc
 
 instance Pretty TypeAnnote where
   pretty (TBuiltin t) = pretty t

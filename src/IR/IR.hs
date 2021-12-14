@@ -292,7 +292,10 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim _                   _         = False
 
 instance Pretty t => Pretty (Program t) where
-  pretty Program { programDefs = ds } = vsep $ map pretty ds
+  pretty Program { programDefs = ds } = vsep $ map prettyTop ds
+    where prettyTop (v, e@(Lambda _ _ t)) = let (vs, body) = collectLambda e in
+                                         nest 2 $ vsep [pretty v <+> (hsep $ map pretty vs) <> pretty ":" <+> pretty t <+> pretty "=", (pretty body)]
+          prettyTop (v, e) = nest 2 $ vsep [pretty v <> pretty ":" <+> pretty (extract e) <+> pretty "=", (pretty e)]
   -- TODO: type defs
   -- TODO: how to represent entry point?
 

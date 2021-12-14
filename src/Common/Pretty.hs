@@ -16,7 +16,9 @@ import           Prettyprinter.Render.String
 
 -- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
 typeAnn :: Pretty t => t -> Doc ann -> Doc ann
-typeAnn t d = parens $ d <> colon <+> pretty t
+typeAnn t d = let pt = pretty t in
+              if (show $ pretty t) == "" then d
+                                        else parens $ d <> colon <+> pt
 
 -- | @=>@
 drarrow :: Doc ann
