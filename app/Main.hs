@@ -28,11 +28,12 @@ import           System.IO                      ( hPrint
                                                 )
 
 data Mode
-  = DumpTokens  -- ^ Token stream before parsing
-  | DumpAST     -- ^ AST before operator parsing
-  | DumpASTP    -- ^ AST after operators are parsed
-  | DumpIR      -- ^ Intermediate representation
-  | GenerateC   -- ^ Generate C backend
+  = DumpTokens            -- ^ Token stream before parsing
+  | DumpAST               -- ^ AST before operator parsing
+  | DumpASTP              -- ^ AST after operators are parsed
+  | DumpIR                -- ^ Intermediate representation
+  | DumpIRLambdasLifted   -- ^ Intermediate representation with lifted lambdas
+  | GenerateC             -- ^ Generate C backend
   deriving (Eq, Show)
 
 data Options = Options
@@ -69,6 +70,10 @@ optionDescriptions =
            ["dump-ir"]
            (NoArg (\opt -> return opt { optMode = DumpIR }))
            "Print the IR"
+  , Option ""
+           ["dump-lambdas-lifted-ir"]
+           (NoArg (\opt -> return opt { optMode = DumpIRLambdasLifted }))
+           "Print the IR with lifted lambdas"
   , Option ""
            ["generate-c"]
            (NoArg (\opt -> return opt { optMode = GenerateC }))
@@ -113,7 +118,7 @@ main = do
   when (optMode opts == DumpAST) $ putStrLn (spaghetti ast) >> exitSuccess
 
   ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $  putStrLn (spaghetti ast') >> exitSuccess
+  when (optMode opts == DumpASTP) $ putStrLn (spaghetti ast') >> exitSuccess
 
   ()  <- doPass $ Front.checkAst ast'
 
@@ -121,13 +126,15 @@ main = do
 
   when (optMode opts == DumpIR) $ putStrLn (spaghetti irA) >> exitSuccess
 
-  irC   <- doPass $ IR.inferTypes irA
+  irC <- doPass $ IR.inferTypes irA
 
-  irP   <- doPass $ IR.instantiateClasses irC
+  irP <- doPass $ IR.instantiateClasses irC
 
-  irY   <- doPass $ IR.yieldAbstraction irP
+  irY <- doPass $ IR.yieldAbstraction irP
 
-  irL   <- doPass $ IR.lambdaLift irY
+  irL <- doPass $ IR.lambdaLift irY
+
+  when (optMode opts == DumpIRLambdasLifted) $ putStrLn (spaghetti irL) >> exitSuccess
 
   irI   <- doPass $ IR.defunctionalize irL
 

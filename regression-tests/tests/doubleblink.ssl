@@ -18,3 +18,4 @@ fast(led : &Int) -> () =
 main(led : &Int) -> () =
   par ((slow: &Int -> ()) (led: &Int): ())
       ((fast: &Int -> ()) (led: &Int): ())
+  ()
