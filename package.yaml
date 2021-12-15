@@ -90,3 +90,10 @@ tests:
     - hspec
     - containers
     - comonad
+  typeclass-test:
+    main: Spec.hs
+    source-dirs:
+    - test/typeclass
+    dependencies:
+    - sslang
+    - hspec

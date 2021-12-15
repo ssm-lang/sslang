@@ -49,7 +49,7 @@ data Program t = Program
 
 data ClassDef t = ClassDef
   { className    :: ClassId
-  , classTVar    :: TVarId
+  , classTVar    :: t
   , classMethods :: [(VarId, t)]
   }
   deriving (Eq, Show)
@@ -210,8 +210,8 @@ collectLambda (Lambda a b _) =
 collectLambda e = ([], e)
 
 instance Functor ClassDef where
-  fmap f cdef@ClassDef { className = _, classMethods = cms } =
-    cdef { classMethods = fmap (second f) cms }
+  fmap f cdef@ClassDef { className = _, classTVar = tv, classMethods = cms } =
+    cdef { classTVar = f tv, classMethods = fmap (second f) cms }
 
 instance Functor InstDef where
   fmap f idef@InstDef { instConstraint = ic, instMethods = ims } = idef

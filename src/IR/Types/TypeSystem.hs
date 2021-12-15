@@ -128,8 +128,9 @@ Note that for a flat type system, where all type constructors are nullary, arity
 will just be set to 0.
 -}
 data TypeDef t = TypeDef
-  { variants :: [(DConId, TypeVariant t)]
-  , arity    :: Arity
+  { variants    :: [(DConId, TypeVariant t)]
+  , arity       :: Arity
+  , typeDefVars :: [t]
   }
   deriving (Show, Eq)
 
@@ -146,8 +147,11 @@ instance Functor InstConstraint where
   fmap f (IsIn t cid) = IsIn (f t) cid
 
 instance Functor TypeDef where
-  fmap f TypeDef { variants = vs, arity = a } =
-    TypeDef { variants = fmap (second $ fmap f) vs, arity = a }
+  fmap f TypeDef { variants = vs, arity = a, typeDefVars = tvars } = TypeDef
+    { variants    = fmap (second $ fmap f) vs
+    , arity       = a
+    , typeDefVars = map f tvars
+    }
 
 instance Functor TypeVariant where
   fmap f (VariantNamed   fs) = VariantNamed $ fmap (second f) fs

@@ -30,21 +30,21 @@ module IR.Types.Poly
   , Builtin(..)
   ) where
 
-import           Common.Identifiers             ( TConId
-                                                , TVarIdx
-                                                )
+import           Common.Identifiers                       ( TConId
+                                                          , TVarId
+                                                          )
 import           Common.Pretty
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , TypeSystem(..)
-                                                )
+import           IR.Types.TypeSystem                      ( Builtin(..)
+                                                          , TypeSystem(..)
+                                                          )
 
 
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., @Option '0@
-  | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
-  deriving Eq
+  | TVar TVarId                    -- ^ Type variables, e.g., @'0@
+  deriving (Eq, Show)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

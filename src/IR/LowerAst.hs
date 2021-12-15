@@ -60,7 +60,7 @@ lowerProgram (A.Program tops) = return $ I.Program
 lowerClass :: A.ClassDef -> I.ClassDef I.Type
 lowerClass (A.ClassDef tcid tvid ms) = I.ClassDef
   { I.className    = fromString tcid
-  , I.classTVar    = fromString tvid
+  , I.classTVar    = I.Type [I.TVar $ fromString tvid]
   , I.classMethods = map (bimap fromString lowerType) ms
   }
 

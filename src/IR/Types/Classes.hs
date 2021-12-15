@@ -12,12 +12,12 @@ module IR.Types.Classes
   , Type(..)
   ) where
 
-import           Common.Identifiers             ( TConId
-                                                , TVarIdx
-                                                )
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , TypeSystem(..)
-                                                )
+import           Common.Identifiers                       ( TConId
+                                                          , TVarId
+                                                          )
+import           IR.Types.TypeSystem                      ( Builtin(..)
+                                                          , TypeSystem(..)
+                                                          )
 import           Prettyprinter
 
 
@@ -25,7 +25,7 @@ import           Prettyprinter
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TVar TVarId                    -- ^ Type variables, e.g., '0
   deriving (Eq, Show)
 
 instance TypeSystem Type where

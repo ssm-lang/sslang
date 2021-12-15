@@ -267,4 +267,4 @@ ann2Class (Ann.TBuiltin bty) = case bty of
 ann2Class (Ann.TCon tid tys) = do
   t <- mapM anns2Class tys
   return $ Classes.TCon tid t
-ann2Class (Ann.TVar tidx) = return $ Classes.TVar tidx
+ann2Class (Ann.TVar tid) = return $ Classes.TVar tid

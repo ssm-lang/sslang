@@ -6,13 +6,13 @@ module IR.Types.Annotated
   , TypeAnnote(..)
   , untyped
   ) where
-import           Common.Identifiers             ( TConId
-                                                , TVarIdx
-                                                )
+import           Common.Identifiers                       ( TConId
+                                                          , TVarId
+                                                          )
 import           Common.Pretty
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , TypeSystem(..)
-                                                )
+import           IR.Types.TypeSystem                      ( Builtin(..)
+                                                          , TypeSystem(..)
+                                                          )
 {- | A single term may be annotated by zero or more types.
 
 When multiple exist, it should be assumed that they are equivalent, in the
@@ -31,7 +31,7 @@ newtype Type = Type [TypeAnnote]
 data TypeAnnote
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TVar TVarId                    -- ^ Type variables, e.g., '0
   deriving (Show, Eq)
 
 -- | `Type' is a type system.
