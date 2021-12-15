@@ -23,7 +23,7 @@ data Error
   | LexError ErrorMsg         -- ^ Lex error
   | ParseError ErrorMsg       -- ^ Parse error
   | AstError ErrorMsg         -- ^ Some error in the AST
-  deriving Show
+  deriving (Show, Eq)
 
 -- | A compiler pass, able to throw 'Error'
 newtype Pass a = Pass (Except Error a)

@@ -9,13 +9,6 @@ copyright:           "2021 Stephen A. Edwards"
 extra-source-files:
 - README.md
 
-# Metadata used when publishing your package
-# synopsis:            Real-time programming language
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
 
 dependencies:
@@ -55,47 +48,50 @@ executables:
     - happy
     - alex
 
+_test-suite: &test-suite
+  main: Spec.hs
+  source-dirs:
+  - test/lib
+  dependencies:
+  - sslang
+  - hspec
+  - here
+  - template-haskell
+  - containers
+  - comonad
+
 tests:
-  scanner-test:
-    main: Spec.hs
-    source-dirs:
-    - test/scanner
-    dependencies:
-    - sslang
-    - hspec
-  parser-test:
-    main: Spec.hs
-    source-dirs:
-    - test/parser
-    dependencies:
-    - sslang
-    - hspec
-  prettyprinter-test:
-    main: Spec.hs
-    source-dirs:
-    - test/prettyprinter
-    dependencies:
-    - sslang
-    - hspec
-  regression-test:
+  regression:
     main: test/regression/Spec.hs
     dependencies:
     - process
-  typeinference-test:
-    main: Spec.hs
+
+  scanner:
+    <<: *test-suite
     source-dirs:
+    - test/lib
+    - test/scanner
+
+  parser:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
+    - test/parser
+
+  prettyprinter:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
+    - test/prettyprinter
+
+  typeinference:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
     - test/typeinference
-    dependencies:
-    - sslang
-    - hspec
-    - containers
-    - comonad
-  ir-to-ir-test:
-    main: Spec.hs
+
+  ir:
+    <<: *test-suite
     source-dirs:
-    - test/ir-to-ir
-    dependencies:
-    - sslang
-    - hspec
-    - containers
-    - comonad
+    - test/lib
+    - test/ir

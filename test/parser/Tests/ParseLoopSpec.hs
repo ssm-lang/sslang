@@ -1,5 +1,7 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ParseLoopSpec where
 
+import           Data.String.SourceCode         ( here )
 import           Test.Hspec                     ( Spec(..)
                                                 , it
                                                 , pending
@@ -14,13 +16,13 @@ spec :: Spec
 spec = do
   it "parses a basic function with a loop and some waits" $ do
     let
-      input = unlines
-        [ "main (clk : &Int) ="
-        , "  loop"
-        , "    wait clk"
-        , "    wait clk"
-        , "    wait clk"
-        ]
+      input = [here|
+        main (clk : &Int) =
+          loop
+            wait clk
+            wait clk
+            wait clk
+        |]
       output = Program
         [ DefFn
             "main"
