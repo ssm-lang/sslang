@@ -50,8 +50,6 @@ executables:
 
 _test-suite: &test-suite
   main: Spec.hs
-  source-dirs:
-  - test/lib
   dependencies:
   - sslang
   - hspec
