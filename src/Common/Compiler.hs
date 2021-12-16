@@ -46,18 +46,19 @@ newtype Pass a = Pass (Except Error a)
 instance MonadFail Pass where
   fail = throw . UnexpectedError
 
--- | Invoke a compiler pass
+-- | Invoke a compiler pass.
 runPass :: Pass a -> Either Error a
 runPass (Pass p) = runExcept p
 
--- | Throw an error from within a compiler pass
+-- | Throw an error from within a compiler pass.
 throw :: Error -> Pass a
 throw = throwError
 
--- | Dump pretty-printable output from within a compiler pass
+-- | Dump pretty-printable output from within a compiler pass.
 dump :: Pretty a => a -> Pass x
 dump = throwError . Dump . show . pretty
 
+-- | Execute compiler pass in I/O monad, exiting upon exception.
 passIO :: Pass a -> IO a
 passIO p = case runPass p of
   Left  (Dump s) -> putStrLn s >> exitSuccess
