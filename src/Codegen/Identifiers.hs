@@ -291,3 +291,17 @@ mm = "mm"
 -- | Name of an ADT's payload
 payload :: CIdent
 payload = "payload"
+
+-- | Construct an ssm_value_t from an ssm_object* 
+ssm_from_obj :: C.Exp -> C.Exp
+ssm_from_obj o = [cexp|($ty:ssm_value_t) { .$id:packed_val = &($exp:o)->$id:mm }|]
+
+-- | Construct an ssm_value_t from an integer 
+ssm_from_int :: C.Exp -> C.Exp
+ssm_from_int v = [cexp|($ty:ssm_value_t) { .$id:packed_val = $exp:v }|]
+
+{- | Convert an ssm_value_t to an ssm_object*
+This kind of conversion is needed to access fields in an ADT
+-}
+ssm_to_obj :: C.Exp -> C.Exp 
+ssm_to_obj v = [cexp| ($id:container_of(($exp:v).$id:heap_ptr, ssm_object, $id:mm )) |]

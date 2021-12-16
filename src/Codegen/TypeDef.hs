@@ -126,8 +126,8 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
           where tagBits = length intDCons
         ptrTagFunc :: C.Exp -> C.Exp
         ptrTagFunc v = [cexp|($exp:v.$id:mm.tag)|]
-        tagFunc cond a b = [cexp| (($exp:cond) ? ($exp:a) : ($exp:b)) |]
         isInt v = [cexp| (($exp:v) & 0x1 == 0x1) |]
+        tagFunc cond a b = [cexp| (($exp:cond) ? ($exp:a) : ($exp:b)) |]
       -- | Save initialization for each integer 'DCon (assume 0 fields for now)
       initVals    = M.fromList intInitVals
       intInitVals = intInitVal . fst <$> intgrs
@@ -139,7 +139,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
        where
         accessField :: (C.Exp -> Int -> C.Exp)
         accessField nm index =
-          [cexp|(($ty:ssm_object*)($exp:nm).$id:heap_ptr)->$id:payload[$uint:index]|]
+          [cexp|$exp:(ssm_to_obj nm)->$id:payload[$uint:index] |]
 
   -- | Return the size in bits of a given data constructor
   dConSize :: (DConId, L.TypeVariant L.Type) -> Int
