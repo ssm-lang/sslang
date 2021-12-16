@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {- | Lower the representation of a sslang Ast into sslang IR.
 
 This pass expects prior desugaring passes to ensure that:
@@ -17,7 +18,9 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as I
 import qualified IR.Types.TypeSystem           as I
 
-import           Common.Identifiers             ( fromString )
+import           Common.Identifiers             ( fromId
+                                                , fromString
+                                                )
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
@@ -39,11 +42,11 @@ lowerType (  A.TTuple tys    ) = I.tuple $ map lowerType tys
 lowerType (  A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
 lowerType (  A.TCon "Int"    ) = I.int 32
 lowerType (  A.TCon "()"     ) = I.unit
-lowerType (  A.TCon i        ) = I.Type [I.TCon (fromString i) []]
+lowerType (  A.TCon i        ) = I.Type [I.TCon (fromId i) []]
 lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
   (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
   (A.TCon "[]", [_arg]) -> error "list types are not yet implemented"
-  (A.TCon i   , args  ) -> I.Type [I.TCon (fromString i) $ map lowerType args]
+  (A.TCon i   , args  ) -> I.Type [I.TCon (fromId i) $ map lowerType args]
   _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
 
 -- | Lower an AST 'Program' into IR.
@@ -64,7 +67,7 @@ lowerDef :: A.Definition -> (I.Binder, I.Expr I.Type)
 lowerDef (A.DefPat aPat aBody) =
   (lowerPatName aPat, lowerExpr aBody (lowerPatType aPat <>))
 lowerDef (A.DefFn aName aPats aTy aBody) =
-  (Just $ fromString aName, lowerLambda aPats aBody lambdaAnn lambdaRetAnn)
+  (Just $ fromId aName, lowerLambda aPats aBody lambdaAnn lambdaRetAnn)
  where
   {- | Where the 'A.TypFn' type annotation should be applied.
 
@@ -102,9 +105,8 @@ propogate it elsewhere. This is possible because the IR's type annotations
 the join operation.
 -}
 lowerExpr :: A.Expr -> AnnotationK -> I.Expr I.Type
-lowerExpr (  A.Id   v   ) k = I.Var (fromString v) (k I.untyped)
-lowerExpr (  A.DCon v   ) k = I.Data (fromString v) (k I.untyped)
-lowerExpr (  A.Lit  l   ) k = I.Lit (lowerLit l) (k I.untyped)
+lowerExpr (  A.Id  v    ) k = I.Var (fromId v) (k I.untyped)
+lowerExpr (  A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr a@(A.Apply l r) k = case first lowerPrim (A.collectApp a) of
   (Just prim, args) -> I.Prim prim (map (`lowerExpr` id) args) (k I.untyped)
   (Nothing  , _   ) -> I.App (lowerExpr l id) (lowerExpr r id) (k I.untyped)
@@ -144,7 +146,6 @@ lowerAlt A.PatWildcard  = I.AltDefault Nothing
 lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
 lowerAlt (A.PatLit l  ) = I.AltLit $ lowerLit l
 lowerAlt (A.PatTup _  ) = error "I.Alt for A.PatTup not implemented yet"
-lowerAlt (A.PatCon _  ) = error "No way to lower A.PatCon to I.DataCons yet"
 lowerAlt (A.PatApp _  ) = error "No way to lower A.PatApp to I.DataCons yet"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
 lowerAlt (A.PatAs  _ p) = lowerAlt p
@@ -186,7 +187,7 @@ lowerPrim _              = Nothing
 
 -- | Extract an optional identifier from an Ast pattern.
 lowerPatName :: A.Pat -> I.Binder
-lowerPatName (A.PatId v)      = Just $ fromString v
+lowerPatName (A.PatId v)      = Just $ fromId v
 lowerPatName A.PatWildcard    = Nothing
 lowerPatName (A.PatAnn _ pat) = lowerPatName pat
 lowerPatName _ = error "pattern should be desguared into pattern match"

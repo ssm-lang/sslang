@@ -7,6 +7,7 @@ module Common.Pretty
   , rarrow
   , dbar
   , bar
+  , amp
   , block
   , spaghetti
   ) where
@@ -37,6 +38,10 @@ dbar = pretty "||"
 -- | @|@
 bar :: Doc ann
 bar = pretty "|"
+
+-- | @&@
+amp :: Doc ann
+amp = pretty "&"
 
 -- | Constructs a separator-delimited block 'Doc' out of a list of 'Doc's.
 block :: Doc ann -> [Doc ann] -> Doc ann

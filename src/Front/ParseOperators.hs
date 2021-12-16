@@ -1,20 +1,21 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Front.ParseOperators
   ( parseOperators
   , Fixity(..)
   ) where
 
-import qualified Data.Map.Strict               as Map
+import           Common.Identifiers
 import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
                                                 , OpRegion(..)
                                                 , Program(..)
+                                                , Fixity(..)
                                                 )
 
-data Fixity = Infixl Int String
-            | Infixr Int String
+import qualified Data.Map.Strict               as Map
 
 data Stack = BOS
-           | Stack Stack Expr String
+           | Stack Stack Expr Identifier
 
 -- FIXME: These should be defined and included in the standard library
 defaultOps :: [Fixity]
@@ -49,11 +50,11 @@ parseExprOps fixity = rw
     | op1 `shouldShift` op2 = shift s0 e2 op2 e3 t1
     | otherwise             = reduce s1 e1 op1 e2 t0
 
-  shift, reduce :: Stack -> Expr -> String -> Expr -> OpRegion -> Expr
+  shift, reduce :: Stack -> Expr -> Identifier -> Expr -> OpRegion -> Expr
   shift s e1 op e2 ts = step (Stack s e1 op) e2 ts
   reduce s e1 op e2 ts = step s (Apply (Apply (Id op) e1) e2) ts
 
-  shouldShift :: String -> String -> Bool
+  shouldShift :: Identifier -> Identifier -> Bool
   shouldShift opl opr = pl < pr
    where
     pl   = fst prel

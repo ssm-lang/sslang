@@ -114,9 +114,9 @@ tokens :-
     \&                  { keyword TAmpersand }
 
     -- | Other stringy tokens.
-    @operator           { strTok TOp }
-    \` @identifier \`   { strTok (TOp . dropEnds 1 1) }
-    @identifier         { strTok TId }
+    @operator           { strTok (TOp . fromString) }
+    \` @identifier \`   { strTok (TOp . fromString . dropEnds 1 1) }
+    @identifier         { strTok (TId . fromString) }
     $digit+             { strTok (TInteger . read) }
   }
 

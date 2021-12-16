@@ -1,25 +1,11 @@
 module Front.Ast where
 
+import           Common.Identifiers             ( Identifiable(..)
+                                                , Identifier
+                                                )
 import           Common.Pretty
+
 import           Data.List                      ( intersperse )
-
--- | A type variable name (e.g., a, b)
-type TVarId = String
-
--- | A type constructor name (e.g., Int, Bool)
-type TConId = String
-
--- | A data constructor name (e.g., Just, False)
-type DConId = String
-
--- | A type class name (e.g., Eq, Ord)
-type TClassId = String
-
--- | A variable name (e.g., x, y, f)
-type VarId = String
-
--- | An operator name (e.g., +, foo)
-type OperatorId = String
 
 -- | A complete program: a list of declarations
 newtype Program = Program [Definition]
@@ -27,17 +13,16 @@ newtype Program = Program [Definition]
 
 -- | A value definition
 data Definition
-  = DefFn VarId [Pat] TypFn Expr
+  = DefFn Identifier [Pat] TypFn Expr
   | DefPat Pat Expr
   deriving (Eq, Show)
 
 -- | A pattern appearing on the LHS of a definition or match arm
 data Pat
   = PatWildcard         -- ^ Match anything, i.e., @_@
-  | PatId VarId         -- ^ Bind value to variable, e.g., @v@
-  | PatCon DConId       -- ^ Match on data constructor, e.g., @Some@
+  | PatId Identifier         -- ^ Variable or data constructor, e.g., @v@ or @Some@
   | PatLit Literal      -- ^ Literal match, e.g., @1@
-  | PatAs VarId Pat     -- ^ Pattern alias, e.g., @a \@ <pat>@
+  | PatAs Identifier Pat     -- ^ Pattern alias, e.g., @a \@ <pat>@
   | PatTup [Pat]        -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
   | PatApp [Pat]        -- ^ Match on multiple patterns, e.g., @Some a@
   | PatAnn Typ Pat      -- ^ Match with type annotation, e.g., @<pat>: Type@
@@ -55,7 +40,7 @@ type TypAnn = Typ
 
 -- | A type definition
 data Typ
-  = TCon TConId
+  = TCon Identifier
   | TApp Typ Typ
   | TTuple [Typ]
   | TArrow Typ Typ
@@ -64,8 +49,7 @@ data Typ
 
 -- | An expression
 data Expr
-  = Id VarId
-  | DCon DConId
+  = Id Identifier
   | Lit Literal
   | Apply Expr Expr
   | Lambda [Pat] Expr
@@ -91,7 +75,7 @@ that is initially parsed flat but will be restructured into a tree by
 the operator precedence parser.
 -}
 data OpRegion
-  = NextOp OperatorId Expr OpRegion
+  = NextOp Identifier Expr OpRegion
   | EOR
   deriving (Eq, Show)
 
@@ -103,6 +87,10 @@ data Literal
   | LitChar Char
   | LitEvent
   deriving (Eq, Show)
+
+-- | Fixity declaration for binary operators.
+data Fixity = Infixl Int Identifier
+            | Infixr Int Identifier
 
 -- | Collect a curried application into the function and its list of arguments.
 collectTApp :: Typ -> (Typ, [Typ])
@@ -130,7 +118,6 @@ instance Pretty Definition where
 instance Pretty Pat where
   pretty PatWildcard   = pretty '_'
   pretty (PatId  s   ) = pretty s
-  pretty (PatCon d   ) = pretty d
   pretty (PatApp ps  ) = parens $ hsep $ map pretty ps
   pretty (PatLit l   ) = pretty l
   pretty (PatAs b p  ) = parens $ pretty b <> pretty '@' <> pretty p
@@ -144,11 +131,11 @@ instance Pretty TypFn where
 
 instance Pretty Typ where
   pretty (TTuple tys) = parens $ hsep (punctuate comma $ map pretty tys)
-  pretty (TCon   cid           ) = pretty cid
-  pretty (TApp   (TCon "[]") t2) = brackets $ pretty t2
-  pretty (TApp   (TCon "&" ) t2) = pretty "&" <> pretty t2
-  pretty (TApp   t1          t2) = parens $ pretty t1 <+> pretty t2
-  pretty (TArrow t1          t2) = pretty t1 <+> rarrow <+> pretty t2
+  pretty (TCon   cid) = pretty cid
+  pretty (TApp (TCon tc) t2) | ident tc == "[]" = brackets $ pretty t2
+                             | ident tc == "&"  = amp <> pretty t2
+  pretty (TApp   t1 t2) = parens $ pretty t1 <+> pretty t2
+  pretty (TArrow t1 t2) = pretty t1 <+> rarrow <+> pretty t2
 
 
 instance Pretty Expr where
@@ -191,9 +178,8 @@ instance Pretty Expr where
     parens $ pretty "fun" <+> hsep (map (parens . pretty) ps) <+> braces
       (pretty b)
   pretty (Apply e1 e2) = parens $ pretty e1 <+> pretty e2
-  pretty (Id   ident ) = pretty ident
-  pretty (DCon ident ) = pretty ident
-  pretty (Lit  l     ) = pretty l
+  pretty (Id  i      ) = pretty i
+  pretty (Lit l      ) = pretty l
   pretty Break         = pretty "break"
   pretty (Return e  )  = pretty "return" <+> pretty e
   pretty (Match s as)  = parens $ pretty "match" <+> pretty s <+> braces

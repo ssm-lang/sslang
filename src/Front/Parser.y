@@ -17,6 +17,7 @@ import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
 import Common.Compiler (ErrorMsg)
+import Common.Identifiers (fromString)
 }
 
 %name parse
@@ -155,7 +156,7 @@ typApp                                --> Typ
 
 -- | Prefix type operators.
 typPre                                --> Typ
-  : '&' typPre                          { TApp (TCon "&") $2 }
+  : '&' typPre                          { TApp (TCon $ fromString "&") $2 }
   | typAtom                             { $1 }
 
 {- | Atomic type expressions.
@@ -166,8 +167,8 @@ parenthesize a type expression).
 typAtom                               --> Typ
   : id                                  { TCon $1 }
   | '(' typTups ')'                     { normalize id TTuple $2 }
-  | '[' typ ']'                         { TApp (TCon "[]") $2 }
-  | '(' ')'                             { TCon "()" }
+  | '[' typ ']'                         { TApp (TCon $ fromString "[]") $2 }
+  | '(' ')'                             { TCon $ fromString "()" }
 
 -- | Type annotation for (potentially) functions.
 typFn                                 --> TypFn
