@@ -1,21 +1,17 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.InferProgramSpec where
 
-import           Front                          ( parseOps
-                                                , parseSource
-                                                )
-import           IR                             ( inferTypes
-                                                , lowerAst
-                                                )
+import qualified Front
+import qualified IR
 import qualified IR.IR                         as I
 import           IR.LowerAst                    ( lowerProgram )
-import qualified IR.Types.Classes              as C
+import           IR.TypeInference               ( inferProgram )
+import qualified IR.Types.Classes              as Cls
 
 import           Common.Compiler                ( Error(..)
                                                 , runPass
                                                 )
-import           Common.Pretty                  ( spaghetti )
-import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Common.Default                 ( Default(..) )
 import           Data.String.SourceCode         ( here )
 import           Test.Hspec                     ( Spec(..)
                                                 , describe
@@ -24,8 +20,8 @@ import           Test.Hspec                     ( Spec(..)
                                                 , shouldBe
                                                 )
 
-parseInfer :: String -> Either Error (I.Program C.Type)
-parseInfer s = runPass $ parseSource s >>= parseOps >>= lowerAst >>= inferTypes
+parseInfer :: String -> Either Error (I.Program Cls.Type)
+parseInfer s = runPass $ Front.run def s >>= IR.lower def >>= inferProgram
 
 spec :: Spec
 spec = do

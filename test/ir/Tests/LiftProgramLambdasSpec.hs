@@ -1,22 +1,17 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.LiftProgramLambdasSpec where
 
-import           Front                          ( parseOps
-                                                , parseSource
-                                                )
-import           IR                             ( inferTypes
-                                                , instantiateClasses
-                                                , lowerAst
-                                                )
+import qualified Front
+import qualified IR
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
-import qualified IR.Types.Classes              as C
 import           IR.Types.Poly                 as Poly
 
 
 import           Common.Compiler                ( Error(..)
                                                 , runPass
                                                 )
+import           Common.Default                 ( Default(..) )
 import           Data.String.SourceCode         ( here )
 import           Test.Hspec                     ( Spec(..)
                                                 , describe
@@ -30,16 +25,14 @@ import           Data.Bifunctor                 ( Bifunctor(second) )
 parseLift :: String -> Either Error (I.Program Poly.Type)
 parseLift s =
   runPass
-    $   parseSource s
-    >>= parseOps
-    >>= lowerAst
-    >>= inferTypes
-    >>= instantiateClasses
+    $   Front.run def s
+    >>= IR.lower def
+    >>= IR.ann2Class def
+    >>= IR.class2Poly def
     >>= liftProgramLambdas
 
 spec :: Spec
 spec = do
-
   it "lifts a lambda without free variables" $ do
     let unlifted = parseLift [here|
           bar: Int = 5

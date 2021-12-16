@@ -1,18 +1,20 @@
+-- | CLI front-end to the sslang compiler.
 module Main where
 
 import qualified Codegen
-import qualified Common.Compiler               as Compiler
+import           Common.Compiler                ( passIO )
+import           Common.Default                 ( Default(..) )
 import qualified Front
 import qualified IR
 
-import           Common.Pretty
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
-import           System.Console.GetOpt          ( ArgDescr(NoArg, ReqArg)
-                                                , ArgOrder(RequireOrder)
+import           System.Console.GetOpt          ( ArgDescr(..)
+                                                , ArgOrder(..)
                                                 , OptDescr(..)
                                                 , getOpt
+                                                , getOpt'
                                                 , usageInfo
                                                 )
 import           System.Environment             ( getArgs
@@ -21,127 +23,74 @@ import           System.Environment             ( getArgs
 import           System.Exit                    ( exitFailure
                                                 , exitSuccess
                                                 )
-import           System.IO                      ( hPrint
-                                                , hPutStr
+import           System.IO                      ( hPutStr
                                                 , hPutStrLn
                                                 , stderr
                                                 )
 
-data Mode
-  = DumpTokens            -- ^ Token stream before parsing
-  | DumpAST               -- ^ AST before operator parsing
-  | DumpASTP              -- ^ AST after operators are parsed
-  | DumpIR                -- ^ Intermediate representation
-  | DumpIRLambdasLifted   -- ^ Intermediate representation with lifted lambdas
-  | GenerateC             -- ^ Generate C backend
-  deriving (Eq, Show)
-
-data Options = Options
-  { optMode :: Mode
-  , modName :: String
-  }
-
-defaultOptions :: Options
-defaultOptions = Options { optMode = DumpIR, modName = "top" }
-
-
+-- | Print the usage message, collating options from each compiler stage.
 usageMessage :: IO ()
 usageMessage = do
   prg <- getProgName
-  let header = "Usage: " ++ prg ++ " [options] file..."
-  hPutStr stderr (usageInfo header optionDescriptions)
+  let header = "Usage: " ++ prg ++ " [options] file"
+  hPutStr stderr $ unlines
+    [ header
+    , usageInfo "" options
+    , usageInfo "" Front.options
+    , usageInfo "" IR.options
+    , usageInfo "" Codegen.options
+    ]
 
-optionDescriptions :: [OptDescr (Options -> IO Options)]
-optionDescriptions =
-  [ Option "h" ["help"] (NoArg (\_ -> usageMessage >> exitSuccess)) "Print help"
-  , Option ""
-           ["dump-tokens"]
-           (NoArg (\opt -> return opt { optMode = DumpTokens }))
-           "Print the token stream"
-  , Option ""
-           ["dump-ast"]
-           (NoArg (\opt -> return opt { optMode = DumpAST }))
-           "Print the AST"
-  , Option ""
-           ["dump-ast-parsed"]
-           (NoArg (\opt -> return opt { optMode = DumpASTP }))
-           "Print the AST after operators are parsed"
-  , Option ""
-           ["dump-ir"]
-           (NoArg (\opt -> return opt { optMode = DumpIR }))
-           "Print the IR"
-  , Option ""
-           ["dump-lambdas-lifted-ir"]
-           (NoArg (\opt -> return opt { optMode = DumpIRLambdasLifted }))
-           "Print the IR with lifted lambdas"
-  , Option ""
-           ["generate-c"]
-           (NoArg (\opt -> return opt { optMode = GenerateC }))
-           "Generate C (default)"
-  , Option "m"
-           ["module-name"]
-           (ReqArg (\mn opt -> return opt { modName = mn }) "<module-name>")
-           "Set the module name"
-  ]
+-- | CLI options.
+options :: [OptDescr (IO ())]
+options =
+  [Option "h" ["help"] (NoArg (usageMessage >> exitSuccess)) "Print help"]
 
-doPass :: Compiler.Pass a -> IO a
-doPass p = case Compiler.runPass p of
-  Left  e -> hPrint stderr e >> exitFailure
-  Right a -> return a
-
+-- | Read input from file or stdin.
 readInput :: String -> IO String
 readInput "-"      = getContents
 readInput filename = readFile filename
 
+{- | Compiler executable entry point.
+
+This
+-}
 main :: IO ()
 main = do
   args <- getArgs
-  let (actions, filenames, errors) =
-        getOpt RequireOrder optionDescriptions args
-  opts <- foldl (>>=) (return defaultOptions) actions -- Perform actions
+
+  let (cliActions, fArgs, fArgs', cliErrors) =
+        getOpt' RequireOrder options args
+      (fOpts, iArgs, iArgs', fErr) =
+        getOpt' RequireOrder Front.options $ fArgs' ++ fArgs
+      (iOpts, cArgs, cArgs', iErr) =
+        getOpt' RequireOrder IR.options $ iArgs' ++ iArgs
+      (cOpts, filenames, cErr) =
+        getOpt RequireOrder Codegen.options $ cArgs' ++ cArgs
+      errors      = cliErrors ++ fErr ++ iErr ++ cErr
+      frontOpts   = foldr ($) def fOpts
+      irOpts      = foldr ($) def iOpts
+      codegenOpts = foldr ($) def cOpts
+
   unless (null errors) $ do
     mapM_ (hPutStr stderr) errors
     usageMessage
     exitFailure
+
+  mapM_ return cliActions
 
   when (null filenames) $ do
     hPutStrLn stderr "Error: no source files"
     usageMessage
     exitFailure
 
-  inputs <- mapM readInput filenames
+  when (length filenames > 1) $ do
+    hPutStrLn stderr "Error: specified more than one file"
+    usageMessage
+    exitFailure
 
-  when (optMode opts == DumpTokens) $ do
-    doPass (Front.tokenStream (head inputs)) >>= mapM_ (print . pretty)
-    exitSuccess
-  ast <- doPass $ Front.parseSource (head inputs)
-  when (optMode opts == DumpAST) $ putStrLn (spaghetti ast) >> exitSuccess
-
-  ast' <- doPass $ Front.desugarAst ast
-  when (optMode opts == DumpASTP) $ putStrLn (spaghetti ast') >> exitSuccess
-
-  ()  <- doPass $ Front.checkAst ast'
-
-  irA <- doPass $ IR.lowerAst ast'
-
-  when (optMode opts == DumpIR) $ putStrLn (spaghetti irA) >> exitSuccess
-
-  irC <- doPass $ IR.inferTypes irA
-
-  irP <- doPass $ IR.instantiateClasses irC
-
-  irY <- doPass $ IR.yieldAbstraction irP
-
-  irL <- doPass $ IR.lambdaLift irY
-
-  when (optMode opts == DumpIRLambdasLifted) $ putStrLn (spaghetti irL) >> exitSuccess
-
-  irI   <- doPass $ IR.defunctionalize irL
-
-  irD   <- doPass $ IR.inferDrops irI
-
-  irM   <- doPass $ IR.monomorphize irD
-
-  cDefs <- doPass $ Codegen.genIR irM
-
-  when (optMode opts == GenerateC) $ doPass (Codegen.prettyC cDefs) >>= putStrLn
+  input <- readInput $ head filenames
+  ast   <- passIO $ Front.run frontOpts input
+  ir    <- passIO $ IR.run irOpts ast
+  c     <- passIO $ Codegen.run codegenOpts ir
+  putStrLn c
