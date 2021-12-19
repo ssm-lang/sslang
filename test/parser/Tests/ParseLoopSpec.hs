@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.ParseLoopSpec where
 
 import           Test.Hspec                     ( Spec(..)

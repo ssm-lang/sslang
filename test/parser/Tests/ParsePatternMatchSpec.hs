@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.ParsePatternMatchSpec where
 
 import           Front.Ast

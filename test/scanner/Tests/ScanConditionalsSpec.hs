@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.ScanConditionalsSpec where
 
 import           Test.Hspec                     ( Spec(..)

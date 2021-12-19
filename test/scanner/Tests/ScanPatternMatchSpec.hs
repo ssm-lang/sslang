@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.ScanPatternMatchSpec where
 
 import           Test.Hspec                     ( Spec(..)
