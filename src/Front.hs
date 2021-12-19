@@ -13,6 +13,7 @@ import           Front.Check                    ( checkTopSignatures )
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
 import           Front.Scanner                  ( scanTokens )
+import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( Token(..) )
 
 import           Control.Monad.Except           ( liftEither )
@@ -32,6 +33,8 @@ desugarAst = return . parseOperators
 
 -- | Check the structure of the AST, throwing errors as necessary
 checkAst :: A.Program -> Compiler.Pass ()
-checkAst prog = if checkTopSignatures prog
-  then return ()
-  else Compiler.throw $ Compiler.AstError "Type signature mismatch" -- TODO: better error message
+checkAst prog = do
+  scopeProgram prog
+  if checkTopSignatures prog
+    then return ()
+    else Compiler.throw $ Compiler.AstError "Type signature mismatch" -- TODO: better error message
