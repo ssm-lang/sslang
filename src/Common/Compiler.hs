@@ -20,12 +20,13 @@ type ErrorMsg = String
 data Error
   = UnexpectedError ErrorMsg  -- ^ Internal compiler error; shouldn't be reachable
   | TypeError ErrorMsg        -- ^ Type error
+  | ScopeError ErrorMsg       -- ^ Scope error
+  | NameError ErrorMsg        -- ^ Name error
   | LexError ErrorMsg         -- ^ Lex error
   | ParseError ErrorMsg       -- ^ Parse error
   | AstError ErrorMsg         -- ^ Some error in the AST
   deriving Show
 
--- | A compiler pass, able to throw 'Error'
 newtype Pass a = Pass (Except Error a)
   deriving Functor                    via (Except Error)
   deriving Applicative                via (Except Error)
