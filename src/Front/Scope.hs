@@ -123,7 +123,7 @@ scopeDefs ds = do
     ensureVar f
     dataDecl f
     return [(f, VarInfo ())]
-  scopeCorec (A.DefPat p _   ) = do
+  scopeCorec (A.DefPat p _) = do
     ids <- scopePat p
     when (hasRepeated $ map fst ids) $ do
       -- Not strictly necessary here, but gives a more precise error message.
@@ -185,8 +185,19 @@ scopePat (A.PatAs i p) = do
   ensureVar i
   dataDecl i
   ([ (i, VarInfo ()) | isVar i ] ++) <$> scopePat p
-scopePat (A.PatTup pats   ) = concat <$> mapM scopePat pats
-scopePat (A.PatApp pats   ) = concat <$> mapM scopePat pats
+scopePat (A.PatTup pats)
+  | length pats < 2 = throwError
+  $ UnexpectedError "PatTup should have arity greater than 2"
+  | otherwise = concat <$> mapM scopePat pats
+scopePat (A.PatApp []) =
+  throwError $ UnexpectedError "PatApp should not be empty"
+scopePat (A.PatApp [_]) =
+  throwError $ UnexpectedError "PatApp should not be singleton"
+scopePat (A.PatApp pats@(A.PatId i : _)) = do
+  ensureCons i
+  concat <$> mapM scopePat pats
+scopePat (A.PatApp _) = do
+  throwError $ PatternError "Invalid pattern head"
 scopePat (A.PatAnn typ pat) = scopeType typ >> scopePat pat
 scopePat (A.PatLit _      ) = return []
 scopePat A.PatWildcard      = return []

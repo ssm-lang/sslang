@@ -22,6 +22,7 @@ data Error
   | TypeError ErrorMsg        -- ^ Type error
   | ScopeError ErrorMsg       -- ^ Scope error
   | NameError ErrorMsg        -- ^ Name error
+  | PatternError ErrorMsg     -- ^ Pattern error
   | LexError ErrorMsg         -- ^ Lex error
   | ParseError ErrorMsg       -- ^ Parse error
   | AstError ErrorMsg         -- ^ Some error in the AST
