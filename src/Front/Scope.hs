@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Front.Scope where
 
 import qualified Front.Ast                     as A
@@ -6,6 +7,7 @@ import qualified Front.Ast                     as A
 import           Common.Compiler                ( Error(..)
                                                 , Pass(..)
                                                 )
+import           Common.Default
 
 import           Common.Identifiers             ( Identifiable(..)
                                                 , Identifier(..)
@@ -24,12 +26,30 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 )
 import qualified Data.Map                      as M
 
-newtype VarInfo = VarInfo () deriving (Show, Eq)
+showId :: Identifier -> String
+showId s = "'" ++ ident s ++ "'"
+
+-- | Builtin type constructors. TODO: move this elsewhere.
+builtinTypes :: M.Map Identifier TypInfo
+builtinTypes = M.fromList [("Int", def), ("[]", def), ("&", def)]
+
+-- | Builtin variables and data constructors. TODO: move this elsewhere.
+builtinData :: M.Map Identifier DataInfo
+builtinData = M.fromList
+  [("-", def), ("+", def), ("*", def), ("/", def), ("deref", def), ("new", def)]
+
+newtype DataInfo = DataInfo () deriving (Show, Eq)
 newtype TypInfo = TypInfo () deriving (Show, Eq)
+
+instance Default DataInfo where
+  def = DataInfo ()
+
+instance Default TypInfo where
+  def = TypInfo ()
 
 -- | Scoping environment
 data ScopeCtx = ScopeCtx
-  { dataMap :: M.Map Identifier VarInfo
+  { dataMap :: M.Map Identifier DataInfo
   , typeMap :: M.Map Identifier TypInfo
   }
 
@@ -45,9 +65,9 @@ newtype ScopeFn a = ScopeFn (ReaderT ScopeCtx Pass a)
 -- | Run a ScopeFn computation.
 runScopeFn :: ScopeFn a -> Pass a
 runScopeFn (ScopeFn m) =
-  runReaderT m ScopeCtx { dataMap = M.empty, typeMap = M.empty }
+  runReaderT m ScopeCtx { dataMap = builtinData, typeMap = builtinTypes }
 
-withDataScope :: [(Identifier, VarInfo)] -> ScopeFn a -> ScopeFn a
+withDataScope :: [(Identifier, DataInfo)] -> ScopeFn a -> ScopeFn a
 withDataScope is = do
   local $ \ctx -> ctx { dataMap = foldr (uncurry M.insert) (dataMap ctx) is }
 
@@ -63,7 +83,7 @@ ensureCons i = do
   nameErr =
     NameError
       $  "'"
-      ++ ident i
+      ++ showId i
       ++ "' should begin with upper case or begin and end with ':'"
 
 ensureVar :: Identifier -> ScopeFn ()
@@ -74,14 +94,14 @@ ensureVar i = do
   nameErr =
     NameError
       $  "'"
-      ++ ident i
+      ++ showId i
       ++ "' should begin with upper case or begin and end with ':'"
 
 dataDecl :: Identifier -> ScopeFn ()
 dataDecl i = do
   inScope <- asks $ M.member i . dataMap
   when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Constructor is out of scope: " ++ ident i
+    throwError $ ScopeError $ "Constructor is out of scope: " ++ showId i
   when (inScope && isVar i) $ do
     -- TODO: warn about shadowing
     return ()
@@ -89,14 +109,14 @@ dataDecl i = do
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
   inScope <- asks $ M.member i . dataMap
-  unless inScope $ throwError $ ScopeError $ "Not in scope: " ++ ident i
+  unless inScope $ throwError $ ScopeError $ "Not in scope: " ++ showId i
 
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
   inScope <- asks $ M.member i . typeMap
   when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Type constructor is out of scope: " ++ ident i
-  -- NOTE: type variables are implicitly quantified
+    throwError $ ScopeError $ "Type constructor is out of scope: " ++ showId i
+  -- NOTE: type variables are implicitly quantified, so we always allow any.
 
 scopeProgram :: A.Program -> Pass ()
 scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds
@@ -106,12 +126,12 @@ scopeDefs ds = do
   corecs <- concat <$> mapM scopeCorec ds
   mapM_ (scopeDef corecs) ds
  where
-  scopeCorec :: A.Definition -> ScopeFn [(Identifier, VarInfo)]
+  scopeCorec :: A.Definition -> ScopeFn [(Identifier, DataInfo)]
   scopeCorec (A.DefFn f _ps t _e) = do
     scopeTypeFn t
     ensureVar f
     dataDecl f
-    return [(f, VarInfo ())]
+    return [(f, def)]
   scopeCorec (A.DefPat p _) = do
     ids <- scopePat p
     when (hasRepeated $ map fst ids) $ do
@@ -119,7 +139,7 @@ scopeDefs ds = do
       throwError $ ScopeError "Overlapping names in pattern"
     return ids
 
-  scopeDef :: [(Identifier, VarInfo)] -> A.Definition -> ScopeFn ()
+  scopeDef :: [(Identifier, DataInfo)] -> A.Definition -> ScopeFn ()
   scopeDef corecs (A.DefFn _f ps _t e) = do
     -- NOTE: corecs should already contain _f
     ids <- (corecs ++) . concat <$> mapM scopePat ps
@@ -164,16 +184,16 @@ scopeExpr A.NoExpr =
   throwError $ UnexpectedError "NoExpr should not be reachable"
 
 -- | Retrieve new variable identifiers defined in a pattern.
-scopePat :: A.Pat -> ScopeFn [(Identifier, VarInfo)]
+scopePat :: A.Pat -> ScopeFn [(Identifier, DataInfo)]
 scopePat (A.PatId i) = do
   -- NOTE: here, i may be either a data constructor or a variable name.
   dataDecl i
-  return $ [ (i, VarInfo ()) | isVar i ]
+  return $ [ (i, def) | isVar i ]
 scopePat (A.PatAs i p) = do
   -- When we have v@p, v should always be a variable identifier.
   ensureVar i
   dataDecl i
-  ([ (i, VarInfo ()) | isVar i ] ++) <$> scopePat p
+  ([ (i, def) | isVar i ] ++) <$> scopePat p
 scopePat (A.PatTup pats)
   | length pats < 2 = throwError
   $ UnexpectedError "PatTup should have arity greater than 2"
