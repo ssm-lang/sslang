@@ -20,6 +20,7 @@ import qualified IR.Types.TypeSystem           as I
 
 import           Common.Identifiers             ( fromId
                                                 , fromString
+                                                , isCons
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -105,7 +106,8 @@ propogate it elsewhere. This is possible because the IR's type annotations
 the join operation.
 -}
 lowerExpr :: A.Expr -> AnnotationK -> I.Expr I.Type
-lowerExpr (  A.Id  v    ) k = I.Var (fromId v) (k I.untyped)
+lowerExpr (A.Id v) k | isCons v  = I.Data (fromId v) (k I.untyped)
+                     | otherwise = I.Var (fromId v) (k I.untyped)
 lowerExpr (  A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
 lowerExpr a@(A.Apply l r) k = case first lowerPrim (A.collectApp a) of
   (Just prim, args) -> I.Prim prim (map (`lowerExpr` id) args) (k I.untyped)
