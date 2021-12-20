@@ -5,6 +5,8 @@ module Front.ParseOperators
   ) where
 
 import           Common.Identifiers
+import qualified Common.Compiler               as Compiler
+
 import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
                                                 , OpRegion(..)
@@ -22,8 +24,9 @@ defaultOps :: [Fixity]
 defaultOps =
   [Infixl 6 "+", Infixl 6 "-", Infixl 7 "*", Infixl 8 "/", Infixr 8 "^"]
 
-parseOperators :: Program -> Program
-parseOperators (Program decls) = Program $ map (parseOps defaultOps) decls
+parseOperators :: Program -> Compiler.Pass Program
+parseOperators (Program decls) = return $ Program $ map (parseOps defaultOps)
+                                                        decls
  where
   parseOps fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
   parseOps fs (DefPat b e    ) = DefPat b $ parseExprOps fs e

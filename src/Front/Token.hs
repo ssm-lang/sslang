@@ -114,3 +114,6 @@ instance Pretty TokenType where
   pretty (TString  s) = pretty $ "\"" ++ s ++ "\""
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
+
+prettyTokens :: [Token] -> String
+prettyTokens = unlines . map (show . pretty)

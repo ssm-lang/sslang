@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ParsePatternMatchSpec where
 
+import           Data.String.SourceCode         ( here )
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
 import           Front.Scanner                  ( scanTokenTypes )
@@ -15,12 +17,12 @@ spec :: Spec
 spec = do
   it "parses a basic function with a pattern match" $ do
     let
-      input = unlines
-        [ "main (x: Int, clk : &Int) ="
-        , "  match x"
-        , "    id => wait clk"
-        , "    _ => wait clk"
-        ]
+      input = [here|
+        main (x: Int, clk : &Int) =
+          match x
+            id => wait clk
+            _ => wait clk
+      |]
       output = Program
         [ DefFn
             "main"
