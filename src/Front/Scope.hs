@@ -119,12 +119,13 @@ typeRef i = do
   -- NOTE: type variables are implicitly quantified, so we always allow any.
 
 scopeProgram :: A.Program -> Pass ()
-scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds
+scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds $ return ()
 
-scopeDefs :: [A.Definition] -> ScopeFn ()
-scopeDefs ds = do
+scopeDefs :: [A.Definition] -> ScopeFn () -> ScopeFn ()
+scopeDefs ds k = do
   corecs <- concat <$> mapM scopeCorec ds
   mapM_ (scopeDef corecs) ds
+  withDataScope corecs k
  where
   scopeCorec :: A.Definition -> ScopeFn [(Identifier, DataInfo)]
   scopeCorec (A.DefFn f _ps t _e) = do
@@ -164,7 +165,7 @@ scopeExpr (A.Lambda as b) = do
   when (hasRepeated $ map fst args) $ do
     throwError $ ScopeError "Overlapping variable names"
   withDataScope args $ scopeExpr b
-scopeExpr (A.Let        ds b) = scopeDefs ds >> scopeExpr b
+scopeExpr (A.Let        ds b) = scopeDefs ds $ scopeExpr b
 scopeExpr (A.Constraint e  t) = scopeType t >> scopeExpr e
 scopeExpr (A.Apply      f  a) = scopeExpr f >> scopeExpr a
 scopeExpr (A.While      c  b) = scopeExpr c >> scopeExpr b
