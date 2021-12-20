@@ -9,6 +9,9 @@ import           Common.Compiler                ( Error(..)
 
 import           Common.Identifiers             ( Identifiable(..)
                                                 , Identifier(..)
+                                                , hasRepeated
+                                                , isCons
+                                                , isVar
                                                 )
 import           Control.Monad                  ( forM_
                                                 , unless
@@ -19,21 +22,7 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.Char                      ( isUpper )
-import           Data.List                      ( group )
 import qualified Data.Map                      as M
-
-
-hasRepeated :: [Identifier] -> Bool
-hasRepeated = not . all ((== 1) . length) . group
-
-isCons :: Identifier -> Bool
-isCons i | null s    = False
-         | otherwise = isUpper (head s) || head s == ':' && last s == ':'
-  where s = ident i
-
-isVar :: Identifier -> Bool
-isVar = not . isCons
 
 newtype VarInfo = VarInfo () deriving (Show, Eq)
 newtype TypInfo = TypInfo () deriving (Show, Eq)
@@ -74,7 +63,7 @@ ensureCons i = do
   nameErr =
     NameError
       $  "'"
-      ++ show i
+      ++ ident i
       ++ "' should begin with upper case or begin and end with ':'"
 
 ensureVar :: Identifier -> ScopeFn ()
@@ -85,14 +74,14 @@ ensureVar i = do
   nameErr =
     NameError
       $  "'"
-      ++ show i
+      ++ ident i
       ++ "' should begin with upper case or begin and end with ':'"
 
 dataDecl :: Identifier -> ScopeFn ()
 dataDecl i = do
   inScope <- asks $ M.member i . dataMap
   when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Constructor is out of scope: " ++ show i
+    throwError $ ScopeError $ "Constructor is out of scope: " ++ ident i
   when (inScope && isVar i) $ do
     -- TODO: warn about shadowing
     return ()
@@ -100,13 +89,13 @@ dataDecl i = do
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
   inScope <- asks $ M.member i . dataMap
-  unless inScope $ throwError $ ScopeError $ "Not in scope: " ++ show i
+  unless inScope $ throwError $ ScopeError $ "Not in scope: " ++ ident i
 
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
   inScope <- asks $ M.member i . typeMap
   when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Type constructor is out of scope: " ++ show i
+    throwError $ ScopeError $ "Type constructor is out of scope: " ++ ident i
   -- NOTE: type variables are implicitly quantified
 
 scopeProgram :: A.Program -> Pass ()

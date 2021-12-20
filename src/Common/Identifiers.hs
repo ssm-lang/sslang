@@ -17,8 +17,13 @@ module Common.Identifiers
   , FieldId(..)
   , Binder
   , Identifier(..)
+  , hasRepeated
+  , isCons
+  , isVar
   ) where
 
+import           Data.Char                      ( isUpper )
+import           Data.List                      ( group )
 import           Data.String                    ( IsString(..) )
 
 import           Language.C                     ( Id(..) )
@@ -141,3 +146,17 @@ newtype FieldId = FieldId Identifier
 
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@
 type Binder = Maybe VarId
+
+-- | List of identifiers contains a repeated member.
+hasRepeated :: [Identifier] -> Bool
+hasRepeated = not . all ((== 1) . length) . group
+
+-- | Whether an identifier refers to a type or data constructor.
+isCons :: Identifier -> Bool
+isCons i | null s    = False
+         | otherwise = isUpper (head s) || head s == ':' && last s == ':'
+  where s = ident i
+
+-- | Whether an identifier refers to a type or data variable.
+isVar :: Identifier -> Bool
+isVar = not . isCons
