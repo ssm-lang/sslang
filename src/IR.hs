@@ -1,4 +1,4 @@
-{- | IR stage of the compiler pipeline.
+{- | Intermediate representation (IR) stage of the compiler pipeline.
 
 The IR stage is organized into 4 distinct substages: 'lower', 'ann2Class',
 'class2Poly', and 'poly2Flat', delineated by each type system used in the
@@ -30,11 +30,11 @@ import           System.Console.GetOpt          ( ArgDescr(..)
 
 -- | Operation modes for the IR compiler stage.
 data Mode
-  = DumpIR
-  | DumpIRTyped
-  | DumpIRLifted
-  | DumpIRFinal
-  | Continue
+  = Continue          -- ^ Compile end-to-end (default).
+  | DumpIR            -- ^ Print the IR immediately after lowering.
+  | DumpIRTyped       -- ^ Print the fully-typed IR after type inference.
+  | DumpIRLifted      -- ^ Print the IR after lambda lifting.
+  | DumpIRFinal       -- ^ Print the final IR representation before codegen.
   deriving (Eq, Show)
 
 -- | Compiler options for the IR compiler stage.
@@ -63,7 +63,7 @@ options =
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
   ]
- where setMode m o = o { mode = m }
+  where setMode m o = o { mode = m }
 
 -- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
 lower :: Options -> A.Program -> Pass (I.Program Ann.Type)
@@ -92,7 +92,9 @@ poly2Flat :: Options -> I.Program Poly.Type -> Pass (I.Program Flat.Type)
 poly2Flat opt ir = do
   irLifted <- liftProgramLambdas ir
   when (mode opt == DumpIRLifted) $ dump irLifted
-  monoProgram irLifted
+  ir' <- monoProgram irLifted
+  when (mode opt == DumpIRFinal) $ dump ir'
+  return ir'
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Flat.Type)

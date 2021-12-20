@@ -1,4 +1,10 @@
--- | CLI front-end to the sslang compiler.
+{- | CLI front-end to the sslang compiler.
+
+This module joins together the "Front", "IR", and "Codegen" compiler stage
+modules, piecing together the options and CLI interfaces exposed therein.
+This module is also responsible for managing IO operations, such as file I/O,
+exiting with status code, etc.
+-}
 module Main where
 
 import qualified Codegen
@@ -32,9 +38,11 @@ import           System.IO                      ( hPutStr
 usageMessage :: IO ()
 usageMessage = do
   prg <- getProgName
-  let header = "Usage: " ++ prg ++ " [options] file"
+  let header = "Usage: " ++ prg ++ " [options] <filename>"
   hPutStr stderr $ unlines
     [ header
+    , ""
+    , "When `-' is specified as the filename, input is read from stdin."
     , usageInfo "" options
     , usageInfo "" Front.options
     , usageInfo "" IR.options
@@ -44,17 +52,14 @@ usageMessage = do
 -- | CLI options.
 options :: [OptDescr (IO ())]
 options =
-  [Option "h" ["help"] (NoArg (usageMessage >> exitSuccess)) "Print help"]
+  [Option "h" ["help"] (NoArg $ usageMessage >> exitSuccess) "Print help"]
 
 -- | Read input from file or stdin.
 readInput :: String -> IO String
 readInput "-"      = getContents
 readInput filename = readFile filename
 
-{- | Compiler executable entry point.
-
-This
--}
+-- | Compiler executable entry point.
 main :: IO ()
 main = do
   args <- getArgs
@@ -72,12 +77,12 @@ main = do
       irOpts      = foldr ($) def iOpts
       codegenOpts = foldr ($) def cOpts
 
+  mapM_ return cliActions
+
   unless (null errors) $ do
     mapM_ (hPutStr stderr) errors
     usageMessage
     exitFailure
-
-  mapM_ return cliActions
 
   when (null filenames) $ do
     hPutStrLn stderr "Error: no source files"

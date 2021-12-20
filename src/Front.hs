@@ -30,11 +30,11 @@ import           System.Console.GetOpt          ( ArgDescr(..)
 
 -- | Operation modes for the front end compiler stage.
 data Mode
-  = DumpTokens
-  | DumpAst
-  | DumpAstParsed
-  | DumpAstFinal
-  | Continue
+  = Continue            -- ^ Compile end-to-end (default).
+  | DumpTokens          -- ^ Print the token stream from the scanner.
+  | DumpAst             -- ^ Print the initial parsed AST, before operators are parsed.
+  | DumpAstParsed       -- ^ Print the AST after operators are parsed.
+  | DumpAstFinal        -- ^ Print the AST after all desugaring, just before lowering.
   deriving (Eq, Show)
 
 -- | Compiler options for the front end compiler stage.
@@ -49,11 +49,11 @@ options =
   [ Option ""
            ["dump-tokens"]
            (NoArg $ setMode DumpTokens)
-           "Print the token stream"
+           "Print the token stream from the scanner"
   , Option ""
            ["dump-ast"]
            (NoArg $ setMode DumpAst)
-           "Print the AST, before operators are parsed"
+           "Print the initial parsed AST, before operators are parsed"
   , Option ""
            ["dump-ast-parsed"]
            (NoArg $ setMode DumpAstParsed)
@@ -79,6 +79,6 @@ run opt src = do
 
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
-
+  -- TODO: desugaring
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
   return astP
