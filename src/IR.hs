@@ -55,6 +55,10 @@ options =
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
   , Option ""
+           ["dump-ir-lifted"]
+           (NoArg $ setMode DumpIRLifted)
+           "Print the IR after lambda lifting"
+  , Option ""
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
