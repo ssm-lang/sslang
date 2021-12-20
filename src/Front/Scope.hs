@@ -1,8 +1,16 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Front.Scope where
+module Front.Scope
+  ( scopeProgram
+  ) where
 
 import qualified Front.Ast                     as A
+import           Front.Identifiers              ( DataInfo(dataKind)
+                                                , IdKind(User)
+                                                , TypInfo
+                                                , builtinData
+                                                , builtinTypes
+                                                )
 
 import           Common.Compiler                ( Error(..)
                                                 , Pass(..)
@@ -15,6 +23,7 @@ import           Common.Identifiers             ( Identifiable(..)
                                                 , isCons
                                                 , isVar
                                                 )
+
 import           Control.Monad                  ( forM_
                                                 , unless
                                                 , when
@@ -25,27 +34,10 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , asks
                                                 )
 import qualified Data.Map                      as M
+import           Data.Maybe                     ( isJust )
 
 showId :: Identifier -> String
 showId s = "'" ++ ident s ++ "'"
-
--- | Builtin type constructors. TODO: move this elsewhere.
-builtinTypes :: M.Map Identifier TypInfo
-builtinTypes = M.fromList [("Int", def), ("[]", def), ("&", def)]
-
--- | Builtin variables and data constructors. TODO: move this elsewhere.
-builtinData :: M.Map Identifier DataInfo
-builtinData = M.fromList
-  [("-", def), ("+", def), ("*", def), ("/", def), ("deref", def), ("new", def)]
-
-newtype DataInfo = DataInfo () deriving (Show, Eq)
-newtype TypInfo = TypInfo () deriving (Show, Eq)
-
-instance Default DataInfo where
-  def = DataInfo ()
-
-instance Default TypInfo where
-  def = TypInfo ()
 
 -- | Scoping environment
 data ScopeCtx = ScopeCtx
@@ -82,9 +74,8 @@ ensureCons i = do
  where
   nameErr =
     NameError
-      $  "'"
-      ++ showId i
-      ++ "' should begin with upper case or begin and end with ':'"
+      $  showId i
+      ++ " should begin with upper case or begin and end with ':'"
 
 ensureVar :: Identifier -> ScopeFn ()
 ensureVar i = do
@@ -93,18 +84,27 @@ ensureVar i = do
  where
   nameErr =
     NameError
-      $  "'"
-      ++ showId i
-      ++ "' should begin with upper case or begin and end with ':'"
+      $  showId i
+      ++ " should begin with upper case or begin and end with ':'"
 
 dataDecl :: Identifier -> ScopeFn ()
 dataDecl i = do
-  inScope <- asks $ M.member i . dataMap
-  when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Constructor is out of scope: " ++ showId i
-  when (inScope && isVar i) $ do
-    -- TODO: warn about shadowing
-    return ()
+  info <- asks $ M.lookup i . dataMap
+
+  -- A data constructor cannot be defined inside of a pattern.
+  when (isCons i && not (inScope info)) $ do
+    throwError $ ScopeError $ "Data constructor is out of scope: " ++ showId i
+
+  when (isVar i && inScope info) $ if canShadow info
+    then
+      -- TODO: warn about shadowing
+         return ()
+    else
+      throwError $ NameError $ "Cannot bind identifier shadowing : " ++ showId i
+
+ where
+  inScope   = isJust
+  canShadow = not . maybe False ((== User) . dataKind)
 
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
