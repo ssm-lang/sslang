@@ -115,6 +115,14 @@ spec = do
           match t
             (x, y, z) = x + y + z
       |]
+    it "supports nested tuples patterns" $ do
+      shouldPass $ doScope [here|
+        f (x, (y, z)) =
+          x + y + z
+        g (t, r) =
+          match t r
+            ((x, y), z) = x + y + z
+      |]
     it "supports tuples let-bindings" $ do
       pendingWith "tuple literal syntax"
       shouldPass $ doScope [here|
@@ -142,6 +150,14 @@ spec = do
       doScope [here|
         _ x = 3
       |] `shouldFailWith` ParseError "Invalid syntax"
+    it "rejects juxtaposed patterns whose head is a variable" $ do
+      doScope [here|
+        f (x y) = 3
+      |] `shouldFailWith` NameError "Head of pattern must be a constructor"
+    it "rejects juxtaposed patterns whose head is not an identifier" $ do
+      doScope [here|
+        f ((x y) z) = 3
+      |] `shouldFailWith` PatternError "Head of pattern must be a constructor"
 
   describe "scoping recursion and corecursion" $ do
     it "supports top-level recursion" $ do
