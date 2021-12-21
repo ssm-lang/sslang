@@ -62,37 +62,29 @@ _test-suite: &test-suite
   - comonad
 
 tests:
+  # End-to-end regression tests
   regression:
     main: test/regression/Spec.hs
     dependencies:
     - process
 
-  scanner:
+  # Tests related to the textual representation of programs
+  text:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/scanner
+    - test/text
 
-  parser:
-    <<: *test-suite
-    source-dirs:
-    - test/lib
-    - test/parser
-
-  prettyprinter:
-    <<: *test-suite
-    source-dirs:
-    - test/lib
-    - test/prettyprinter
-
+  # Tests related to the user-facing semantics of programs
   semant:
     <<: *test-suite
     source-dirs:
     - test/lib
     - test/semant
 
-  ir:
+  # Tests related to internal compiler transformations invisible to the user
+  trans:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/ir
+    - test/trans

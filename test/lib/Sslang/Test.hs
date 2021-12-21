@@ -1,3 +1,7 @@
+{- | Defines some common utilities for writing Hspec tests.
+
+TODO: display the pretty-printed instance of items, for better test output.
+-}
 module Sslang.Test
   ( module Common.Compiler
   , module Common.Default
@@ -48,6 +52,7 @@ shouldPass a = case runPass a of
   Right _ -> return ()
   Left  e -> assertFailure $ "Encountered compiler error: " ++ show e
 
+-- | Expect that some 'Pass' must produce a particular value.
 shouldProduce :: (HasCallStack, Show a, Eq a) => Pass a -> a -> Expectation
 shouldProduce actual expected = case runPass actual of
   Right a -> a `shouldBe` expected
