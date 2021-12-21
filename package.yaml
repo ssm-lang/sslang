@@ -53,6 +53,9 @@ _test-suite: &test-suite
   dependencies:
   - sslang
   - hspec
+  - HUnit
+  - deepseq
+  - call-stack
   - here
   - template-haskell
   - containers
@@ -82,11 +85,11 @@ tests:
     - test/lib
     - test/prettyprinter
 
-  typeinference:
+  semant:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/typeinference
+    - test/semant
 
   ir:
     <<: *test-suite

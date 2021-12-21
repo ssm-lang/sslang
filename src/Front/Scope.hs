@@ -14,8 +14,9 @@ import           Front.Identifiers              ( DataInfo(dataKind)
 
 import           Common.Compiler                ( Error(..)
                                                 , Pass(..)
+                                                , fromString
                                                 )
-import           Common.Default
+import           Common.Default                 ( Default(def) )
 
 import           Common.Identifiers             ( Identifiable(..)
                                                 , Identifier(..)
@@ -23,7 +24,6 @@ import           Common.Identifiers             ( Identifiable(..)
                                                 , isCons
                                                 , isVar
                                                 )
-
 import           Control.Monad                  ( forM_
                                                 , unless
                                                 , when
@@ -74,6 +74,7 @@ ensureCons i = do
  where
   nameErr =
     NameError
+      $  fromString
       $  showId i
       ++ " should begin with upper case or begin and end with ':'"
 
@@ -84,6 +85,7 @@ ensureVar i = do
  where
   nameErr =
     NameError
+      $  fromString
       $  showId i
       ++ " should begin with upper case or begin and end with ':'"
 
@@ -93,14 +95,22 @@ dataDecl i = do
 
   -- A data constructor cannot be defined inside of a pattern.
   when (isCons i && not (inScope info)) $ do
-    throwError $ ScopeError $ "Data constructor is out of scope: " ++ showId i
+    throwError
+      $  ScopeError
+      $  fromString
+      $  "Data constructor is out of scope: "
+      ++ showId i
 
   when (isVar i && inScope info) $ if canShadow info
     then
       -- TODO: warn about shadowing
          return ()
     else
-      throwError $ NameError $ "Cannot bind identifier shadowing : " ++ showId i
+      throwError
+      $  NameError
+      $  fromString
+      $  "Cannot bind identifier shadowing : "
+      ++ showId i
 
  where
   inScope   = isJust
@@ -109,13 +119,22 @@ dataDecl i = do
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
   inScope <- asks $ M.member i . dataMap
-  unless inScope $ throwError $ ScopeError $ "Not in scope: " ++ showId i
+  unless inScope
+    $  throwError
+    $  ScopeError
+    $  fromString
+    $  "Not in scope: "
+    ++ showId i
 
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
   inScope <- asks $ M.member i . typeMap
   when (not inScope && isCons i) $ do
-    throwError $ ScopeError $ "Type constructor is out of scope: " ++ showId i
+    throwError
+      $  ScopeError
+      $  fromString
+      $  "Type constructor is out of scope: "
+      ++ showId i
   -- NOTE: type variables are implicitly quantified, so we always allow any.
 
 scopeProgram :: A.Program -> Pass ()
@@ -179,8 +198,14 @@ scopeExpr (A.Seq e e'       ) = mapM_ scopeExpr [e, e']
 scopeExpr (A.Return e       ) = scopeExpr e
 scopeExpr (A.Lit    _       ) = return ()
 scopeExpr A.Break             = return ()
-scopeExpr (A.OpRegion _ _) =
-  throwError $ UnexpectedError "OpRegion should not be reachable"
+scopeExpr (A.OpRegion e o) =
+  throwError
+    $  UnexpectedError
+    $  fromString
+    $  "OpRegion should not be reachable: "
+    ++ show e
+    ++ " "
+    ++ show o
 scopeExpr A.NoExpr =
   throwError $ UnexpectedError "NoExpr should not be reachable"
 
@@ -207,7 +232,9 @@ scopePat (A.PatApp pats@(A.PatId i : _)) = do
   ensureCons i
   concat <$> mapM scopePat pats
 scopePat (A.PatApp _) = do
-  throwError $ PatternError "Invalid pattern head"
+  -- We encountered something like @let f ((x y) z) = ...@
+  throwError
+    $ PatternError "Head of destructuring pattern must be a data constructor"
 scopePat (A.PatAnn typ pat) = scopeType typ >> scopePat pat
 scopePat (A.PatLit _      ) = return []
 scopePat A.PatWildcard      = return []

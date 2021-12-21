@@ -18,6 +18,7 @@ import Front.Token
 import Prettyprinter (pretty)
 import Common.Compiler (ErrorMsg)
 import Common.Identifiers (fromString)
+import Data.Bifunctor (first)
 }
 
 %name parse
@@ -253,7 +254,7 @@ matchArms                             --> [(Pat, Expr)]
 
 -- | Each individual arm of a pattern match.
 matchArm                              --> (Pat, Expr)
-  : pat '=>' '{' expr '}'               { ($1, $4) }
+  : pat '=' '{' expr '}'                { ($1, $4) }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
@@ -289,7 +290,7 @@ parseError (Token (sp, _)) =
 
 -- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
 parseProgram :: String -> Either ErrorMsg Program
-parseProgram = flip runAlex parse
+parseProgram = first fromString . flip runAlex parse
 
 {- | List combinator for singleton vs other lists.
 

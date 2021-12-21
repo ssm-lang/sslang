@@ -28,6 +28,7 @@ module Front.Scanner
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
 import Common.Compiler (ErrorMsg)
+import Data.Bifunctor (first)
 }
 
 %wrapper "monadUserState"
@@ -420,7 +421,7 @@ collectStream = do
 
 -- | Extract a token stream from an input string.
 scanTokens :: String -> Either ErrorMsg [Token]
-scanTokens s = runAlex s collectStream
+scanTokens s = first fromString $ runAlex s collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
 scanTokenTypes :: String -> Either ErrorMsg [TokenType]
