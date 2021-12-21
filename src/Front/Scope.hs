@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 {- | Check scoping rules and naming conventions for identifiers.
 
 Here, we ensure that all identifiers that appear in the AST only appear after
@@ -64,7 +65,6 @@ import           Common.Default                 ( Default(def) )
 
 import           Common.Identifiers             ( Identifiable(..)
                                                 , Identifier(..)
-                                                , hasRepeated
                                                 , isCons
                                                 , isVar
                                                 )
@@ -76,6 +76,9 @@ import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
+                                                )
+import           Data.List                      ( group
+                                                , sort
                                                 )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( isJust )
@@ -116,8 +119,16 @@ ensureNonempty i =
 
 -- | Check that a set of bindings does not define overlapping 'Identifier'.
 ensureUnique :: [Identifier] -> ScopeFn ()
-ensureUnique ids = when (hasRepeated ids) $ do
-  throwError $ ScopeError "Overlapping names in pattern"
+ensureUnique ids = do
+  forM_ (group $ sort ids) $ \case
+    []  -> throwError $ UnexpectedError "unique should not be empty"
+    [_] -> return ()
+    i : _ ->
+      throwError
+        $  ScopeError
+        $  fromString
+        $  "Defined more than once: "
+        ++ showId i
 
 -- | Check that a constructor 'Identifier' has the right naming convention.
 ensureCons :: Identifier -> ScopeFn ()
@@ -175,7 +186,7 @@ dataDecl i = do
 
  where
   inScope   = isJust
-  canShadow = not . maybe False ((== User) . dataKind)
+  canShadow = maybe True ((== User) . dataKind)
 
 -- | Validate a reference to a data 'Identifier'.
 dataRef :: Identifier -> ScopeFn ()
@@ -208,6 +219,7 @@ scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds $ return ()
 scopeDefs :: [A.Definition] -> ScopeFn () -> ScopeFn ()
 scopeDefs ds k = do
   corecs <- concat <$> mapM scopeCorec ds
+  ensureUnique $ map fst corecs
   mapM_ (scopeDef corecs) ds
   withDataScope corecs k
  where

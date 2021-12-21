@@ -17,13 +17,11 @@ module Common.Identifiers
   , FieldId(..)
   , Binder
   , Identifier(..)
-  , hasRepeated
   , isCons
   , isVar
   ) where
 
 import           Data.Char                      ( isUpper )
-import           Data.List                      ( group )
 import           Data.String                    ( IsString(..) )
 
 import           Language.C                     ( Id(..) )
@@ -35,7 +33,7 @@ import           Prettyprinter                  ( Pretty(..) )
 newtype Identifier = Identifier String deriving (Eq, Ord)
 
 -- | Turn a general identifier into a string
-class IsString i => Identifiable i where
+class (IsString i, Ord i) => Identifiable i where
   ident :: i -> String
 
 instance IsString Identifier where
@@ -66,6 +64,7 @@ fromId = fromString . ident
 -- | ToIdentifier for type constructors, e.g., @Option@
 newtype TConId = TConId Identifier
   deriving Eq
+  deriving Ord
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -79,6 +78,7 @@ instance Show TConId where
 -- | ToIdentifier for type variable, e.g., @a@
 newtype TVarId = TVarId Identifier
   deriving Eq
+  deriving Ord
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -92,6 +92,7 @@ instance Show TVarId where
 -- | de Bruijn index for type variables, e.g., @'0@
 newtype TVarIdx = TVarIdx Int
   deriving Eq
+  deriving Ord
 
 instance Show TVarIdx where
   show (TVarIdx i) = "'" ++ show i
@@ -102,6 +103,7 @@ instance Pretty TVarIdx where
 -- | ToIdentifier for data constructors, e.g., @None@
 newtype DConId = DConId Identifier
   deriving Eq
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -113,6 +115,7 @@ newtype DConId = DConId Identifier
 -- | ToIdentifier for low-level identifiers, e.g., @ssm_activate@
 newtype FfiId = FfiId Identifier
   deriving Eq
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -124,7 +127,7 @@ newtype FfiId = FfiId Identifier
 -- | ToIdentifier for user-defined variable, e.g., @x@
 newtype VarId = VarId Identifier
   deriving Eq
-  deriving Ord via Identifier
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -136,6 +139,7 @@ newtype VarId = VarId Identifier
 -- | ToIdentifier for struct field names, e.g., @len@
 newtype FieldId = FieldId Identifier
   deriving Eq
+  deriving Ord
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -146,10 +150,6 @@ newtype FieldId = FieldId Identifier
 
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@
 type Binder = Maybe VarId
-
--- | List of identifiers contains a repeated member.
-hasRepeated :: [Identifier] -> Bool
-hasRepeated = not . all ((== 1) . length) . group
 
 -- | Whether an identifier refers to a type or data constructor.
 isCons :: Identifier -> Bool
