@@ -68,6 +68,7 @@ options =
   setMode :: Mode -> Options -> Options
   setMode m o = o { optMode = m }
 
+-- | Parse a fully-formed AST from some String input.
 parseAst :: Options -> String -> Pass A.Program
 parseAst opt src = do
   when (optMode opt == DumpTokens)
@@ -85,6 +86,7 @@ parseAst opt src = do
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
   return astP
 
+-- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
   scopeProgram ast
