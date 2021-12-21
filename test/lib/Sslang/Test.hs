@@ -11,6 +11,7 @@ module Sslang.Test
   , shouldPassAs
   , shouldProduce
   , shouldFail
+  , shouldFailWith
   ) where
 
 import           Common.Compiler
@@ -70,8 +71,15 @@ shouldPassAs actual expected = case (runPass actual, runPass expected) of
   (Right a, Right e) -> a `shouldBe` e
 
 -- | Expect that some 'Pass' should fail with the given 'Error'.
-shouldFail :: (HasCallStack, Show a) => Pass a -> Error -> Expectation
-shouldFail actual expected = case runPass actual of
+shouldFail :: (HasCallStack, Show a) => Pass a -> Expectation
+shouldFail actual = case runPass actual of
+  Right a ->
+    assertDifference "Did not encounter expected error" (show a) "Some error"
+  Left _ -> return ()
+
+-- | Expect that some 'Pass' should fail with the given 'Error'.
+shouldFailWith :: (HasCallStack, Show a) => Pass a -> Error -> Expectation
+shouldFailWith actual expected = case runPass actual of
   Right a ->
     assertDifference "Did not encounter expected error" (show a) (show expected)
   Left a -> a `shouldBe` expected

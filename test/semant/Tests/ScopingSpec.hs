@@ -33,14 +33,14 @@ spec = do
     it "rejects undefined references" $ do
       doScope [here|
         f = x
-      |] `shouldFail` ScopeError "x is undefined"
+      |] `shouldFailWith` ScopeError "x is undefined"
     it "rejects global references to hidden variables" $ do
       doScope [here|
         f =
           let x = 3
           x
         g = x
-      |] `shouldFail` ScopeError "x is undefined"
+      |] `shouldFailWith` ScopeError "x is undefined"
 
   describe "scoping variable-binding expressions" $ do
     it "supports let-bound variables" $ do
@@ -70,20 +70,20 @@ spec = do
     it "rejects leaked lambda arguments" $ do
       doScope [here|
         f g = g (fun h {3}) h
-      |] `shouldFail` ScopeError "h is not defined"
+      |] `shouldFailWith` ScopeError "h is not defined"
     it "rejects local references to hidden variables" $ do
       doScope [here|
         f =
           let x = let y = 3
                   y
           y
-      |] `shouldFail` ScopeError "y is undefined"
+      |] `shouldFailWith` ScopeError "y is undefined"
     it "rejects references to hidden arguments" $ do
       doScope [here|
         x =
           let f y = y
           f y
-      |] `shouldFail` ScopeError "y is undefined"
+      |] `shouldFailWith` ScopeError "y is undefined"
 
   describe "scoping patterns" $ do
     it "supports literal patterns" $ do
@@ -130,18 +130,18 @@ spec = do
           match 3
             a = a
             b = a
-      |] `shouldFail` ScopeError "a is not defined in second match arm"
+      |] `shouldFailWith` ScopeError "a is not defined in second match arm"
     it "rejects leaked pattern-matched identifiers" $ do
       doScope [here|
         _ =
           let b = match 3
                     a = a
           a
-      |] `shouldFail` ScopeError "a is not defined outside of match"
+      |] `shouldFailWith` ScopeError "a is not defined outside of match"
     it "rejects wildcards as function names" $ do
       doScope [here|
         _ x = 3
-      |] `shouldFail` ParseError "Invalid syntax"
+      |] `shouldFailWith` ParseError "Invalid syntax"
 
   describe "scoping recursion and corecursion" $ do
     it "supports top-level recursion" $ do
@@ -226,38 +226,38 @@ spec = do
       doScope [here|
         f x = x
         f x = x
-      |] `shouldFail` ScopeError "f is redefined"
+      |] `shouldFailWith` ScopeError "f is redefined"
     it "rejects overlapping identifiers in the same pattern" $ do
       doScope [here|
         (x, x) = x
-      |] `shouldFail` ScopeError "x is redefined"
+      |] `shouldFailWith` ScopeError "x is redefined"
     it "rejects corecursive overlap with argument" $ do
       doScope [here|
         f x = x
         x = 3
-      |] `shouldFail` ScopeError "x is redefined"
+      |] `shouldFailWith` ScopeError "x is redefined"
     it "rejects overlapping identifiers in the same argument pattern" $ do
       doScope [here|
         f (x, x) = x
-      |] `shouldFail` ScopeError "x is redefined"
+      |] `shouldFailWith` ScopeError "x is redefined"
     it "rejects overlapping identifiers in different patterns" $ do
       doScope [here|
         f x x = x
-      |] `shouldFail` ScopeError "x is redefined"
+      |] `shouldFailWith` ScopeError "x is redefined"
     it "rejects overlapping across co-recursive definitions" $ do
       doScope [here|
         f =
           let x = 3
               x = 4
           x
-      |] `shouldFail` ScopeError "x is redefined"
+      |] `shouldFailWith` ScopeError "x is redefined"
 
   describe "scoping naming conventions" $ do
     it "rejects shadowing new" $ do
       doScope [here|
         new = 3
-      |] `shouldFail` NameError "new is a builtin, cannot be redefined"
+      |] `shouldFailWith` NameError "new is a builtin, cannot be redefined"
     it "rejects shadowing deref" $ do
       doScope [here|
         deref = 3
-      |] `shouldFail` NameError "deref is a builtin, cannot be redefined"
+      |] `shouldFailWith` NameError "deref is a builtin, cannot be redefined"
