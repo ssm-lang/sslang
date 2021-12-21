@@ -1,13 +1,17 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
 -- | Data types and helpers used to compose the compiler pipeline.
 module Common.Compiler
   ( ErrorMsg
   , Error(..)
+  , Warning(..)
   , Pass(..)
+  , MonadError(..)
+  , MonadWriter(..)
   , fromString
   , runPass
   , dump
-  , throw
+  , warn
   , passIO
   , liftEither
   ) where
@@ -15,9 +19,12 @@ module Common.Compiler
 import           Common.Pretty                  ( Pretty(pretty) )
 import           Control.Monad.Except           ( Except
                                                 , MonadError(..)
+                                                , liftEither
                                                 , runExcept
                                                 , throwError
-                                                , liftEither
+                                                )
+import           Control.Monad.Writer           ( MonadWriter(..)
+                                                , WriterT(..)
                                                 )
 
 import           Data.String                    ( IsString(..) )
@@ -27,6 +34,7 @@ import           System.Exit                    ( exitFailure
 import           System.IO                      ( hPrint
                                                 , stderr
                                                 )
+
 
 -- | Type for error messages.
 newtype ErrorMsg = ErrorMsg String
@@ -52,30 +60,39 @@ data Error
   | ParseError ErrorMsg       -- ^ Error encountered by parser
   deriving (Show, Eq)
 
+data Warning
+  = TypeWarning    ErrorMsg   -- ^ Warning about type
+  | NameWarning    ErrorMsg   -- ^ Warning related to identifier names
+  | PatternWarning ErrorMsg   -- ^ Warning related to patterns
+  deriving (Show, Eq)
+
+type PassMonad = WriterT [Warning] (Except Error)
+
 -- | The compiler pipeline monad; supports throwing errors, logging, etc.
-newtype Pass a = Pass (Except Error a)
-  deriving Functor                    via (Except Error)
-  deriving Applicative                via (Except Error)
-  deriving Monad                      via (Except Error)
-  deriving (MonadError Error)         via (Except Error)
+newtype Pass a = Pass (PassMonad a)
+  deriving Functor                    via PassMonad
+  deriving Applicative                via PassMonad
+  deriving Monad                      via PassMonad
+  deriving (MonadError Error)         via PassMonad
+  deriving (MonadWriter [Warning])    via PassMonad
 
 instance MonadFail Pass where
-  fail = throw . UnexpectedError . ErrorMsg
+  fail = throwError . UnexpectedError . fromString
 
 -- | Invoke a compiler 'Pass'.
-runPass :: Pass a -> Either Error a
-runPass (Pass p) = runExcept p
-
--- | Throw an error from within a compiler pass.
-throw :: Error -> Pass a
-throw = throwError
+runPass :: Pass a -> Either Error (a, [Warning])
+runPass (Pass p) = runExcept (runWriterT p)
 
 -- | Dump pretty-printable output from within a compiler pass.
 dump :: Pretty a => a -> Pass x
 dump = throwError . Dump . show . pretty
 
+-- | Log a compiler warning.
+warn :: MonadWriter [Warning] m => Warning -> m ()
+warn w = pass $ return ((), (++ [w]))
+
 -- | Execute compiler pass in I/O monad, exiting upon exception.
-passIO :: Pass a -> IO a
+passIO :: Pass a -> IO (a, [Warning])
 passIO p = case runPass p of
   Left  (Dump s) -> putStrLn s >> exitSuccess
   Left  e        -> hPrint stderr e >> exitFailure

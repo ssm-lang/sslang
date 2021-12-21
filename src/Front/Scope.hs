@@ -59,8 +59,12 @@ import           Front.Identifiers              ( DataInfo(dataKind)
 
 import           Common.Compiler                ( Error(..)
                                                 , ErrorMsg
+                                                , MonadError(..)
+                                                , MonadWriter
                                                 , Pass(..)
+                                                , Warning(..)
                                                 , fromString
+                                                , warn
                                                 )
 import           Common.Default                 ( Default(def) )
 
@@ -73,7 +77,6 @@ import           Control.Monad                  ( forM_
                                                 , unless
                                                 , when
                                                 )
-import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
@@ -101,6 +104,7 @@ newtype ScopeFn a = ScopeFn (ReaderT ScopeCtx Pass a)
   deriving Monad                        via (ReaderT ScopeCtx Pass)
   deriving MonadFail                    via (ReaderT ScopeCtx Pass)
   deriving (MonadError Error)           via (ReaderT ScopeCtx Pass)
+  deriving (MonadWriter [Warning])      via (ReaderT ScopeCtx Pass)
   deriving (MonadReader ScopeCtx)       via (ReaderT ScopeCtx Pass)
 
 -- | Run a ScopeFn computation.
@@ -164,9 +168,7 @@ dataDecl i = do
 
   -- A data variable can usually be shadowed, but we want warn about it.
   when (isVar i && inScope info) $ if canShadow info
-    then
-      -- TODO: warn about shadowing
-         return ()
+    then warn $ NameWarning $ "shadowing variable: " <> showId i
     else
       throwError $ NameError $ "Cannot bind identifier shadowing : " <> showId i
 

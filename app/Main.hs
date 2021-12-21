@@ -94,8 +94,11 @@ main = do
     usageMessage
     exitFailure
 
-  input <- readInput $ head filenames
-  ast   <- passIO $ Front.run frontOpts input
-  ir    <- passIO $ IR.run irOpts ast
-  c     <- passIO $ Codegen.run codegenOpts ir
-  putStrLn c
+  input            <- readInput $ head filenames
+  (cStr, warnings) <-
+    passIO
+    $   Front.run frontOpts input
+    >>= IR.run irOpts
+    >>= Codegen.run codegenOpts
+  hPutStr stderr $ show warnings
+  putStrLn cStr
