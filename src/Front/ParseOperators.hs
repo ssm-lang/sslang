@@ -87,5 +87,6 @@ parseExprOps fixity = rw
   rewrite f (Assign     p  e ) = Assign p (f e)
   rewrite f (Constraint e  t ) = Constraint (f e) t
   rewrite f (Seq        e1 e2) = Seq (f e1) (f e2)
+  rewrite f (Lambda     ps b ) = Lambda ps (f b)
   rewrite f (Match      s  as) = Match (f s) $ map (second f) as
   rewrite _ e                  = e
