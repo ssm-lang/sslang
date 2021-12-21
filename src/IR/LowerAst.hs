@@ -39,16 +39,18 @@ type AnnotationK = I.Type -> I.Type
 
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Typ -> I.Type
-lowerType (  A.TTuple tys    ) = I.tuple $ map lowerType tys
-lowerType (  A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
-lowerType (  A.TCon "Int"    ) = I.int 32
-lowerType (  A.TCon "()"     ) = I.unit
-lowerType (  A.TCon i        ) = I.Type [I.TCon (fromId i) []]
-lowerType a@(A.TApp _ _      ) = case A.collectTApp a of
-  (A.TCon "&" , [arg] ) -> I.ref $ lowerType arg
-  (A.TCon "[]", [_arg]) -> error "list types are not yet implemented"
-  (A.TCon i   , args  ) -> I.Type [I.TCon (fromId i) $ map lowerType args]
-  _                     -> error $ "Cannot lower higher-kinded type: " ++ show a
+lowerType (A.TTuple tys    ) = I.tuple $ map lowerType tys
+lowerType (A.TArrow lhs rhs) = lowerType lhs `I.arrow` lowerType rhs
+lowerType (A.TCon "Int"    ) = I.int 32
+lowerType (A.TCon "()"     ) = I.unit
+lowerType (A.TCon i) | isCons i  = I.Type [I.TCon (fromId i) []]
+                     | otherwise = I.Type [I.TVar (fromId i)]
+lowerType a@(A.TApp _ _) = case A.collectTApp a of
+  (A.TCon "&" , [arg] )       -> I.ref $ lowerType arg
+  (A.TCon "[]", [_arg])       -> error "list types are not yet implemented"
+  (A.TCon i, args) | isCons i -> I.Type [I.TCon (fromId i) $ map lowerType args]
+  _ ->
+    error $ "Cannot lower type application with non-constant head: " ++ show a
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
