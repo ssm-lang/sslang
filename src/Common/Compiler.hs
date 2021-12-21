@@ -29,7 +29,10 @@ import           System.IO                      ( hPrint
                                                 )
 
 -- | Type for error messages.
-newtype ErrorMsg = ErrorMsg String deriving (Show)
+newtype ErrorMsg = ErrorMsg String
+  deriving Show
+  deriving Semigroup    via String
+  deriving Monoid       via String
 
 instance IsString ErrorMsg where
   fromString = ErrorMsg

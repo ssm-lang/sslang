@@ -58,6 +58,7 @@ import           Front.Identifiers              ( DataInfo(dataKind)
                                                 )
 
 import           Common.Compiler                ( Error(..)
+                                                , ErrorMsg
                                                 , Pass(..)
                                                 , fromString
                                                 )
@@ -84,8 +85,8 @@ import qualified Data.Map                      as M
 import           Data.Maybe                     ( isJust )
 
 -- | Report 'Identifier' for error reporting.
-showId :: Identifier -> String
-showId s = "'" ++ ident s ++ "'"
+showId :: Identifier -> ErrorMsg
+showId s = "'" <> fromString (ident s) <> "'"
 
 -- | Scoping environment.
 data ScopeCtx = ScopeCtx
@@ -121,14 +122,9 @@ ensureNonempty i =
 ensureUnique :: [Identifier] -> ScopeFn ()
 ensureUnique ids = do
   forM_ (group $ sort ids) $ \case
-    []  -> throwError $ UnexpectedError "unique should not be empty"
-    [_] -> return ()
-    i : _ ->
-      throwError
-        $  ScopeError
-        $  fromString
-        $  "Defined more than once: "
-        ++ showId i
+    []    -> throwError $ UnexpectedError "unique should not be empty"
+    [ _ ] -> return ()
+    i : _ -> throwError $ ScopeError $ "Defined more than once: " <> showId i
 
 -- | Check that a constructor 'Identifier' has the right naming convention.
 ensureCons :: Identifier -> ScopeFn ()
@@ -138,9 +134,8 @@ ensureCons i = do
  where
   nameErr =
     NameError
-      $  fromString
       $  showId i
-      ++ " should begin with upper case or begin and end with ':'"
+      <> " should begin with upper case or begin and end with ':'"
 
 -- | Check that a variable 'Identifier' has the right naming convention.
 ensureVar :: Identifier -> ScopeFn ()
@@ -150,9 +145,8 @@ ensureVar i = do
  where
   nameErr =
     NameError
-      $  fromString
       $  showId i
-      ++ " should begin with upper case or begin and end with ':'"
+      <> " should begin with upper case or begin and end with ':'"
 
 {- | Validate a declaration of a data 'Identifier'.
 
@@ -166,11 +160,7 @@ dataDecl i = do
 
   -- A data constructor cannot be defined inside of a pattern.
   when (isCons i && not (inScope info)) $ do
-    throwError
-      $  ScopeError
-      $  fromString
-      $  "Data constructor is out of scope: "
-      ++ showId i
+    throwError $ ScopeError $ "Data constructor is out of scope: " <> showId i
 
   -- A data variable can usually be shadowed, but we want warn about it.
   when (isVar i && inScope info) $ if canShadow info
@@ -178,11 +168,7 @@ dataDecl i = do
       -- TODO: warn about shadowing
          return ()
     else
-      throwError
-      $  NameError
-      $  fromString
-      $  "Cannot bind identifier shadowing : "
-      ++ showId i
+      throwError $ NameError $ "Cannot bind identifier shadowing : " <> showId i
 
  where
   inScope   = isJust
@@ -192,23 +178,14 @@ dataDecl i = do
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
   inScope <- asks $ M.member i . dataMap
-  unless inScope
-    $  throwError
-    $  ScopeError
-    $  fromString
-    $  "Not in scope: "
-    ++ showId i
+  unless inScope $ throwError $ ScopeError $ "Not in scope: " <> showId i
 
 -- | Validate a reference to a type 'Identifier'.
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
   inScope <- asks $ M.member i . typeMap
   when (not inScope && isCons i) $ do
-    throwError
-      $  ScopeError
-      $  fromString
-      $  "Type constructor is out of scope: "
-      ++ showId i
+    throwError $ ScopeError $ "Type constructor is out of scope: " <> showId i
   -- Type variables are implicitly quantified, so we always allow any.
 
 -- | Check the scoping of a 'A.Program'.
@@ -277,11 +254,10 @@ scopeExpr A.Break             = return ()
 scopeExpr (A.OpRegion e o) =
   throwError
     $  UnexpectedError
-    $  fromString
     $  "OpRegion should not be reachable: "
-    ++ show e
-    ++ " "
-    ++ show o
+    <> fromString (show e)
+    <> " "
+    <> fromString (show o)
 scopeExpr A.NoExpr =
   throwError $ UnexpectedError "NoExpr should not be reachable"
 
