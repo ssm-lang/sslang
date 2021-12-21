@@ -94,7 +94,7 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
+  : pats typFn '=' '{' expr '}'         {% categorizeDef $1 $2 $5 }
 
 -- | A list of juxtaposed pattersn.
 pats
@@ -281,17 +281,12 @@ exprPar                               --> [Expr]
   | expr                                { [$1] }
 {
 -- | What to do upon encountering parse error.
---
--- TODO does this really just throw an uncaught exception on parse error, or
--- does Happy catch that for us?
-parseError :: Token -> a
-parseError (Token (sp, _)) =
-    error $ show (pretty sp) ++ ":Syntax error"
+parseError :: Token -> Alex a
+parseError (Token (sp, _)) = syntaxErr $ "near " ++ show (pretty sp)
 
 -- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
 parseProgram :: String -> Pass Program
-parseProgram =
-  liftEither . first (ParseError . fromString) . flip runAlex parse
+parseProgram = liftEither . first liftErr . flip runAlex parse
 
 {- | List combinator for singleton vs other lists.
 
@@ -309,9 +304,12 @@ normalize _ f xs = f xs
   definition.
 - Nothing else is considered well-formed.
 -}
-categorizeDef :: [Pat] -> TypFn -> Expr -> Definition
-categorizeDef [pat] (TypProper typ) = DefPat $ PatAnn typ pat
-categorizeDef [pat] TypNone = DefPat pat
-categorizeDef (PatId f:args) fAnn = DefFn f args fAnn
-categorizeDef _ _ = error "Syntax error in definition"
+categorizeDef :: [Pat] -> TypFn -> Expr -> Alex Definition
+categorizeDef [pat]          (TypProper typ) = return . DefPat (PatAnn typ pat)
+categorizeDef [pat]          TypNone         = return . DefPat pat
+categorizeDef (PatId f:args) fAnn            = return . DefFn f args fAnn
+categorizeDef (_:_)          _               =
+  const $ syntaxErr "function definition cannot begin with non-var pattern"
+categorizeDef []             _               =
+  const $ syntaxErr "empty pattern list"
 }

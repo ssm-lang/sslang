@@ -22,6 +22,9 @@ module Front.Scanner
   , TokenType(..)
   , Span(..)
   , Alex(..)
+  , syntaxErr
+  , internalErr
+  , liftErr
   , runAlex
   ) where
 
@@ -122,13 +125,18 @@ tokens :-
   }
 
 {
--- | User-facing syntax error.
-syntaxErr :: String -> Alex a
-syntaxErr s = alexError $ "Syntax error: " ++ s
-
 -- | Internal compiler error for unreachable code.
 internalErr :: String -> Alex a
-internalErr s = alexError $ "Internal error: " ++ s
+internalErr s = alexError $ "_i:" ++ s
+
+-- | User-facing syntax error.
+syntaxErr :: String -> Alex a
+syntaxErr s = alexError $ "_s:" ++ s
+
+liftErr :: String -> Error
+liftErr ('_':'i':':':e) = UnexpectedError $ fromString e
+liftErr ('_':'s':':':e) = ParseError      $ fromString e
+liftErr e               = LexError        $ fromString e
 
 -- | The various contexts that the scanner maintains in its stack state.
 data ScannerContext
@@ -421,8 +429,7 @@ collectStream = do
 
 -- | Extract a token stream from an input string.
 scanTokens :: String -> Pass [Token]
-scanTokens =
-  liftEither . first (LexError . fromString) . flip runAlex collectStream
+scanTokens = liftEither . first liftErr . flip runAlex collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
 scanTokenTypes :: String -> Pass [TokenType]
