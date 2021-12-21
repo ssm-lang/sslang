@@ -68,9 +68,8 @@ options =
   setMode :: Mode -> Options -> Options
   setMode m o = o { optMode = m }
 
--- | Front end compiler stage.
-run :: Options -> String -> Pass A.Program
-run opt src = do
+parseAst :: Options -> String -> Pass A.Program
+parseAst opt src = do
   when (optMode opt == DumpTokens)
     $ either (throw . LexError) (dump . prettyTokens)
     $ scanTokens src
@@ -80,9 +79,19 @@ run opt src = do
 
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
-  -- TODO: desugaring
 
-  scopeProgram astP
+  -- TODO: other desugaring
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
   return astP
+
+checkAst :: Options -> A.Program -> Pass ()
+checkAst _opt ast = do
+  scopeProgram ast
+
+-- | Front end compiler stage.
+run :: Options -> String -> Pass A.Program
+run opt src = do
+  ast <- parseAst opt src
+  checkAst opt ast
+  return ast
