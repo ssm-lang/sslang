@@ -22,61 +22,68 @@ doScope s = Front.parseAst def s >>= scopeProgram
 
 spec :: Spec
 spec = do
-  it "supports global scoping" $ do
-    shouldPass $ doScope [here|
-      x = 3
-      y = x
-    |]
-  it "supports let-bound variables" $ do
-    shouldPass $ doScope [here|
-      x =
-        let y = 3
-        x + y
-    |]
-  it "supports arguments" $ do
-    shouldPass $ doScope [here|
-      f x = x
-    |]
-  it "supports nested arguments" $ do
-    shouldPass $ doScope [here|
-      f x =
-        let g y = x
-        g x
-    |]
-  it "supports pattern-matching" $ do
-    shouldPass $ doScope [here|
-      foo x =
-        match x
-          0 = 1
-          a = x + a
-    |]
-  it "supports wild-cards" $ do
-    shouldPass $ doScope [here|
-      foo _ x =
-        match x
-          0 = 2
-          _ = x
-    |]
-  it "supports local and global scoping" $ do
-    shouldPass $ doScope [here|
-      foo x =
-        let foo' y = x
-        foo'
-      bar a b =
-        foo b a
-    |]
-  it "supports enum matches" $ do
-    pendingWith "syntax for defining data constructors"
-    shouldPass $ doScope [here|
-      foo D = 3
-    |]
-  it "supports data constructor matches" $ do
-    pendingWith "syntax for defining data constructors"
-    shouldPass $ doScope [here|
-      foo (D x) = 3
-    |]
-  it "supports nested data constructors" $ do
-    pendingWith "syntax for defining data constructors"
-    shouldPass $ doScope [here|
-      foo (D (D 3)) = 3
-    |]
+  describe "scoping global definitions" $ do
+    it "supports global scoping" $ do
+      shouldPass $ doScope [here|
+        x = 3
+        y = x
+      |]
+    it "supports global function arguments" $ do
+      shouldPass $ doScope [here|
+        f x = x
+      |]
+    it "supports local and global scoping" $ do
+      shouldPass $ doScope [here|
+        foo x =
+          let foo' y = x
+          foo'
+        bar a b =
+          foo b a
+      |]
+
+  describe "scoping let-bindings" $ do
+    it "supports let-bound variables" $ do
+      shouldPass $ doScope [here|
+        x =
+          let y = 3
+          x + y
+      |]
+    it "supports nested function arguments" $ do
+      shouldPass $ doScope [here|
+        f x =
+          let g y = x
+          g x
+      |]
+
+  describe "scoping pattern matches" $ do
+    it "supports pattern-matching" $ do
+      shouldPass $ doScope [here|
+        foo x =
+          match x
+            0 = 1
+            a = x + a
+      |]
+    it "supports wild-cards" $ do
+      shouldPass $ doScope [here|
+        foo _ x =
+          match x
+            0 = 2
+            _ = x
+      |]
+
+  describe "scoping data constructors" $ do
+    it "supports enum matches" $ do
+      pendingWith "syntax for defining data constructors"
+      shouldPass $ doScope [here|
+        foo D = 3
+      |]
+    it "supports data constructor matches" $ do
+      pendingWith "syntax for defining data constructors"
+      shouldPass $ doScope [here|
+        foo (D x) = 3
+      |]
+    it "supports nested data constructors" $ do
+      pendingWith "syntax for defining data constructors"
+      shouldPass $ doScope [here|
+        foo (D (D 3)) = 3
+      |]
