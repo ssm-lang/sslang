@@ -152,11 +152,11 @@ newtype FieldId = FieldId Identifier
 type Binder = Maybe VarId
 
 -- | Whether an identifier refers to a type or data constructor.
-isCons :: Identifier -> Bool
+isCons :: Identifiable a => a -> Bool
 isCons i | null s    = False
          | otherwise = isUpper (head s) || head s == ':' && last s == ':'
   where s = ident i
 
 -- | Whether an identifier refers to a type or data variable.
-isVar :: Identifier -> Bool
+isVar :: Identifiable a => a -> Bool
 isVar = not . isCons
