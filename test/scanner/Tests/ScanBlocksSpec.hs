@@ -1,25 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ScanBlocksSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , shouldBe
-                                                , pending
-                                                )
+import           Sslang.Test
 
 import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
 
-
-
 spec :: Spec
 spec = do
   it "supports line continuations" $ do
-    let input = unlines
-          [ "some long line"
-          , "    is continued with more indentation"
-          , "but this is not"
-          ]
+    let input = [here|
+          some long line
+              is continued with more indentation
+          but this is not
+        |]
         output =
           [ TId "some"
           , TId "long"
@@ -35,13 +30,13 @@ spec = do
           , TId "is"
           , TId "not"
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports do blocks with implicit braces" $ do
-    let input = unlines
-          [ "do a"
-          , "   b"
-          ]
+    let input = [here|
+          do a
+             b
+        |]
         output =
           [ TDo
           , TLbrace
@@ -50,16 +45,16 @@ spec = do
           , TId "b"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports do blocks with implicit braces, followed by continuation" $ do
-    let input = unlines
-          [ "do a"
-          , "     b"
-          , "   c"
-          , " d"
-          , "     e"
-          ]
+    let input = [here|
+          do a
+               b
+             c
+           d
+               e
+        |]
         output =
           [ TDo
           , TLbrace
@@ -71,15 +66,15 @@ spec = do
           , TId "d"
           , TId "e"
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports do blocks with explicit braces" $ do
-    let input = unlines
-          [ "do {"
-          , "    g"
-          , "x"
-          , "  }"
-          ]
+    let input = [here|
+          do {
+              g
+          x
+            }
+        |]
         output =
           [ TDo
           , TLbrace
@@ -87,15 +82,15 @@ spec = do
           , TId "x"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports do blocks with explicit braces and semicolons" $ do
-    let input = unlines
-          [ "do {"
-          , "  g;"
-          , "    x"
-          , "}"
-          ]
+    let input = [here|
+          do {
+            g;
+              x
+          }
+        |]
         output =
           [ TDo
           , TLbrace
@@ -104,4 +99,4 @@ spec = do
           , TId "x"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output

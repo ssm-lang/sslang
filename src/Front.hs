@@ -5,10 +5,8 @@ into simpler AST constructs.
 -}
 module Front where
 
-import           Common.Compiler                ( Error(..)
-                                                , Pass
+import           Common.Compiler                ( Pass
                                                 , dump
-                                                , throw
                                                 )
 import           Common.Default                 ( Default(..) )
 
@@ -19,9 +17,6 @@ import           Front.Parser                   ( parseProgram )
 import           Front.Scanner                  ( scanTokens )
 import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( prettyTokens )
-
-import           Control.Monad.Except           ( liftEither )
-import           Data.Bifunctor                 ( first )
 
 import           Common.Pretty                  ( Pretty(pretty) )
 import           Control.Monad                  ( when )
@@ -71,11 +66,11 @@ options =
 -- | Parse a fully-formed AST from some String input.
 parseAst :: Options -> String -> Pass A.Program
 parseAst opt src = do
-  when (optMode opt == DumpTokens)
-    $ either (throw . LexError) (dump . prettyTokens)
-    $ scanTokens src
+  when (optMode opt == DumpTokens) $ do
+    ts <- scanTokens src
+    dump $ prettyTokens ts
 
-  ast <- liftEither $ first ParseError $ parseProgram src
+  ast <- parseProgram src
   when (optMode opt == DumpAst) $ dump $ show $ pretty ast
 
   astP <- parseOperators ast

@@ -19,13 +19,13 @@ data Definition
 
 -- | A pattern appearing on the LHS of a definition or match arm
 data Pat
-  = PatWildcard         -- ^ Match anything, i.e., @_@
-  | PatId Identifier         -- ^ Variable or data constructor, e.g., @v@ or @Some@
-  | PatLit Literal      -- ^ Literal match, e.g., @1@
-  | PatAs Identifier Pat     -- ^ Pattern alias, e.g., @a \@ <pat>@
-  | PatTup [Pat]        -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
-  | PatApp [Pat]        -- ^ Match on multiple patterns, e.g., @Some a@
-  | PatAnn Typ Pat      -- ^ Match with type annotation, e.g., @<pat>: Type@
+  = PatWildcard           -- ^ Match anything, i.e., @_@
+  | PatId Identifier      -- ^ Variable or data constructor, e.g., @v@ or @Some@
+  | PatLit Literal        -- ^ Literal match, e.g., @1@
+  | PatAs Identifier Pat  -- ^ Pattern alias, e.g., @a \@ <pat>@
+  | PatTup [Pat]          -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
+  | PatApp [Pat]          -- ^ Match on multiple patterns, e.g., @Some a@
+  | PatAnn Typ Pat        -- ^ Match with type annotation, e.g., @<pat>: Type@
   deriving (Eq, Show)
 
 -- | Function type annotation
@@ -185,7 +185,7 @@ instance Pretty Expr where
   pretty (Match s as)  = parens $ pretty "match" <+> pretty s <+> braces
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
-    prettyPatExprTup (p, e) = pretty p <+> pretty "=>" <+> braces (pretty e)
+    prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
   pretty NoExpr = error "Unexpected NoExpr"
 
 instance Pretty Literal where

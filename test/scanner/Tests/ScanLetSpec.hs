@@ -1,11 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ScanLetSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pendingWith
-                                                , shouldBe
-                                                )
+import           Sslang.Test
 
 import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
@@ -14,7 +11,9 @@ import           Front.Token                    ( TokenType(..) )
 spec :: Spec
 spec = do
   it "scans basic let definition" $ do
-    let input = "do let variable = definition"
+    let input = [here|
+          do let variable = definition
+        |]
         output =
           [ TDo
           , TLbrace
@@ -28,15 +27,15 @@ spec = do
           , TRbrace
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "scans sequenced let definitions" $ do
-    let input = unlines
-          [ "do"
-          , "  let a = a_def"
-          , "  let b = b_def"
-          , "  c"
-          ]
+    let input = [here|
+          do
+            let a = a_def
+            let b = b_def
+            c
+        |]
         output =
           [ TDo
           , TLbrace
@@ -61,11 +60,13 @@ spec = do
           , TId "c"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
 
   it "scans inline nested let definitions" $ do
-    let input = "let a = { let b = { c }; d }; e"
+    let input = [here|
+          let a = { let b = { c }; d }; e
+        |]
         output =
           [ TLet
           , TLbrace
@@ -87,17 +88,17 @@ spec = do
           , TId "e"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "scans grouped let-bindings" $ do
-    let input = unlines
-          [ "do"
-          , " let a = a_block"
-          , "     b = b_block_1"
-          , "         b_block_2"
-          , "           b_block_2_cont"
-          , " outside_let"
-          ]
+    let input = [here|
+          do
+           let a = a_block
+               b = b_block_1
+                   b_block_2
+                     b_block_2_cont
+           outside_let
+        |]
         output =
           [ TDo
           , TLbrace
@@ -122,17 +123,17 @@ spec = do
           , TId "outside_let"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports explicit braces around definition" $ do
-    let input = unlines
-          [ "do"
-          , " let a = { a_block_1_1"
-          , "             a_block_1_2;"
-          , "           a_block_2_1"
-          , "             a_block_2_2 }"
-          , " outside_let"
-          ]
+    let input = [here|
+          do
+           let a = { a_block_1_1
+                       a_block_1_2;
+                     a_block_2_1
+                       a_block_2_2 }
+           outside_let
+        |]
         output =
           [ TDo
           , TLbrace
@@ -152,14 +153,14 @@ spec = do
           , TId "outside_let"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports explicit braces around bind group" $ do
-    let input = unlines
-          [ "do"
-          , " let { a = b"
-          , "   ||  b = a }"
-          ]
+    let input = [here|
+          do
+           let { a = b
+             ||  b = a }
+        |]
         output =
           [ TDo
           , TLbrace
@@ -179,7 +180,7 @@ spec = do
           , TRbrace
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
     -- pendingWith "help needed"
     -- let { a = b
     --   || b = a }
@@ -188,13 +189,13 @@ spec = do
     -- TODO(hans): The scanner isn't actually OK with this
 
   it "supports parenthesized definition in block" $ do
-    let input = unlines
-          [ "do"
-          , " let a = (a"
-          , "          b c)"
-          , "          d"
-          , "         e"
-          ]
+    let input = [here|
+          do
+           let a = (a
+                    b c)
+                    d
+                   e
+        |]
         output =
           [ TDo
           , TLbrace
@@ -215,15 +216,15 @@ spec = do
           , TRbrace
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports nested let-block" $ do
-    let input = unlines
-          [ "do"
-          , "  let a = let b = c"
-          , "              c = b"
-          , "  d"
-          ]
+    let input = [here|
+          do
+            let a = let b = c
+                        c = b
+            d
+        |]
         output =
           [ TDo
           , TLbrace
@@ -252,14 +253,14 @@ spec = do
           , TId "d"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "supports let-bound function definitions" $ do
-    let input = unlines
-          [ "do"
-          , "  let f = let g x = 1"
-          , "          g"
-          ]
+    let input = [here|
+          do
+            let f = let g x = 1
+                    g
+        |]
         output =
           [ TDo
           , TLbrace
@@ -283,4 +284,4 @@ spec = do
           , TRbrace
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output

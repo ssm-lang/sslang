@@ -27,7 +27,7 @@ module Front.Scanner
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
-import Common.Compiler (ErrorMsg)
+import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
 }
 
@@ -420,10 +420,11 @@ collectStream = do
     _ -> (:) tok <$> collectStream
 
 -- | Extract a token stream from an input string.
-scanTokens :: String -> Either ErrorMsg [Token]
-scanTokens s = first fromString $ runAlex s collectStream
+scanTokens :: String -> Pass [Token]
+scanTokens =
+  liftEither . first (LexError . fromString) . flip runAlex collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
-scanTokenTypes :: String -> Either ErrorMsg [TokenType]
+scanTokenTypes :: String -> Pass [TokenType]
 scanTokenTypes = fmap (map tokenType) . scanTokens
 }

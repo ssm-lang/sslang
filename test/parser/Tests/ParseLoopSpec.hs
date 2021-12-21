@@ -2,12 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.ParseLoopSpec where
 
-import           Data.String.SourceCode         ( here )
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
+import           Sslang.Test
 
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
@@ -33,4 +28,4 @@ spec = do
               (Seq (Wait [Id "clk"]) (Seq (Wait [Id "clk"]) (Wait [Id "clk"])))
             )
         ]
-    parseProgram input `shouldBe` Right output
+    parseProgram input `shouldProduce` output

@@ -1,20 +1,13 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.PrettyAstSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
+import Sslang.Test ( here, it, shouldPassAs, Spec, Pass )
 
 import           Common.Pretty                  ( spaghetti )
-import           Data.Bifunctor                 ( bimap )
-import           Data.Either                    ( fromRight )
-import           Data.String.SourceCode         ( here )
 import           Front.Ast                      ( Program )
 import           Front.Parser                   ( parseProgram )
 
-renderAndParse :: Program -> Either String Program
+renderAndParse :: Program -> Pass Program
 renderAndParse = parseProgram . spaghetti
 
 spec :: Spec
@@ -28,7 +21,7 @@ spec = do
               wait clk
         |]
         output = input >>= renderAndParse
-    input `shouldBe` output
+    input `shouldPassAs` output
 
   it "prints a function with a postfix type signature" $ do
     let input = parseProgram [here|
@@ -37,7 +30,7 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldBe` output
+    input `shouldPassAs` output
 
   it "prints a function with an inline type signature" $ do
     let input = parseProgram [here|
@@ -46,7 +39,7 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldBe` output
+    input `shouldPassAs` output
 
   it "prints a function with no type signature" $ do
     let input = parseProgram [here|
@@ -55,14 +48,14 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldBe` output
+    input `shouldPassAs` output
 
   it "prints a function with a pattern match" $ do
     let input = parseProgram [here|
           main (x: Int, clk : &Int) =
             match x
-              id => wait clk
-              _ => wait clk
+              id = wait clk
+              _  = wait clk
         |]
         output = input >>= renderAndParse
-    input `shouldBe` output
+    input `shouldPassAs` output

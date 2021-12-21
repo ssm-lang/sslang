@@ -2,16 +2,10 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.ParsePatternMatchSpec where
 
-import           Data.String.SourceCode         ( here )
+import           Sslang.Test
+
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
-import           Front.Scanner                  ( scanTokenTypes )
-import           Front.Token                    ( TokenType(..) )
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
 
 spec :: Spec
 spec = do
@@ -20,8 +14,8 @@ spec = do
       input = [here|
         main (x: Int, clk : &Int) =
           match x
-            id => wait clk
-            _ => wait clk
+            id = wait clk
+            _  = wait clk
       |]
       output = Program
         [ DefFn
@@ -37,4 +31,4 @@ spec = do
               [(PatId "id", Wait [Id "clk"]), (PatWildcard, Wait [Id "clk"])]
             )
         ]
-    parseProgram input `shouldBe` Right output
+    parseProgram input `shouldProduce` output

@@ -5,6 +5,7 @@ module Sslang.Test
   , module Test.Hspec
   , shouldPass
   , shouldPassAs
+  , shouldProduce
   , shouldFail
   ) where
 
@@ -46,6 +47,13 @@ shouldPass :: (HasCallStack, Show a, Eq a) => Pass a -> Expectation
 shouldPass a = case runPass a of
   Right _ -> return ()
   Left  e -> assertFailure $ "Encountered compiler error: " ++ show e
+
+shouldProduce :: (HasCallStack, Show a, Eq a) => Pass a -> a -> Expectation
+shouldProduce actual expected = case runPass actual of
+  Right a -> a `shouldBe` expected
+  Left  a -> assertDifference "Expected success but encountered error"
+                              (show a)
+                              (show expected)
 
 -- | Expect that some 'Pass' must produce some expected value.
 shouldPassAs :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation

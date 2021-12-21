@@ -16,7 +16,7 @@ import Front.Scanner
 import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
-import Common.Compiler (ErrorMsg)
+import Common.Compiler (Pass, Error(..), liftEither)
 import Common.Identifiers (fromString)
 import Data.Bifunctor (first)
 }
@@ -289,8 +289,9 @@ parseError (Token (sp, _)) =
     error $ show (pretty sp) ++ ":Syntax error"
 
 -- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
-parseProgram :: String -> Either ErrorMsg Program
-parseProgram = first fromString . flip runAlex parse
+parseProgram :: String -> Pass Program
+parseProgram =
+  liftEither . first (ParseError . fromString) . flip runAlex parse
 
 {- | List combinator for singleton vs other lists.
 

@@ -9,6 +9,7 @@ module Common.Compiler
   , dump
   , throw
   , passIO
+  , liftEither
   ) where
 
 import           Common.Pretty                  ( Pretty(pretty) )
@@ -16,6 +17,7 @@ import           Control.Monad.Except           ( Except
                                                 , MonadError(..)
                                                 , runExcept
                                                 , throwError
+                                                , liftEither
                                                 )
 
 import           Data.String                    ( IsString(..) )
