@@ -61,7 +61,7 @@ shouldProduce actual expected = case runPass actual of
                               (show a)
                               (show expected)
 
--- | Expect that some 'Pass' must produce some expected value.
+-- | Expect that some 'Pass' successfully produces the same value as another.
 shouldPassAs :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation
 shouldPassAs actual expected = case (runPass actual, runPass expected) of
   (_, Left e) ->
@@ -74,7 +74,7 @@ shouldPassAs actual expected = case (runPass actual, runPass expected) of
 shouldFail :: (HasCallStack, Show a) => Pass a -> Expectation
 shouldFail actual = case runPass actual of
   Right (a, _) ->
-    assertDifference "Did not encounter expected error" (show a) "Some error"
+    assertFailure $ "Did not encounter expected error, instead got: " ++ show a
   Left _ -> return ()
 
 -- | Expect that some 'Pass' should fail with the given 'Error'.

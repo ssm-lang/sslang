@@ -170,7 +170,7 @@ dataDecl i = do
   when (isVar i && inScope info) $ if canShadow info
     then warn $ NameWarning $ "shadowing variable: " <> showId i
     else
-      throwError $ NameError $ "Cannot bind identifier shadowing : " <> showId i
+      throwError $ NameError $ "Cannot bind identifier shadowing: " <> showId i
 
  where
   inScope   = isJust

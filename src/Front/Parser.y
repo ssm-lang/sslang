@@ -282,9 +282,9 @@ exprPar                               --> [Expr]
 {
 -- | What to do upon encountering parse error.
 parseError :: Token -> Alex a
-parseError (Token (sp, _)) = syntaxErr $ "near " ++ show (pretty sp)
+parseError t = syntaxErr $ "at " ++ show t
 
--- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
+-- | Parse a 'String' and yield a 'Program'.
 parseProgram :: String -> Pass Program
 parseProgram = liftEither . first liftErr . flip runAlex parse
 
