@@ -133,9 +133,13 @@ internalErr s = alexError $ "_i:" ++ s
 syntaxErr :: String -> Alex a
 syntaxErr s = alexError $ "_s:" ++ s
 
+lexErr :: String -> Alex a
+lexErr s = alexError $ "_l:" ++ s
+
 liftErr :: String -> Error
 liftErr ('_':'i':':':e) = UnexpectedError $ fromString e
 liftErr ('_':'s':':':e) = ParseError      $ fromString e
+liftErr ('_':'l':':':e) = LexError        $ fromString e
 liftErr e               = LexError        $ fromString e
 
 -- | The various contexts that the scanner maintains in its stack state.
@@ -413,7 +417,7 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
     -- Close all unclosed implicit blocks
     ImplicitBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
       where s' = s { alex_ust = st { usContext = ctxts } }
-    _ -> error $ "error message TODO (alexEOF)" ++ show (usContext st)
+    ctx -> Left $ "encountered EOF inside of non-implicit context: " ++ show ctx
 
 -- | Used to integrate with Happy parser.
 lexerForHappy :: (Token -> Alex a) -> Alex a
