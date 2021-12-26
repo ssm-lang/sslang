@@ -5,10 +5,8 @@ into simpler AST constructs.
 -}
 module Front where
 
-import           Common.Compiler                ( Error(..)
-                                                , Pass
+import           Common.Compiler                ( Pass
                                                 , dump
-                                                , throw
                                                 )
 import           Common.Default                 ( Default(..) )
 
@@ -17,10 +15,8 @@ import qualified Front.Ast                     as A
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
 import           Front.Scanner                  ( scanTokens )
+import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( prettyTokens )
-
-import           Control.Monad.Except           ( liftEither )
-import           Data.Bifunctor                 ( first )
 
 import           Common.Pretty                  ( Pretty(pretty) )
 import           Control.Monad                  ( when )
@@ -67,18 +63,32 @@ options =
   setMode :: Mode -> Options -> Options
   setMode m o = o { optMode = m }
 
--- | Front end compiler stage.
-run :: Options -> String -> Pass A.Program
-run opt src = do
-  when (optMode opt == DumpTokens)
-    $ either (throw . LexError) (dump . prettyTokens)
-    $ scanTokens src
+-- | Parse a fully-formed AST from some String input.
+parseAst :: Options -> String -> Pass A.Program
+parseAst opt src = do
+  when (optMode opt == DumpTokens) $ do
+    ts <- scanTokens src
+    dump $ prettyTokens ts
 
-  ast <- liftEither $ first ParseError $ parseProgram src
+  ast <- parseProgram src
   when (optMode opt == DumpAst) $ dump $ show $ pretty ast
 
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
-  -- TODO: desugaring
+
+  -- TODO: other desugaring
+
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
   return astP
+
+-- | Semantic checking on an AST.
+checkAst :: Options -> A.Program -> Pass ()
+checkAst _opt ast = do
+  scopeProgram ast
+
+-- | Front end compiler stage.
+run :: Options -> String -> Pass A.Program
+run opt src = do
+  ast <- parseAst opt src
+  checkAst opt ast
+  return ast

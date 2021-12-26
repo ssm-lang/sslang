@@ -22,12 +22,16 @@ module Front.Scanner
   , TokenType(..)
   , Span(..)
   , Alex(..)
+  , syntaxErr
+  , internalErr
+  , liftErr
   , runAlex
   ) where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
-import Common.Compiler (ErrorMsg)
+import Common.Compiler (Pass, Error(..), liftEither)
+import Data.Bifunctor (first)
 }
 
 %wrapper "monadUserState"
@@ -114,20 +118,29 @@ tokens :-
     \&                  { keyword TAmpersand }
 
     -- | Other stringy tokens.
-    @operator           { strTok TOp }
-    \` @identifier \`   { strTok (TOp . dropEnds 1 1) }
-    @identifier         { strTok TId }
+    @operator           { strTok (TOp . fromString) }
+    \` @identifier \`   { strTok (TOp . fromString . dropEnds 1 1) }
+    @identifier         { strTok (TId . fromString) }
     $digit+             { strTok (TInteger . read) }
   }
 
 {
--- | User-facing syntax error.
-syntaxErr :: String -> Alex a
-syntaxErr s = alexError $ "Syntax error: " ++ s
-
 -- | Internal compiler error for unreachable code.
 internalErr :: String -> Alex a
-internalErr s = alexError $ "Internal error: " ++ s
+internalErr s = alexError $ "_i:" ++ s
+
+-- | User-facing syntax error.
+syntaxErr :: String -> Alex a
+syntaxErr s = alexError $ "_s:" ++ s
+
+lexErr :: String -> Alex a
+lexErr s = alexError $ "_l:" ++ s
+
+liftErr :: String -> Error
+liftErr ('_':'i':':':e) = UnexpectedError $ fromString e
+liftErr ('_':'s':':':e) = ParseError      $ fromString e
+liftErr ('_':'l':':':e) = LexError        $ fromString e
+liftErr e               = LexError        $ fromString e
 
 -- | The various contexts that the scanner maintains in its stack state.
 data ScannerContext
@@ -404,7 +417,7 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
     -- Close all unclosed implicit blocks
     ImplicitBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
       where s' = s { alex_ust = st { usContext = ctxts } }
-    _ -> error $ "error message TODO (alexEOF)" ++ show (usContext st)
+    ctx -> Left $ "encountered EOF inside of non-implicit context: " ++ show ctx
 
 -- | Used to integrate with Happy parser.
 lexerForHappy :: (Token -> Alex a) -> Alex a
@@ -419,10 +432,10 @@ collectStream = do
     _ -> (:) tok <$> collectStream
 
 -- | Extract a token stream from an input string.
-scanTokens :: String -> Either ErrorMsg [Token]
-scanTokens s = runAlex s collectStream
+scanTokens :: String -> Pass [Token]
+scanTokens = liftEither . first liftErr . flip runAlex collectStream
 
 -- | Extract a stream of token types (without span) from an input string.
-scanTokenTypes :: String -> Either ErrorMsg [TokenType]
+scanTokenTypes :: String -> Pass [TokenType]
 scanTokenTypes = fmap (map tokenType) . scanTokens
 }

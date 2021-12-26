@@ -53,43 +53,38 @@ _test-suite: &test-suite
   dependencies:
   - sslang
   - hspec
+  - HUnit
+  - deepseq
+  - call-stack
   - here
   - template-haskell
   - containers
   - comonad
 
 tests:
+  # End-to-end regression tests
   regression:
     main: test/regression/Spec.hs
     dependencies:
     - process
 
-  scanner:
+  # Tests related to the textual representation of programs
+  text:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/scanner
+    - test/text
 
-  parser:
+  # Tests related to the user-facing semantics of programs
+  semant:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/parser
+    - test/semant
 
-  prettyprinter:
+  # Tests related to internal compiler transformations invisible to the user
+  trans:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/prettyprinter
-
-  typeinference:
-    <<: *test-suite
-    source-dirs:
-    - test/lib
-    - test/typeinference
-
-  ir:
-    <<: *test-suite
-    source-dirs:
-    - test/lib
-    - test/ir
+    - test/trans

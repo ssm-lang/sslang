@@ -1,22 +1,24 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Front.ParseOperators
   ( parseOperators
   , Fixity(..)
   ) where
 
 import qualified Common.Compiler               as Compiler
+import           Common.Identifiers
 
-import qualified Data.Map.Strict               as Map
 import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
+                                                , Fixity(..)
                                                 , OpRegion(..)
                                                 , Program(..)
                                                 )
 
-data Fixity = Infixl Int String
-            | Infixr Int String
+import           Data.Bifunctor                 ( Bifunctor(..) )
+import qualified Data.Map.Strict               as Map
 
 data Stack = BOS
-           | Stack Stack Expr String
+           | Stack Stack Expr Identifier
 
 -- FIXME: These should be defined and included in the standard library
 defaultOps :: [Fixity]
@@ -52,11 +54,11 @@ parseExprOps fixity = rw
     | op1 `shouldShift` op2 = shift s0 e2 op2 e3 t1
     | otherwise             = reduce s1 e1 op1 e2 t0
 
-  shift, reduce :: Stack -> Expr -> String -> Expr -> OpRegion -> Expr
+  shift, reduce :: Stack -> Expr -> Identifier -> Expr -> OpRegion -> Expr
   shift s e1 op e2 ts = step (Stack s e1 op) e2 ts
   reduce s e1 op e2 ts = step s (Apply (Apply (Id op) e1) e2) ts
 
-  shouldShift :: String -> String -> Bool
+  shouldShift :: Identifier -> Identifier -> Bool
   shouldShift opl opr = pl < pr
    where
     pl   = fst prel
@@ -72,7 +74,7 @@ parseExprOps fixity = rw
    where
     h EOR               = EOR
     h (NextOp op e' r') = NextOp op (f e') (h r')
-  rewrite f (Let d b) = Let (map g d) b
+  rewrite f (Let d b) = Let (map g d) $ f b
    where
     g (DefFn v bs t e) = DefFn v bs t $ f e
     g (DefPat p e    ) = DefPat p $ f e
@@ -85,4 +87,6 @@ parseExprOps fixity = rw
   rewrite f (Assign     p  e ) = Assign p (f e)
   rewrite f (Constraint e  t ) = Constraint (f e) t
   rewrite f (Seq        e1 e2) = Seq (f e1) (f e2)
+  rewrite f (Lambda     ps b ) = Lambda ps (f b)
+  rewrite f (Match      s  as) = Match (f s) $ map (second f) as
   rewrite _ e                  = e

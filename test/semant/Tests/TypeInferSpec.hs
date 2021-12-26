@@ -1,27 +1,16 @@
 {-# LANGUAGE QuasiQuotes #-}
-module Tests.InferProgramSpec where
+module Tests.TypeInferSpec where
+
+import           Sslang.Test
 
 import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
-import           IR.LowerAst                    ( lowerProgram )
 import           IR.TypeInference               ( inferProgram )
 import qualified IR.Types.Classes              as Cls
 
-import           Common.Compiler                ( Error(..)
-                                                , runPass
-                                                )
-import           Common.Default                 ( Default(..) )
-import           Data.String.SourceCode         ( here )
-import           Test.Hspec                     ( Spec(..)
-                                                , describe
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
-
-parseInfer :: String -> Either Error (I.Program Cls.Type)
-parseInfer s = runPass $ Front.run def s >>= IR.lower def >>= inferProgram
+parseInfer :: String -> Pass (I.Program Cls.Type)
+parseInfer s = Front.run def s >>= IR.lower def >>= inferProgram
 
 spec :: Spec
 spec = do
@@ -64,4 +53,4 @@ spec = do
             par slow led
                 fast led
           |]
-    fully `shouldBe` minimal
+    fully `shouldPassAs` minimal

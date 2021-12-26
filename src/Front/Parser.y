@@ -16,7 +16,9 @@ import Front.Scanner
 import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
-import Common.Compiler (ErrorMsg)
+import Common.Compiler (Pass, Error(..), liftEither)
+import Common.Identifiers (fromString)
+import Data.Bifunctor (first)
 }
 
 %name parse
@@ -92,7 +94,12 @@ We use 'categorizeDef' to figure out whether we are defining a function or a
 variable.
 -}
 defLet                                --> Definition
-  : pats typFn '=' '{' expr '}'         { categorizeDef $1 $2 $5 }
+  : pats typFn '=' '{' expr '}'         {% categorizeDef $1 $2 $5 }
+
+-- | A list of juxtaposed pattersn.
+pats
+  : pat pats                            { $1 : $2 }
+  | {- nothing -}                       { [] }
 
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
@@ -101,13 +108,17 @@ patTups                              --> [Pat]
 
 -- | Tuple pattern, which consist of a pattern and an optional type annotation.
 patAnn                                --> Pat
-  : pat ':' typ                         { PatAnn $3 $1 }
-  | pat                                 { $1 }
+  : patsApp ':' typ                     { PatAnn $3 $1 }
+  | patsApp                             { $1 }
 
--- | A list of argument patterns consists of a series of juxtaposed patterns.
-pats                                  --> [Pat]
-  : pat pats                            { $1 : $2 }
-  | {- nothing -}                       { [] }
+-- | Data constructor pattern with juxtaposed fields.
+patsApp                               --> Pat
+  : pats1                               { normalize id PatApp $1 }
+
+-- | Non-empty list of juxtaposed patterns.
+pats1                                 --> [Pat]
+  : pat pats1                           { $1 : $2 }
+  | pat                                 { [$1] }
 
 -- | Root node of patterns, which cannot be type-annotated without parens.
 pat                                   --> Pat
@@ -127,8 +138,8 @@ patAtom                               --> Pat
   : '_'                                 { PatWildcard }
   | '(' patTups ')'                     { normalize id PatTup $2 }
   | '(' ')'                             { PatLit LitEvent }
+  | int                                 { PatLit $ LitInt $1 }
   | id                                  { PatId $1 }
-  -- TODO: actually support literal patterns
 
 -- | Root node for type annotation.
 typ                                   --> Typ
@@ -146,7 +157,7 @@ typApp                                --> Typ
 
 -- | Prefix type operators.
 typPre                                --> Typ
-  : '&' typPre                          { TApp (TCon "&") $2 }
+  : '&' typPre                          { TApp (TCon $ fromString "&") $2 }
   | typAtom                             { $1 }
 
 {- | Atomic type expressions.
@@ -157,8 +168,8 @@ parenthesize a type expression).
 typAtom                               --> Typ
   : id                                  { TCon $1 }
   | '(' typTups ')'                     { normalize id TTuple $2 }
-  | '[' typ ']'                         { TApp (TCon "[]") $2 }
-  | '(' ')'                             { TCon "()" }
+  | '[' typ ']'                         { TApp (TCon $ fromString "[]") $2 }
+  | '(' ')'                             { TCon $ fromString "()" }
 
 -- | Type annotation for (potentially) functions.
 typFn                                 --> TypFn
@@ -243,7 +254,7 @@ matchArms                             --> [(Pat, Expr)]
 
 -- | Each individual arm of a pattern match.
 matchArm                              --> (Pat, Expr)
-  : pat '=>' '{' expr '}'               { ($1, $4) }
+  : pat '=' '{' expr '}'                { ($1, $4) }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
@@ -270,16 +281,12 @@ exprPar                               --> [Expr]
   | expr                                { [$1] }
 {
 -- | What to do upon encountering parse error.
---
--- TODO does this really just throw an uncaught exception on parse error, or
--- does Happy catch that for us?
-parseError :: Token -> a
-parseError (Token (sp, _)) =
-    error $ show (pretty sp) ++ ":Syntax error"
+parseError :: Token -> Alex a
+parseError t = syntaxErr $ "at " ++ show t
 
--- | Parse a 'String' and yield a 'Program' or an 'ErrorMsg' if unsuccessful.
-parseProgram :: String -> Either ErrorMsg Program
-parseProgram = flip runAlex parse
+-- | Parse a 'String' and yield a 'Program'.
+parseProgram :: String -> Pass Program
+parseProgram = liftEither . first liftErr . flip runAlex parse
 
 {- | List combinator for singleton vs other lists.
 
@@ -297,9 +304,12 @@ normalize _ f xs = f xs
   definition.
 - Nothing else is considered well-formed.
 -}
-categorizeDef :: [Pat] -> TypFn -> Expr -> Definition
-categorizeDef [pat] (TypProper typ) = DefPat $ PatAnn typ pat
-categorizeDef [pat] TypNone = DefPat pat
-categorizeDef (PatId f:args) fAnn = DefFn f args fAnn
-categorizeDef _ _ = error "Syntax error in definition"
+categorizeDef :: [Pat] -> TypFn -> Expr -> Alex Definition
+categorizeDef [pat]          (TypProper typ) = return . DefPat (PatAnn typ pat)
+categorizeDef [pat]          TypNone         = return . DefPat pat
+categorizeDef (PatId f:args) fAnn            = return . DefFn f args fAnn
+categorizeDef (_:_)          _               =
+  const $ syntaxErr "function definition cannot begin with non-var pattern"
+categorizeDef []             _               =
+  const $ syntaxErr "empty pattern list"
 }

@@ -1,31 +1,17 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.LiftProgramLambdasSpec where
 
+import           Sslang.Test
+
 import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.Types.Poly                 as Poly
 
-
-import           Common.Compiler                ( Error(..)
-                                                , runPass
-                                                )
-import           Common.Default                 ( Default(..) )
-import           Data.String.SourceCode         ( here )
-import           Test.Hspec                     ( Spec(..)
-                                                , describe
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
-
-import           Data.Bifunctor                 ( Bifunctor(second) )
-
-parseLift :: String -> Either Error (I.Program Poly.Type)
+parseLift :: String -> Pass (I.Program Poly.Type)
 parseLift s =
-  runPass
-    $   Front.run def s
+  Front.run def s
     >>= IR.lower def
     >>= IR.ann2Class def
     >>= IR.class2Poly def
@@ -52,7 +38,7 @@ spec = do
             let adder = anon0
             adder y
         |]
-    unlifted `shouldBe` lifted
+    unlifted `shouldPassAs` lifted
 
   it "lifts a lambda with free variables" $ do
     let unlifted = parseLift [here|
@@ -75,7 +61,7 @@ spec = do
                 adder = anon0 w
             adder y
         |]
-    lifted `shouldBe` unlifted
+    lifted `shouldPassAs` unlifted
 
   it "lifts nested lambdas with free variables" $ do
     let unlifted = parseLift [here|
@@ -97,4 +83,4 @@ spec = do
                 g = anon1 x z
             g y
         |]
-    lifted `shouldBe` unlifted
+    lifted `shouldPassAs` unlifted

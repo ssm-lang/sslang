@@ -1,10 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ScanConditionalsSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , shouldBe
-                                                , pendingWith
-                                                )
+import           Sslang.Test
 
 import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
@@ -14,7 +12,9 @@ import           Front.Token                    ( TokenType(..) )
 spec :: Spec
 spec = do
   it "scans inline conditionals" $ do
-    let input = "if a { b }"
+    let input = [here|
+          if a { b }
+        |]
         output =
           [ TIf
           , TId "a"
@@ -22,13 +22,13 @@ spec = do
           , TId "b"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "scans conditionals blocks" $ do
-    let input = unlines
-          [ "if a"
-          , "  b"
-          ]
+    let input = [here|
+          if a
+            b
+        |]
         output =
           [ TIf
           , TId "a"
@@ -36,14 +36,14 @@ spec = do
           , TId "b"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "scans loops blocks" $ do
-    let input = unlines
-          [ "loop"
-          , "  some_action"
-          , "  some_other_action"
-          ]
+    let input = [here|
+          loop
+            some_action
+            some_other_action
+        |]
         output =
           [ TLoop
           , TLbrace
@@ -52,14 +52,16 @@ spec = do
           , TId "some_other_action"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
 
   it "scans inline loops" $ do
-    let input = "loop some_action"
+    let input = [here|
+          loop some_action
+        |]
         output  =
           [ TLoop
           , TLbrace
           , TId "some_action"
           , TRbrace
           ]
-    scanTokenTypes input `shouldBe` Right output
+    scanTokenTypes input `shouldProduce` output
