@@ -1,10 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ScanPatternMatchSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
+import           Sslang.Test
 
 import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
@@ -14,12 +12,12 @@ import           Front.Token                    ( TokenType(..) )
 spec :: Spec
 spec = do
     it "scans pattern matches" $ do
-        let input = unlines
-                [ "main (x: Int, clk : &Int) ="
-                , "  match x"
-                , "    id => wait clk"
-                , "    _ => wait clk"
-                ]
+        let input = [here|
+              main (x: Int, clk : &Int) =
+                match x
+                  id => wait clk
+                  _ => wait clk
+            |]
             output =
                 [ TId "main"
                 , TLparen
@@ -57,4 +55,4 @@ spec = do
                 , TRbrace
                 , TRbrace
                 ]
-        scanTokenTypes input `shouldBe` Right output
+        scanTokenTypes input `shouldProduce` output

@@ -1,10 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Tests.ParseLoopSpec where
 
-import           Test.Hspec                     ( Spec(..)
-                                                , it
-                                                , pending
-                                                , shouldBe
-                                                )
+import           Sslang.Test
 
 import           Front.Ast
 import           Front.Parser                   ( parseProgram )
@@ -14,13 +12,13 @@ spec :: Spec
 spec = do
   it "parses a basic function with a loop and some waits" $ do
     let
-      input = unlines
-        [ "main (clk : &Int) ="
-        , "  loop"
-        , "    wait clk"
-        , "    wait clk"
-        , "    wait clk"
-        ]
+      input = [here|
+        main (clk : &Int) =
+          loop
+            wait clk
+            wait clk
+            wait clk
+        |]
       output = Program
         [ DefFn
             "main"
@@ -30,4 +28,4 @@ spec = do
               (Seq (Wait [Id "clk"]) (Seq (Wait [Id "clk"]) (Wait [Id "clk"])))
             )
         ]
-    parseProgram input `shouldBe` Right output
+    parseProgram input `shouldProduce` output

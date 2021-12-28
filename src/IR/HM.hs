@@ -17,7 +17,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , void
                                                 )
 import           Common.Identifiers             ( Binder
-                                                , TVarIdx(..)
+                                                , TVarIdx(..), fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -187,7 +187,7 @@ initTypeVars :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
 initTypeVars e@(I.Var v _) = do
   record <- lookupVar v
   case record of
-    Nothing -> throwError $ Compiler.TypeError $ "Unbound variable: " ++ show e
+    Nothing -> throwError $ Compiler.TypeError $ fromString $ "Unbound variable: " ++ show e
     Just s -> do
       t' <- instantiate s
       return $ I.Var v t'
@@ -272,8 +272,8 @@ initTypeVars (I.Prim I.Wait es _) = do
 initTypeVars (I.Prim I.Par es _) = do
     es' <- mapM initTypeVars es
     return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
-initTypeVars e@I.Prim {} = throwError $ Compiler.TypeError $ "Unsupported Prim expression: " ++ show e
-initTypeVars e = throwError $ Compiler.TypeError $ "Unable to type unknown expression: " ++ show e
+initTypeVars e@I.Prim {} = throwError $ Compiler.TypeError $ fromString $ "Unsupported Prim expression: " ++ show e
+initTypeVars e = throwError $ Compiler.TypeError $ fromString $ "Unable to type unknown expression: " ++ show e
 
 {- | Stage 2: Solve type equations using unification.
 
@@ -304,7 +304,7 @@ unify tv@(Classes.TVar _) t = do
   if r1 == tv then insertUnion r1 t else unify r1 t
 unify (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = unify t1 t2
 unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = unify t1 t3 >> unify t2 t4
-unify _ _ = throwError $ Compiler.TypeError "Single unification error"
+unify _ _ = throwError $ Compiler.TypeError $ fromString "Single unification error"
 
 {- | Stage 3: Find the type of the expression based on `unionFindTree`.
 
@@ -373,7 +373,7 @@ getType (I.Prim I.Wait es _) = do
 getType (I.Prim I.Par es _) = do
     es' <- mapM getType es
     return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
-getType e = throwError $ Compiler.TypeError $ "Unable to get the type of unknown expression: " ++ show e
+getType e = throwError $ Compiler.TypeError $ fromString $ "Unable to get the type of unknown expression: " ++ show e
 
 -- | `solveType` @t@ solves the type @t@ by replacing any embeded `TVar` @tvar@
 --   with its real type, which is the root of @tvar@ in the `unionFindTree`.
@@ -392,7 +392,7 @@ solveType (Classes.TBuiltin (Arrow t1 t2)) = do
   t1' <- solveType t1
   t2' <- solveType t2
   return $ Classes.TBuiltin $ Arrow t1' t2'
-solveType t = throwError $ Compiler.TypeError $ "Solve Type error" ++ show t
+solveType t = throwError $ Compiler.TypeError $ fromString $ "Solve Type error" ++ show t
 
 -- | `findRoot` @t@ finds the root of @t@ inside `unionFindTree`.
 findRoot :: Classes.Type -> InferFn Classes.Type

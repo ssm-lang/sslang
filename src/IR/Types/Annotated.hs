@@ -7,7 +7,7 @@ module IR.Types.Annotated
   , untyped
   ) where
 import           Common.Identifiers             ( TConId
-                                                , TVarIdx
+                                                , TVarId
                                                 )
 import           Common.Pretty
 import           IR.Types.TypeSystem            ( Builtin(..)
@@ -31,7 +31,7 @@ newtype Type = Type [TypeAnnote]
 data TypeAnnote
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TVar TVarId                     -- ^ Type variables, e.g., '0
   deriving (Show, Eq)
 
 -- | `Type' is a type system.
