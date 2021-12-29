@@ -279,7 +279,7 @@ matchArms                             --> [(Pat, Expr)]
 
 -- | Each individual arm of a pattern match.
 matchArm                              --> (Pat, Expr)
-  : pat '=' '{' expr '}'                { ($1, $4) }
+  : patAnn '=' '{' expr '}'             { ($1, $4) }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
