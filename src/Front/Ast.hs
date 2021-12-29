@@ -8,7 +8,22 @@ import           Common.Pretty
 import           Data.List                      ( intersperse )
 
 -- | A complete program: a list of declarations
-newtype Program = Program [Definition]
+newtype Program = Program [TopDef]
+  deriving (Eq, Show)
+
+data TopDef
+  = TopDef Definition
+  | TopType TypeDef
+  deriving (Eq, Show)
+
+data TypeDef = TypeDef
+  { typeName     :: Identifier
+  , typeParams   :: [Identifier]
+  , typeVariants :: [TypeVariant]
+  }
+  deriving (Eq, Show)
+
+data TypeVariant = VariantUnnamed Identifier [Typ]
   deriving (Eq, Show)
 
 -- | A value definition
@@ -92,18 +107,41 @@ data Literal
 data Fixity = Infixl Int Identifier
             | Infixr Int Identifier
 
--- | Collect a curried application into the function and its list of arguments.
+-- | Collect a type application into the type constructor and its arguments.
 collectTApp :: Typ -> (Typ, [Typ])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
   where (lf, la) = collectTApp lhs
 collectTApp t = (t, [])
 
+-- | Collect a curried application into the function and its list of arguments.
 collectApp :: Expr -> (Expr, [Expr])
 collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])
 
+-- | Unwrap a (potential) top-level data definition.
+getTopDataDef :: TopDef -> Maybe Definition
+getTopDataDef (TopDef d) = Just d
+getTopDataDef _ = Nothing
+
+-- | Unwrap a (potential) top-level type definition.
+getTopTypeDef :: TopDef -> Maybe TypeDef
+getTopTypeDef (TopType t) = Just t
+getTopTypeDef _ = Nothing
+
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
+
+instance Pretty TopDef where
+  pretty (TopDef  d) = pretty d
+  pretty (TopType t) = pretty t
+
+instance Pretty TypeDef where
+  pretty TypeDef { typeName = tn, typeParams = tvs, typeVariants = tds } =
+    pretty "type" <+> hsep (pretty tn : map pretty tvs) <+> equals <+> braces
+      (hsep $ punctuate bar $ map pretty tds)
+
+instance Pretty TypeVariant where
+  pretty (VariantUnnamed dc vs) = pretty dc <+> hsep (map pretty vs)
 
 instance Pretty Definition where
   pretty (DefFn fid formals r body) =

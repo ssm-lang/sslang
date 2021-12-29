@@ -8,6 +8,7 @@ module IR.IR
   , Alt(..)
   , collectApp
   , VarId(..)
+  , TConId(..)
   , DConId(..)
   , wellFormed
   , collectLambda

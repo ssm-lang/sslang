@@ -50,9 +50,9 @@ module Front.Scope
   ) where
 
 import qualified Front.Ast                     as A
-import           Front.Identifiers              ( DataInfo(dataKind)
-                                                , IdKind(User)
-                                                , TypInfo
+import           Front.Identifiers              ( DataInfo(..)
+                                                , IdKind(..)
+                                                , TypInfo(..)
                                                 , builtinData
                                                 , builtinTypes
                                                 )
@@ -85,7 +85,9 @@ import           Data.List                      ( group
                                                 , sort
                                                 )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( isJust )
+import           Data.Maybe                     ( isJust
+                                                , mapMaybe
+                                                )
 
 -- | Report 'Identifier' for error reporting.
 showId :: Identifier -> ErrorMsg
@@ -192,7 +194,26 @@ typeRef i = do
 
 -- | Check the scoping of a 'A.Program'.
 scopeProgram :: A.Program -> Pass ()
-scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds $ return ()
+scopeProgram (A.Program ds) = runScopeFn $ do
+  scopeTypeDefs tds
+  scopeDefs dds $ return ()
+ where
+  tds = mapMaybe A.getTopTypeDef ds
+  dds = mapMaybe A.getTopDataDef ds
+
+scopeTypeDefs :: [A.TypeDef] -> ScopeFn ()
+scopeTypeDefs _tds = undefined
+  {-
+  corecs <- mapM scopeCorec tds
+  ensureUnique $ map fst corecs
+  undefined
+ where
+  scopeCorec :: A.TypeDef -> ScopeFn (Identifier, TypInfo)
+  scopeCorec A.TypeDef { A.typeName = tn } =
+    return (tn, TypInfo { typKind = User })
+
+  scopeTypeDef :: [(Identifier, TypInfo)] -> A.TypeDef -> ScopeFn ()
+  -}
 
 -- | Check the scoping of a set of parallel (co-recursive) 'A.Definition'.
 scopeDefs :: [A.Definition] -> ScopeFn () -> ScopeFn ()

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 {- | Lower the representation of a sslang Ast into sslang IR.
 
 This pass expects prior desugaring passes to ensure that:
@@ -25,8 +26,7 @@ import           Common.Identifiers             ( fromId
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( fromJust )
-
+import           Data.Maybe                     ( mapMaybe )
 {- | IR type annotation continuation.
 
 In the AST, type annotations appear as first-class expression/pattern nodes that
@@ -54,11 +54,31 @@ lowerType a@(A.TApp _ _) = case A.collectTApp a of
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
-lowerProgram (A.Program ds) = return $ I.Program
-  { I.programEntry = fromString "main"
-  , I.programDefs  = map (first fromJust . lowerDef) ds
-  , I.typeDefs     = []
-  }
+lowerProgram (A.Program ds) = do
+  dds <- mapM lowerDataDef $ mapMaybe A.getTopDataDef ds
+  tds <- mapM lowerTypeDef $ mapMaybe A.getTopTypeDef ds
+  return $ I.Program { I.programEntry = fromString "main" -- TODO: don't hardcode
+                     , I.programDefs  = dds
+                     , I.typeDefs     = tds
+                     }
+
+-- | Lower a top-level data definition into IR.
+lowerDataDef :: A.Definition -> Compiler.Pass (I.VarId, I.Expr I.Type)
+lowerDataDef d = case lowerDef d of
+  (Just b , e) -> return (b, e)
+  (Nothing, _) -> Compiler.unexpected "Missing top-level binding"
+  -- TODO: This might actually be ok, to allow top-level evaluation
+
+-- | Lower a top-level type definition into IR.
+lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef I.Type)
+lowerTypeDef A.TypeDef { A.typeName = tn, A.typeParams = tvs, A.typeVariants = tds }
+  = return
+    ( fromId tn
+    , I.TypeDef { I.arity = length tvs, I.variants = map lowerTypeVariant tds }
+    )
+ where
+  lowerTypeVariant (A.VariantUnnamed vn ts) =
+    (fromId vn, I.VariantUnnamed $ map lowerType ts)
 
 {- | Lower an 'A.Definition' into a name and bound expression.
 
