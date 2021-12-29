@@ -20,7 +20,7 @@ spec = do
             wait clk
         |]
       output = Program
-        [ DefFn
+        [ TopDef $ DefFn
             "main"
             [PatAnn (TApp (TCon "&") (TCon "Int")) (PatId "clk")]
             TypNone
