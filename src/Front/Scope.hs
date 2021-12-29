@@ -262,6 +262,7 @@ scopeDCons A.TypeDef { A.typeVariants = tvs, A.typeParams = tps } = do
 -- | Check the scoping of the data constructor a single data variant.
 scopeDcon :: A.TypeVariant -> ScopeFn (Identifier, DataInfo)
 scopeDcon (A.VariantUnnamed dcon ts) = do
+  ensureCons dcon
   mapM_ scopeType ts
   return (dcon, DataInfo { dataKind = User })
 
