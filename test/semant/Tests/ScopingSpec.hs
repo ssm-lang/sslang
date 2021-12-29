@@ -205,22 +205,144 @@ spec = do
           f g
       |]
 
-  describe "scoping data constructors" $ do
-    it "supports enum matches" $ do
-      pendingWith "syntax for defining data constructors"
+  describe "scoping type constructors" $ do
+    it "supports basic type definitions" $ do
       shouldPass $ doScope [here|
+        type Unit
+          Unit
+      |]
+      shouldPass $ doScope [here|
+        type Bool
+          True
+          False
+      |]
+    it "supports type definitions with parameters" $ do
+      shouldPass $ doScope [here|
+        type Option t
+          Some t
+          None
+      |]
+      shouldPass $ doScope [here|
+        type Either a b
+          Left a
+          Right b
+      |]
+    it "supports type definitions that refer to other type definitions" $ do
+      shouldPass $ doScope [here|
+        type IntList
+          Cons Int IntList
+          Nil
+      |]
+      shouldPass $ doScope [here|
+        type List a
+          Cons a (List a)
+          Nil
+      |]
+      shouldPass $ doScope [here|
+        type Foo a
+          Foo (Foo (Foo a))
+      |]
+      shouldPass $ doScope [here|
+        type Foo a
+          Foo a a
+        type Bar a b
+          Bar a (Foo b)
+      |]
+      shouldPass $ doScope [here|
+        type Bar a b
+          Bar a (Foo b)
+        type Foo a
+          Foo a
+      |]
+      shouldPass $ doScope [here|
+        type Bar a b
+          Bar a (Foo b)
+        type Foo a
+          Foo (Bar a (Foo a))
+      |]
+    it "rejects naming type constructor with variable convention" $ do
+      doScope [here|
+        type foo
+          Foo
+      |]
+        `shouldFailWith` NameError "foo cannot being with lower case"
+    it "rejects type redefinition" $ do
+      doScope [here|
+        type Foo
+          Foo
+        type Foo
+          Foo
+      |]
+        `shouldFailWith` ScopeError "type constructor Foo is already defined"
+    it "rejects undefined type constructors" $ do
+      doScope [here|
+        type Foo a
+          Foo Bar
+      |]
+        `shouldFailWith` ScopeError "type constructor Bar is never defined"
+
+  describe "scoping type variables" $ do
+    it "supports implicitly quantified type variables in type annotations" $ do
+      shouldPass $ doScope [here|
+        id a : a -> a = a
+      |]
+      shouldPass $ doScope [here|
+        id (a: a) -> a = a
+      |]
+    it "requires type parameters to be named like variables" $ do
+      doScope [here|
+        type Foo F
+          Foo F
+      |] `shouldFailWith` NameError "type parameter 'F' must not be capitalized"
+    it "requires type parameters to be quantified in type definitions" $ do
+      doScope [here|
+        type Foo b
+          Foo a
+      |] `shouldFailWith` ScopeError "type parameter 'a' is not defined"
+    it "rejects repeated type parameters" $ do
+      doScope [here|
+        type Foo a a
+          Foo a
+      |] `shouldFailWith` ScopeError "type parameter 'a' was specified twice"
+
+  describe "scoping data constructors" $ do
+    it "supports data constructor matches" $ do
+      shouldPass $ doScope [here|
+        type T
+          D
         foo D = 3
       |]
-    it "supports data constructor matches" $ do
-      pendingWith "syntax for defining data constructors"
       shouldPass $ doScope [here|
+        type T
+          D Int
         foo (D x) = 3
       |]
-    it "supports nested data constructors" $ do
-      pendingWith "syntax for defining data constructors"
       shouldPass $ doScope [here|
-        foo (D (D 3)) = 3
+        type T
+          D
+          E
+        foo (D (D 3)) (E (D D)) = 3
       |]
+      shouldPass $ doScope [here|
+        type List a
+          Cons a (List a)
+          Nil
+        map (f: a -> a) (l: List a) -> a =
+          match l
+            Cons a l_ = Cons (f a) (map f l_)
+            Nil       = Nil
+      |]
+    it "rejects repeated data constructors" $ do
+      doScope [here|
+        type Foo a
+          Foo a
+          Foo a
+      |] `shouldFailWith` ScopeError "data constructor 'Foo' was defined twice"
+    it "rejects data constructors named like variables" $ do
+      doScope [here|
+        type Foo a
+          foo a
+      |] `shouldFailWith` NameError "data constructor 'foo' must begin with upper case"
 
   describe "scoping redefinitions and shadowing" $ do
     it "suppors local variable shadowing" $ do
