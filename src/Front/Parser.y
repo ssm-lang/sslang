@@ -70,6 +70,7 @@ import Data.Bifunctor (first)
 -- | Root node of sslang program parser.
 program                               --> Program
   : topDefs                             { Program $1 }
+  | {- empty -}                         { Program [] }
 
 {- | Top-level definitions.
 
@@ -78,7 +79,7 @@ shift-reduce conflicts.
 -}
 topDefs                               --> [TopDef]
   : topDef '||' topDefs                 { $1 : $3 }
-  | {- empty -}                         { [] }
+  | topDef                              { [$1] }
 
 -- | Top-level definition.
 topDef                                --> TopDef
@@ -96,7 +97,7 @@ defType                               --> TypeDef
 -- | List of pipe-separated variants.
 typeVariants                          --> [TypeVariant]
   : typeVariant '|' typeVariants        { $1 : $3 }
-  |                                     { [] }
+  | typeVariant                         { [$1] }
 
 -- | Variant of an algebraic data type.
 typeVariant                           --> TypeVariant
@@ -118,7 +119,7 @@ defLet                                --> Definition
 -- | A list of juxtaposed pattersn.
 pats                                  -->
   : pat pats                            { $1 : $2 }
-  | {- nothing -}                       { [] }
+  | {- empty -}                         { [] }
 
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
@@ -284,7 +285,7 @@ matchArm                              --> (Pat, Expr)
 exprElse                              --> Expr
   : ';' 'else' '{' expr '}'             { $4 }
   | 'else' '{' expr '}'                 { $3 }
-  | {- nothing -} %prec NOELSE          { NoExpr }
+  | {- empty -} %prec NOELSE            { NoExpr }
 
 -- | Expressions with application by juxtaposition.
 exprApp                               --> Expr
@@ -307,7 +308,7 @@ exprPar                               --> [Expr]
 -- | A list of juxtaposed identifiers.
 ids                                   --> [Identifier]
   : id ids                              { $1 : $2 }
-    | {- empty -}                       { [] }
+  | {- empty -}                         { [] }
 {
 -- | What to do upon encountering parse error.
 parseError :: Token -> Alex a
