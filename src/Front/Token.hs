@@ -1,11 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module Front.Token where
 
-import           Prettyprinter                  ( (<+>)
-                                                , Pretty(..)
-                                                , fill
-                                                , viaShow
-                                                )
+import Common.Pretty
+import Common.Identifiers
 
 -- | Tokens extracted from source text.
 newtype Token = Token (Span, TokenType)
@@ -58,8 +55,8 @@ data TokenType
   | TRbracket
   | TInteger Integer
   | TString String
-  | TId String
-  | TOp String
+  | TId Identifier
+  | TOp Identifier
   deriving (Eq, Show)
 
 {- | 'Pretty' instance for 'Token', good for dumping tokens for inspection.
@@ -117,3 +114,6 @@ instance Pretty TokenType where
   pretty (TString  s) = pretty $ "\"" ++ s ++ "\""
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
+
+prettyTokens :: [Token] -> String
+prettyTokens = unlines . map (show . pretty)

@@ -24,6 +24,7 @@ import           Data.String                    ( IsString(..) )
 -- | Identifiers in C.
 newtype CIdent = CIdent Identifier
   deriving Eq
+  deriving Ord
   deriving IsString via Identifier
   deriving Identifiable via Identifier
   deriving ToIdent via Identifier

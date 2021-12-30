@@ -81,12 +81,6 @@ Check() {
     reffile=`echo $1 | sed 's/[.][^.]*$//'`
     basedir=`dirname $1`
 
-    # If the library isn't there, build it
-    if [ ! -f "${SSMLIBDIR}/libssm.a" ] ; then
-	Run mkdir -p out &&
-	Run make -C "$SSMDIR" build/libssm.a "1>&2"
-    fi
-    
     echo -n "$basename..."
 
     echo 1>&2
@@ -107,8 +101,7 @@ Check() {
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
-    # Run $SSLC "--module-name=${basename}" "--generate-h" "$1" ">" "${cheader}" &&
-    Run $SSLC "--module-name=${basename}" "--generate-c" "$1" ">" "${csource}" &&
+    Run $SSLC "$1" ">" "${csource}" &&
     Run $CC -c -o "${obj}" "${csource}" &&
     if [ -f "${mainsource}" ] ; then
 	NoteGen "${mainobj} ${exec} ${result} ${diff}"
@@ -193,6 +186,8 @@ then
 else
     files="tests/*.ssl"
 fi
+
+Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do

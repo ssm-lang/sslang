@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Test script for git alias setup
+
+echo "Hello world!"
+
+# When a script is invoked from a git alias, it is invoked from the git root
+# directory, but with the working directory stored in the GIT_PREFIX variable.
+echo "GIT_PREFIX: ${GIT_PREFIX:-./}"
+echo "git root: $(git rev-parse --show-toplevel)"
+echo "pwd: $(pwd) (should be same as git root)"
+
+# Arguments to the alias are forwarded to the script.
+echo "\$#: $#"
+echo "\$0: $0"
+echo "\$1: $1"
+echo "\$@: " "$@"

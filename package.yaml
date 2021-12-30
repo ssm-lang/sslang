@@ -9,13 +9,6 @@ copyright:           "2021 Stephen A. Edwards"
 extra-source-files:
 - README.md
 
-# Metadata used when publishing your package
-# synopsis:            Real-time programming language
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
 
 dependencies:
@@ -55,38 +48,43 @@ executables:
     - happy
     - alex
 
+_test-suite: &test-suite
+  main: Spec.hs
+  dependencies:
+  - sslang
+  - hspec
+  - HUnit
+  - deepseq
+  - call-stack
+  - here
+  - template-haskell
+  - containers
+  - comonad
+
 tests:
-  scanner-test:
-    main: Spec.hs
-    source-dirs:
-    - test/scanner
-    dependencies:
-    - sslang
-    - hspec
-  parser-test:
-    main: Spec.hs
-    source-dirs:
-    - test/parser
-    dependencies:
-    - sslang
-    - hspec
-  prettyprinter-test:
-    main: Spec.hs
-    source-dirs:
-    - test/prettyprinter
-    dependencies:
-    - sslang
-    - hspec
-  regression-test:
+  # End-to-end regression tests
+  regression:
     main: test/regression/Spec.hs
     dependencies:
     - process
-  typeinference-test:
-    main: Spec.hs
+
+  # Tests related to the textual representation of programs
+  text:
+    <<: *test-suite
     source-dirs:
-    - test/typeinference
-    dependencies:
-    - sslang
-    - hspec
-    - containers
-    - comonad
+    - test/lib
+    - test/text
+
+  # Tests related to the user-facing semantics of programs
+  semant:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
+    - test/semant
+
+  # Tests related to internal compiler transformations invisible to the user
+  trans:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
+    - test/trans

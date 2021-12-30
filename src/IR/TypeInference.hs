@@ -36,6 +36,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 )
 import           Data.Maybe                     ( fromJust )
+import Data.String (IsString(fromString))
 
 -- | Typing Environment
 newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
@@ -132,10 +133,10 @@ inferExpr e@(I.App a b _) = do
   case dearrow $ extract a' of
     Just (t1, t2) ->
       if t1 == extract a'
-        then throwError $ Compiler.TypeError $ "App expression has inconsistent type: " ++ show e
+        then throwError $ Compiler.TypeError $ fromString $ "App expression has inconsistent type: " ++ show e
         else return $ I.App a' b' t2
-    Nothing -> throwError $ Compiler.TypeError $ "Unable to type App expression: " ++ show e
-inferExpr e = throwError $ Compiler.TypeError $ "Unable to type unknown expression: " ++ show e
+    Nothing -> throwError $ Compiler.TypeError $ fromString $ "Unable to type App expression: " ++ show e
+inferExpr e = throwError $ Compiler.TypeError $ fromString $ "Unable to type unknown expression: " ++ show e
 
 -- | Infer the type of a Primitive expression.
 inferPrim :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
@@ -158,7 +159,7 @@ inferPrim e@(I.Prim I.Assign [lhs, rhs] _) = do
         I.Var v _ -> insertVar v rrty
         _ -> return ()
       return $ I.Prim I.Assign [rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "Assign expression has inconsistent type: " ++ show e
+    else throwError $ Compiler.TypeError $ fromString $ "Assign expression has inconsistent type: " ++ show e
 inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
   del' <- inferExpr del
   rhs' <- inferExpr rhs
@@ -170,7 +171,7 @@ inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
         I.Var v _ -> insertVar v rrty
         _ -> return ()
       return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
-    else throwError $ Compiler.TypeError $ "After expression has inconsistent type: " ++ show e
+    else throwError $ Compiler.TypeError $ fromString $ "After expression has inconsistent type: " ++ show e
 inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
@@ -191,7 +192,7 @@ inferPrim (I.Prim I.Par es _) = do
     es' <- mapM inferExpr es
     let ts = map extract es'
     return $ I.Prim I.Par es' $ tuple ts
-inferPrim e = throwError $ Compiler.TypeError $ "Unable to type Prim expression: " ++ show e
+inferPrim e = throwError $ Compiler.TypeError $ fromString $ "Unable to type Prim expression: " ++ show e
 
 -- | Helper function to support local modificaton of type context.
 withNewScope :: InferFn a -> InferFn a
@@ -209,11 +210,11 @@ withVty e (Just v) t =
     Just (vty, _) -> do
       vty' <- anns2Class vty
       insertVar v vty'
-    Nothing -> throwError $ Compiler.TypeError $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
+    Nothing -> throwError $ Compiler.TypeError $ fromString $ "Lambda wasn't annotated (or it wasn't an arrow type): " ++ show e
 
 -- | Transfrom an Ann.Type to Classes.Type.
 anns2Class :: Ann.Type -> InferFn Classes.Type
-anns2Class (Ann.Type []) = throwError $ Compiler.TypeError "Cannot change empty Ann type to Classes type"
+anns2Class (Ann.Type []) = throwError $ Compiler.TypeError $ fromString "Cannot change empty Ann type to Classes type"
 anns2Class (Ann.Type ts) = ann2Class $ head ts
 
 {- Transfrom an Ann.TypeAnnote to Classes.Type.
@@ -240,4 +241,4 @@ ann2Class (Ann.TBuiltin bty) = case bty of
 ann2Class (Ann.TCon tid tys) = do
   t <- mapM anns2Class tys
   return $ Classes.TCon tid t
-ann2Class (Ann.TVar tidx   ) = return $ Classes.TVar tidx
+ann2Class (Ann.TVar _tid   ) = throwError $ Compiler.UnexpectedError $ fromString "Do not know how to translate type variable yet"
