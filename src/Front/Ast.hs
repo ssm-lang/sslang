@@ -7,26 +7,29 @@ import           Common.Pretty
 
 import           Data.List                      ( intersperse )
 
--- | A complete program: a list of declarations
+-- | A complete program: a list of top-level definitions.
 newtype Program = Program [TopDef]
   deriving (Eq, Show)
 
+-- | A top-level definition.
 data TopDef
-  = TopDef Definition
-  | TopType TypeDef
+  = TopDef Definition     -- ^ Bind a (data) value to a variable
+  | TopType TypeDef       -- ^ Declare a type
   deriving (Eq, Show)
 
+-- | A type definition.
 data TypeDef = TypeDef
-  { typeName     :: Identifier
-  , typeParams   :: [Identifier]
-  , typeVariants :: [TypeVariant]
+  { typeName     :: Identifier      -- ^ The name of the type, e.g., @Option@
+  , typeParams   :: [Identifier]    -- ^ List of type parameters, e.g., @a@
+  , typeVariants :: [TypeVariant]   -- ^ List of variants/data constructors
   }
   deriving (Eq, Show)
 
+-- | A type variant, i.e., a data constructor.
 data TypeVariant = VariantUnnamed Identifier [Typ]
   deriving (Eq, Show)
 
--- | A value definition
+-- | A value definition.
 data Definition
   = DefFn Identifier [Pat] TypFn Expr
   | DefPat Pat Expr
