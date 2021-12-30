@@ -525,6 +525,7 @@ We now a present an overview of expressions and language constructs in sslang.
 \alt "if" <expr_blk> "{" <expr> "}" <expr_else>$^{?}$
 \alt "while" <expr_blk> "{" <expr> "}"
 \alt "fun" <pat>$^{+}$ "{" expr "}"
+\alt "match" <expr_blk> "{" (  <pat> "=>" "{" <expr> "}" )$^{+}$ "}"
 \alt <expr_app>
 
 <expr_else> ::= "; else {" <expr> "}"
@@ -715,7 +716,29 @@ Sequences chain expressions in block-expressions. The value of a sequence is the
 
 
 \subsection{Pattern Matching}
-\fixme{todo}
+\begin{grammar}
+<match> ::=  "match" <expr_blk> "{" (  <pat> "=" "{" <expr> "}" )$^{+}$ "}"
+\end{grammar}
+
+Pattern matches are used to break down algebraic data types.
+A pattern match consists of a ``scrutinee''---what is being matched on---and a number of ``arms.''
+Each arm consists of a pattern that the scrutinee is matched against, and a ``consequence'' expression.
+The value of the entire pattern match is the consequence of the first matching arm.
+The types of each consequence must be the same in a pattern match, and the type of the scrutinee must match the type of the each pattern; the overall type of the match expression is that of its consequences.
+
+In the example below, the \texttt{default0} function unwraps its option-typed argument, \texttt{o}.
+In the case where \texttt{o} is \texttt{None}, \texttt{default0} defaults to returning a value of 0.
+
+\begin{lstlisting}
+type Option a
+  Some a
+  None
+
+default0 (o: Option Int) -> Int =
+  match o
+    Some x = x
+    None   = 0
+\end{lstlisting}
 
 \newpage
 
