@@ -717,19 +717,27 @@ Sequences chain expressions in block-expressions. The value of a sequence is the
 
 \subsection{Pattern Matching}
 \begin{grammar}
-<match> ::=  "match" <expr_blk> "{" (  <pat> "=>" "{" <expr> "}" )$^{+}$ "}"
+<match> ::=  "match" <expr_blk> "{" (  <pat> "=" "{" <expr> "}" )$^{+}$ "}"
 \end{grammar}
 
-Pattern matches are a succinct way to handle of a variety of cases for the expression in the match clause, known as the scrutinee. If the scrutinee satisfies the pattern in a match arm, the expression in the match arm is evaluated; otherwise, the expression in that arm is not evaluated.
+Pattern matches are used to break down algebraic data types.
+A pattern match consists of a ``scrutinee''---what is being matched on---and a number of ``arms.''
+Each arm consists of a pattern that the scrutinee is matched against, and a ``consequence'' expression.
+The value of the entire pattern match is the consequence of the first matching arm.
+The types of each consequence must be the same in a pattern match, and the type of the scrutinee must match the type of the each pattern; the overall type of the match expression is that of its consequences.
 
-The below code sample checks if the scrutinee \texttt{x} is \texttt{Some a}; if it is, \texttt{y} is set to \texttt{1}. Otherwise, if \texttt{x} is \texttt{None},\texttt{y} is set to \texttt{2}. Pattern matches are an elegant way to handle multiple cases of \texttt{if} statements. They also allow for the destruction of complex algebraic data types via comparison to the patterns in the match arms.
+In the example below, the \texttt{default0} function unwraps its option-typed argument, \texttt{o}.
+In the case where \texttt{o} is \texttt{None}, \texttt{default0} defaults to returning a value of 0.
 
 \begin{lstlisting}
-y = 0
+type Option a
+  Some a
+  None
 
-match x // Match clause
-    (Some a)  => y <- 1 // Arm if x is Some a
-    None      => y <- 2 // Arm if x is None
+default0 (o: Option Int) -> Int =
+  match o
+    Some x = x
+    None   = 0
 \end{lstlisting}
 
 \newpage
