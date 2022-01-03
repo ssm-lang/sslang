@@ -396,9 +396,10 @@ solveType t = throwError $ Compiler.TypeError $ fromString $ "Solve Type error" 
 
 -- | `findRoot` @t@ finds the root of @t@ inside `unionFindTree`.
 findRoot :: Classes.Type -> InferFn Classes.Type
-findRoot t = do
+findRoot t@(Classes.TVar _) = do
   sb <- gets unionFindTree
   -- We find the root of @t@ if @t@ exists in the tree as a key and its value is different from itself
   case M.lookup t sb of
     Just t' | t' /= t -> findRoot t'
     _ -> return t
+findRoot t = solveType t

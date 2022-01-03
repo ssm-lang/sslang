@@ -64,7 +64,6 @@ spec = do
     lifted `shouldPassAs` unlifted
 
   it "lifts nested lambdas with free variables" $ do
-    pendingWith "type inference taking into account type annotations"
     let unlifted = parseLift [here|
           foo (x: Int) (y: Int) -> Int =
             let z = 5
