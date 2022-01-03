@@ -63,6 +63,33 @@ spec = do
         |]
     lifted `shouldPassAs` unlifted
 
+  it "lifts lambdas with free variables in let bindings" $ do
+    let unlifted = parseLift [here|
+          bar: Int = 5
+          baz x: Int -> Int =
+            x + 1
+          foo y: Int -> Int =
+            let w = 1
+                adder (z: Int) -> Int = z + bar + w
+                dec (z: Int) -> Int = z - w
+            adder y + dec y
+        |]
+        lifted = parseLift [here|
+          bar: Int = 5
+          baz x: Int -> Int =
+            x + 1
+          foo_let_adder_anon0 (w: Int) (z: Int) -> Int =
+            z + bar + w
+          foo_let_dec_anon1 (w: Int) (z: Int) -> Int =
+            z - w
+          foo y: Int -> Int =
+            let w = 1
+                adder = foo_let_adder_anon0 w
+                dec = foo_let_dec_anon1 w
+            adder y + dec y
+        |]
+    lifted `shouldPassAs` unlifted
+
   it "lifts nested lambdas with free variables" $ do
     let unlifted = parseLift [here|
           foo (x: Int) (y: Int) -> Int =
