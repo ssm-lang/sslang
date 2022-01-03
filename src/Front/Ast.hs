@@ -14,14 +14,14 @@ newtype Program = Program [TopDef]
 -- | A top-level definition.
 data TopDef
   = TopDef Definition     -- ^ Bind a (data) value to a variable
-  | TopType TypeDef       -- ^ Declare a type
+  | TopType TypeDef       -- ^ Define an algebraic data type
   deriving (Eq, Show)
 
--- | A type definition.
+-- | An algebraic data type definition.
 data TypeDef = TypeDef
   { typeName     :: Identifier      -- ^ The name of the type, e.g., @Option@
   , typeParams   :: [Identifier]    -- ^ List of type parameters, e.g., @a@
-  , typeVariants :: [TypeVariant]   -- ^ List of variants/data constructors
+  , typeVariants :: [TypeVariant]   -- ^ List of variants, e.g., @Some@, @None@
   }
   deriving (Eq, Show)
 
