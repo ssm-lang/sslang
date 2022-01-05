@@ -109,7 +109,7 @@ getFresh = do
 -- | Store a new lifted lambda to later add to the program's top level definitions.
 addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
 addLifted name lam =
-  modify $ \st -> st { lifted = (I.VarId (fromString name), lam) : lifted st }
+  modify $ \st -> st { lifted = (fromString name, lam) : lifted st }
 
 -- | Register a (free variable, type) mapping for the current program scope.
 addFreeVar :: I.VarId -> Poly.Type -> LiftFn ()
@@ -210,7 +210,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
         liftedLamBody
   addLifted fullName liftedLam
   return $ foldl applyFree
-                 (I.Var (I.VarId (fromString fullName)) (extract liftedLam))
+                 (I.Var (fromString fullName) (extract liftedLam))
                  (M.toList lamFreeTypes)
  where
   applyFree app (v', t') = case dearrow $ extract app of
