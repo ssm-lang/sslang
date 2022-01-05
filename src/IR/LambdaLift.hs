@@ -32,26 +32,26 @@ import qualified Data.Set                      as S
 -- | Lifting Environment
 data LiftCtx = LiftCtx
   { globalScope  :: S.Set I.VarId
-  {- ^ `globalScope` is a  set containing top-level identifiers. All scopes,
+  {- ^ 'globalScope' is a  set containing top-level identifiers. All scopes,
   regardless of depth, have access to these identifiers.
   -}
   , currentScope :: S.Set I.VarId
-  {- ^ 'currentScope` is a set containing the identifiers available in the
+  {- ^ 'currentScope' is a set containing the identifiers available in the
   current scope.
   -}
   , freeTypes    :: M.Map I.VarId Poly.Type
-  {- ^ `freeTypes` maps an identifier for a free variable to its type. -}
+  {- ^ 'freeTypes' maps an identifier for a free variable to its type. -}
   , lifted       :: [(I.VarId, I.Expr Poly.Type)]
-  {- ^ `lifted` is a list of lifted lambdas created while descending into a
+  {- ^ 'lifted' is a list of lifted lambdas created while descending into a
   top-level definition.
   -}
   , trail        :: [String]
-  {- ^ `trail` is a list of strings tracing the surrounding scopes in terms of
+  {- ^ 'trail' is a list of strings tracing the surrounding scopes in terms of
   language constructs and relevant identifiers. It is used for
   creating unique identifiers for lifted lambdas.
   -}
   , anonCount    :: Int
-  {- ^ `anonCount` is a monotonically increasing counter used for creating
+  {- ^ 'anonCount' is a monotonically increasing counter used for creating
   unique identifiers for lifted lambdas.
   -}
   }
