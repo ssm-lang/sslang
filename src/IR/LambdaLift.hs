@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
 module IR.LambdaLift
   ( liftProgramLambdas
   ) where
@@ -24,7 +25,7 @@ import           Control.Monad.State.Lazy       ( MonadState
 
 import qualified Data.Bifunctor                as B
 import qualified Data.Foldable                 as F
-import           Data.List                      ( intercalate )
+import           Data.List                      ( intercalate, intersperse )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
@@ -45,7 +46,7 @@ data LiftCtx = LiftCtx
   {- ^ 'lifted' is a list of lifted lambdas created while descending into a
   top-level definition.
   -}
-  , trail        :: [String]
+  , trail        :: [Identifier]
   {- ^ 'trail' is a list of strings tracing the surrounding scopes in terms of
   language constructs and relevant identifiers. It is used for
   creating unique identifiers for lifted lambdas.
@@ -93,23 +94,23 @@ addCurrentScope v =
   modify $ \st -> st { currentScope = S.insert v $ currentScope st }
 
 -- | Create a string composed of the scope trail and a variable name.
-prependPath :: String -> LiftFn String
+prependPath :: Identifier -> LiftFn Identifier
 prependPath cur = do
   curTrail <- gets trail
-  return $ intercalate "_" (reverse (cur : curTrail))
+  return $ foldr (<>) (Identifier "") (intersperse (Identifier "_") (reverse (cur : curTrail)))
 
 -- | Construct a fresh variable name for a new lifted lambda.
-getFresh :: LiftFn String
+getFresh :: LiftFn Identifier
 getFresh = do
   curCount <- gets anonCount
-  let anonName = "anon" ++ show curCount
+  let anonName = Identifier "anon" <> fromString (show curCount)
   modify $ \st -> st { anonCount = anonCount st + 1 }
   return anonName
 
 -- | Store a new lifted lambda to later add to the program's top level definitions.
-addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
+addLifted :: Identifier -> I.Expr Poly.Type -> LiftFn ()
 addLifted name lam =
-  modify $ \st -> st { lifted = (fromString name, lam) : lifted st }
+  modify $ \st -> st { lifted = (VarId name, lam) : lifted st }
 
 -- | Register a (free variable, type) mapping for the current program scope.
 addFreeVar :: I.VarId -> Poly.Type -> LiftFn ()
@@ -124,7 +125,7 @@ newScope vs = modify $ \st -> st
 
 -- | Context management for lifting new scopes (restore information after lifting the body).
 descend
-  :: String
+  :: Identifier
   -> LiftFn (I.Expr Poly.Type)
   -> LiftFn (I.Expr Poly.Type, M.Map VarId Poly.Type)
 descend scopeName body = do
@@ -167,10 +168,10 @@ liftProgramLambdas p = runLiftFn $ do
 -- | Given a top-level definition, lift out any lambda definitions.
 liftLambdasTop
   :: (I.VarId, I.Expr Poly.Type) -> LiftFn [(I.VarId, I.Expr Poly.Type)]
-liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
+liftLambdasTop (v@(VarId lamIdent), lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
-  (liftedBody, newTopDefs) <- extractLifted $ descend (ident v) $ do
+  (liftedBody, newTopDefs) <- extractLifted $ descend lamIdent $ do
     newScope (catMaybes vs)
     liftLambdas body
   let liftedLambda = I.makeLambdaChain vs' liftedBody
@@ -210,7 +211,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
         liftedLamBody
   addLifted fullName liftedLam
   return $ foldl applyFree
-                 (I.Var (fromString fullName) (extract liftedLam))
+                 (I.Var (VarId fullName) (extract liftedLam))
                  (M.toList lamFreeTypes)
  where
   applyFree app (v', t') = case dearrow $ extract app of
@@ -233,7 +234,7 @@ liftLambdas dat@I.Data{} = return dat
 liftLambdasInLet :: (I.Binder, I.Expr Poly.Type) -> LiftFn (I.Expr Poly.Type)
 liftLambdasInLet (b, expr) = do
   let bindingName = maybe "wildcard" ident b
-  (liftedLetBody, bodyFrees) <- descend bindingName $ liftLambdas expr
+  (liftedLetBody, bodyFrees) <- descend (fromString bindingName) $ liftLambdas expr
   modify $ \st -> st { freeTypes = bodyFrees }
   return liftedLetBody
 
