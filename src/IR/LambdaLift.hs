@@ -170,8 +170,9 @@ liftLambdasTop
 liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
-  (liftedBody, newTopDefs) <- extractLifted
-    (descend (ident v) $ newScope (catMaybes vs) >> liftLambdas body)
+  (liftedBody, newTopDefs) <- extractLifted $ descend (ident v) $ do
+    newScope (catMaybes vs)
+    liftLambdas body
   let liftedLambda = I.makeLambdaChain vs' liftedBody
   return $ newTopDefs ++ [(v, liftedLambda)]
 liftLambdasTop topDef = return [topDef]
@@ -201,8 +202,9 @@ liftLambdas lam@(I.Lambda _ _ t) = do
       vs'        = zip vs $ fst (collectArrow t)
   lamName                       <- getFresh
   fullName                      <- prependPath lamName
-  (liftedLamBody, lamFreeTypes) <-
-    descend lamName $ newScope (catMaybes vs) >> liftLambdas body
+  (liftedLamBody, lamFreeTypes) <- descend lamName $ do
+    newScope (catMaybes vs)
+    liftLambdas body
   let liftedLam = I.makeLambdaChain
         (map (B.first Just) (M.toList lamFreeTypes) ++ vs')
         liftedLamBody
@@ -231,8 +233,7 @@ liftLambdas dat@I.Data{} = return dat
 liftLambdasInLet :: (I.Binder, I.Expr Poly.Type) -> LiftFn (I.Expr Poly.Type)
 liftLambdasInLet (b, expr) = do
   let bindingName = maybe "wildcard" ident b
-  (liftedLetBody, bodyFrees) <- descend ("let_" ++ bindingName)
-    $ liftLambdas expr
+  (liftedLetBody, bodyFrees) <- descend bindingName $ liftLambdas expr
   modify $ \st -> st { freeTypes = bodyFrees }
   return liftedLetBody
 
@@ -244,14 +245,14 @@ liftLambdasInArm (I.AltLit l, arm) = do
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
 liftLambdasInArm (I.AltDefault b, arm) = do
-  (liftedArm, armFrees) <-
-    descend "match_altdefault" $ F.forM_ b addCurrentScope >> liftLambdas arm
+  (liftedArm, armFrees) <- descend "match_altdefault" $ do
+    F.forM_ b addCurrentScope
+    liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltDefault b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
-  (liftedArm, armFrees) <-
-    descend "match_altdata"
-    $  mapM_ addCurrentScope (catMaybes bs)
-    >> liftLambdas arm
+  (liftedArm, armFrees) <- descend "match_altdata" $ do
+    mapM_ addCurrentScope (catMaybes bs)
+    liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltData d bs, liftedArm)
