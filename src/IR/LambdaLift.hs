@@ -122,10 +122,10 @@ newScope vs = modify $ \st -> st
 
 -- | Context management for lifting new scopes (restore information after lifting the body).
 descend
-  :: LiftFn (I.Expr Poly.Type)
-  -> String
+  :: String
+  -> LiftFn (I.Expr Poly.Type)
   -> LiftFn (I.Expr Poly.Type, M.Map VarId Poly.Type)
-descend body scopeName = do
+descend scopeName body = do
   savedScope     <- gets currentScope
   savedFreeTypes <- gets freeTypes
   savedTrail     <- gets trail
@@ -169,7 +169,7 @@ liftLambdasTop (v, lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
   (liftedBody, newTopDefs) <- extractLifted
-    (descend (newScope (catMaybes vs) >> liftLambdas body) (ident v))
+    (descend (ident v) $ newScope (catMaybes vs) >> liftLambdas body)
   let liftedLambda = I.makeLambdaChain vs' liftedBody
   return $ newTopDefs ++ [(v, liftedLambda)]
 liftLambdasTop topDef = return [topDef]
@@ -198,9 +198,8 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
   (fullName     , lamName     ) <- getFresh
-  (liftedLamBody, lamFreeTypes) <- descend
-    (newScope (catMaybes vs) >> liftLambdas body)
-    lamName
+  (liftedLamBody, lamFreeTypes) <-
+    descend lamName $ newScope (catMaybes vs) >> liftLambdas body
   let liftedLam = I.makeLambdaChain
         (map (B.first Just) (M.toList lamFreeTypes) ++ vs')
         liftedLamBody
@@ -229,8 +228,8 @@ liftLambdas dat@I.Data{} = return dat
 liftLambdasInLet :: (I.Binder, I.Expr Poly.Type) -> LiftFn (I.Expr Poly.Type)
 liftLambdasInLet (b, expr) = do
   let bindingName = maybe "wildcard" ident b
-  (liftedLetBody, bodyFrees) <- descend (liftLambdas expr)
-                                        ("let_" ++ bindingName)
+  (liftedLetBody, bodyFrees) <- descend ("let_" ++ bindingName)
+    $ liftLambdas expr
   modify $ \st -> st { freeTypes = bodyFrees }
   return liftedLetBody
 
@@ -238,18 +237,18 @@ liftLambdasInLet (b, expr) = do
 liftLambdasInArm
   :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
 liftLambdasInArm (I.AltLit l, arm) = do
-  (liftedArm, armFrees) <- descend (liftLambdas arm) "match_altlit"
+  (liftedArm, armFrees) <- descend "match_altlit" $ liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
 liftLambdasInArm (I.AltDefault b, arm) = do
-  (liftedArm, armFrees) <- descend
-    (F.forM_ b addCurrentScope >> liftLambdas arm)
-    "match_altdefault"
+  (liftedArm, armFrees) <-
+    descend "match_altdefault" $ F.forM_ b addCurrentScope >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltDefault b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
-  (liftedArm, armFrees) <- descend
-    (mapM_ addCurrentScope (catMaybes bs) >> liftLambdas arm)
-    "match_altdata"
+  (liftedArm, armFrees) <-
+    descend "match_altdata"
+    $  mapM_ addCurrentScope (catMaybes bs)
+    >> liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltData d bs, liftedArm)
