@@ -92,17 +92,19 @@ addCurrentScope :: I.VarId -> LiftFn ()
 addCurrentScope v =
   modify $ \st -> st { currentScope = S.insert v $ currentScope st }
 
-fullPath :: [String] -> String -> String
-fullPath path cur = intercalate "_" (reverse (cur : path))
+-- | Create a string composed of the scope trail and a variable name.
+prependPath :: String -> LiftFn String
+prependPath cur = do
+  curTrail <- gets trail
+  return $ intercalate "_" (reverse (cur : curTrail))
 
 -- | Construct a fresh variable name for a new lifted lambda.
-getFresh :: LiftFn (String, String)
+getFresh :: LiftFn String
 getFresh = do
-  curTrail <- gets trail
   curCount <- gets anonCount
   let anonName = "anon" ++ show curCount
   modify $ \st -> st { anonCount = anonCount st + 1 }
-  return (fullPath curTrail anonName, anonName)
+  return anonName
 
 -- | Store a new lifted lambda to later add to the program's top level definitions.
 addLifted :: String -> I.Expr Poly.Type -> LiftFn ()
@@ -197,7 +199,8 @@ liftLambdas (I.Prim p exprs t) = do
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
-  (fullName     , lamName     ) <- getFresh
+  lamName                       <- getFresh
+  fullName                      <- prependPath lamName
   (liftedLamBody, lamFreeTypes) <-
     descend lamName $ newScope (catMaybes vs) >> liftLambdas body
   let liftedLam = I.makeLambdaChain
