@@ -24,6 +24,7 @@ data Span = Span
 -- | The types of tokens that can appear in a sslang source file.
 data TokenType
   = TEOF
+  | TType
   | TIf
   | TElse
   | TWhile
@@ -81,6 +82,7 @@ instance Pretty Span where
 -- | 'Pretty' instance for 'TokenType'. Recovers strings from keywords.
 instance Pretty TokenType where
   pretty TEOF         = mempty
+  pretty TType        = pretty "type"
   pretty TIf          = pretty "if"
   pretty TElse        = pretty "else"
   pretty TWhile       = pretty "while"

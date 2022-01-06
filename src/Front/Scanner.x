@@ -103,6 +103,7 @@ tokens :-
     par                 { layout    TPar    TDBar }
     wait                { layout    TWait   TDBar }
     fun                 { layoutNL  TFun    TSemicolon }
+    type                { layoutNL  TType   TBar }
 
     -- | Keywords that just do as they be.
     after               { keyword TAfter }

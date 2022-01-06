@@ -42,17 +42,17 @@ constructors are @Bool@ and @Either@.
 
 The grammar as it appears in the parser does not actually distinguish between
 any of these kinds of identifiers, so it is the responsibility of this module to
-check that, for example, a data constructor does not appear where a data
-variable is expected, e.g., @let F x = e@, or vice versa, e.g., @let f X = e@.
+check that, a data constructor does not appear where a data variable is
+expected, e.g., @let F x = e@, or vice versa, e.g., @let f (x Y) = e@.
 -}
 module Front.Scope
   ( scopeProgram
   ) where
 
 import qualified Front.Ast                     as A
-import           Front.Identifiers              ( DataInfo(dataKind)
-                                                , IdKind(User)
-                                                , TypInfo
+import           Front.Identifiers              ( DataInfo(..)
+                                                , IdKind(..)
+                                                , TypInfo(..)
                                                 , builtinData
                                                 , builtinTypes
                                                 )
@@ -85,16 +85,31 @@ import           Data.List                      ( group
                                                 , sort
                                                 )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( isJust )
+import           Data.Maybe                     ( isJust
+                                                , mapMaybe
+                                                )
 
 -- | Report 'Identifier' for error reporting.
 showId :: Identifier -> ErrorMsg
 showId s = "'" <> fromString (ident s) <> "'"
 
--- | Scoping environment.
+{- | Scoping environment, maintained during the scoping pass.
+
+In type expressions that act as type annotations, type variables are implicitly
+qualified at the top-level, so any type variable is always in scope. So, an
+annotation like @id : a -> a@ is legal, and means @id : forall a. a -> a@.
+
+However, in the context of type definitions, type variables must be quantified.
+So something like @type T a = D a b@ is illegal because the type variable @b@
+does not appear as a parameter of unary type constructor @T@.
+
+To account for this discrepancy, the 'implicitScheme' field of the scoping
+environment is used to keep track of this context.
+-}
 data ScopeCtx = ScopeCtx
-  { dataMap :: M.Map Identifier DataInfo
-  , typeMap :: M.Map Identifier TypInfo
+  { dataMap        :: M.Map Identifier DataInfo -- ^ Map of in-scope data ids
+  , typeMap        :: M.Map Identifier TypInfo  -- ^ Map of in-scope type ids
+  , implicitScheme :: Bool                      -- ^ Allow implicit type vars
   }
 
 -- | Scoping monad.
@@ -109,13 +124,30 @@ newtype ScopeFn a = ScopeFn (ReaderT ScopeCtx Pass a)
 
 -- | Run a ScopeFn computation.
 runScopeFn :: ScopeFn a -> Pass a
-runScopeFn (ScopeFn m) =
-  runReaderT m ScopeCtx { dataMap = builtinData, typeMap = builtinTypes }
+runScopeFn (ScopeFn m) = runReaderT
+  m
+  ScopeCtx { dataMap        = builtinData
+           , typeMap        = builtinTypes
+           , implicitScheme = True
+           }
+
+-- | Add a list of data identifiers to the scope.
+withTypeScope :: [(Identifier, TypInfo)] -> ScopeFn a -> ScopeFn a
+withTypeScope is =
+  local $ \ctx -> ctx { typeMap = foldr (uncurry M.insert) (typeMap ctx) is }
 
 -- | Add a list of data identifiers to the scope.
 withDataScope :: [(Identifier, DataInfo)] -> ScopeFn a -> ScopeFn a
-withDataScope is = do
+withDataScope is =
   local $ \ctx -> ctx { dataMap = foldr (uncurry M.insert) (dataMap ctx) is }
+
+withExplicitScheme :: [Identifier] -> ScopeFn a -> ScopeFn a
+withExplicitScheme is = local $ \ctx -> ctx
+  { typeMap        = foldr (uncurry M.insert)
+                           (typeMap ctx)
+                           (zip is $ repeat TypInfo { typKind = User })
+  , implicitScheme = False
+  }
 
 -- | Check that an 'Identifier' is not an empty string.
 ensureNonempty :: Identifier -> ScopeFn ()
@@ -186,13 +218,53 @@ dataRef i = do
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
   inScope <- asks $ M.member i . typeMap
+  allowImplicit <- asks implicitScheme
   when (not inScope && isCons i) $ do
     throwError $ ScopeError $ "Type constructor is out of scope: " <> showId i
-  -- Type variables are implicitly quantified, so we always allow any.
+  when (not inScope && isVar i && not allowImplicit) $ do
+    throwError $ ScopeError $ "Type variable is not defined: " <> showId i
 
 -- | Check the scoping of a 'A.Program'.
 scopeProgram :: A.Program -> Pass ()
-scopeProgram (A.Program ds) = runScopeFn $ scopeDefs ds $ return ()
+scopeProgram (A.Program ds) = runScopeFn $ do
+  scopeTypeDefs tds $ scopeDefs dds $ return ()
+ where
+  tds = mapMaybe A.getTopTypeDef ds
+  dds = mapMaybe A.getTopDataDef ds
+
+-- | Check the scoping of a set of type definitions.
+scopeTypeDefs :: [A.TypeDef] -> ScopeFn () -> ScopeFn ()
+scopeTypeDefs tds k = do
+  -- Check and collect all type constructors, which are mutually recursive.
+  tcons <- mapM scopeTCons tds
+  ensureUnique $ map fst tcons
+  withTypeScope tcons $ do
+    -- Then, check and collect all data constructors.
+    dcons <- concat <$> mapM scopeDCons tds
+    ensureUnique $ map fst dcons
+    -- Continuation k is checked with all type and data constructors in scope
+    withDataScope dcons k
+
+-- | Check the scoping of a user-defined type constructor.
+scopeTCons :: A.TypeDef -> ScopeFn (Identifier, TypInfo)
+scopeTCons A.TypeDef { A.typeName = tn } = do
+  ensureCons tn
+  return (tn, TypInfo { typKind = User })
+
+-- | Check the scoping of the data constructors of a type definition.
+scopeDCons :: A.TypeDef -> ScopeFn [(Identifier, DataInfo)]
+scopeDCons A.TypeDef { A.typeVariants = tvs, A.typeParams = tps } = do
+  mapM_ ensureVar tps
+  ensureUnique tps
+  withExplicitScheme tps $ do
+    mapM scopeDcon tvs
+
+-- | Check the scoping of the data constructor a single data variant.
+scopeDcon :: A.TypeVariant -> ScopeFn (Identifier, DataInfo)
+scopeDcon (A.VariantUnnamed dcon ts) = do
+  ensureCons dcon
+  mapM_ scopeType ts
+  return (dcon, DataInfo { dataKind = User })
 
 -- | Check the scoping of a set of parallel (co-recursive) 'A.Definition'.
 scopeDefs :: [A.Definition] -> ScopeFn () -> ScopeFn ()

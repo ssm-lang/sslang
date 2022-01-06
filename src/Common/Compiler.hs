@@ -11,6 +11,7 @@ module Common.Compiler
   , fromString
   , runPass
   , dump
+  , unexpected
   , warn
   , passIO
   , liftEither
@@ -86,6 +87,10 @@ runPass (Pass p) = runExcept (runWriterT p)
 -- | Dump pretty-printable output from within a compiler pass.
 dump :: Pretty a => a -> Pass x
 dump = throwError . Dump . show . pretty
+
+-- | Report unexpected compiler error and halt pipeline.
+unexpected :: (MonadError Error m) => String -> m a
+unexpected = throwError . UnexpectedError . fromString
 
 -- | Log a compiler warning.
 warn :: MonadWriter [Warning] m => Warning -> m ()

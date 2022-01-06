@@ -18,7 +18,7 @@ spec = do
             _  = wait clk
       |]
       output = Program
-        [ DefFn
+        [ TopDef $ DefFn
             "main"
             [ PatTup
                 [ PatAnn (TCon "Int")                   (PatId "x")

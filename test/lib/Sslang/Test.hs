@@ -40,7 +40,7 @@ location = case reverse callStack of
 --
 -- Based on Test.Hspec.assertEqual, without the 'Eq' and 'Show' instances.
 assertDifference :: HasCallStack => String -> String -> String -> Expectation
-assertDifference preface expected actual =
+assertDifference preface actual expected =
   preface `deepseq` expected `deepseq` actual `deepseq` E.throwIO
     (HUnitFailure location $ ExpectedButGot prefaceMsg expected actual)
  where
@@ -57,9 +57,9 @@ shouldPass a = case runPass a of
 shouldProduce :: (HasCallStack, Show a, Eq a) => Pass a -> a -> Expectation
 shouldProduce actual expected = case runPass actual of
   Right (a, _) -> a `shouldBe` expected
-  Left  a -> assertDifference "Expected success but encountered error"
-                              (show a)
-                              (show expected)
+  Left  a      -> assertDifference "Expected success but encountered error"
+                                   (show a)
+                                   (show expected)
 
 -- | Expect that some 'Pass' successfully produces the same value as another.
 shouldPassAs :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation

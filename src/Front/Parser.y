@@ -28,6 +28,7 @@ import Data.Bifunctor (first)
 %tokentype { Token }
 
 %token
+  'type'  { Token (_, TType) }
   'if'    { Token (_, TIf) }
   'else'  { Token (_, TElse) }
   'while' { Token (_, TWhile) }
@@ -68,20 +69,39 @@ import Data.Bifunctor (first)
 %%
 -- | Root node of sslang program parser.
 program                               --> Program
-  : defTop                              { Program $1 }
-  -- TODO: support empty program
+  : topDefs                             { Program $1 }
+  | {- empty -}                         { Program [] }
 
 {- | Top-level definitions.
-
-Note that although these also begin with 'let', they are grammatically (and
-indeed semantically) distinct from actual let-bindings (@defLets@).
 
 They are separated with '||' rather than ';' because the latter somehow causes
 shift-reduce conflicts.
 -}
-defTop                                --> [Definition]
-  : defLet '||' defTop                  { $1 : $3 }
-  | defLet                              { [$1] }
+topDefs                               --> [TopDef]
+  : topDef '||' topDefs                 { $1 : $3 }
+  | topDef                              { [$1] }
+
+-- | Top-level definition.
+topDef                                --> TopDef
+  : defLet                              { TopDef $1 }
+  | defType                             { TopType $1 }
+
+-- | Algebraic data type definition.
+defType                               --> TypeDef
+  : 'type' id ids '{' typeVariants '}'  { TypeDef { typeName = $2
+                                                  , typeParams = $3
+                                                  , typeVariants = $5
+                                                  }
+                                        }
+
+-- | List of pipe-separated variants.
+typeVariants                          --> [TypeVariant]
+  : typeVariant '|' typeVariants        { $1 : $3 }
+  | typeVariant                         { [$1] }
+
+-- | Variant of an algebraic data type.
+typeVariant                           --> TypeVariant
+  : id typs                             { VariantUnnamed $1 $2 }
 
 -- | Mutually recursive block of let-definitions.
 defLets                               --> [Definition]
@@ -97,9 +117,9 @@ defLet                                --> Definition
   : pats typFn '=' '{' expr '}'         {% categorizeDef $1 $2 $5 }
 
 -- | A list of juxtaposed pattersn.
-pats
+pats                                  -->
   : pat pats                            { $1 : $2 }
-  | {- nothing -}                       { [] }
+  | {- empty -}                         { [] }
 
 -- | Tuple patterns are comma-separated and can be type-annotated.
 patTups                              --> [Pat]
@@ -141,7 +161,12 @@ patAtom                               --> Pat
   | int                                 { PatLit $ LitInt $1 }
   | id                                  { PatId $1 }
 
--- | Root node for type annotation.
+-- | List of type expressions.
+typs                                  --> [Typ]
+  : typPre typs                         { $1 : $2 }
+  | {- empty -}                         { [] }
+
+-- | Root node for single type expression.
 typ                                   --> Typ
   : typIn                               { $1 }
 
@@ -254,13 +279,13 @@ matchArms                             --> [(Pat, Expr)]
 
 -- | Each individual arm of a pattern match.
 matchArm                              --> (Pat, Expr)
-  : pat '=' '{' expr '}'                { ($1, $4) }
+  : patAnn '=' '{' expr '}'             { ($1, $4) }
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
   : ';' 'else' '{' expr '}'             { $4 }
   | 'else' '{' expr '}'                 { $3 }
-  | {- nothing -} %prec NOELSE          { NoExpr }
+  | {- empty -} %prec NOELSE            { NoExpr }
 
 -- | Expressions with application by juxtaposition.
 exprApp                               --> Expr
@@ -279,6 +304,11 @@ exprAtom
 exprPar                               --> [Expr]
   : expr '||' exprPar                   { $1 : $3 }
   | expr                                { [$1] }
+
+-- | A list of juxtaposed identifiers.
+ids                                   --> [Identifier]
+  : id ids                              { $1 : $2 }
+  | {- empty -}                         { [] }
 {
 -- | What to do upon encountering parse error.
 parseError :: Token -> Alex a

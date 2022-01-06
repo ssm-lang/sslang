@@ -12,6 +12,7 @@ import           Front.Ast                      ( Definition(..)
                                                 , Fixity(..)
                                                 , OpRegion(..)
                                                 , Program(..)
+                                                , TopDef(..)
                                                 )
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
@@ -26,11 +27,14 @@ defaultOps =
   [Infixl 6 "+", Infixl 6 "-", Infixl 7 "*", Infixl 8 "/", Infixr 8 "^"]
 
 parseOperators :: Program -> Compiler.Pass Program
-parseOperators (Program decls) = return $ Program $ map (parseOps defaultOps)
-                                                        decls
+parseOperators (Program decls) = return $ Program $ map (parseTop ops) decls
  where
-  parseOps fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
-  parseOps fs (DefPat b e    ) = DefPat b $ parseExprOps fs e
+  ops = defaultOps
+  parseTop fs  (TopDef  d) = TopDef $ parseDef fs d
+  parseTop _fs (TopType t) = TopType t
+
+  parseDef fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
+  parseDef fs (DefPat b e    ) = DefPat b $ parseExprOps fs e
 
 -- | Remove the OpRegion constructs in the AST by parsing the operators
 --   according to the given Fixity specifications
