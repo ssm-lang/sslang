@@ -25,7 +25,7 @@ import           Control.Monad.State.Lazy       ( MonadState
 
 import qualified Data.Bifunctor                as B
 import qualified Data.Foldable                 as F
-import           Data.List                      ( intercalate, intersperse )
+import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes )
 import qualified Data.Set                      as S
@@ -94,10 +94,12 @@ addCurrentScope v =
   modify $ \st -> st { currentScope = S.insert v $ currentScope st }
 
 -- | Create a string composed of the scope trail and a variable name.
-prependPath :: Identifier -> LiftFn Identifier
-prependPath cur = do
+prependTrail :: Identifier -> LiftFn Identifier
+prependTrail cur = do
   curTrail <- gets trail
-  return $ foldr (<>) (Identifier "") (intersperse (Identifier "_") (reverse (cur : curTrail)))
+  return $ foldr (<>)
+                 (Identifier "")
+                 (intersperse (Identifier "_") (reverse (cur : curTrail)))
 
 -- | Construct a fresh variable name for a new lifted lambda.
 getFresh :: LiftFn Identifier
@@ -123,16 +125,23 @@ newScope vs = modify $ \st -> st
   , freeTypes    = M.empty
   }
 
+
+-- | Optionally append to the scope trail.
+maybeTrailAppend :: Maybe Identifier -> [Identifier] -> LiftFn ()
+maybeTrailAppend (Just scopeName) trail' =
+  modify (\st -> st { trail = scopeName : trail' })
+maybeTrailAppend Nothing _ = return ()
+
 -- | Context management for lifting new scopes (restore information after lifting the body).
 descend
-  :: Identifier
+  :: Maybe Identifier
   -> LiftFn (I.Expr Poly.Type)
   -> LiftFn (I.Expr Poly.Type, M.Map VarId Poly.Type)
 descend scopeName body = do
   savedScope     <- gets currentScope
   savedFreeTypes <- gets freeTypes
   savedTrail     <- gets trail
-  liftedBody <- modify (\st -> st { trail = scopeName : savedTrail }) >> body
+  liftedBody     <- maybeTrailAppend scopeName savedTrail >> body
   freeTypesBody  <- gets freeTypes
   modify $ \st -> st
     { currentScope = savedScope
@@ -171,7 +180,7 @@ liftLambdasTop
 liftLambdasTop (v@(VarId lamIdent), lam@(I.Lambda _ _ t)) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
-  (liftedBody, newTopDefs) <- extractLifted $ descend lamIdent $ do
+  (liftedBody, newTopDefs) <- extractLifted $ descend (Just lamIdent) $ do
     newScope (catMaybes vs)
     liftLambdas body
   let liftedLambda = I.makeLambdaChain vs' liftedBody
@@ -202,8 +211,8 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.collectLambda lam
       vs'        = zip vs $ fst (collectArrow t)
   lamName                       <- getFresh
-  fullName                      <- prependPath lamName
-  (liftedLamBody, lamFreeTypes) <- descend lamName $ do
+  fullName                      <- prependTrail lamName
+  (liftedLamBody, lamFreeTypes) <- descend (Just lamName) $ do
     newScope (catMaybes vs)
     liftLambdas body
   let liftedLam = I.makeLambdaChain
@@ -234,7 +243,8 @@ liftLambdas dat@I.Data{} = return dat
 liftLambdasInLet :: (I.Binder, I.Expr Poly.Type) -> LiftFn (I.Expr Poly.Type)
 liftLambdasInLet (b, expr) = do
   let bindingName = maybe "wildcard" ident b
-  (liftedLetBody, bodyFrees) <- descend (fromString bindingName) $ liftLambdas expr
+  (liftedLetBody, bodyFrees) <- descend (Just $ fromString bindingName)
+    $ liftLambdas expr
   modify $ \st -> st { freeTypes = bodyFrees }
   return liftedLetBody
 
@@ -242,17 +252,17 @@ liftLambdasInLet (b, expr) = do
 liftLambdasInArm
   :: (I.Alt, I.Expr Poly.Type) -> LiftFn (I.Alt, I.Expr Poly.Type)
 liftLambdasInArm (I.AltLit l, arm) = do
-  (liftedArm, armFrees) <- descend "match_altlit" $ liftLambdas arm
+  (liftedArm, armFrees) <- descend Nothing $ liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
 liftLambdasInArm (I.AltDefault b, arm) = do
-  (liftedArm, armFrees) <- descend "match_altdefault" $ do
+  (liftedArm, armFrees) <- descend Nothing $ do
     F.forM_ b addCurrentScope
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltDefault b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
-  (liftedArm, armFrees) <- descend "match_altdata" $ do
+  (liftedArm, armFrees) <- descend Nothing $ do
     mapM_ addCurrentScope (catMaybes bs)
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
