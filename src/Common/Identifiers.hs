@@ -176,3 +176,30 @@ isCons i | null s    = False
 -- | Whether an identifier refers to a type or data variable.
 isVar :: Identifiable a => a -> Bool
 isVar = not . isCons
+
+{- | Mangle all identifiers in some data structure.
+
+This function is useful for preserving the general syntactic structure of
+a datum without inspecting the /specific/ identifiers used within. This is
+useful for comparing ASTs modulo alpha renaming.
+
+The @Proxy i@ parameter is used to specify exactly which kind of identifier to
+mangle. For instance, to mangle all 'VarId' nodes:
+
+> mangleVarId :: Data a => a -> a
+> mangleVarId = mangle (Proxy :: VarId)
+
+-}
+mangle :: (Identifiable i, Data i, Data a) => Proxy i -> a -> a
+mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
+ where
+  mang :: (Identifiable i, Data i) => Proxy i -> i -> State (Int, M.Map i i) i
+  mang _ i = do
+    (ctr, idMap) <- get
+    case M.lookup i idMap of
+      Just i' -> return i'
+      Nothing -> do
+        let ctr' = ctr + 1
+            i'   = fromString $ "mang" <> show ctr'
+        put (ctr', M.insert i i' idMap)
+        return i'
