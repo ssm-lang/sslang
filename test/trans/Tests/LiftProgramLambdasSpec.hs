@@ -32,10 +32,10 @@ spec = do
           bar: Int = 5
           baz x: Int -> Int =
             x + 1
-          anon0 z: Int -> Int =
+          foo_adder_anon0 z: Int -> Int =
             z + 1
           foo y: Int -> Int =
-            let adder = anon0
+            let adder = foo_adder_anon0
             adder y
         |]
     unlifted `shouldPassAs` lifted
@@ -54,12 +54,39 @@ spec = do
           bar: Int = 5
           baz x: Int -> Int =
             x + 1
-          anon0 (w: Int) (z: Int) -> Int =
+          foo_adder_anon0 (w: Int) (z: Int) -> Int =
             z + bar + w
           foo y: Int -> Int =
             let w = 1
-                adder = anon0 w
+                adder = foo_adder_anon0 w
             adder y
+        |]
+    lifted `shouldPassAs` unlifted
+
+  it "lifts lambdas with free variables in let bindings" $ do
+    let unlifted = parseLift [here|
+          bar: Int = 5
+          baz x: Int -> Int =
+            x + 1
+          foo y: Int -> Int =
+            let w = 1
+                adder (z: Int) -> Int = z + bar + w
+                dec (z: Int) -> Int = z - w
+            adder y + dec y
+        |]
+        lifted = parseLift [here|
+          bar: Int = 5
+          baz x: Int -> Int =
+            x + 1
+          foo_adder_anon0 (w: Int) (z: Int) -> Int =
+            z + bar + w
+          foo_dec_anon1 (w: Int) (z: Int) -> Int =
+            z - w
+          foo y: Int -> Int =
+            let w = 1
+                adder = foo_adder_anon0 w
+                dec = foo_dec_anon1 w
+            adder y + dec y
         |]
     lifted `shouldPassAs` unlifted
 
@@ -73,14 +100,14 @@ spec = do
             g y
         |]
         lifted = parseLift [here|
-          anon0 (a: Int) (x: Int) (b: Int) -> Int =
+          foo_g_anon0_h_anon1 (a: Int) (x: Int) (b: Int) -> Int =
             a + b + x
-          anon1 (x: Int) (z: Int) (a: Int) -> Int =
-            let h = anon0 a x
+          foo_g_anon0 (x: Int) (z: Int) (a: Int) -> Int =
+            let h = foo_g_anon0_h_anon1 a x
             h z
           foo (x: Int) (y: Int) -> Int =
             let z = 5
-                g = anon1 x z
+                g = foo_g_anon0 x z
             g y
         |]
     lifted `shouldPassAs` unlifted
