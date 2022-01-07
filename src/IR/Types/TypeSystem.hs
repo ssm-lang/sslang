@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- | Common definitions for the type system(s) used in this compiler.
 
 The following is a sketch of the type pipeline (from top to bottom):
@@ -21,9 +22,12 @@ module IR.Types.TypeSystem where
 import           Common.Identifiers             ( DConId
                                                 , FieldId
                                                 )
-import           Data.Bifunctor                 ( Bifunctor(second) )
-
 import           Common.Pretty
+
+import           Data.Bifunctor                 ( Bifunctor(second) )
+import           Data.Data                      ( Data
+                                                , Typeable
+                                                )
 
 -- | The number of arguments a type constructor will take.
 type Arity = Int
@@ -130,13 +134,13 @@ data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
   , arity    :: Arity
   }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Typeable, Data)
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
   = VariantNamed [(FieldId, t)] -- ^ A record with named fields
   | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
-  deriving (Show, Eq)
+  deriving (Show, Eq, Typeable, Data)
 
 instance Functor TypeDef where
   fmap f TypeDef { variants = vs, arity = a } =

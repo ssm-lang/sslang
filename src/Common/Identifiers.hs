@@ -1,4 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
 {- | The types of identifiers used across the compiler.
 
 These are defined as newtypes (rather than as type aliases) so that they cannot
@@ -19,18 +21,22 @@ module Common.Identifiers
   , Identifier(..)
   , isCons
   , isVar
+  , mangle
   ) where
 
+import           Common.Pretty                  ( Pretty(..) )
+
+import           Control.Monad.State
 import           Data.Char                      ( isUpper )
+import           Data.Generics
+import qualified Data.Map                      as M
 import           Data.String                    ( IsString(..) )
 
 import           Language.C                     ( Id(..) )
 import           Language.C.Quote               ( ToIdent(..) )
 
-import           Prettyprinter                  ( Pretty(..) )
-
 -- | A basic identifier: just a string
-newtype Identifier = Identifier String deriving (Eq, Ord)
+newtype Identifier = Identifier String deriving (Eq, Ord, Typeable, Data)
 
 -- | Turn a general identifier into a string
 class (IsString i, Ord i) => Identifiable i where
@@ -65,6 +71,8 @@ fromId = fromString . ident
 newtype TConId = TConId Identifier
   deriving Eq
   deriving Ord
+  deriving Typeable
+  deriving Data
   deriving ToIdent via Identifier
   deriving IsString via Identifier
   deriving Identifiable via Identifier
@@ -104,6 +112,8 @@ instance Pretty TVarIdx where
 newtype DConId = DConId Identifier
   deriving Eq
   deriving Ord
+  deriving Typeable
+  deriving Data
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -116,6 +126,8 @@ newtype DConId = DConId Identifier
 newtype FfiId = FfiId Identifier
   deriving Eq
   deriving Ord
+  deriving Typeable
+  deriving Data
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -128,6 +140,8 @@ newtype FfiId = FfiId Identifier
 newtype VarId = VarId Identifier
   deriving Eq
   deriving Ord
+  deriving Typeable
+  deriving Data
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier
@@ -140,6 +154,8 @@ newtype VarId = VarId Identifier
 newtype FieldId = FieldId Identifier
   deriving Eq
   deriving Ord
+  deriving Typeable
+  deriving Data
   deriving Show via Identifier
   deriving ToIdent via Identifier
   deriving IsString via Identifier

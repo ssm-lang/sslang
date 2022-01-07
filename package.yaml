@@ -28,6 +28,7 @@ library:
   - srcloc
   - composition
   - comonad
+  - syb
 
 executables:
   sslc:
