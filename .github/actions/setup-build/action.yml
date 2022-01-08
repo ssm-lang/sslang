@@ -30,9 +30,11 @@ runs:
         stack-version: latest
 
     - name: Setup Haskell Stack
+      shell: bash
       run: |
         stack setup --resolver ${{ inputs.resolver }}
 
     - name: Install dependencies
+      shell: bash
       run: |
         stack build --no-terminal --only-dependencies
