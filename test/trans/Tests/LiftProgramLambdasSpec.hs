@@ -32,10 +32,10 @@ spec = do
           bar: Int = 5
           baz x: Int -> Int =
             x + 1
-          anon0 z: Int -> Int =
+          anonymous z: Int -> Int =
             z + 1
           foo y: Int -> Int =
-            let adder = anon0
+            let adder = anonymous
             adder y
         |]
     unlifted `shouldPassAs` lifted
