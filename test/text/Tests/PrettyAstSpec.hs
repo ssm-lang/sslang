@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Tests.PrettyAstSpec where
 
-import Sslang.Test ( here, it, shouldPassAs, Spec, Pass )
+import Sslang.Test ( here, it, shouldPassExactlyAs, Spec, Pass )
 
 import           Common.Pretty                  ( spaghetti )
 import           Front.Ast                      ( Program )
@@ -21,7 +21,7 @@ spec = do
               wait clk
         |]
         output = input >>= renderAndParse
-    input `shouldPassAs` output
+    input `shouldPassExactlyAs` output
 
   it "prints a function with a postfix type signature" $ do
     let input = parseProgram [here|
@@ -30,7 +30,7 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldPassAs` output
+    input `shouldPassExactlyAs` output
 
   it "prints a function with an inline type signature" $ do
     let input = parseProgram [here|
@@ -39,7 +39,7 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldPassAs` output
+    input `shouldPassExactlyAs` output
 
   it "prints a function with no type signature" $ do
     let input = parseProgram [here|
@@ -48,7 +48,7 @@ spec = do
             oth <- 5
         |]
         output = input >>= renderAndParse
-    input `shouldPassAs` output
+    input `shouldPassExactlyAs` output
 
   it "prints a function with a pattern match" $ do
     let input = parseProgram [here|
@@ -58,4 +58,4 @@ spec = do
               _  = wait clk
         |]
         output = input >>= renderAndParse
-    input `shouldPassAs` output
+    input `shouldPassExactlyAs` output
