@@ -363,7 +363,7 @@ layoutNL ttype sepToken i len = do
 keyword :: TokenType -> AlexAction Token
 keyword ttype i len = return $ Token (alexInputSpan i len, ttype)
 
--- | Arbitrary string token helper, which uses 'f' to produce 'TokenType'.
+-- | Arbitrary string token helper, which uses @f@ to produce 'TokenType'.
 strTok :: (String -> TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = do
   return $ Token (alexInputSpan i len, f $ take len s)

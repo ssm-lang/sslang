@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_HADDOCK prune #-}
 -- | Data types and helpers used to compose the compiler pipeline.
 module Common.Compiler
   ( ErrorMsg

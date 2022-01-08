@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
--- | Parse 'OpRegion' nodes inside of an AST 'Program'.
+-- | Parse OpRegion nodes inside of an AST 'Program'.
 module Front.ParseOperators
   ( parseOperators
   , Fixity(..)
