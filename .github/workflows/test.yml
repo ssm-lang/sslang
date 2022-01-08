@@ -30,44 +30,18 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         resolver: [lts-18.6]
-    env:
-      ARGS: "--stack-yaml stack.yaml --no-terminal --system-ghc"
 
     steps:
-    - name: Check out repo
-      uses: actions/checkout@v2
-
-    - name: Cache Stack files
-      uses: actions/cache@v2
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/setup-build
       with:
-        path: |
-          ~/.stack
-          .stack-work
-        # tie cache to Stack resolver and package config
-        # https://raehik.github.io/2021/03/01/caching-stack-and-cabal-haskell-builds-on-github-actions.html
-        key: ${{ matrix.os }}-stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml.lock', 'package.yaml') }}
-        restore-keys: |
-          ${{ matrix.os }}-stack-${{ matrix.resolver }}-
-          ${{ matrix.os }}-stack-
+        os:  ${{ matrix.os }}
+        resolver: ${{ matrix.resolver }}
 
-    - name: Install Haskell Stack
-      uses: haskell/actions/setup@v1
-      with:
-        enable-stack: true
-        stack-version: latest
-
-    - name: Setup Haskell Stack
+    - name: Build sslang compiler
       run: |
-        stack setup --resolver ${{ matrix.resolver }}
+        stack build
 
-    - name: Install dependencies
-      run: |
-        stack build ${ARGS} --only-dependencies
-
-    - name: Build
-      run: |
-        stack build ${ARGS}
-
-    - name: Test
+    - name: Run sslang test suite
       run: |
         stack test --stack-yaml stack.yaml
