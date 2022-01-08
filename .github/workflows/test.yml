@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - '.github/**'
+      - 'package.yaml'
+      - 'stack.yaml'
+      - 'stack.yaml.lock'
       - 'app/**'
       - 'lib/**'
       - 'regression-tests/**'
@@ -15,6 +18,7 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '*.yml'
       - 'app/**'
       - 'lib/**'
       - 'regression-tests/**'
