@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+-- | Parse 'OpRegion' nodes inside of an AST 'Program'.
 module Front.ParseOperators
   ( parseOperators
   , Fixity(..)
@@ -22,10 +23,12 @@ data Stack = BOS
            | Stack Stack Expr Identifier
 
 -- FIXME: These should be defined and included in the standard library
+-- | Default fixity of operators.
 defaultOps :: [Fixity]
 defaultOps =
   [Infixl 6 "+", Infixl 6 "-", Infixl 7 "*", Infixl 8 "/", Infixr 8 "^"]
 
+-- | Parse OpRegion nodes inside of an AST 'Program'.
 parseOperators :: Program -> Compiler.Pass Program
 parseOperators (Program decls) = return $ Program $ map (parseTop ops) decls
  where
