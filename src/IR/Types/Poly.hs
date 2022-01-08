@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- | Type system supporting (parametric) polymorphism.
 
 Based on the Hindley-Milner-Damas type system and the definitions in
@@ -34,6 +35,9 @@ import           Common.Identifiers             ( TConId
                                                 , TVarIdx
                                                 )
 import           Common.Pretty
+import           Data.Data                      ( Data
+                                                , Typeable
+                                                )
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -44,7 +48,7 @@ data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., @Option '0@
   | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

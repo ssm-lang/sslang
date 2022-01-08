@@ -12,23 +12,30 @@ module Common.Identifiers
   , fromId
   , TConId(..)
   , TVarId(..)
-  , TVarIdx(..)
   , DConId(..)
-  , FfiId(..)
   , VarId(..)
-  , FieldId(..)
+  , TVarIdx(..)
   , Binder
   , Identifier(..)
   , isCons
   , isVar
   , mangle
+  , mangleVars
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
 
-import           Control.Monad.State
+import           Control.Monad.State            ( MonadState(..)
+                                                , State
+                                                , evalState
+                                                )
 import           Data.Char                      ( isUpper )
-import           Data.Generics
+import           Data.Generics                  ( Data
+                                                , Proxy(Proxy)
+                                                , Typeable
+                                                , everywhereM
+                                                , mkM
+                                                )
 import qualified Data.Map                      as M
 import           Data.String                    ( IsString(..) )
 
@@ -188,7 +195,6 @@ mangle. For instance, to mangle all 'VarId' nodes:
 
 > mangleVarId :: Data a => a -> a
 > mangleVarId = mangle (Proxy :: VarId)
-
 -}
 mangle :: (Identifiable i, Data i, Data a) => Proxy i -> a -> a
 mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
@@ -203,3 +209,7 @@ mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
             i'   = fromString $ "mang" <> show ctr'
         put (ctr', M.insert i i' idMap)
         return i'
+
+-- | Mangle all type and data variable identifiers.
+mangleVars :: (Data a) => a -> a
+mangleVars = mangle (Proxy :: Proxy VarId) . mangle (Proxy :: Proxy TVarId)

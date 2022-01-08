@@ -20,7 +20,7 @@ Types.Flat: concrete only
 module IR.Types.TypeSystem where
 
 import           Common.Identifiers             ( DConId
-                                                , FieldId
+                                                , VarId
                                                 )
 import           Common.Pretty
 
@@ -40,7 +40,7 @@ data Builtin t
   | Arrow t t     -- ^ Function arrow @a -> b@
   | Tuple [t]     -- ^ Tuple with two or more fields
   | Integral Int  -- ^ Two's complement binary type with size in bits
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 instance Functor Builtin where
   fmap _ Unit           = Unit
@@ -138,8 +138,8 @@ data TypeDef t = TypeDef
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
-  = VariantNamed [(FieldId, t)] -- ^ A record with named fields
-  | VariantUnnamed [t]          -- ^ An algebraic type with unnamed fields
+  = VariantNamed [(VarId, t)] -- ^ A record with named fields
+  | VariantUnnamed [t]        -- ^ An algebraic type with unnamed fields
   deriving (Show, Eq, Typeable, Data)
 
 instance Functor TypeDef where
