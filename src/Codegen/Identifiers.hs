@@ -99,6 +99,7 @@ value = "value"
 
 {- libssm Symbols -}
 
+-- | Name of the pseudonymous macro from the Linux kernel.
 container_of :: CIdent
 container_of = "container_of"
 
@@ -158,9 +159,11 @@ now = "ssm_now"
 never :: CIdent
 never = "SSM_NEVER"
 
+-- | Priority of the root SSM routine.
 root_priority :: CIdent
 root_priority = "SSM_ROOT_PRIORITY"
 
+-- | Depth of the root SSM routine.
 root_depth :: CIdent
 root_depth = "SSM_ROOT_DEPTH"
 
@@ -198,9 +201,11 @@ enter_ routineName = "enter_" <> fromId routineName
 trig_ :: Int -> CIdent
 trig_ i = "__trig_" <> fromString (show i)
 
+-- | Obtain the name of a temporary variable.
 tmp_ :: Int -> CIdent
 tmp_ i = "__tmp_" <> fromString (show i)
 
+-- | Obtain the name of an argument variable.
 arg_ :: Int -> CIdent
 arg_ i = "__arg_" <> fromString (show i)
 
@@ -226,19 +231,19 @@ ret_val = "__return_val"
 
 {---- Type identifiers ----}
 
--- | Name of the scheduled variable type for an SSM `Type`.
+-- | Name of the scheduled variable type for an SSM Type.
 sv_ :: Identifiable a => a -> CIdent
 sv_ ty = "ssm_" <> fromId ty <> "_t"
 
--- | Name of the initialize method for an SSM `Type`.
+-- | Name of the initialize method for an SSM Type.
 initialize_ :: Identifiable a => a -> CIdent
 initialize_ ty = "ssm_initialize_" <> fromId ty
 
--- | Name of the assign method for an SSM `Type`.
+-- | Name of the assign method for an SSM Type.
 assign_ :: Identifiable a => a -> CIdent
 assign_ ty = "ssm_assign_" <> fromId ty
 
--- | Name of the later method for an SSM `Type`.
+-- | Name of the later method for an SSM Type.
 later_ :: Identifiable a => a -> CIdent
 later_ ty = "ssm_later_" <> fromId ty
 
@@ -246,6 +251,7 @@ later_ ty = "ssm_later_" <> fromId ty
 sv :: CIdent
 sv = "sv"
 
+-- | Name of C integer type.
 int_ :: Int -> CIdent
 int_ s = "i" <> fromString (show s)
 

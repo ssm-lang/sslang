@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+-- | Sslang source code tokens.
 module Front.Token where
 
 import Common.Pretty
@@ -117,5 +118,6 @@ instance Pretty TokenType where
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
 
+-- | Pretty print a list of tokens.
 prettyTokens :: [Token] -> String
 prettyTokens = unlines . map (show . pretty)

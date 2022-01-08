@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+-- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
   , Binder
@@ -19,37 +21,38 @@ import           Common.Identifiers             ( Binder
                                                 , TConId(..)
                                                 , VarId(..)
                                                 )
-
-import           Control.Comonad                ( Comonad(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
                                                 )
 
-import           Common.Pretty
+import           Control.Comonad                ( Comonad(..) )
+import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Data.Data                      ( Data
+                                                , Typeable
+                                                )
 
 {- | Top-level compilation unit.
 
-`t' is the type system in use, e.g., "IR.Types.Flat"
-
+@t@ is the type system in use, e.g., "IR.Types.Flat"
 -}
 data Program t = Program
   { programEntry :: VarId
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Literal values supported by the language.
 
-Note that these don't carry any connotation of type: '1' just means '1',
+Note that these don't carry any connotation of type: @1@ just means @1@,
 -}
 data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Primitive operations.
 
@@ -58,8 +61,8 @@ operators in C, or as instructions in an assembly language.
 
 For simplicity and consistency, they should be:
 
-- Pure (i.e., side-effectful iff operands are side-effectful, i.e., no '=')
-- Strict in all operands (i.e., no '&&' or '||')
+- Pure (i.e., side-effectful iff operands are side-effectful, i.e., no @=@)
+- Strict in all operands (i.e., no @&&@ or @||@)
 
 We can instead implement short-circuit control flow using match statements.
 -}
@@ -79,50 +82,50 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
   = New
-  {- ^ 'New e t' allocates a schedule variable initialized to 'e', and
-  returns a reference to it. If reuse token 't' is non-null,
-  this will use token 't' instead of allocating new memory.
+  {- ^ @New e t@ allocates a schedule variable initialized to @e@, and
+  returns a reference to it. If reuse token @t@ is non-null,
+  this will use token @t@ instead of allocating new memory.
   -}
   | Dup
-  {- ^ 'Dup r' duplicates the reference 'r' (i.e., increments its
+  {- ^ @Dup r@ duplicates the reference @r@ (i.e., increments its
   reference count.)
   -}
   | Drop
-  {- ^ 'Drop r' brings reference 'r' out of scope, and frees it if it
+  {- ^ @Drop r@ brings reference @r@ out of scope, and frees it if it
   is the last remaining reference to the scheduled variable.
   -}
   | Reuse
-  {- ^ 'Reuse r' is like 'Drop r', except it returns a reuse token
-  that should be passed to 'New' for reuse.
+  {- ^ @Reuse r@ is like @Drop r@, except it returns a reuse token
+  that should be passed to @New@ for reuse.
   -}
   | Deref
-  {- ^ 'Deref r' dereferences reference 'r' to obtain its value. -}
+  {- ^ @Deref r@ dereferences reference @r@ to obtain its value. -}
   | Assign
-  {- ^ 'Assign r e' instantly assigns value 'e' to reference 'r'. -}
+  {- ^ @Assign r e@ instantly assigns value @e@ to reference @r@. -}
   | After
-  {- ^ 'After t r e' assigns 'e' to reference 'r' after time 't'. -}
+  {- ^ @After t r e@ assigns @e@ to reference @r@ after time @t@. -}
   | Par
-  {- ^ 'Par  es+' evaluates expressions 'es' concurrently. -}
+  {- ^ @Par  es+@ evaluates expressions @es@ concurrently. -}
   | Wait
-  {- ^ 'Wait rs+' waits for an assignment to any reference in 'rs'. -}
+  {- ^ @Wait rs+@ waits for an assignment to any reference in @rs@. -}
   | Loop
-  {- ^ 'Loop b' loops body 'b' forever. -}
+  {- ^ @Loop b@ loops body @b@ forever. -}
   | Break
-  {- ^ 'Break' breaks out of the innermost loop. -}
+  {- ^ @Break@ breaks out of the innermost loop. -}
   | Return
-  {- ^ 'Return e' returns the value 'e' from the current function. -}
+  {- ^ @Return e@ returns the value @e@ from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
-`t' represents the type of this expression, e.g., "IR.Types.Flat". At
+@t@ represents the type of this expression, e.g., 'IR.Types.Flat'. At
 various stages, this may represent a richer or simpler type
 system. The type is embedded in each data constructor so as to
 type-annotate the entire expression tree.
@@ -130,44 +133,42 @@ type-annotate the entire expression tree.
 Designed for side effects with call-by-value evaluation order. Basic
 sequencing can be recovered through let-bindings:
 
-@
-   let _ = stmt1 in
-   let _ = stmt2 in
-   ...
-@
+> let _ = stmt1 in
+> let _ = stmt2 in
+> ...
 
-Effects of 'stmt1' take place before that of 'stmt2'.
+Effects of @stmt1@ take place before that of @stmt2@.
 -}
 data Expr t
   = Var VarId t
-  {- ^ 'Var n t' is a variable named 'n' of type 't'. -}
+  {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
   | Data DConId t
-  {- ^ 'Data d t' is a data constructor named 'n' of type 't'. -}
+  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
   | Lit Literal t
-  {- ^ 'Lit l t' is a literal value 'l' of type 't'. -}
+  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
   | App (Expr t) (Expr t) t
-  {- ^ 'App f a t' applies function 'f' to argument 'a', producing a value of
-  type 't'.
+  {- ^ @App f a t@ applies function @f@ to argument @a@, producing a value of
+  type @t@.
   -}
   | Let [(Binder, Expr t)] (Expr t) t
-  {- ^ 'Let [(n, v)] b t' binds value 'v' to variable 'v' in its body 'b'.
+  {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
 
   The bindings list may only be of length greater than 1 for a set of mutually
   co-recursive functions.
   -}
   | Lambda Binder (Expr t) t
-  {- ^ 'Lambda v b t' constructs an anonymous function of type 't' that binds
-  a value to parameter 'v' in its body 'b'.
+  {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
+  a value to parameter @v@ in its body @b@.
   -}
   | Match (Expr t) [(Alt, Expr t)] t
-  {- ^ 'Match s alts t' pattern-matches on scrutinee 's' against alternatives
-  'alts', each producing a value of type 't'.
+  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
+  @alts@, each producing a value of type @t@.
   -}
   | Prim Primitive [Expr t] t
-  {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
-  of type 't'.
+  {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
+  of type @t@.
   -}
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -177,7 +178,7 @@ data Alt
   -- ^ @AltLit l e@ matches against literal @d@, producing expression @e@.
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
