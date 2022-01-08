@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DerivingVia #-}
 {- |
 
 Types with Typeclasses, e.g., after type inference
@@ -5,8 +7,6 @@ Types with Typeclasses, e.g., after type inference
 For now, just the polymorphic types.
 
 -}
-
-{-# LANGUAGE DerivingVia #-}
 module IR.Types.Classes
   ( Builtin(..)
   , Type(..)
@@ -14,6 +14,9 @@ module IR.Types.Classes
 
 import           Common.Identifiers             ( TConId
                                                 , TVarIdx
+                                                )
+import           Data.Data                      ( Data
+                                                , Typeable
                                                 )
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
@@ -26,7 +29,7 @@ data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarIdx                    -- ^ Type variables, e.g., '0
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

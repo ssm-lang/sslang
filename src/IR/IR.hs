@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+-- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
   , Binder
@@ -19,19 +21,21 @@ import           Common.Identifiers             ( Binder
                                                 , TConId(..)
                                                 , VarId(..)
                                                 )
-
-import           Control.Comonad                ( Comonad(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Common.Pretty
 import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
                                                 )
 
-import           Common.Pretty
+import           Control.Comonad                ( Comonad(..) )
+import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Data.Data                      ( Data
+                                                , Typeable
+                                                )
 
 {- | Top-level compilation unit.
 
-`t' is the type system in use, e.g., "IR.Types.Flat"
+'t' is the type system in use, e.g., "IR.Types.Flat"
 
 -}
 data Program t = Program
@@ -39,7 +43,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Literal values supported by the language.
 
@@ -49,7 +53,7 @@ data Literal
   = LitIntegral Integer
   | LitBool Bool
   | LitEvent
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Primitive operations.
 
@@ -79,7 +83,7 @@ data PrimOp
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
   | PrimLe      -- ^ less than or equal to, i.e., x <= y
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
@@ -118,7 +122,7 @@ data Primitive
   {- ^ 'Return e' returns the value 'e' from the current function. -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
 
@@ -167,7 +171,7 @@ data Expr t
   {- ^ 'Prim p es t' applies primitive 'p' arguments 'es', producing a value
   of type 't'.
   -}
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -177,7 +181,7 @@ data Alt
   -- ^ @AltLit l e@ matches against literal @d@, producing expression @e@.
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Collect a curried application into the function applied to a list of args.
 collectApp :: Expr t -> (Expr t, [Expr t])
