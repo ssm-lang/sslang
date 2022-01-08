@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- | Basic type system with only nullary type constants and builtin types.
 
 Features (or lack thereof):
@@ -23,6 +24,9 @@ module IR.Types.Flat
 
 import           Common.Identifiers             ( TConId )
 import           Common.Pretty
+import           Data.Data                      ( Data
+                                                , Typeable
+                                                )
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeSystem(..)
                                                 )
@@ -31,7 +35,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
 data Type
   = TBuiltin (Builtin Type) -- ^ Builtin types
   | TCon TConId             -- ^ Type constructors
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
