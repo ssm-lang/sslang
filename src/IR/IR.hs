@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+-- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
   , Binder
@@ -34,7 +35,7 @@ import           Data.Data                      ( Data
 
 {- | Top-level compilation unit.
 
-`t' is the type system in use, e.g., "IR.Types.Flat"
+'t' is the type system in use, e.g., "IR.Types.Flat"
 
 -}
 data Program t = Program

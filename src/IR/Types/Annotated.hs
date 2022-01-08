@@ -23,14 +23,14 @@ import           IR.Types.TypeSystem            ( Builtin(..)
 When multiple exist, it should be assumed that they are equivalent, in the
 sense that they can be unified.
 
-Type annotations can be added using '<>' (from `Semigroup'), while 'mempty'
+Type annotations can be added using '<>' (from 'Semigroup'), while 'mempty'
 represents no type annotation.
 -}
 newtype Type = Type [TypeAnnote]
+  deriving Eq
   deriving Show
   deriving Typeable
   deriving Data
-  deriving Eq         via [TypeAnnote]
   deriving Semigroup  via [TypeAnnote]
   deriving Monoid     via [TypeAnnote]
 
@@ -41,7 +41,7 @@ data TypeAnnote
   | TVar TVarId                     -- ^ Type variables, e.g., '0
   deriving (Show, Eq, Typeable, Data)
 
--- | `Type' is a type system.
+-- | 'Type' is a type system.
 instance TypeSystem Type where
   projectBuiltin = Type . (: []) . TBuiltin
 
