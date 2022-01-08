@@ -61,12 +61,14 @@ data Error
   | ParseError ErrorMsg       -- ^ Error encountered by parser
   deriving (Show, Eq)
 
+-- | Types of compiler warnings that can be logged during compilation.
 data Warning
   = TypeWarning    ErrorMsg   -- ^ Warning about type
   | NameWarning    ErrorMsg   -- ^ Warning related to identifier names
   | PatternWarning ErrorMsg   -- ^ Warning related to patterns
   deriving (Show, Eq)
 
+-- | Type alias for underlying compiler pipeline monad.
 type PassMonad = WriterT [Warning] (Except Error)
 
 -- | The compiler pipeline monad; supports throwing errors, logging, etc.
