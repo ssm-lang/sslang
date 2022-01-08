@@ -9,6 +9,8 @@ module Sslang.Test
   , module Test.Hspec
   , shouldPass
   , shouldPassAs
+  , shouldPassExactlyAs
+  , shouldNotPassAs
   , shouldProduce
   , shouldFail
   , shouldFailWith
@@ -23,7 +25,7 @@ import           Test.Hspec
 import           Control.DeepSeq                ( deepseq )
 import           Control.Exception             as E
                                                 ( throwIO )
-import           Control.Monad                  ( unless )
+import           Control.Monad                  ( unless, when )
 import           Data.CallStack                 ( SrcLoc
                                                 , callStack
                                                 )
@@ -56,41 +58,48 @@ shouldPass a = case runPass a of
   Right _ -> return ()
   Left  e -> assertFailure $ "Encountered compiler error: " ++ show e
 
+produce :: (HasCallStack, Show a) => String -> Pass a -> IO a
+produce desc actual = case runPass actual of
+  Right (a, _) -> return a
+  Left a ->
+    assertFailure
+      $  "Expected success but encountered error when evaluating "
+      ++ desc
+      ++ ": "
+      ++ show a
+
 -- | Expect that some 'Pass' must produce a particular value.
 shouldProduce :: (HasCallStack, Show a, Eq a) => Pass a -> a -> Expectation
-shouldProduce actual expected = case runPass actual of
-  Right (a, _) -> a `shouldBe` expected
-  Left  a      -> assertDifference "Expected success but encountered error"
-                                   (show a)
-                                   (show expected)
+shouldProduce actual expected = do
+  a <- produce "actual case" actual
+  a `shouldBe` expected
 
--- | Expect that some 'Pass' successfully produces the same value as another
--- modulo alpha renaming.
+-- | Expect that some 'Pass' successfully produces the same normalized value
+-- as another.
 shouldPassAs
   :: (HasCallStack, Show a, Eq a, Data a) => Pass a -> Pass a -> Expectation
-shouldPassAs actual expected = case (runPass actual, runPass expected) of
-  (_, Left e) ->
-    assertFailure $ "Encountered error when evaluating expectation: " ++ show e
-  (Left a, Right e) ->
-    assertDifference "Expected success but encountered error" (show a) (show e)
-  (Right (a, _), Right (e, _)) ->
-    unless (mangleVars a == mangleVars e)
-      $ assertDifference "" (show a) (show e)
+shouldPassAs actual expected = do
+  e <- produce "expected case" expected
+  a <- produce "actual case" actual
+  unless (mangleVars a == mangleVars e) $ assertDifference "" (show a) (show e)
 
 -- | Expect that some 'Pass' successfully produces the same value as another.
-shouldPassAsExactly
+shouldPassExactlyAs
   :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation
-shouldPassAsExactly actual expected =
-  case (runPass actual, runPass expected) of
-    (_, Left e) ->
-      assertFailure
-        $  "Encountered error when evaluating expectation: "
-        ++ show e
-    (Left a, Right e) -> assertDifference
-      "Expected success but encountered error"
-      (show a)
-      (show e)
-    (Right (a, _), Right (e, _)) -> a `shouldBe` e
+shouldPassExactlyAs actual expected = do
+  e <- produce "expected case" expected
+  a <- produce "actual case" actual
+  a `shouldBe` e
+
+-- | Expect that some 'Pass' successfully produces a different value from
+-- another.
+shouldNotPassAs
+  :: (HasCallStack, Show a, Eq a, Data a) => Pass a -> Pass a -> Expectation
+shouldNotPassAs actual unexpected = do
+  e <- produce "unexpected case" unexpected
+  a <- produce "actual case" actual
+  when (e == a) $ assertFailure $ unlines
+    ["Expected inequality but found equivalent:", show a, "----", show e]
 
 -- | Expect that some 'Pass' should fail with the given 'Error'.
 shouldFail :: (HasCallStack, Show a) => Pass a -> Expectation
