@@ -1,3 +1,4 @@
+-- | Sslang abstract syntax tree.
 module Front.Ast where
 
 import           Common.Identifiers             ( Identifiable(..)
