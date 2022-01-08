@@ -61,6 +61,7 @@ _test-suite: &test-suite
   - template-haskell
   - containers
   - comonad
+  - syb
 
 tests:
   # End-to-end regression tests
