@@ -9,6 +9,7 @@ module Sslang.Test
   , module Test.Hspec
   , shouldPass
   , shouldPassAs
+  , shouldPassButNotAs
   , shouldProduce
   , shouldFail
   , shouldFailWith
@@ -69,6 +70,15 @@ shouldPassAs actual expected = case (runPass actual, runPass expected) of
   (Left a, Right e) ->
     assertDifference "Expected success but encountered error" (show a) (show e)
   (Right (a, _), Right (e, _)) -> a `shouldBe` e
+
+-- | Expect that some 'Pass' successfully produces a different value from another.
+shouldPassButNotAs :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation
+shouldPassButNotAs actual unexpected = case (runPass actual, runPass unexpected) of
+  (_, Left e) ->
+    assertFailure $ "Encountered error when evaluating expectation: " ++ show e
+  (Left a, Right e) ->
+    assertDifference "Expected success but encountered error" (show a) (show e)
+  (Right (a, _), Right (e, _)) -> a `shouldNotBe` e
 
 -- | Expect that some 'Pass' should fail with the given 'Error'.
 shouldFail :: (HasCallStack, Show a) => Pass a -> Expectation

@@ -17,10 +17,14 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , void
                                                 )
 import           Common.Identifiers             ( Binder
-                                                , TVarIdx(..), fromString
+                                                , TVarIdx(..)
+                                                , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad.Except           ( MonadError(..) )
+import           Control.Monad.Except           ( MonadError(..)
+                                                , zipWithM
+                                                , zipWithM_
+                                                )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
@@ -55,7 +59,7 @@ runInferFn (InferFn m) = evalStateT m InferState { unionFindTree = M.empty
 -- | `inferProgram` @p@ infers the type of all the programDefs of the given porgram @p@.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
-  defs' <- inferProgramDefs $ I.programDefs p
+  defs' <- inferProgramDefs (I.programDefs p)
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
                      , I.typeDefs     = [] }
@@ -133,6 +137,9 @@ generalize t = do
 vnums :: [Int]
 vnums = [0..]
 
+dummyAnnT :: Classes.Type
+dummyAnnT = Classes.TVar (TVarIdx (-1))
+
 -- | `fresh` generates a new `TVar` using the next tick number and increment the counter.
 fresh :: InferFn Classes.Type
 fresh = do
@@ -178,28 +185,47 @@ withNewTypeScope inf = do
   modify $ \st -> st { unionFindTree = s }
   return x
 
+-- | Helper function to collapse a list of type annotation to a single one with
+-- 'Classes.type' type. If the list is empty, use @Classes.TVar (TVarIdx (-1))@
+-- to denote a dummy annotation.
+-- TODO: Currently just take the first type annotation of the list as the
+-- result. Need to implement the 'collapse' step to find and return the most
+-- specific type annotation from the list. Need yo add support for annotating
+-- type variables as well.
+collapseAnnT :: Ann.Type -> Classes.Type
+collapseAnnT (Ann.Type []) = Classes.TVar (TVarIdx (-1))
+collapseAnnT (Ann.Type anns) = case head anns of
+  Ann.TBuiltin bt -> Classes.TBuiltin $ fmap collapseAnnT bt
+  _ -> Classes.TVar (TVarIdx (-1))
+
 {- | Stage 1: Assign symbolic typenames
 
 `initTypeVars` @e@ walks into the expression @e@ revursively, assign a fresh
 `TVar` to each unknown type, and build type equations that will be solved later.
 -}
 initTypeVars :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
-initTypeVars e@(I.Var v _) = do
+initTypeVars e@(I.Var v annT) = do
+  let annT' = collapseAnnT annT
   record <- lookupVar v
   case record of
     Nothing -> throwError $ Compiler.TypeError $ fromString $ "Unbound variable: " ++ show e
     Just s -> do
       t' <- instantiate s
-      return $ I.Var v t'
-initTypeVars (I.Lambda v b _) = do
+      t'' <- typeCheck annT' t'
+      return $ I.Var v t''
+initTypeVars (I.Lambda v b annT) = do
+  let annT' = collapseAnnT annT
   tin <- fresh
   b' <- withNewScope do
     insertBinder v (Classes.Forall [] tin)
     initTypeVars b
-  return $ I.Lambda v b' (Classes.TBuiltin $ Arrow tin (extract b'))
-initTypeVars (I.Let vs b _) = do
+  t <- typeCheck annT' (Classes.TBuiltin $ Arrow tin (extract b'))
+  return $ I.Lambda v b' t
+initTypeVars (I.Let vs b annT) = do
+  let annT' = collapseAnnT annT
   (vs', b') <- withNewScope $ localinitTypeVars vs b
-  return $ I.Let vs' b' (extract b')
+  t <- typeCheck annT' (extract b')
+  return $ I.Let vs' b' t
   where
     localinitTypeVars bs body = do
       bs' <- mapM fn bs
@@ -212,68 +238,117 @@ initTypeVars (I.Let vs b _) = do
           e'' <- getType e'
           s <- generalize $ extract e''
           insertBinder binder s
-          return (binder, e')
-initTypeVars (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
-initTypeVars (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
-initTypeVars (I.App a b _) = do
-  t <- fresh
+          return (binder, e'')
+initTypeVars (I.App a b annT) = do
+  let annT' = collapseAnnT annT
   a' <- initTypeVars a
   b' <- initTypeVars b
-  insertEquation (Classes.TBuiltin (Arrow (extract b') t), extract a')
+  tout <- fresh
+  insertEquation (Classes.TBuiltin (Arrow (extract b') tout), extract a')
+  t <- typeCheck annT' tout
   return $ I.App a' b' t
+initTypeVars (I.Lit I.LitEvent annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' unit
+  return $ I.Lit I.LitEvent t
+initTypeVars (I.Lit i@(I.LitIntegral _) annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' (int 32)
+  return $ I.Lit i t
 -- | Infer the type of a Primitive expression.
-initTypeVars (I.Prim I.New [e] _) = do
-  t <- fresh
+initTypeVars (I.Prim I.New [e] annT) = do
+  let annT' = collapseAnnT annT
   e' <- initTypeVars e
-  insertEquation (t, Classes.TBuiltin (Ref (extract e')))
+  t <- typeCheck annT' (Classes.TBuiltin (Ref (extract e')))
   return $ I.Prim I.New [e'] t
-initTypeVars (I.Prim I.Deref [e] _) = do
-  t <- fresh
+initTypeVars (I.Prim I.Deref [e] annT) = do
+  let annT' = collapseAnnT annT
   e' <- initTypeVars e
+  t <- fresh
   insertEquation (Classes.TBuiltin (Ref t), extract e')
-  return $ I.Prim I.Deref [e'] t
-initTypeVars (I.Prim I.Dup [e] _) = do
-  t <- fresh
+  t' <- typeCheck annT' t
+  return $ I.Prim I.Deref [e'] t'
+initTypeVars (I.Prim I.Dup [e] annT) = do
+  let annT' = collapseAnnT annT
   e' <- initTypeVars e
-  insertEquation (t, extract e')
+  t <- typeCheck annT' (extract e')
   return $ I.Prim I.Dup [e'] t
-initTypeVars (I.Prim I.Assign [lhs, rhs] _) = do
+initTypeVars (I.Prim I.Assign [lhs, rhs] annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' unit
   lhs' <- initTypeVars lhs
   rhs' <- initTypeVars rhs
-  insertEquation (extract lhs', Classes.TBuiltin (Ref (extract rhs')))
-  return $ I.Prim I.Assign [lhs', rhs'] unit
-initTypeVars (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+  return $ I.Prim I.Assign [lhs', rhs'] t
+initTypeVars (I.Prim (I.PrimOp I.PrimSub) [e1, e2] annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' (int 32)
   e1' <- initTypeVars e1
   e2' <- initTypeVars e2
   insertEquation (extract e1', int 32)
   insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  _) = do
+  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] t
+initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' (int 32)
   e1' <- initTypeVars e1
   e2' <- initTypeVars e2
   insertEquation (extract e1', int 32)
   insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
-initTypeVars (I.Prim I.After [del, lhs, rhs] _) = do
+  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] t
+initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' unit
   del' <- initTypeVars del
   rhs' <- initTypeVars rhs
   lhs' <- initTypeVars lhs
   insertEquation (extract del', int 32)
   insertEquation (extract lhs', Classes.TBuiltin (Ref (extract rhs')))
-  return $ I.Prim I.After [del', lhs', rhs'] unit
-initTypeVars (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
-initTypeVars (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
-initTypeVars (I.Prim I.Loop es _) = do
-    es' <- mapM initTypeVars es
-    return $ I.Prim I.Loop es' unit
-initTypeVars (I.Prim I.Wait es _) = do
-    es' <- mapM initTypeVars es
-    return $ I.Prim I.Wait es' unit
-initTypeVars (I.Prim I.Par es _) = do
-    es' <- mapM initTypeVars es
-    return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
+  return $ I.Prim I.After [del', lhs', rhs'] t
+initTypeVars (I.Prim I.Break [] annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' void
+  return $ I.Prim I.Break [] t
+initTypeVars (I.Prim I.Return [] annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' void
+  return $ I.Prim I.Return [] t
+initTypeVars (I.Prim I.Loop es annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' unit
+  es' <- mapM initTypeVars es
+  return $ I.Prim I.Loop es' t
+initTypeVars (I.Prim I.Wait es annT) = do
+  let annT' = collapseAnnT annT
+  t <- typeCheck annT' unit
+  es' <- mapM initTypeVars es
+  return $ I.Prim I.Wait es' t
+initTypeVars (I.Prim I.Par es annT) = do
+  let annT' = collapseAnnT annT
+  es' <- mapM initTypeVars es
+  t <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
+  return $ I.Prim I.Par es' t
 initTypeVars e@I.Prim {} = throwError $ Compiler.TypeError $ fromString $ "Unsupported Prim expression: " ++ show e
 initTypeVars e = throwError $ Compiler.TypeError $ fromString $ "Unable to type unknown expression: " ++ show e
+
+-- | @typeCheck annT expectedT@ checks whether the type annotation @annT@ is
+-- compatible with the expected type @expectedT@. Insert new type equations when
+-- the expected type is a type variable.
+-- TODO: currently only consider equality as compatibility. Need to support the
+-- case when type annotation is more specific than the expected type.
+typeCheck :: Classes.Type -> Classes.Type -> InferFn Classes.Type
+typeCheck annT expectedT | annT == dummyAnnT || annT == expectedT = return expectedT
+typeCheck (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = do
+  t <- typeCheck t1 t2
+  return $ Classes.TBuiltin (Ref t)
+typeCheck (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = do
+  t1' <- typeCheck t1 t3
+  t2' <- typeCheck t2 t4
+  return $ Classes.TBuiltin (Arrow t1' t2')
+typeCheck (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = do
+  ts <- zipWithM typeCheck ts1 ts2
+  return $ Classes.TBuiltin (Tuple ts)
+typeCheck annT expectedT@(Classes.TVar _) = insertEquation (expectedT, annT) >> return expectedT
+typeCheck annT expectedT = throwError $ Compiler.TypeError $ fromString $ "Incompatible type annotation: expected " ++ show expectedT ++ ", but got " ++ show annT
 
 {- | Stage 2: Solve type equations using unification.
 
@@ -304,7 +379,8 @@ unify tv@(Classes.TVar _) t = do
   if r1 == tv then insertUnion r1 t else unify r1 t
 unify (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = unify t1 t2
 unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = unify t1 t3 >> unify t2 t4
-unify _ _ = throwError $ Compiler.TypeError $ fromString "Single unification error"
+unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = zipWithM_ unify ts1 ts2
+unify t1 t2 = do throwError $ Compiler.TypeError $ fromString $ "Single unification error: " ++ show t1 ++ ", " ++ show t2
 
 {- | Stage 3: Find the type of the expression based on `unionFindTree`.
 
@@ -319,13 +395,13 @@ getType (I.Lambda v b t) = do
   t' <- solveType t
   return $ I.Lambda v b' t'
 getType (I.Let vs b _) = do
-  vs' <- mapM fn vs
+  vs' <- mapM (fmapSnd getType) vs
   b' <- getType b
   return $ I.Let vs' b' (extract b')
   where
-    fn (binder, e) = do
-      e' <- getType e
-      return (binder, e')
+    fmapSnd fn (v, e) = do
+      e' <- fn e
+      return (v, e')
 getType (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
 getType (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
 getType (I.App a b t) = do

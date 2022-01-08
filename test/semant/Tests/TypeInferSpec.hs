@@ -6,7 +6,7 @@ import           Sslang.Test
 import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
-import           IR.TypeInference               ( inferProgram )
+import           IR.HM                         ( inferProgram )
 import qualified IR.Types.Classes              as Cls
 
 parseInfer :: String -> Pass (I.Program Cls.Type)
@@ -30,32 +30,109 @@ spec = do
               ((toggle: &Int -> ()) (led: &Int): ())
               after 20 , (e2: &()) <- ()
               wait (e2: &())
-          main(led : &Int) -> () =
+          main(led : &Int) -> ((), ()) =
             par ((slow: &Int -> ()) (led: &Int): ())
                 ((fast: &Int -> ()) (led: &Int): ())
           |]
         minimal = parseInfer [here|
-          toggle(led : &Int) -> () =
+          toggle(led) =
             led <- 1 - deref led
-          slow(led : &Int) -> () =
+          slow(led) =
             let e1 = new ()
             loop
               toggle led
               after 30 , e1 <- ()
               wait e1
-          fast(led : &Int) -> () =
+          fast(led) =
             let e2 = new ()
             loop
               toggle led
               after 20 , e2 <- ()
               wait e2
-          main(led : &Int) -> () =
+          main(led) =
             par slow led
                 fast led
           |]
     fully `shouldPassAs` minimal
 
-  {- A list of tricky functions to verify the correctness of type inference.
+  it "inferred programs takes type annotations into account" $ do
+    let fully = parseInfer [here|
+          id(x : Int) =
+            x : Int
+          |]
+        partial1 = parseInfer [here|
+          id(x : Int) =
+            x
+          |]
+        partial2 = parseInfer [here|
+          id(x) =
+            x : Int
+          |]
+        none = parseInfer [here|
+          id(x) =
+            x
+          |]
+    fully `shouldPassAs` partial1
+    fully `shouldPassAs` partial2
+    fully `shouldPassButNotAs` none
+
+  it "expressions with incompatible type annotations do not type check" $ do
+    let bad1 = parseInfer [here|
+          id(x : Int) =
+            (x : &Int)
+          |]
+        bad2 = parseInfer [here|
+          id(x : &Int) =
+            x+1-1
+          |]
+        good1 = parseInfer [here|
+          id(x : Int) =
+            x+1-1
+          |]
+        good2 = parseInfer [here|
+          id(x) =
+            x+1-1
+          |]
+    shouldFail bad1
+    shouldFail bad2
+    good1 `shouldPassAs` good2
+
+  it "type inference can correctly handle some tricky cases" $ do
+    let tricky1a = parseInfer [here|
+          f(x : Int) =
+            let y = x
+            y
+          |]
+        tricky1b = parseInfer [here|
+          f(x : Int) -> Int =
+            let y = x
+            y
+          |]
+    tricky1a `shouldPassAs` tricky1b
+    let tricky2a = parseInfer [here|
+          f(x : Int) =
+            let g (z : ()) = x
+            g
+          |]
+        tricky2b = parseInfer [here|
+          f(x : Int) -> (() -> Int) =
+            let g (z : ()) = x
+            g
+          |]
+    tricky2a `shouldPassAs` tricky2b
+    let tricky3a = parseInfer [here|
+          f(x : Int) =
+            let g (x : ()) = x
+            g
+          |]
+        tricky3b = parseInfer [here|
+          f(x : Int) -> (() -> ()) =
+            let g (x : ()) = x
+            g
+          |]
+    tricky3a `shouldPassAs` tricky3b
+
+  {- More test functions to verify the correctness of type inference.
 
   For now, this is broken. Also, I hardcoded all the expected results. We should fix that later.
   Uncomment the print statement to output the inference result for each function.
@@ -120,8 +197,8 @@ spec = do
   it "infers tricky program #3:`f` should has type `a -> (b -> b)` not `a -> (a -> a)`" $ do
     let minimal = parseProgram $ unlines
           [ "f x ="
-          , "  let g x = x"
-          , "  g g"
+          , "  let g x y = x"
+          , "  g x"
           ]
         typedMinimal = lowerAndInfer minimal
         typedPString = show typedMinimal
