@@ -14,7 +14,7 @@ module IR.Types.Classes
   ) where
 
 import           Common.Identifiers             ( TConId
-                                                , TVarIdx
+                                                , TVarId
                                                 )
 import           Data.Data                      ( Data
                                                 , Typeable
@@ -29,11 +29,11 @@ import           Prettyprinter
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
+  | TVar TVarId                     -- ^ Type variables, e.g., '0
   deriving (Eq, Show, Ord, Typeable, Data)
 
 -- | Type scheme.
-data Scheme = Forall [TVarIdx] Type
+data Scheme = Forall [TVarId] Type
   deriving (Eq, Ord, Typeable, Data)
 
 instance Show Scheme where

@@ -17,7 +17,8 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , void
                                                 )
 import           Common.Identifiers             ( Binder
-                                                , TVarIdx(..)
+                                                , TVarId(..)
+                                                , Identifier(..)
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
@@ -30,6 +31,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , evalStateT
                                                 , gets
                                                 , modify
+                                                , replicateM
                                                 )
 
 -- | Inference State.
@@ -78,9 +80,9 @@ inferProgramDefs ((v, e):xs) = do
 
 -- | Class of things that may contain free type variables.
 class HasFreeTVars a where
-  freeTVars :: a -> S.Set TVarIdx
+  freeTVars :: a -> S.Set TVarId
 
-instance HasFreeTVars TVarIdx where
+instance HasFreeTVars TVarId where
   freeTVars = S.singleton
 
 instance HasFreeTVars Classes.Scheme where
@@ -134,17 +136,17 @@ generalize t = do
   let vs = S.toList $ S.difference (freeTVars t) $ S.union (freeTVars (M.elems uft)) (freeTVars (M.elems vm))
   return $ Classes.Forall vs t
 
-vnums :: [Int]
-vnums = [0..]
+letters :: [String]
+letters = [1 ..] >>= flip replicateM ['a' .. 'z']
 
 dummyAnnT :: Classes.Type
-dummyAnnT = Classes.TVar (TVarIdx (-1))
+dummyAnnT = Classes.TVar (TVarId $ Identifier "_")
 
 -- | `fresh` generates a new `TVar` using the next tick number and increment the counter.
 fresh :: InferFn Classes.Type
 fresh = do
   n <- gets count
-  let t = Classes.TVar $ TVarIdx (vnums !! n)
+  let t = Classes.TVar $ TVarId $ Identifier (letters !! n)
   modify $ \st -> st { count = n+1 }
   return t
 
@@ -186,17 +188,17 @@ withNewTypeScope inf = do
   return x
 
 -- | Helper function to collapse a list of type annotation to a single one with
--- 'Classes.type' type. If the list is empty, use @Classes.TVar (TVarIdx (-1))@
--- to denote a dummy annotation.
+-- 'Classes.type' type. If the list is empty, use
+-- @Classes.TVar (TVarId $ Identifier "_"))@ to denote a dummy annotation.
 -- TODO: Currently just take the first type annotation of the list as the
 -- result. Need to implement the 'collapse' step to find and return the most
 -- specific type annotation from the list. Need yo add support for annotating
 -- type variables as well.
 collapseAnnT :: Ann.Type -> Classes.Type
-collapseAnnT (Ann.Type []) = Classes.TVar (TVarIdx (-1))
+collapseAnnT (Ann.Type []) = Classes.TVar (TVarId $ Identifier "_")
 collapseAnnT (Ann.Type anns) = case head anns of
   Ann.TBuiltin bt -> Classes.TBuiltin $ fmap collapseAnnT bt
-  _ -> Classes.TVar (TVarIdx (-1))
+  _ -> Classes.TVar (TVarId $ Identifier "_")
 
 {- | Stage 1: Assign symbolic typenames
 

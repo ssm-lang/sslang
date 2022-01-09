@@ -74,7 +74,7 @@ spec = do
           |]
     fully `shouldPassAs` partial1
     fully `shouldPassAs` partial2
-    fully `shouldPassButNotAs` none
+    fully `shouldNotPassAs` none
 
   it "expressions with incompatible type annotations do not type check" $ do
     let bad1 = parseInfer [here|
