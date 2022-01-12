@@ -1,0 +1,10 @@
+type MyBool 
+  MyTrue Int
+  MyFalse Int Int
+
+
+main ( cout : & Int ) -> () =
+  let a = 999
+  after 10 , (cout : & MyBool) <- a
+//  let a = (2:MyBool)
+//  after 10 , (cout : & MyBool) <- a

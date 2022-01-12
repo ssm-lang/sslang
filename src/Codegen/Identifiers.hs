@@ -264,3 +264,51 @@ mem_alloc = "malloc"
 -- | Free memory.
 mem_free :: CIdent
 mem_free = "free"
+
+-- | Call to allocate memory for an ADT
+ssm_new :: CIdent
+ssm_new = "ssm_new"
+
+{----- Algebraic Data Types -----}
+
+-- | Type of a generic ssm value (either pointer or integer)
+ssm_value_t :: C.Type
+ssm_value_t = [cty|typename ssm_value_t|]
+
+-- | Name of an ssm values's pointer field
+heap_ptr :: CIdent
+heap_ptr = "heap_ptr"
+
+-- | Name of an ssm values's integer field
+packed_val :: CIdent
+packed_val = "packed_val"
+
+-- | Type of a generic ADT on the heap
+ssm_object :: C.Type
+ssm_object = [cty|struct ssm_object_t|]
+
+-- | Type of an ADT's memory management header
+ssm_mm_md :: C.Type
+ssm_mm_md = [cty|struct ssm_mm|]
+
+-- | Name of an ADT's memory management header
+mm :: CIdent
+mm = "mm"
+
+-- | Name of an ADT's payload
+payload :: CIdent
+payload = "payload"
+
+-- | Construct an ssm_value_t from an ssm_object* 
+ssm_from_obj :: C.Exp -> C.Exp
+ssm_from_obj o = [cexp|($ty:ssm_value_t) { .$id:packed_val = &($exp:o)->$id:mm }|]
+
+-- | Construct an ssm_value_t from an integer 
+ssm_from_int :: C.Exp -> C.Exp
+ssm_from_int v = [cexp|($ty:ssm_value_t) { .$id:packed_val = $exp:v }|]
+
+{- | Convert an ssm_value_t to an ssm_object*
+This kind of conversion is needed to access fields in an ADT
+-}
+ssm_to_obj :: C.Exp -> C.Exp 
+ssm_to_obj v = [cexp| ($id:container_of(($exp:v).$id:heap_ptr, ssm_object, $id:mm )) |]

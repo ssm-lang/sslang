@@ -29,7 +29,14 @@ import           Codegen.Identifiers
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
-
+import           Codegen.TypeDef                ( TypeDefInfo
+                                                , dconType
+                                                , genTypeDef
+                                                , intInit
+                                                , isPointer
+                                               -- , tag
+                                                , typeSize
+                                                )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
@@ -40,6 +47,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( isJust )
+import qualified Data.Map                      as M
 
 -- | Possible, but temporarily punted for the sake of expediency.
 todo :: a
@@ -64,6 +72,7 @@ data GenFnState = GenFnState
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
   , fnTmps     :: Int                   -- ^ Temporary variable name counter
+  , adtInfo    :: TypeDefInfo           -- ^ ADT information
   }
 
 {- | Translation monad for procedures, with derived typeclass instances.
@@ -85,14 +94,16 @@ runGenFn
   -> [(I.Binder, I.Type)]   -- ^ Names and types of parameters to procedure
   -> I.Type                 -- ^ Name and type of return parameter of procedure
   -> I.Expr I.Type          -- ^ Body of procedure
+  -> TypeDefInfo            -- ^ ADT information
   -> GenFn a                -- ^ Translation monad to run
   -> Compiler.Pass a        -- ^ Pass on errors to caller
-runGenFn name params ret body (GenFn tra) = evalStateT tra $ GenFnState
+runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
   { fnName     = name
   , fnParams   = params
   , fnRetTy    = ret
   , fnBody     = body
   , fnLocs     = []
+  , adtInfo    = adtinfo
   , fnMaxWaits = 0
   , fnCases    = 0
   , fnTmps     = 0
@@ -194,9 +205,17 @@ undef = [cexp|0xdeadbeef|]
 
 -- | Generate a C compilation from an SSM program.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs } = do -- p@I.Program
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM genTop defs
-  return $ includes ++ cdecls ++ cdefs  -- ++ genInitProgram p
+genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
+  let genAdt = (\acc adt -> acc <> genTypeDef adt)
+  in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
+  in
+  -- in if null typedefs
+  --    then error "where are all the ADT definitions???? "
+  --    else
+        do -- p@I.Program
+            (cdecls, cdefs) <-
+              bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
+            return $ includes ++ adts ++ cdecls ++ cdefs  -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -229,9 +248,11 @@ Each top-level function in a program is turned into three components:
 Items 2 and 3 include both declarations and definitions.
 -}
 genTop
-  :: (I.VarId, I.Expr I.Type) -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body $ do
+  :: TypeDefInfo
+  -> (I.VarId, I.Expr I.Type)
+  -> Compiler.Pass ([C.Definition], [C.Definition])
+genTop info (name, l@(I.Lambda _ _ ty)) =
+  runGenFn (fromId name) (zip argIds argTys) retTy body info $ do
     (stepDecl , stepDefn ) <- genStep
     (enterDecl, enterDefn) <- genEnter
     structDefn             <- genStruct
@@ -239,8 +260,8 @@ genTop (name, l@(I.Lambda _ _ ty)) =
  where
   (argIds, body ) = I.collectLambda l
   (argTys, retTy) = I.collectArrow ty
-genTop (_, I.Lit _ _) = todo
-genTop (_, _        ) = nope
+genTop _ (_, I.Lit _ _) = todo
+genTop _ (_, _        ) = nope
 
 {- | Generate struct definition for an SSM procedure.
 
@@ -425,7 +446,9 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
 genExpr (I.Var n _) = do
   -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
   return ([cexp|$id:acts->$id:n|], [])
-genExpr (I.Data _ _             ) = nope
+genExpr (I.Data tg _            ) = do
+  info <- gets adtInfo
+  let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
 genExpr (I.Lit  l t             ) = genLiteral l t
 genExpr (I.Let [(Just n, d)] b _) = do
   addLocal (n, extract d)
@@ -441,18 +464,40 @@ genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr a@(I.App _ _ ty) = do
   let (fn, args) = I.collectApp a
   (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-  tmpName                       <- nextTmp ty
-  yield                         <- genYield
-  let tmp = [cexp|$id:acts->$id:tmpName|]
-      enterArgs =
-        [ [cexp|$id:actg|]
-          , [cexp|$id:actg->$id:priority|]
-          , [cexp|$id:actg->$id:depth|]
-          ]
-          ++ argVals
-          ++ [[cexp|&$exp:tmp|]]
-      call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
-  return (tmp, concat evalStms ++ call ++ yield)
+  case fn of
+    (I.Var _ _) -> do
+      tmpName                       <- nextTmp ty
+      yield                         <- genYield
+      let tmp = [cexp|$id:acts->$id:tmpName|]
+          enterArgs =
+            [ [cexp|$id:actg|]
+              , [cexp|$id:actg->$id:priority|]
+              , [cexp|$id:actg->$id:depth|]
+              ]
+              ++ argVals
+              ++ [[cexp|&$exp:tmp|]]
+          call = [citems|$id:activate($exp:fnEnter($args:enterArgs));|]
+      return (tmp, concat evalStms ++ call ++ yield)
+    (I.Data tg dty) -> do
+      info <- gets adtInfo
+      case M.lookup tg (isPointer info) of
+        Nothing    -> fail "Couldn't find tag"
+        Just False -> fail "Cannot handle integer types with fields yet"
+        Just True  -> do
+          tmpName <- nextTmp dty
+          let tmp = [cexp|$id:acts->$id:tmpName|]
+          let (Just typ) = M.lookup tg (dconType info)
+          let (Just sz)  = M.lookup typ (typeSize info)
+          let alloc =
+                [[citem|$exp:tmp = $id:ssm_new($int:sz,$id:tg);|]]
+          let
+            initField =
+              (\y i ->
+                [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
+              )
+          let initFields = zipWith initField argVals [0::Int, 1 ..]
+          return (ssm_from_obj tmp, concat evalStms ++ alloc ++ initFields)
+    _ -> fail $ "Cannot apply this expression: " ++ show fn  
 genExpr I.Match{}       = nope
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
