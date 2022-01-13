@@ -136,9 +136,13 @@ generalize t = do
   let vs = S.toList $ S.difference (freeTVars t) $ S.union (freeTVars (M.elems uft)) (freeTVars (M.elems vm))
   return $ Classes.Forall vs t
 
+-- | @letters@ represents list of identifiers to be used to construct free type
+-- variables assigned during type inference. The leading '_' distinguish them
+-- from user-annotated type variables.
 letters :: [String]
-letters = [1 ..] >>= flip replicateM ['a' .. 'z']
+letters = map ('_':) $ [1 ..] >>= flip replicateM ['a' .. 'z']
 
+-- | @dummyAnnT@ represents empty type annotation list.
 dummyAnnT :: Classes.Type
 dummyAnnT = Classes.TVar (TVarId $ Identifier "_")
 
@@ -195,10 +199,11 @@ withNewTypeScope inf = do
 -- specific type annotation from the list. Need yo add support for annotating
 -- type variables as well.
 collapseAnnT :: Ann.Type -> Classes.Type
-collapseAnnT (Ann.Type []) = Classes.TVar (TVarId $ Identifier "_")
+collapseAnnT (Ann.Type []) = dummyAnnT
 collapseAnnT (Ann.Type anns) = case head anns of
-  Ann.TBuiltin bt -> Classes.TBuiltin $ fmap collapseAnnT bt
-  _ -> Classes.TVar (TVarId $ Identifier "_")
+  Ann.TBuiltin tb -> Classes.TBuiltin $ fmap collapseAnnT tb
+  Ann.TVar tvar -> Classes.TVar tvar
+  _ -> dummyAnnT
 
 {- | Stage 1: Assign symbolic typenames
 
@@ -350,7 +355,8 @@ typeCheck (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = do
   ts <- zipWithM typeCheck ts1 ts2
   return $ Classes.TBuiltin (Tuple ts)
 typeCheck annT expectedT@(Classes.TVar _) = insertEquation (expectedT, annT) >> return expectedT
-typeCheck annT expectedT = throwError $ Compiler.TypeError $ fromString $ "Incompatible type annotation: expected " ++ show expectedT ++ ", but got " ++ show annT
+typeCheck annT expectedT = throwError $ Compiler.TypeError $ fromString $
+  "Incompatible type annotation: expected " ++ show expectedT ++ ", but got " ++ show annT
 
 {- | Stage 2: Solve type equations using unification.
 
@@ -382,7 +388,8 @@ unify tv@(Classes.TVar _) t = do
 unify (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = unify t1 t2
 unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = unify t1 t3 >> unify t2 t4
 unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = zipWithM_ unify ts1 ts2
-unify t1 t2 = do throwError $ Compiler.TypeError $ fromString $ "Single unification error: " ++ show t1 ++ ", " ++ show t2
+unify t1 t2 = throwError $ Compiler.TypeError $ fromString $
+  "Single unification error: " ++ show t1 ++ ", " ++ show t2
 
 {- | Stage 3: Find the type of the expression based on `unionFindTree`.
 

@@ -56,15 +56,15 @@ spec = do
     fully `shouldPassAs` minimal
 
   it "inferred programs takes type annotations into account" $ do
-    let fully = parseInfer [here|
+    let int2int = parseInfer [here|
           id(x : Int) =
             x : Int
           |]
-        partial1 = parseInfer [here|
+        int2unknow = parseInfer [here|
           id(x : Int) =
             x
           |]
-        partial2 = parseInfer [here|
+        unknow2int = parseInfer [here|
           id(x) =
             x : Int
           |]
@@ -72,9 +72,9 @@ spec = do
           id(x) =
             x
           |]
-    fully `shouldPassAs` partial1
-    fully `shouldPassAs` partial2
-    fully `shouldNotPassAs` none
+    int2int `shouldPassAs` int2unknow
+    int2int `shouldPassAs` unknow2int
+    int2int `shouldNotPassAs` none
 
   it "expressions with incompatible type annotations do not type check" $ do
     let bad1 = parseInfer [here|
@@ -96,6 +96,38 @@ spec = do
     shouldFail bad1
     shouldFail bad2
     good1 `shouldPassAs` good2
+
+  it "type annotations can contains type variable" $ do
+    let a2a = parseInfer [here|
+          id(x : a) =
+            x
+          |]
+        b2b = parseInfer [here|
+          id(x : b) =
+            x
+          |]
+        none = parseInfer [here|
+          id(x) =
+            x
+          |]
+        int2a = parseInfer [here|
+          id(x : Int) =
+            x : a
+          |]
+        int2int = parseInfer [here|
+          id(x : Int) =
+            x
+          |]
+    a2a `shouldPassAs` b2b
+    a2a `shouldPassAs` none
+
+  it "throws error when annotated type is more general than infered type" $ do
+    pendingWith "check type generality"
+    let int2a = parseInfer [here|
+          id(x : Int) =
+            x : a
+          |]
+    shouldFail int2a
 
   it "type inference can correctly handle some tricky cases" $ do
     let tricky1a = parseInfer [here|
