@@ -10,7 +10,7 @@ module Sslang.Test
   , shouldPass
   , shouldPassAs
   , shouldPassExactlyAs
-  , shouldNotPassAs
+  , shouldPassButNotAs
   , shouldProduce
   , shouldFail
   , shouldFailWith
@@ -93,22 +93,13 @@ shouldPassExactlyAs actual expected = do
 
 -- | Expect that some 'Pass' successfully produces a different value from
 -- another.
-shouldNotPassAs
+shouldPassButNotAs
   :: (HasCallStack, Show a, Eq a, Data a) => Pass a -> Pass a -> Expectation
-shouldNotPassAs actual unexpected = do
+shouldPassButNotAs actual unexpected = do
   e <- produce "unexpected case" unexpected
   a <- produce "actual case" actual
   when (e == a) $ assertFailure $ unlines
     ["Expected inequality but found equivalent:", show a, "----", show e]
-
--- | Expect that some 'Pass' successfully produces a different value from another.
-shouldPassButNotAs :: (HasCallStack, Show a, Eq a) => Pass a -> Pass a -> Expectation
-shouldPassButNotAs actual unexpected = case (runPass actual, runPass unexpected) of
-  (_, Left e) ->
-    assertFailure $ "Encountered error when evaluating expectation: " ++ show e
-  (Left a, Right e) ->
-    assertDifference "Expected success but encountered error" (show a) (show e)
-  (Right (a, _), Right (e, _)) -> a `shouldNotBe` e
 
 -- | Expect that some 'Pass' should fail with the given 'Error'.
 shouldFail :: (HasCallStack, Show a) => Pass a -> Expectation

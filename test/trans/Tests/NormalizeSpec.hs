@@ -44,9 +44,9 @@ spec = do
     foo0 `shouldPassAs` foo1
     foo0 `shouldPassAs` foo2
     foo1 `shouldPassAs` foo2
-    fmap mangleVars foo0 `shouldNotPassAs` fmap mangleVars foo0'
-    fmap mangleVars foo0 `shouldNotPassAs` fmap mangleVars foo1'
-    fmap mangleVars foo0 `shouldNotPassAs` fmap mangleVars foo2'
+    fmap mangleVars foo0 `shouldPassButNotAs` fmap mangleVars foo0'
+    fmap mangleVars foo0 `shouldPassButNotAs` fmap mangleVars foo1'
+    fmap mangleVars foo0 `shouldPassButNotAs` fmap mangleVars foo2'
 
     let p0 = parseIR [here|
           bar: Int = 5
@@ -103,5 +103,5 @@ spec = do
         |]
     const0 `shouldPassAs` const1
     const0 `shouldPassAs` const2
-    fmap mangleVars const0 `shouldNotPassAs` fmap mangleVars const0'
-    fmap mangleVars const0 `shouldNotPassAs` fmap mangleVars const1'
+    fmap mangleVars const0 `shouldPassButNotAs` fmap mangleVars const0'
+    fmap mangleVars const0 `shouldPassButNotAs` fmap mangleVars const1'

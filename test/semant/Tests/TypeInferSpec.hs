@@ -74,7 +74,7 @@ spec = do
           |]
     int2int `shouldPassAs` int2unknow
     int2int `shouldPassAs` unknow2int
-    int2int `shouldNotPassAs` none
+    int2int `shouldPassButNotAs` none
 
   it "expressions with incompatible type annotations do not type check" $ do
     let bad1 = parseInfer [here|
@@ -124,8 +124,8 @@ spec = do
   it "throws error when annotated type is more general than infered type" $ do
     pendingWith "check type generality"
     let int2a = parseInfer [here|
-          id(x : Int) =
-            x : a
+          addOne(x : a) =
+            x + 1
           |]
     shouldFail int2a
 
