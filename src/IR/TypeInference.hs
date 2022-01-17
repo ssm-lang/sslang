@@ -24,6 +24,10 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , tuple
                                                 , unit
                                                 , void
+                                                , TypeDef(TypeDef)
+                                                , TypeVariant(VariantNamed, VariantUnnamed)
+                                                , variants
+                                                , arity
                                                 )
 import           Common.Identifiers             ( Binder )
 import           Control.Comonad                ( Comonad(..) )
@@ -66,14 +70,46 @@ replaceCtx ctx = modify $ const ctx
 lookupVar :: I.VarId -> InferFn (Maybe Classes.Type)
 lookupVar v = M.lookup v <$> gets varMap
 
--- | Infer all the program defs of the given porgram.
+-- | Infer all the program defs of the given program.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   defs' <- inferTop $ I.programDefs p
+  typeDefs' <- inferADT (I.typeDefs p) 
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
-                     , I.typeDefs     = [] -- TODO: something with I.typeDefs p
+                     , I.typeDefs     = typeDefs'
                      }
+
+-- | Pass all program typeDefs through the typechecker, changing Ann.Type to Classes.Type
+inferADT :: [(I.TConId, TypeDef Ann.Type)] -> InferFn [(I.TConId, TypeDef Classes.Type)]
+inferADT [] = pure []
+inferADT ((tconId,h):tl) = do
+  h' <- inferTypeDef h 
+  tl' <- inferADT tl
+  return ((tconId,h'):tl')
+  where 
+  inferTypeDef :: TypeDef Ann.Type -> InferFn (TypeDef Classes.Type)
+  inferTypeDef  TypeDef{variants = vars, arity = ar} =
+    case vars of
+      [] -> pure TypeDef {variants = [], arity = ar}
+      ((dconId,h2):tl2) -> do
+        h2' <- inferTypeVariant h2 
+        TypeDef{variants = tl2'} <- inferTypeDef TypeDef{variants = tl2, arity = ar}
+        return TypeDef{variants = (dconId,h2'):tl2', arity = ar}
+  inferTypeVariant :: TypeVariant Ann.Type -> InferFn (TypeVariant Classes.Type)
+  inferTypeVariant (VariantUnnamed []) = do return (VariantUnnamed [])
+  inferTypeVariant (VariantUnnamed (h3:tl3)) = do 
+    h3' <- anns2Class h3
+    (VariantUnnamed tl3') <- inferTypeVariant (VariantUnnamed tl3)
+    return (VariantUnnamed (h3':tl3'))
+  inferTypeVariant (VariantNamed [] )= do return (VariantNamed [])
+  inferTypeVariant (VariantNamed [(varId, t)] )= do
+    t' <- anns2Class t
+    return (VariantNamed [(varId, t')])
+  inferTypeVariant (VariantNamed ((varId, h4):tl4) )= do
+    h4'  <- anns2Class h4
+    (VariantNamed tl4') <- inferTypeVariant (VariantNamed  tl4)
+    return (VariantNamed ((varId, h4'):tl4'))
 
 {- | Top level inference.
 

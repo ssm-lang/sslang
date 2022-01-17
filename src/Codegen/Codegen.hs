@@ -209,9 +209,9 @@ genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
   let genAdt = (\acc adt -> acc <> genTypeDef adt)
   in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
   in
-  -- in if null typedefs
-  --    then error "where are all the ADT definitions???? "
-  --    else
+    --  if null typedefs
+    --  then error "where are all the ADT definitions???? "
+    --  else
         do -- p@I.Program
             (cdecls, cdefs) <-
               bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
