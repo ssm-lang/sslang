@@ -51,14 +51,14 @@ newtype InferFn a = InferFn (StateT InferState Compiler.Pass a)
   deriving (MonadError Compiler.Error)  via (StateT InferState Compiler.Pass)
   deriving (MonadState InferState)      via (StateT InferState Compiler.Pass)
 
--- | `runInferFn` runs a InferFn computation.
+-- | Run a InferFn computation.
 runInferFn :: InferFn a -> Compiler.Pass a
 runInferFn (InferFn m) = evalStateT m InferState { unionFindTree = M.empty
                                                  , varMap = M.empty
                                                  , count = 0
                                                  , equations = [] }
 
--- | `inferProgram` @p@ infers the type of all the programDefs of the given porgram @p@.
+-- | 'inferProgram' @p@ infers the type of all the programDefs of the given porgram @p@.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   defs' <- inferProgramDefs (I.programDefs p)
@@ -66,7 +66,7 @@ inferProgram p = runInferFn $ do
                      , I.programEntry = I.programEntry p
                      , I.typeDefs     = [] }
 
--- | `inferProgramDefs` @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
+-- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
 inferProgramDefs [] = return []
 inferProgramDefs ((v, e):xs) = do
@@ -136,7 +136,7 @@ generalize t = do
   let vs = S.toList $ S.difference (freeTVars t) $ S.union (freeTVars (M.elems uft)) (freeTVars (M.elems vm))
   return $ Classes.Forall vs t
 
--- | @letters@ represents list of identifiers to be used to construct free type
+-- | 'letters' represents list of identifiers to be used to construct free type
 -- variables assigned during type inference. The leading '_' distinguish them
 -- from user-annotated type variables.
 letters :: [String]
@@ -146,7 +146,7 @@ letters = map ('_':) $ [1 ..] >>= flip replicateM ['a' .. 'z']
 dummyAnnT :: Classes.Type
 dummyAnnT = Classes.TVar (TVarId $ Identifier "_")
 
--- | `fresh` generates a new `TVar` using the next tick number and increment the counter.
+-- | Generates a new 'TVar' using the next tick number and increment the counter.
 fresh :: InferFn Classes.Type
 fresh = do
   n <- gets count
@@ -154,28 +154,28 @@ fresh = do
   modify $ \st -> st { count = n+1 }
   return t
 
--- | `lookupVar` @v@ looks up the type scheme of a variable in the current `varMap` given its variable ID @v@.
+-- | 'lookupVar' @v@ looks up the type scheme of a variable in the current 'varMap' given its variable ID @v@.
 lookupVar :: I.VarId -> InferFn (Maybe Classes.Scheme)
 lookupVar v = M.lookup v <$> gets varMap
 
--- | `insertVar` @v t@ Insert a variable ID and its type scheme into current `varMap`.
+-- | 'insertVar' @v t@ Insert a variable ID and its type scheme into current 'varMap'.
 insertVar :: I.VarId -> Classes.Scheme -> InferFn ()
 insertVar v t = modify $ \st -> st { varMap = M.insert v t $ varMap st }
 
--- | `insertBinder` is a wrapper of `insertVar` for `Binder` type.
+-- | 'insertBinder' is a wrapper of 'insertVar' for 'Binder' type.
 insertBinder :: Binder -> Classes.Scheme -> InferFn ()
 insertBinder Nothing _ = return ()
 insertBinder (Just vid) t = insertVar vid t
 
--- | `insertEquation` @e@ inserts @e@ into the current `equations` list.
+-- | 'insertEquation' @e@ inserts @e@ into the current 'equations' list.
 insertEquation :: (Classes.Type, Classes.Type) -> InferFn ()
 insertEquation e = modify $ \st -> st { equations = e : equations st }
 
--- | `insertUnion` @t1 t2@ inserts @t1 : t2@ into the current `unionFindTree`.
+-- | 'insertUnion' @t1 t2@ inserts @t1 : t2@ into the current 'unionFindTree'.
 insertUnion :: Classes.Type -> Classes.Type -> InferFn ()
 insertUnion t1 t2 = modify $ \st -> st { unionFindTree = M.insert t1 t2 $ unionFindTree st}
 
--- | Helper function to support local modificaton of `varMap`.
+-- | Helper function to support local modificaton of 'varMap'.
 withNewScope :: InferFn a -> InferFn a
 withNewScope inf = do
   vm <- gets varMap
@@ -183,7 +183,7 @@ withNewScope inf = do
   modify $ \st -> st { varMap = vm }
   return x
 
--- | Helper function to support local modificaton of `unionFindTree`.
+-- | Helper function to support local modificaton of 'unionFindTree'.
 withNewTypeScope :: InferFn a -> InferFn a
 withNewTypeScope inf = do
   s <- gets unionFindTree
@@ -207,8 +207,8 @@ collapseAnnT (Ann.Type anns) = case head anns of
 
 {- | Stage 1: Assign symbolic typenames
 
-`initTypeVars` @e@ walks into the expression @e@ revursively, assign a fresh
-`TVar` to each unknown type, and build type equations that will be solved later.
+'initTypeVars' @e@ walks into the expression @e@ revursively, assign a fresh
+'TVar' to each unknown type, and build type equations that will be solved later.
 -}
 initTypeVars :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
 initTypeVars e@(I.Var v annT) = do
@@ -360,8 +360,8 @@ typeCheck annT expectedT = throwError $ Compiler.TypeError $ fromString $
 
 {- | Stage 2: Solve type equations using unification.
 
-`unifyAll` @eqs@ solve the list of equations @eqs@ one by one and puts solutions
-as new enties in the `unionFindTree`.
+Solve the list of 'equations' one by one and puts solutions as new enties in
+the 'unionFindTree'.
 -}
 unifyAll :: InferFn ()
 unifyAll = do
@@ -373,7 +373,7 @@ unifyAll = do
       modify $ \st -> st { equations = eqs }
       unifyAll
 
--- |`unify` @t1 t2@ solves the type equation t1 ~ t2 and put the solution into `unionFindTree`.
+-- |'unify' @t1 t2@ solves the type equation t1 ~ t2 and put the solution into 'unionFindTree'.
 unify :: Classes.Type -> Classes.Type -> InferFn ()
 unify t1 t2
   | t1 == t2 = return ()
@@ -391,9 +391,9 @@ unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = zipWithM_ 
 unify t1 t2 = throwError $ Compiler.TypeError $ fromString $
   "Single unification error: " ++ show t1 ++ ", " ++ show t2
 
-{- | Stage 3: Find the type of the expression based on `unionFindTree`.
+{- | Stage 3: Find the type of the expression based on 'unionFindTree'.
 
-`getType` @e@ walks into the expression @e@ and solves its type @t@ recursively.
+'getType' @e@ walks into the expression @e@ and solves its type @t@ recursively.
 -}
 getType :: I.Expr Classes.Type -> InferFn (I.Expr Classes.Type)
 getType (I.Var v t) = do
@@ -460,8 +460,8 @@ getType (I.Prim I.Par es _) = do
     return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
 getType e = throwError $ Compiler.TypeError $ fromString $ "Unable to get the type of unknown expression: " ++ show e
 
--- | `solveType` @t@ solves the type @t@ by replacing any embeded `TVar` @tvar@
---   with its real type, which is the root of @tvar@ in the `unionFindTree`.
+-- | 'solveType' @t@ solves the type @t@ by replacing any embeded 'TVar' @tvar@
+--   with its real type, which is the root of @tvar@ in the 'unionFindTree'.
 solveType :: Classes.Type -> InferFn Classes.Type
 solveType t@(Classes.TBuiltin (Integral 32)) = return t
 solveType t@(Classes.TBuiltin Unit) = return t
@@ -479,7 +479,7 @@ solveType (Classes.TBuiltin (Arrow t1 t2)) = do
   return $ Classes.TBuiltin $ Arrow t1' t2'
 solveType t = throwError $ Compiler.TypeError $ fromString $ "Solve Type error" ++ show t
 
--- | `findRoot` @t@ finds the root of @t@ inside `unionFindTree`.
+-- | 'findRoot' @t@ finds the root of @t@ inside 'unionFindTree'.
 findRoot :: Classes.Type -> InferFn Classes.Type
 findRoot t@(Classes.TVar _) = do
   sb <- gets unionFindTree
