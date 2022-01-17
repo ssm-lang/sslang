@@ -129,6 +129,17 @@ spec = do
           |]
     shouldFail int2a
 
+  it "handles recursive function correctly" $ do
+    pendingWith "support recursive function"
+    let recFn = parseInfer [here|
+          f x =
+            if x > 1
+              f (x - 1)
+            else
+              1
+          |]
+    shouldFail recFn
+
   it "type inference can correctly handle some tricky cases" $ do
     let tricky1a = parseInfer [here|
           f x =
