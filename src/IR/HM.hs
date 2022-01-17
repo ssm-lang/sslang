@@ -8,6 +8,7 @@ import qualified Data.Set                      as S
 import qualified Common.Compiler               as Compiler
 
 import qualified IR.IR                         as I
+import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Classes
 
@@ -61,10 +62,18 @@ runInferFn (InferFn m) = evalStateT m InferState { unionFindTree = M.empty
 -- | 'inferProgram' @p@ infers the type of all the programDefs of the given porgram @p@.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
-  defs' <- inferProgramDefs (I.programDefs p)
-  return $ I.Program { I.programDefs  = defs'
-                     , I.programEntry = I.programEntry p
-                     , I.typeDefs     = [] }
+  let defsI = inferProgramDefs (I.programDefs p)
+      defsC = TC.inferProgramDefs (I.programDefs p)
+  case (Compiler.runPass (runInferFn defsI), Compiler.runPass (TC.runInferFn defsC)) of
+    (Left eI, Left _) -> throwError eI
+    (Right (defsI', _), _) ->
+      return $ I.Program { I.programDefs  = defsI'
+                         , I.programEntry = I.programEntry p
+                         , I.typeDefs     = [] }
+    (_, Right (defsC', _)) ->
+      return $ I.Program { I.programDefs  = defsC'
+                         , I.programEntry = I.programEntry p
+                         , I.typeDefs     = [] }
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
