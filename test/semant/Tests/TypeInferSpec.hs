@@ -131,146 +131,90 @@ spec = do
 
   it "type inference can correctly handle some tricky cases" $ do
     let tricky1a = parseInfer [here|
-          f(x : Int) =
+          f x =
             let y = x
             y
           |]
         tricky1b = parseInfer [here|
-          f(x : Int) -> Int =
+          f(x : a) -> a =
             let y = x
             y
           |]
     tricky1a `shouldPassAs` tricky1b
     let tricky2a = parseInfer [here|
-          f(x : Int) =
-            let g (z : ()) = x
+          f x =
+            let g y = x
             g
           |]
         tricky2b = parseInfer [here|
-          f(x : Int) -> (() -> Int) =
-            let g (z : ()) = x
+          f(x : a) -> (b -> a) =
+            let g y = x
             g
           |]
     tricky2a `shouldPassAs` tricky2b
     let tricky3a = parseInfer [here|
-          f(x : Int) =
-            let g (x : ()) = x
+          f x =
+            let g x = x
             g
           |]
         tricky3b = parseInfer [here|
-          f(x : Int) -> (() -> ()) =
-            let g (x : ()) = x
+          f(x : a) -> (b -> b) =
+            let g x = x
             g
           |]
     tricky3a `shouldPassAs` tricky3b
-
-  {- More test functions to verify the correctness of type inference.
-
-  For now, this is broken. Also, I hardcoded all the expected results. We should fix that later.
-  Uncomment the print statement to output the inference result for each function.
-
-
-  it "infers id function" $ do
-    let minimal = parseProgram $ unlines
-          [ "id(x) ="
-          , "  x"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t0) (TVar t0))"
-
-  it "infers addOne function v1" $ do
-    let minimal = parseProgram $ unlines
-          [ "addOne(x) ="
-          , "  x + 1"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "TBuiltin (Arrow (TBuiltin (Integral 32)) (TBuiltin (Integral 32)))"
-
-  it "infers addOne function v2" $ do
-    let minimal = parseProgram $ unlines
-          [ "id(x) ="
-          , "  x"
-          , "addOne(x) ="
-          , "  id(x) + 1"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "TBuiltin (Arrow (TBuiltin (Integral 32)) (TBuiltin (Integral 32)))"
-
-  it "infers tricky program #1:`f` should has type `a -> a`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f x ="
-          , "  let y = x"
-          , "  y"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t0) (TVar t0))"
-
-  it "infers tricky program #2:`f` should has type `a -> (b -> a)`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f x ="
-          , "  let g z = x"
-          , "  g"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "Var x (TVar t0)"
-    typedPString `shouldContain` "Var g (TBuiltin (Arrow (TVar t2) (TVar t0)))"
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t0) (TBuiltin (Arrow (TVar t2) (TVar t0))))"
-
-  it "infers tricky program #3:`f` should has type `a -> (b -> b)` not `a -> (a -> a)`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f x ="
-          , "  let g x y = x"
-          , "  g x"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "Var g (TBuiltin (Arrow (TVar t4) (TVar t4)))"
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t0) (TBuiltin (Arrow (TVar t4) (TVar t4))))"
-
-  it "infers tricky program #4: `f` should has type `a -> a`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f x ="
-          , "  let g y = x"
-          , "  g g"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "Var g (TBuiltin (Arrow (TVar t4) (TVar t0)))"
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t0) (TVar t0))"
-
-  it "infers tricky program #5: `f` should has type `a -> a`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f ="
-          , "  let g x = x"
-          , "  g g"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "Var g (TBuiltin (Arrow (TVar t3) (TVar t3)))"
-    typedPString `shouldContain` "TBuiltin (Arrow (TVar t3) (TVar t3))"
-
-  it "infers tricky program #6: `f` should has type `(a -> b) -> (a -> b)` not `(a -> b) -> (c -> d)`" $ do
-    let minimal = parseProgram $ unlines
-          [ "f x ="
-          , "  let g z = x z"
-          , "  g"
-          ]
-        typedMinimal = lowerAndInfer minimal
-        typedPString = show typedMinimal
-    -- print typedMinimal
-    typedPString `shouldContain` "Var g (TBuiltin (Arrow (TVar t1) (TVar t2)))"
-    typedPString `shouldContain` "TBuiltin (Arrow (TBuiltin (Arrow (TVar t1) (TVar t2))) (TBuiltin (Arrow (TVar t1) (TVar t2))))"
-  -}
+    let tricky4a = parseInfer [here|
+          f x =
+            let g x y = x
+            g x
+          |]
+        tricky4b = parseInfer [here|
+          f (x : a) -> (b -> a) =
+            let g x y = x
+            g x
+          |]
+    tricky4a `shouldPassAs` tricky4b
+    let tricky5a = parseInfer [here|
+          f x =
+            let g y x = x
+            g x
+          |]
+        tricky5b = parseInfer [here|
+          f (x : a) -> (b -> b) =
+            let g y x = x
+            g x
+          |]
+    tricky5a `shouldPassAs` tricky5b
+    let tricky6a = parseInfer [here|
+          f x =
+            let g y = x
+            g g
+          |]
+        tricky6b = parseInfer [here|
+          f (x : a) -> a =
+            let g y = x
+            g g
+          |]
+    tricky6a `shouldPassAs` tricky6b
+    let tricky7a = parseInfer [here|
+          f x =
+            let g x = x
+            g g
+          |]
+        tricky7b = parseInfer [here|
+          f (x : a) -> (b -> b) =
+            let g x = x
+            g g
+          |]
+    tricky7a `shouldPassAs` tricky7b
+    let tricky8a = parseInfer [here|
+          f x =
+            let g y = x y
+            g
+          |]
+        tricky8b = parseInfer [here|
+          f (x : (a -> b)) -> (a -> b) =
+            let g y = x y
+            g
+          |]
+    tricky8a `shouldPassAs` tricky8b
