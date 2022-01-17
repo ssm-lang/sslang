@@ -1,3 +1,34 @@
+{- | Infer types for IR of optionally annotated program using Hindley Milner
+type inference algorithm with union find tree data structure.
+
+There are three main stages of the algorithm
+1. Assign symbolic typenames
+   During this stage, we walk through each expression recursively, initialize
+   its type by either assigning a fresh type variable or looking it up in the
+   type context at that point, and generate a list of type equations to record
+   the relationships between types. We also collapse the list of type
+   annotations into the most specific one and put that information into a type
+   equation as well to bring it into the later inference. Note that we will be
+   modifying the expression monad simultaneously to record its new type info.
+2. Solve type equations using unification.
+   During this stage, we solve the type equations generated in the last stage
+   and build a union find tree. This stage should be merged with stage 1 in the
+   future.
+3. Find the type of the expression.
+   During this stage, we walk through each expression recursively and assign it
+   with its inferred type by loop up the root of its temporary type in the union
+  find tree.
+
+The three stages are encaptured by the functions 'initTypeVars', 'unifyAll',
+and 'getType'.
+
+TODO:
+- Define a partial order for the generality of types. The order will be used to
+  (1) collapse type annotations into the most specific one; (2) check that
+  type annotation is equal to or more specific than the expression's inferred
+  type.
+- Handle recursive function correctly.
+-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE BlockArguments #-}
 module IR.HM where
