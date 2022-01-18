@@ -8,9 +8,13 @@ import qualified IR
 import qualified IR.IR                         as I
 import           IR.HM                         ( inferProgram )
 import qualified IR.Types.Classes              as Cls
+import qualified Common.Compiler               as Compiler
 
 parseInfer :: String -> Pass (I.Program Cls.Type)
-parseInfer s = Front.run def s >>= IR.lower def >>= inferProgram
+parseInfer s = parseInferWOptions s def
+
+parseInferWOptions :: String -> IR.Options -> Pass (I.Program Cls.Type)
+parseInferWOptions s opt = Front.run def s >>= IR.lower def >>= IR.ann2Class opt
 
 spec :: Spec
 spec = do
@@ -133,10 +137,7 @@ spec = do
     pendingWith "support recursive function"
     let recFn = parseInfer [here|
           f x =
-            if x > 1
-              f (x - 1)
-            else
-              1
+            f (x-1)
           |]
     shouldPass recFn
 
@@ -229,3 +230,13 @@ spec = do
             g
           |]
     tricky8a `shouldPassAs` tricky8b
+
+  it "support choosing type inference algorithm using command line options" $ do
+    let recFn = parseInferWOptions [here|
+          f x =
+            x
+          |]
+        expectedError = Compiler.TypeError $ fromString "Cannot change empty Ann type to Classes type"
+    shouldPass (recFn def)
+    shouldPass (recFn (IR.setHM def))
+    shouldFailWith (recFn (IR.setTC def)) expectedError
