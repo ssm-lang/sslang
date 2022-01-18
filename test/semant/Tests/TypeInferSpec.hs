@@ -138,7 +138,7 @@ spec = do
             else
               1
           |]
-    shouldFail recFn
+    shouldPass recFn
 
   it "type inference can correctly handle some tricky cases" $ do
     let tricky1a = parseInfer [here|
