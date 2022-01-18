@@ -16,12 +16,13 @@ import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Flat                 as Flat
 import qualified IR.Types.Poly                 as Poly
+import qualified IR.TypeChecker                as TC
+import qualified IR.HM                         as HM
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.Monomorphize                ( monoProgram )
-import           IR.HM                          ( inferProgram )
 
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
@@ -37,11 +38,17 @@ data Mode
   | DumpIRFinal       -- ^ Print the final IR representation before codegen.
   deriving (Eq, Show)
 
+data TIType
+ = HMOnly             -- ^ Only run HM type inference
+ | TCOnly             -- ^ Only run type checker
+ | Both               -- ^ Run both HM type Inference and type checker
+ deriving (Eq, Show)
+
 -- | Compiler options for the IR compiler stage.
-newtype Options = Options { mode :: Mode } deriving (Eq, Show)
+data Options = Options { mode :: Mode, tiType :: TIType } deriving (Eq, Show)
 
 instance Default Options where
-  def = Options { mode = Continue }
+  def = Options { mode = Continue, tiType = Both }
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
@@ -62,6 +69,14 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
+  , Option ""
+           ["only-hm"]
+           (NoArg $ setHM)
+           "Only run HM type inference"
+  , Option ""
+           ["only-tc"]
+           (NoArg $ setTC)
+           "Only run type checker"
   ]
   where setMode m o = o { mode = m }
 
@@ -72,10 +87,22 @@ lower opt prg = do
   when (mode opt == DumpIR) $ dump ir
   return ir
 
--- | IR compiler sub-stage, ultimately producing a fully-typed IR.
+-- | IR compiler sub-stage, ultimately producing a fully-typed IR. Run HM type
+-- inference, type checker, or both (default) based on the command line option.
+-- Note that when both algorithms are run, the program doesn't type check iff
+-- both algorithms throw an error.
 ann2Class :: Options -> I.Program Ann.Type -> Pass (I.Program Cls.Type)
 ann2Class opt ir = do
-  irInferred <- inferProgram ir
+  irInferred <- do
+    let irHMInferred = HM.inferProgram ir
+        irTCInferred = TC.inferProgram ir
+    case tiType opt of
+      HMOnly -> irHMInferred
+      TCOnly -> irTCInferred
+      _ -> case (runPass irHMInferred, runPass irTCInferred) of
+        (Left e , Left _) -> throwError e
+        (Right _, _     ) -> irHMInferred
+        _                 -> irTCInferred
   when (mode opt == DumpIRTyped) $ dump irInferred
   return irInferred
 
@@ -100,3 +127,11 @@ poly2Flat opt ir = do
 run :: Options -> A.Program -> Pass (I.Program Flat.Type)
 run opt prg =
   lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Flat opt
+
+-- | Helper function to set ti type to HM-only
+setHM :: Options -> Options
+setHM o = o { tiType = HMOnly }
+
+-- | Helper function to set ti type to TC-only
+setTC :: Options -> Options
+setTC o = o { tiType = TCOnly }
