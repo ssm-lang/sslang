@@ -1,0 +1,22 @@
+{
+    "name": "ssm",
+    "version": "0.1",
+    "description": "A lightweight runtime system for the sparse synchronous model, a deterministic real-time system model",
+    "repository":
+    {
+	"type":"git",
+	"url":"https://github.com/sedwards-lab/ssm.git"
+    },
+    "authors":
+    [
+	{"name":"Stephen A. Edwards",
+	 "email":"sedwards@cs.columbia.edu",
+	 "url":"http://www.cs.columbia.edu/~sedwards",
+	 "maintainer": true
+	}
+    ],
+    "license":"BSD-3-Clause",
+    "frameworks":"*",
+    "platform":"*"
+}
+    

@@ -1,0 +1,48 @@
+name: Documentation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - 'include/**'
+      - 'doc/**'
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - 'include/**'
+      - 'doc/**'
+
+jobs:
+  doc-build-html:
+    name: "Build Doxygen documentation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen build-essential graphviz
+
+    - name: Build documentation
+      run: |
+        make docs
+
+    - name: Deploy documentation
+      if: ${{ github.ref == 'refs/heads/dev' }} # FIXME: change to main
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/doc/html
+        publish_branch: gh-pages
