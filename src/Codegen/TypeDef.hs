@@ -79,7 +79,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       -- | Compare size of each data constructor to a word
       (greater       , lessThan   ) = partition ((>= 32) . dConSize) dataCons
       -- | Will each data constructor still be smaller than a word after including tag bits?
-      (notSmallEnough, smallEnough) = partition isSmallEnough lessThan
+      (smallEnough, notSmallEnough) = partition isSmallEnough lessThan
        where
         isSmallEnough = (< 32) . (tagBits +) . dConSize
         tagBits       = q + r where (q, r) = length lessThan `quotRem` 2
@@ -144,7 +144,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
   -- | Return the size in bits of a given data constructor
   dConSize :: (DConId, L.TypeVariant L.Type) -> Int
   dConSize (_, L.VariantNamed fields  ) = sum $ fieldSize . snd <$> fields
-  dConSize (_, L.VariantUnnamed fields) = sum $ fieldSize <$> fields
+  dConSize (_, L.VariantUnnamed fields) =  sum $ fieldSize <$> fields
 
   {- | Return the size in bits of a given field 
   (assume all built-in types are one word for now)
