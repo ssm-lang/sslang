@@ -1,35 +1,36 @@
--- | Identifiers in generated C code and helper functions for constructing them.
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+
+-- | Identifiers in generated C code and helper functions for constructing them.
 module Codegen.Identifiers where
 
-import           Language.C.Quote               ( ToIdent(..) )
-import           Language.C.Quote.GCC           ( cexp
-                                                , cty
-                                                )
-import qualified Language.C.Syntax             as C
-
-import           Common.Identifiers             ( Identifiable(..)
-                                                , Identifier(..)
-                                                , VarId(..)
-                                                , fromId
-                                                )
-
-import           Data.String                    ( IsString(..) )
+import Common.Identifiers
+  ( Identifiable (..),
+    Identifier (..),
+    VarId (..),
+    fromId,
+  )
+import Data.String (IsString (..))
+import Language.C.Quote (ToIdent (..))
+import Language.C.Quote.GCC
+  ( cexp,
+    cty,
+  )
+import qualified Language.C.Syntax as C
 
 -- | Use snake_case for c literals
-{-# ANN module ("HLint: ignore Use camelCase"::String) #-}
+{-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
 -- | Identifiers in C.
 newtype CIdent = CIdent Identifier
-  deriving Eq
-  deriving Ord
-  deriving IsString via Identifier
-  deriving Identifiable via Identifier
-  deriving ToIdent via Identifier
-  deriving Semigroup via Identifier
-  deriving Monoid via Identifier
+  deriving (Eq)
+  deriving (Ord)
+  deriving (IsString) via Identifier
+  deriving (Identifiable) via Identifier
+  deriving (ToIdent) via Identifier
+  deriving (Semigroup) via Identifier
+  deriving (Monoid) via Identifier
 
 -- | Construct a type name from a C identifier.
 ctype :: CIdent -> C.Type
@@ -299,16 +300,15 @@ mm = "mm"
 payload :: CIdent
 payload = "payload"
 
--- | Construct an ssm_value_t from an ssm_object* 
+-- | Construct an ssm_value_t from an ssm_object*
 ssm_from_obj :: C.Exp -> C.Exp
 ssm_from_obj o = [cexp|($ty:ssm_value_t) { .$id:packed_val = &($exp:o)->$id:mm }|]
 
--- | Construct an ssm_value_t from an integer 
+-- | Construct an ssm_value_t from an integer
 ssm_from_int :: C.Exp -> C.Exp
 ssm_from_int v = [cexp|($ty:ssm_value_t) { .$id:packed_val = $exp:v }|]
 
-{- | Convert an ssm_value_t to an ssm_object*
-This kind of conversion is needed to access fields in an ADT
--}
-ssm_to_obj :: C.Exp -> C.Exp 
+-- | Convert an ssm_value_t to an ssm_object*
+-- This kind of conversion is needed to access fields in an ADT
+ssm_to_obj :: C.Exp -> C.Exp
 ssm_to_obj v = [cexp| ($id:container_of(($exp:v).$id:heap_ptr, ssm_object, $id:mm )) |]

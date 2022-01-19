@@ -1,66 +1,65 @@
-{- | Infer types for optionally annotated program.
-
-For now, this module implements a very crude form of pure, syntax-directed type
-inference where type annotations can be locally and immediately inferred,
-without the help of a type environment/context.
--}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DerivingVia #-}
+
+-- | Infer types for optionally annotated program.
+--
+-- For now, this module implements a very crude form of pure, syntax-directed type
+-- inference where type annotations can be locally and immediately inferred,
+-- without the help of a type environment/context.
 module IR.TypeInference where
 
-import qualified Data.Map                      as M
-
-import qualified Common.Compiler               as Compiler
-
-import qualified IR.IR                         as I
-import qualified IR.Types.Annotated            as Ann
-import qualified IR.Types.Classes              as Classes
-
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , dearrow
-                                                , deref
-                                                , int
-                                                , ref
-                                                , tuple
-                                                , unit
-                                                , void
-                                                , TypeDef(TypeDef)
-                                                , TypeVariant(VariantNamed, VariantUnnamed)
-                                                , variants
-                                                , arity
-                                                )
-import           Common.Identifiers             ( Binder )
-import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad.Except           ( MonadError(..) )
-import           Control.Monad.State.Lazy       ( MonadState
-                                                , StateT(..)
-                                                , evalStateT
-                                                , gets
-                                                , get
-                                                , modify
-                                                )
-import           Data.Maybe                     ( fromJust )
-import Data.String (IsString(fromString))
+import qualified Common.Compiler as Compiler
+import Common.Identifiers (Binder)
+import Control.Comonad (Comonad (..))
+import Control.Monad.Except (MonadError (..))
+import Control.Monad.State.Lazy
+  ( MonadState,
+    StateT (..),
+    evalStateT,
+    get,
+    gets,
+    modify,
+  )
+import qualified Data.Map as M
+import Data.Maybe (fromJust)
+import Data.String (IsString (fromString))
+import qualified IR.IR as I
+import qualified IR.Types.Annotated as Ann
+import qualified IR.Types.Classes as Classes
+import IR.Types.TypeSystem
+  ( Builtin (..),
+    TypeDef (TypeDef),
+    TypeVariant (VariantNamed, VariantUnnamed),
+    arity,
+    dearrow,
+    deref,
+    int,
+    ref,
+    tuple,
+    unit,
+    variants,
+    void,
+  )
 
 -- | Typing Environment
-newtype TypeCtx = TypeCtx { varMap :: M.Map I.VarId Classes.Type }
+newtype TypeCtx = TypeCtx {varMap :: M.Map I.VarId Classes.Type}
 
 -- Inference Monad
 newtype InferFn a = InferFn (StateT TypeCtx Compiler.Pass a)
-  deriving Functor                      via (StateT TypeCtx Compiler.Pass)
-  deriving Applicative                  via (StateT TypeCtx Compiler.Pass)
-  deriving Monad                        via (StateT TypeCtx Compiler.Pass)
-  deriving MonadFail                    via (StateT TypeCtx Compiler.Pass)
-  deriving (MonadError Compiler.Error)  via (StateT TypeCtx Compiler.Pass)
-  deriving (MonadState TypeCtx)         via (StateT TypeCtx Compiler.Pass)
+  deriving (Functor) via (StateT TypeCtx Compiler.Pass)
+  deriving (Applicative) via (StateT TypeCtx Compiler.Pass)
+  deriving (Monad) via (StateT TypeCtx Compiler.Pass)
+  deriving (MonadFail) via (StateT TypeCtx Compiler.Pass)
+  deriving (MonadError Compiler.Error) via (StateT TypeCtx Compiler.Pass)
+  deriving (MonadState TypeCtx) via (StateT TypeCtx Compiler.Pass)
 
 -- | Run a InferFn computation.
 runInferFn :: InferFn a -> Compiler.Pass a
-runInferFn (InferFn m) = evalStateT m TypeCtx { varMap = M.empty }
+runInferFn (InferFn m) = evalStateT m TypeCtx {varMap = M.empty}
 
 -- | Insert a variable ID and its type into current typing context.
 insertVar :: I.VarId -> Classes.Type -> InferFn ()
-insertVar v t = modify $ \st -> st { varMap = M.insert v t $ varMap st }
+insertVar v t = modify $ \st -> st {varMap = M.insert v t $ varMap st}
 
 -- | Replace the current typing context with a new one.
 replaceCtx :: TypeCtx -> InferFn ()
@@ -74,64 +73,64 @@ lookupVar v = M.lookup v <$> gets varMap
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   defs' <- inferTop $ I.programDefs p
-  typeDefs' <- inferADT (I.typeDefs p) 
-  return $ I.Program { I.programDefs  = defs'
-                     , I.programEntry = I.programEntry p
-                     , I.typeDefs     = typeDefs'
-                     }
+  typeDefs' <- inferADT (I.typeDefs p)
+  return $
+    I.Program
+      { I.programDefs = defs',
+        I.programEntry = I.programEntry p,
+        I.typeDefs = typeDefs'
+      }
 
 -- | Pass all program typeDefs through the typechecker, changing Ann.Type to Classes.Type
 inferADT :: [(I.TConId, TypeDef Ann.Type)] -> InferFn [(I.TConId, TypeDef Classes.Type)]
 inferADT [] = pure []
-inferADT ((tconId,h):tl) = do
-  h' <- inferTypeDef h 
+inferADT ((tconId, h) : tl) = do
+  h' <- inferTypeDef h
   tl' <- inferADT tl
-  return ((tconId,h'):tl')
-  where 
-  inferTypeDef :: TypeDef Ann.Type -> InferFn (TypeDef Classes.Type)
-  inferTypeDef  TypeDef{variants = vars, arity = ar} =
-    case vars of
-      [] -> pure TypeDef {variants = [], arity = ar}
-      ((dconId,h2):tl2) -> do
-        h2' <- inferTypeVariant h2 
-        TypeDef{variants = tl2'} <- inferTypeDef TypeDef{variants = tl2, arity = ar}
-        return TypeDef{variants = (dconId,h2'):tl2', arity = ar}
-  inferTypeVariant :: TypeVariant Ann.Type -> InferFn (TypeVariant Classes.Type)
-  inferTypeVariant (VariantUnnamed []) = do return (VariantUnnamed [])
-  inferTypeVariant (VariantUnnamed (h3:tl3)) = do 
-    h3' <- anns2Class h3
-    (VariantUnnamed tl3') <- inferTypeVariant (VariantUnnamed tl3)
-    return (VariantUnnamed (h3':tl3'))
-  inferTypeVariant (VariantNamed [] )= do return (VariantNamed [])
-  inferTypeVariant (VariantNamed [(varId, t)] )= do
-    t' <- anns2Class t
-    return (VariantNamed [(varId, t')])
-  inferTypeVariant (VariantNamed ((varId, h4):tl4) )= do
-    h4'  <- anns2Class h4
-    (VariantNamed tl4') <- inferTypeVariant (VariantNamed  tl4)
-    return (VariantNamed ((varId, h4'):tl4'))
+  return ((tconId, h') : tl')
+  where
+    inferTypeDef :: TypeDef Ann.Type -> InferFn (TypeDef Classes.Type)
+    inferTypeDef TypeDef {variants = vars, arity = ar} =
+      case vars of
+        [] -> pure TypeDef {variants = [], arity = ar}
+        ((dconId, h2) : tl2) -> do
+          h2' <- inferTypeVariant h2
+          TypeDef {variants = tl2'} <- inferTypeDef TypeDef {variants = tl2, arity = ar}
+          return TypeDef {variants = (dconId, h2') : tl2', arity = ar}
+    inferTypeVariant :: TypeVariant Ann.Type -> InferFn (TypeVariant Classes.Type)
+    inferTypeVariant (VariantUnnamed []) = do return (VariantUnnamed [])
+    inferTypeVariant (VariantUnnamed (h3 : tl3)) = do
+      h3' <- anns2Class h3
+      (VariantUnnamed tl3') <- inferTypeVariant (VariantUnnamed tl3)
+      return (VariantUnnamed (h3' : tl3'))
+    inferTypeVariant (VariantNamed []) = do return (VariantNamed [])
+    inferTypeVariant (VariantNamed [(varId, t)]) = do
+      t' <- anns2Class t
+      return (VariantNamed [(varId, t')])
+    inferTypeVariant (VariantNamed ((varId, h4) : tl4)) = do
+      h4' <- anns2Class h4
+      (VariantNamed tl4') <- inferTypeVariant (VariantNamed tl4)
+      return (VariantNamed ((varId, h4') : tl4'))
 
-{- | Top level inference.
-
-This will infer the (VarId, Expr) pair sequentially and add the infered types
-into the type context so that these info can be used when infering the following
-expressions.
--}
+-- | Top level inference.
+--
+-- This will infer the (VarId, Expr) pair sequentially and add the infered types
+-- into the type context so that these info can be used when infering the following
+-- expressions.
 inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
 inferTop [] = return []
-inferTop ((v, e):xs) = do
+inferTop ((v, e) : xs) = do
   e' <- inferExpr e
   insertVar v (extract e')
   xs' <- inferTop xs
-  return $ (v, e'):xs'
+  return $ (v, e') : xs'
 
-{- | Infer a single expression @e@.
-
-This function will also infer any nested expressions inside @e@ and all
-expressions in the return value will have Classes.Type as its type. Error will
-be thrown if the type annotation is in inconsistent with the true true or the
-expression is known.
--}
+-- | Infer a single expression @e@.
+--
+-- This function will also infer any nested expressions inside @e@ and all
+-- expressions in the return value will have Classes.Type as its type. Error will
+-- be thrown if the type annotation is in inconsistent with the true true or the
+-- expression is known.
 inferExpr :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
 inferExpr (I.Var v t) = do
   record <- lookupVar v
@@ -208,26 +207,26 @@ inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
         _ -> return ()
       return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
     else throwError $ Compiler.TypeError $ fromString $ "After expression has inconsistent type: " ++ show e
-inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2] _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
   return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  _) = do
+inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] _) = do
   e1' <- inferExpr e1
   e2' <- inferExpr e2
   return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
 inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
 inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
 inferPrim (I.Prim I.Loop es _) = do
-    es' <- mapM inferExpr es
-    return $ I.Prim I.Loop es' unit
+  es' <- mapM inferExpr es
+  return $ I.Prim I.Loop es' unit
 inferPrim (I.Prim I.Wait es _) = do
-    es' <- mapM inferExpr es
-    return $ I.Prim I.Wait es' unit
+  es' <- mapM inferExpr es
+  return $ I.Prim I.Wait es' unit
 inferPrim (I.Prim I.Par es _) = do
-    es' <- mapM inferExpr es
-    let ts = map extract es'
-    return $ I.Prim I.Par es' $ tuple ts
+  es' <- mapM inferExpr es
+  let ts = map extract es'
+  return $ I.Prim I.Par es' $ tuple ts
 inferPrim e = throwError $ Compiler.TypeError $ fromString $ "Unable to type Prim expression: " ++ show e
 
 -- | Helper function to support local modificaton of type context.
@@ -277,4 +276,4 @@ ann2Class (Ann.TBuiltin bty) = case bty of
 ann2Class (Ann.TCon tid tys) = do
   t <- mapM anns2Class tys
   return $ Classes.TCon tid t
-ann2Class (Ann.TVar _tid   ) = throwError $ Compiler.UnexpectedError $ fromString "Do not know how to translate type variable yet"
+ann2Class (Ann.TVar _tid) = throwError $ Compiler.UnexpectedError $ fromString "Do not know how to translate type variable yet"
