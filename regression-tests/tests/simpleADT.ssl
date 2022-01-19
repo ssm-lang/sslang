@@ -9,5 +9,5 @@ type MyBool
 
 main ( cout : & Int ) -> () =
   let a = 78
-//  let b = ((MyTrue 999):MyBool)
+ // let b = (MyTrue 999)
   after 10 , (cout : & Int) <- a

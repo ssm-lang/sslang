@@ -18,7 +18,7 @@
 -- - Name mangled: All variable identifiers are unique.
 module Codegen.Codegen where
 
-import Codegen.Identifiers
+import Codegen.Identifiers 
 import Codegen.TypeDef
   ( TypeDefInfo,
     dconType,
@@ -29,7 +29,7 @@ import Codegen.TypeDef
     typeSize,
   )
 import qualified Common.Compiler as Compiler
-import Common.Identifiers (fromId)
+import Common.Identifiers (fromId, ident)
 import Control.Comonad (Comonad (..))
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy
@@ -499,16 +499,24 @@ genExpr a@(I.App _ _ ty) = do
         Just True -> do
           tmpName <- nextTmp dty
           let tmp = [cexp|$id:acts->$id:tmpName|]
-          let (Just typ) = M.lookup tg (dconType info)
-          let (Just sz) = M.lookup typ (typeSize info)
-          let alloc =
-                [[citem|$exp:tmp = $id:ssm_new($int:sz,$id:tg);|]]
-          let initField =
-                ( \y i ->
-                    [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
-                )
-          let initFields = zipWith initField argVals [0 :: Int, 1 ..]
-          return (ssm_from_obj tmp, concat evalStms ++ alloc ++ initFields)
+          case M.lookup tg (dconType info) of
+               Nothing 
+                -> do
+                  let theMap = show (M.toList (dconType info))
+                  fail ("couldn't find " ++ ident tg ++ "in the lookup table!\n" ++ theMap)
+               Just typ 
+                -> do
+                      
+                 -- let (Just typ) = M.lookup tg (dconType info)
+                  let (Just sz) = M.lookup typ (typeSize info)
+                  let alloc =
+                        [[citem|$exp:tmp = $id:ssm_new($int:sz,$id:tg);|]]
+                  let initField =
+                        ( \y i ->
+                            [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
+                        )
+                  let initFields = zipWith initField argVals [0 :: Int, 1 ..]
+                  return (ssm_from_obj tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr I.Match {} = nope
 genExpr I.Lambda {} = fail "Cannot handle lambdas"

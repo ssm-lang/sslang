@@ -96,7 +96,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
               ptrFields = pFields
             }
           where
-            typs = M.fromList $ zip (fst <$> intgrs) (repeat typ)
+            typs = M.fromList $ zip (fst <$> intgrs ++ ptrs) (repeat typ)
 
             typsz = M.fromList [(typ, sz)]
             sz = dConSize $ maximumBy (compare `on` dConSize) heapObjs

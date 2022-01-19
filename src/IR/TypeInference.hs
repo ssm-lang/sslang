@@ -42,7 +42,10 @@ import IR.Types.TypeSystem
   )
 
 -- | Typing Environment
-newtype TypeCtx = TypeCtx {varMap :: M.Map I.VarId Classes.Type}
+data TypeCtx = TypeCtx
+  { varMap :: M.Map I.VarId Classes.Type,
+    dConMap :: M.Map I.DConId Classes.Type
+  }
 
 -- Inference Monad
 newtype InferFn a = InferFn (StateT TypeCtx Compiler.Pass a)
@@ -55,7 +58,13 @@ newtype InferFn a = InferFn (StateT TypeCtx Compiler.Pass a)
 
 -- | Run a InferFn computation.
 runInferFn :: InferFn a -> Compiler.Pass a
-runInferFn (InferFn m) = evalStateT m TypeCtx {varMap = M.empty}
+runInferFn (InferFn m) =
+  evalStateT
+    m
+    TypeCtx
+      { varMap = M.empty,
+        dConMap = M.empty
+      }
 
 -- | Insert a variable ID and its type into current typing context.
 insertVar :: I.VarId -> Classes.Type -> InferFn ()
@@ -69,11 +78,15 @@ replaceCtx ctx = modify $ const ctx
 lookupVar :: I.VarId -> InferFn (Maybe Classes.Type)
 lookupVar v = M.lookup v <$> gets varMap
 
+-- | Look up the type of a data constructor in the typing context.
+lookupDCon :: I.DConId -> InferFn (Maybe Classes.Type)
+lookupDCon d = M.lookup d <$> gets dConMap
+
 -- | Infer all the program defs of the given program.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
+  typeDefs' <- inferADT $ I.typeDefs p
   defs' <- inferTop $ I.programDefs p
-  typeDefs' <- inferADT (I.typeDefs p)
   return $
     I.Program
       { I.programDefs = defs',
@@ -81,14 +94,24 @@ inferProgram p = runInferFn $ do
         I.typeDefs = typeDefs'
       }
 
--- | Pass all program typeDefs through the typechecker, changing Ann.Type to Classes.Type
+{- Pass all program typeDefs through the typechecker
+
+Change Ann.Type to Classes.Type
+For each ADT, save ('DConId, 'TConId) key-value pairs in typing context for future use
+-}
 inferADT :: [(I.TConId, TypeDef Ann.Type)] -> InferFn [(I.TConId, TypeDef Classes.Type)]
 inferADT [] = pure []
-inferADT ((tconId, h) : tl) = do
+inferADT adts@((tconId, h) : tl) = do
+  mapM_ insertADT adts -- save ADTs in typing context
   h' <- inferTypeDef h
   tl' <- inferADT tl
   return ((tconId, h') : tl')
   where
+    insertADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
+    insertADT (tcon, TypeDef {variants = vars}) = mapM_ (insertDCon tcon.fst) vars
+      where
+      insertDCon :: I.TConId -> I.DConId ->  InferFn ()
+      insertDCon t d = modify $ \st -> st {dConMap = M.insert d (Classes.TCon t []) $ dConMap st}
     inferTypeDef :: TypeDef Ann.Type -> InferFn (TypeDef Classes.Type)
     inferTypeDef TypeDef {variants = vars, arity = ar} =
       case vars of
@@ -162,6 +185,16 @@ inferExpr (I.Let vs b _) = do
 inferExpr e@I.Prim {} = inferPrim e
 inferExpr (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
 inferExpr (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
+inferExpr e@(I.Data d _) = do
+  tcon <- lookupDCon d
+  case tcon of
+    Nothing -> throwError $ Compiler.TypeError $ fromString $ "Unable to type ADT expression: " ++ show e
+    Just t' -> return $ I.Data d t'
+inferExpr (I.App a@(I.Data _ _) b _) = do
+    a' <- inferExpr a
+    b' <- inferExpr b
+    return $ I.App a' b' (extract a')
+
 inferExpr e@(I.App a b _) = do
   a' <- inferExpr a
   b' <- inferExpr b
