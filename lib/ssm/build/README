@@ -1,5 +1,0 @@
-The Makefile places objects and executables in this directory.
-Its contents, including this file, is routinely cleaned up.
-
-The purpose of this file is to make sure the build/ directory exists
-when you copy the repository.

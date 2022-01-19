@@ -1,5 +1,0 @@
-/ {
-     aliases {
-	  ssm-timer = &timer4;
-     };
-};
