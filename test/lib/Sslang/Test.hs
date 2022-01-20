@@ -10,7 +10,7 @@ module Sslang.Test
   , shouldPass
   , shouldPassAs
   , shouldPassExactlyAs
-  , shouldNotPassAs
+  , shouldPassButNotAs
   , shouldProduce
   , shouldFail
   , shouldFailWith
@@ -93,9 +93,9 @@ shouldPassExactlyAs actual expected = do
 
 -- | Expect that some 'Pass' successfully produces a different value from
 -- another.
-shouldNotPassAs
+shouldPassButNotAs
   :: (HasCallStack, Show a, Eq a, Data a) => Pass a -> Pass a -> Expectation
-shouldNotPassAs actual unexpected = do
+shouldPassButNotAs actual unexpected = do
   e <- produce "unexpected case" unexpected
   a <- produce "actual case" actual
   when (e == a) $ assertFailure $ unlines

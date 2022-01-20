@@ -40,7 +40,7 @@ data Builtin t
   | Arrow t t     -- ^ Function arrow @a -> b@
   | Tuple [t]     -- ^ Tuple with two or more fields
   | Integral Int  -- ^ Two's complement binary type with size in bits
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Ord, Typeable, Data)
 
 instance Functor Builtin where
   fmap _ Unit           = Unit
