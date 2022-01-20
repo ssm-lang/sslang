@@ -12,4 +12,4 @@ instProgram = return . fmap class2Poly
   class2Poly :: Classes.Type -> Poly.Type
   class2Poly (Classes.TBuiltin bty) = Poly.TBuiltin $ fmap class2Poly bty
   class2Poly (Classes.TCon tid tys) = Poly.TCon tid $ fmap class2Poly tys
-  class2Poly (Classes.TVar tidx   ) = Poly.TVar tidx
+  class2Poly (Classes.TVar tid    ) = Poly.TVar tid
