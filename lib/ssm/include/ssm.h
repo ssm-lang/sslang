@@ -1,115 +1,243 @@
+/** @file ssm.h
+ *  @brief Interface to the SSM runtime.
+ *
+ *  This file contains the public-facing interface of the SSM runtime.
+ *
+ *  @author Stephen Edwards (sedwards-lab)
+ *  @author John Hui (j-hui)
+ */
 #ifndef _SSM_H
 #define _SSM_H
 
-/** \mainpage A Runtime Library for the Sparse Synchronous Model
+#include <stdbool.h> /* For bool, true, false */
+#include <stddef.h>  /* For offsetof */
+#include <stdint.h>  /* For uint16_t, UINT64_MAX etc. */
+#include <stdlib.h>  /* For size_t */
 
-\section intro_sec Introduction
-
-The operation of this library was first described in
-
-> Stephen A. Edwards and John Hui.
-> The Sparse Synchronous Model.
-> In Forum on Specification and Design Languages (FDL),
-> Kiel, Germany, September 2020.
-> http://www.cs.columbia.edu/~sedwards/papers/edwards2020sparse.pdf
-
-\section usage_sec Usage
-
-See [the detailed documentation](@ref all)
-
-\section example Example
-
-
-    #include "ssm.h"
-
-    typedef struct {
-      SSM_ACT_FIELDS;
-      ssm_event_t second;
-    } main_act_t;
-
-    ssm_stepf_t main_step;
-
-    main_act_t *enter_main(struct ssm_act *parent,
-                           ssm_priority_t priority,
-                           ssm_depth_t depth) {
-      main_act_t * act =
-        (main_act_t *) ssm_enter(sizeof(main_act_t),
-                                 main_step, parent, priority, depth);
-      ssm_initialize_event(&act->second);
-    }
-
-*/
-
-#include <stdint.h>   /* For uint16_t, UINT64_MAX etc. */
-#include <stdbool.h>  /* For bool, true, false */
-#include <stdlib.h>   /* For size_t */
-#include <assert.h>
-#include <stddef.h>   /* For offsetof */
-
-/** \defgroup all The SSM Runtime
- * \addtogroup all
+/**
+ * @addtogroup error
  * @{
  */
 
-#ifndef SSM_ACT_MALLOC
-/** Allocation function for activation records.
+/** @brief Error codes indicating reason for failure.
  *
- * Given a number of bytes, return a void pointer to the base
- * of newly allocated space or 0 if no additional space is available */
-#define SSM_ACT_MALLOC(size) malloc(size)
-#endif
-
-#ifndef SSM_ACT_FREE
-/** Free function for activation records.
+ *  Platforms may extend the list of errors using #SSM_PLATFORM_ERROR like this:
  *
- * The first argument is a pointer to the base of the activation record
- * being freed; the second is the size in bytes of the record being freed.
+ *  ~~~{.c}
+ *  enum {
+ *    SSM_CUSTOM_ERROR_CODE1 = SSM_PLATFORM_ERROR,
+ *    SSM_CUSTOM_ERROR_CODE2,
+ *    // etc.
+ *  };
+ *  ~~~
  */
-#define SSM_ACT_FREE(ptr, size) free(ptr)
-#endif
+typedef enum ssm_error {
+  SSM_INTERNAL_ERROR = 1,
+  /**< Reserved for unforeseen, non-user-facing errors. */
+  SSM_EXHAUSTED_ACT_QUEUE,
+  /**< Tried to insert into full activation record queue. */
+  SSM_EXHAUSTED_EVENT_QUEUE,
+  /**< Tried to insert into full event queue. */
+  SSM_EXHAUSTED_MEMORY,
+  /**< Could not allocate more memory. */
+  SSM_EXHAUSTED_PRIORITY,
+  /**< Tried to exceed available recursion depth. */
+  SSM_NOT_READY,
+  /**< Not yet ready to perform the requested action. */
+  SSM_INVALID_TIME,
+  /**< Specified invalid time, e.g., scheduled assignment at an earlier time. */
+  SSM_INVALID_MEMORY,
+  /**< Invalid memory layout, e.g., using a pointer where int was expected. */
+  SSM_PLATFORM_ERROR
+  /**< Start of platform-specific error code range. */
+} ssm_error_t;
 
-/** Underlying exception handler; can be overridden by each platform
+/** @brief Terminate due to a non-recoverable error, with a specified reason.
  *
- * ssm_throw is declared as a weak symbol, meaning it will be left a null
- * pointer if the linker does not find a definition for this symbol in any
- * object file.
- */
-void ssm_throw(int reason, const char *file, int line, const char *func);
-
-/** Invoked when a process must terminate, e.g., when memory or queue space is
- * exhausted. Not expected to return.
+ *  Invoked when a process must terminate, e.g., when memory or queue space is
+ *  exhausted. Not expected to terminate.
  *
- * Argument passed is an ssm_error_t indicating why the failure occurred.
- * Default behavior is to exit with reason as the exit code, but can be
- * overridden by defining ssm_throw.
+ *  Wraps the underlying ssm_throw() exception handler, passing along the
+ *  file name, line number, and function name in the source file where the error
+ *  was thrown.
+ *
+ *  @param reason an #ssm_error_t specifying the reason for the error.
  */
 #define SSM_THROW(reason) ssm_throw(reason, __FILE__, __LINE__, __func__)
 
-/** Error codes, indicating reason for failure.
+/** @brief Underlying exception handler; must be overridden by each platform.
  *
- * Platforms may extend the list of errors using SSM_PLATFORM_ERROR like this:
+ *  This is left undefined by the SSM runtime for portability. On platforms
+ *  where exit() is available, that may be used. Where possible, an exception
+ *  handler may also log additional information using the given parameters for
+ *  better debuggability.
  *
- *      enum {
- *        SSM_CUSTOM_ERROR1 = SSM_PLATFORM_ERROR,
- *        // etc.
- *      };
+ *  @param reason an #ssm_error_t specifying the reason for the error.
+ *  @param file   the file name of the source file where the error was thrown.
+ *  @param line   the line number of the source file where the error was thrown.
+ *  @param func   the function name where the error was thrown.
  */
-enum ssm_error_t {
-  /** Reserved for unforeseen, non-user-facing errors. */
-  SSM_INTERNAL_ERROR = 1,
-  /** Tried to insert into full activation record queue. */
-  SSM_EXHAUSTED_ACT_QUEUE,
-  /** Tried to insert into full event queue. */
-  SSM_EXHAUSTED_EVENT_QUEUE,
-  /** Could not allocate more memory. */
-  SSM_EXHAUSTED_MEMORY,
-  /** Tried to exceed available recursion depth. */
-  SSM_EXHAUSTED_PRIORITY,
-  /** Invalid time, e.g., scheduled delayed assignment at an earlier time. */
-  SSM_INVALID_TIME,
-  /** Start of platform-specific error code range. */
-  SSM_PLATFORM_ERROR
+void ssm_throw(ssm_error_t reason, const char *file, int line,
+               const char *func);
+
+/** @} */
+
+struct ssm_mm;
+struct ssm_sv;
+struct ssm_trigger;
+struct ssm_act;
+
+/**
+ * @addtogroup mem
+ * @{
+ */
+
+/** @brief Values are 32-bits, the largest supported machine word size. */
+typedef uint32_t ssm_word_t;
+
+/** @brief SSM values are either "packed" values or heap-allocated. */
+typedef union {
+  struct ssm_mm *heap_ptr; /**< Pointer to a heap-allocated object. */
+  ssm_word_t packed_val;   /**< Packed value. */
+} ssm_value_t;
+
+/** @brief The metadata "header" accompanying any heap-allocated object.
+ *
+ *  This header should be embedded in heap-allocated objects as the first field
+ *  (at memory offset 0).
+ *
+ *  The @a kind field is used to indicate what #ssm_kind an object is, and thus
+ *  what its size and memory layout are.
+ *
+ *  @note The interpretation and usage of the @a ref_count and @a tag fields may
+ *  depend on the value of @a kind. For instance, some object kinds don't use
+ * one or both of those fields, while others may use them together as a single
+ *  16-bit field.
+ */
+struct ssm_mm {
+  uint8_t ref_count; /**< The number of references to this object. */
+  uint8_t kind;      /**< The #ssm_kind of object this is. */
+  uint8_t val_count; /**< Number of #ssm_value_t values in payload. */
+  uint8_t tag;       /**< Which variant is inhabited by this object. */
 };
+
+/** @brief Construct an #ssm_value_t from a 31-bit integral value.
+ *
+ *  @param v  the 31-bit integral value.
+ *  @return   a packed #ssm_value_t.
+ */
+#define ssm_marshal(v)                                                         \
+  (ssm_value_t) { .packed_val = ((v) << 1 | 1) }
+
+/** @brief Extract an integral value from a packed #ssm_value_t.
+ *
+ *  @param v  the packed #ssm_value_t.
+ *  @return   the raw 31-bit integral value.
+ */
+#define ssm_unmarshal(v) ((v).packed_val >> 1)
+
+/** @brief Whether a value is on the heap (i.e., is an object).
+ *
+ *  @param v  pointer to the #ssm_value_t.
+ *  @returns  non-zero if on heap, zero otherwise.
+ */
+#define ssm_on_heap(v) (((v).packed_val & 0x1) == 0)
+
+/** @brief Duplicate a possible heap reference, incrementing its ref count.
+ *
+ *  If the caller knows @a v is definitely on the heap, call ssm_drop_unsafe()
+ *  to eliminate the heap check (and omit call if it is definitely not on the
+ *  heap).
+ *
+ *  @param v  pointer to the #ssm_mm header of the heap item.
+ */
+#define ssm_dup(v)                                                             \
+  if (ssm_on_heap(v))                                                          \
+  ssm_dup_unsafe(v)
+
+/** @brief Drop a reference to a possible heap item, and free it if necessary.
+ *
+ *  If @a v is freed, all references held by the heap item itself will also be
+ *  be dropped.
+ *
+ *  If the caller knows that @a v is definitely a heap item, call
+ *  ssm_drop_unsafe() to eliminate the heap check (and omit call if it is
+ *  definitely not on the heap).
+ *
+ *  @param v  #ssm_value_t to be dropped.
+ */
+#define ssm_drop(v)                                                            \
+  if (ssm_on_heap(v))                                                          \
+  ssm_drop_unsafe(v)
+
+/** @brief Duplicate a heap reference, incrementing its ref count.
+ *
+ *  Called by ssm_dup().
+ *
+ *  @note assumes that @a v is a heap pointer, i.e., `ssm_on_heap(v)`.
+ *
+ *  @param v  pointer to the #ssm_mm header of the heap item.
+ */
+#define ssm_dup_unsafe(v)                                                      \
+  do                                                                           \
+    ++(v).heap_ptr->ref_count;                                                 \
+  while (0)
+
+/** @brief Drop a reference to a heap item, and free it if necessary.
+ *
+ *  If @a v is freed, ssm_drop_final() will be called to drop all heap objects
+ *  @a v refers to.
+ *
+ *  Called by ssm_drop().
+ *
+ *  @note assumes that @a v is a heap pointer, i.e., `ssm_on_heap(v)`.
+ *
+ *  @param v  #ssm_value_t to be dropped.
+ */
+#define ssm_drop_unsafe(v)                                                     \
+  if (--(v).heap_ptr->ref_count == 0)                                          \
+  ssm_drop_final(v)
+
+/** @brief Finalize and free a heap object.
+ *
+ *  Drops all heap objects @a v refers to, and perform any additional
+ *  finalization as required by the #ssm_kind of @a v.
+ *
+ *  Called by ssm_drop_unsafe().
+ *
+ *  @note assumes that @a v is a heap pointer, i.e., `ssm_on_heap(v)`.
+ *
+ *  @param v  #ssm_value_t to be finalized and freed.
+ */
+void ssm_drop_final(ssm_value_t v);
+
+/** @} */
+
+/**
+ * @addtogroup time
+ * @{
+ */
+
+/** @brief Absolute time; never to overflow. */
+typedef uint64_t ssm_time_t;
+
+/** @brief Heap-allocated time values.
+ *
+ *  These should never be declared on their own, and should only be allocated on
+ *  the heap using ssm_new_time().
+ *
+ *  @invariant for all `struct ssm_time t`, `t.mm.kind == SSM_TIME_K`.
+ */
+struct ssm_time {
+  struct ssm_mm mm; /**< Embedded memory management header. */
+  ssm_time_t time;  /**< Time value payload. */
+};
+
+/** @brief Time indicating something will never happen.
+ *
+ *  The value of this must be derived from the underlying type of #ssm_time_t.
+ */
+#define SSM_NEVER UINT64_MAX
 
 /** Ticks per nanosecond */
 #define SSM_NANOSECOND 1L
@@ -124,390 +252,508 @@ enum ssm_error_t {
 /** Ticks per hour */
 #define SSM_HOUR (SSM_MINUTE * 60L)
 
-/** Absolute time; never to overflow. */
-typedef uint64_t ssm_time_t;
-
-/** Time indicating something will never happen
+/** @brief The current model time.
  *
- * The value of this must be derived from the type of ssm_time_t
+ *  @returns the current model time.
  */
-#define SSM_NEVER UINT64_MAX
+ssm_time_t ssm_now(void);
 
-/** Thread priority.
+/** @brief Allocate a #ssm_time on the heap.
  *
- *  Lower numbers execute first in an instant
+ *  @param time what the heap-allocated @a time field is initialized to.
+ *  @returns    #ssm_value_t pointing to the heap-allocated #ssm_time.
+ */
+ssm_value_t ssm_new_time(ssm_time_t time);
+
+/** @brief Read the heap-allocated time pointed to by an #ssm_value_t.
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that does not
+ *        point to an #ssm_time is undefined.
+ *  @note The behavior of using the result of this macro as an l-value is
+ *        undefined.
+ *
+ *  @param v  the #ssm_value_t
+ *  @returns  the #ssm_time_t in the heap.
+ */
+#define ssm_time_read(v) (container_of((v).heap_ptr, struct ssm_time, mm)->time)
+
+/** @} */
+
+/**
+ * @addtogroup act
+ * @{
+ */
+
+/** @brief Thread priority.
+ *
+ *  Lower numbers execute first in an instant.
  */
 typedef uint32_t ssm_priority_t;
 
-/** The priority for the entry point of an SSM program. */
+/** @brief The priority for the entry point of an SSM program. */
 #define SSM_ROOT_PRIORITY 0
 
-/** Index of least significant bit in a group of priorities
+/** @brief Index of least significant bit in a group of priorities
  *
- * This only needs to represent the number of bits in the ssm_priority_t type.
+ *  This only needs to represent the number of bits in the #ssm_priority_t type.
  */
 typedef uint8_t ssm_depth_t;
 
-/** The depth at the entry point of an SSM program. */
+/** @brief The depth at the entry point of an SSM program. */
 #define SSM_ROOT_DEPTH (sizeof(ssm_priority_t) * 8)
 
-struct ssm_sv;
-struct ssm_trigger;
-struct ssm_act;
-
-/** The function that does an instant's work for a routine */
+/** @brief The function that does an instant's work for a routine. */
 typedef void ssm_stepf_t(struct ssm_act *);
 
-/** Activation record for an SSM routine
-
-    Routine activation record "base class." A struct for a particular
-    routine must start with this type but then may be followed by
-    routine-specific fields.   See SSM_ACT_FIELDS
-*/
+/** @brief Activation record for an SSM routine.
+ *
+ *  Routine activation record "base class." A struct for a particular
+ *  routine must start with this type but then may be followed by
+ *  routine-specific fields.
+ */
 typedef struct ssm_act {
-  ssm_stepf_t *step;       /**< C function for running this continuation */
-  struct ssm_act *caller;  /**< Activation record of caller */
-  uint16_t pc;             /**< Stored "program counter" for the function */
-  uint16_t children;       /**< Number of running child threads */
-  ssm_priority_t priority; /**< Execution priority; lower goes first */
-  ssm_depth_t depth;       /**< Index of the LSB in our priority */
-  bool scheduled;          /**< True when in the schedule queue */
+  ssm_stepf_t *step;       /**< C function for running this continuation. */
+  struct ssm_act *caller;  /**< Activation record of caller. */
+  uint16_t pc;             /**< Stored "program counter" for the function. */
+  uint16_t children;       /**< Number of running child threads. */
+  ssm_priority_t priority; /**< Execution priority; lower goes first. */
+  ssm_depth_t depth;       /**< Index of the LSB in our priority. */
+  bool scheduled;          /**< True when in the schedule queue. */
 } ssm_act_t;
 
-/** "Base class" fields for user-defined activation records
+/** @brief Indicates a routine should run when a scheduled variable is written.
  *
- * The same fields as struct ssm_act.
- *
- * Define your own activation record types like this:
- *
- *     typedef struct {
- *        SSM_ACT_FIELDS;
- *        struct ssm_trigger trigger1;
- *        ssm_int8_t mysv;
- *     } myact_t;
- *
- */
-
-#define SSM_ACT_FIELDS     \
-  ssm_stepf_t *step;       \
-  ssm_act_t *caller;       \
-  uint16_t pc;             \
-  uint16_t children;       \
-  ssm_priority_t priority; \
-  ssm_depth_t depth;       \
-  bool scheduled          
-
-/**  Indicates a routine should run when a scheduled variable is written
- *
- * Node in linked list of activation records, maintained by each scheduled
- * variable to determine which continuations should be scheduled when the
- * variable is updated.
+ *  Node in linked list of activation records, maintained by each scheduled
+ *  variable to determine which continuations should be scheduled when the
+ *  variable is updated.
  */
 typedef struct ssm_trigger {
-  struct ssm_trigger *next;      /**< Next sensitive trigger, if any */
-  struct ssm_trigger **prev_ptr; /**< Pointer to ourself in previous list element */
-  ssm_act_t *act;           /**< Routine triggered by this channel variable */
+  struct ssm_trigger *next;      /**< Next sensitive trigger, if any. */
+  struct ssm_trigger **prev_ptr; /**< Pointer to self in previous element. */
+  struct ssm_act *act;           /**< Routine triggered by this variable. */
 } ssm_trigger_t;
 
-
-/** A variable that may have scheduled updates and triggers
+/** @brief Allocate and initialize a routine activation record.
  *
- * This is the "base class" for other scheduled variable types.
+ *  Uses the underlying memory allocator to allocate an activation record of
+ *  a given @a size, and initializes it with the rest of the fields. Also
+ *  increments the number of children that @a parent has.
  *
- * On its own, this represents a pure event variable, i.e., a
- * scheduled variable with no data/payload.  The presence of an event on
- * such a variable can be tested with ssm_event_on() as well as awaited
- * with triggers.
+ *  This function assumes that the embedded #ssm_act_t is at the beginning of
+ *  the allocated activation record. That is, it has the following layout:
  *
- * The update field must point to code that copies the new value of
- * the scheduled variable into its current value.  For pure events,
- * this function may do nothing, but the pointer must be non-zero.
+ *  ~~~{.c}
+ *  struct {
+ *    ssm_act_t act;
+ *    // Other fields
+ *  };
+ *  ~~~
  *
- * This can also be embedded in a wrapper struct/class to implement a scheduled
- * variable with a payload. In this case, the payload should also be embedded
- * in that wrapper class, and the vtable should have update/assign/later
- * methods specialized to be aware of the size and layout of the wrapper class.
+ *  @param size     the size of the routine activation record to allocate.
+ *  @param step     the step function of the routine.
+ *  @param parent   the parent (caller) of the activation record.
+ *  @param priority the priority of the activation record.
+ *  @param depth    the depth of the activation record.
+ *  @returns        the newly initialized activation record.
  *
- * An invariant:
- * `later_time` != #SSM_NEVER if and only if this variable in the event queue.
+ *  @throws SSM_EXHAUSTED_MEMORY out of memory.
  */
-typedef struct ssm_sv {
-  void (*update)(struct ssm_sv *); /**< Update "virtual method" */
-  ssm_trigger_t *triggers;    /**< List of sensitive continuations */
-  ssm_time_t later_time;       /**< When the variable should be next updated */
-  ssm_time_t last_updated;     /**< When the variable was last updated */
-} ssm_sv_t;
+ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
+                     ssm_priority_t priority, ssm_depth_t depth);
 
-
-/** Indicate writing to a variable should trigger a routine
+/** @brief Destroy the activation record of a routine before leaving.
  *
- * Add a trigger to a variable's list of triggers.
- * When the scheduled variable is written, the scheduler
- * will run the trigger's routine routine.
+ *  Calls the parent if @a act is the last child.
  *
- * If a routine calls ssm_sensitize() on a trigger, it must call
- * ssm_desensitize() on the trigger if it ever calls ssm_leave() to
- * ensure a terminated routine is never inadvertantly triggered.
+ *  @param act  the activation record of the routine to leave.
+ *  @param size the size of activation record.
  */
-extern void ssm_sensitize(ssm_sv_t *, ssm_trigger_t *);
+void ssm_leave(ssm_act_t *act, size_t size);
 
-/** Disable a sensitized routine
+/** @brief Schedule a routine to run in the current instant.
  *
- * Remove the trigger from its variable.  Only call this on
- * a previously-sensitized trigger.
+ *  This function is idempotent: it may be called multiple times on the same
+ *  activation record within an instant; only the first call has any effect.
+ *
+ *  @param act activation record of the routine to schedule.
+ *
+ *  @throws SSM_EXHAUSTED_ACT_QUEUE the activation record is full.
  */
-extern void ssm_desensitize(ssm_trigger_t *);
+void ssm_activate(ssm_act_t *act);
 
-/** Schedule a routine to run in the current instant
+/** @brief An activation record for the parent of the top-most routine.
  *
- * Enter the given activation record into the queue of activation
- * records.  This is idempotent: it may be called multiple times on
- * the same activation record within an instant; only the first call
- * has any effect.
+ *  This activation record should be used as the parent of the entry point.
+ *  For example, if the entry point is named `main`, with activation record type
+ *  `main_act_t` and step function `step_main`:
  *
- * Invokes #SSM_RESOURCES_EXHAUSTED("ssm_activate") if the activation record queue is full.
- */
-extern void ssm_activate(ssm_act_t *);
-
-/**
- * Execute a routine immediately.
- */
-static inline void ssm_call(ssm_act_t *act) { (*(act->step))(act); }
-
-/** Enter a routine
- *
- * Enter a function: allocate the activation record by invoking
- * #SSM_ACT_MALLOC, set up the function and
- * program counter value, and remember the caller.
- *
- * Invokes #SSM_RESOURCES_EXHAUSTED("ssm_enter") if allocation fails.
- *
- */
-static inline ssm_act_t *ssm_enter(size_t bytes, /**< size of the activation record, >0 */
-				   ssm_stepf_t *step, /**< Pointer to "step" function, non-NULL */
-				   ssm_act_t *parent, /**< Activation record of caller, non-NULL */
-				   ssm_priority_t priority, /**< Priority: must be no less than parent's */
-				   ssm_depth_t depth /**< Depth; used if this routine has children */
-							     ) {
-  assert(bytes > 0);
-  assert(step);
-  assert(parent);
-  ++parent->children;
-  ssm_act_t *act = (ssm_act_t *)SSM_ACT_MALLOC(bytes);
-  if (!act) SSM_THROW(SSM_EXHAUSTED_MEMORY);
-  *act = (ssm_act_t){
-      .step = step,
-      .caller = parent,
-      .pc = 0,
-      .children = 0,
-      .priority = priority,
-      .depth = depth,
-      .scheduled = false,
-  };
-  return act;
-}
-
-/**
- * Deallocate an activation record; return to caller if we were the last child.
- */
-static inline void ssm_leave(ssm_act_t *act, size_t bytes) {
-  assert(act);
-  assert(act->caller);
-  assert(act->caller->step);
-  ssm_act_t *caller = act->caller;
-  SSM_ACT_FREE(act, bytes); /* Free the whole activation record, not just the start */
-  if ((--caller->children) == 0)
-    ssm_call(caller); /* If we were the last child, run our parent */
-}
-
-/** Return true if there is an event on the given variable in the current instant
- */
-bool ssm_event_on(ssm_sv_t *var /**< Variable: must be non-NULL */ );
-
-/** Initialize a scheduled variable
- *
- * Call this to initialize the contents of a newly allocated scheduled
- * variable, e.g., after ssm_enter()
- */
-void ssm_initialize(ssm_sv_t *var,
-		    void (*update)(ssm_sv_t *));
-
-/** Schedule a future update to a variable
- *
- * Add an event to the global event queue for the given variable,
- * replacing any pending event.
- */
-void ssm_schedule(ssm_sv_t *var, /**< Variable to schedule: non-NULL */
-		  ssm_time_t later
-		  /**< Event time; must be in the future (greater than #now) */);
-
-/** Unschedule any pending event on a variable
- *
- * If there is a pending event on the given variable, remove the event
- * from the queue.  Nothing happens if the variable does not have a
- * pending event.
- */
-void ssm_unschedule(ssm_sv_t *var);
-
-/** Activate routines triggered by a variable
- *
- * Call this when a scheduled variable is assigned in the current instant
- * (i.e., not scheduled)
- *
- * The given priority should be that of the routine doing the update.
- * Instantaneous assignment can only activate lower-priority (i.e., later)
- * routines in the same instant.
- */
-void ssm_trigger(ssm_sv_t *var, /**< Variable being assigned */
-		 ssm_priority_t priority
-		 /**< Priority of the routine doing the assignment. */
-		 );
-
-/** Return the time of the next event in the queue or #SSM_NEVER
- *
- * Typically used by the platform code that ultimately invokes ssm_tick().
- */
-ssm_time_t ssm_next_event_time(void);
-
-/** Return the current model time */
-ssm_time_t ssm_now(void);
-
-/** Run the system for the next scheduled instant
- *
- * Typically run by the platform code, not the SSM program per se.
- *
- * Advance #now to the time of the earliest event in the queue, if any.
- *
- * Remove every event at the head of the event queue scheduled for
- * #now, update the variable's current value by calling its
- * (type-specific) update function, and schedule all the triggers in
- * the activation queue.
- *
- * Remove the activation record in the activation record queue with the
- * lowest priority number and execute its "step" function.
- */
-void ssm_tick();
-
-/** Reset the scheduler.
- *
- *  Set now to 0; clear the event and activation record queues.  This
- *  does not need to be called before calling ssm_tick() for the first
- *  time; the global state automatically starts initialized.
- */
-void ssm_reset();
-
-/** An activation record for the parent of the topmost routine
- *
- * When you are starting up your SSM system, pass a pointer to this as
- * the parent of your topmost function.  E.g., if `main` is your topmost
- * function and your `enter_main()` function takes its parent as the first
- * argument,
- *
- * ~~~{.c}
- * main_act_t *enter_main(ssm_act_t *, ssm_priority_t, ssm_depth_t);
- * void step_main(ssm_act_t *act);
- *
- * enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
- * ~~~
- *
- * Here, `enter_main()` should cause ssm_enter() to be called with
- *
- * ~~~{.c}
- * ssm_enter(sizeof(main_act_t), step_main, &ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
- * ~~~
+ *  ~~~{.c}
+ *  ssm_enter(sizeof(main_act_t), step_main, &ssm_top_parent,
+ *            SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
+ *  ~~~
  */
 extern ssm_act_t ssm_top_parent;
 
+/** @} */
 
 /**
- * Implementation of container_of that falls back to ISO C99 when GNU C is not
- * available (from https://stackoverflow.com/a/10269925/10497710)
+ * @addtogroup sv
+ * @{
+ */
+
+/** @brief A scheduled variable that supports scheduled updates with triggers.
+ *
+ *  Scheduled variables are heap-allocated built-in types that represent
+ *  variables with reference-like semantics in SSM. These should be always
+ *  allocated on the heap using ssm_new_sv().
+ *
+ *  Routines may directly assign to them in the current instant (ssm_assign()),
+ *  or schedule a delayed assignment to them (ssm_later()). The @a last_updated
+ *  time is recorded in each case, sensitive routines, i.e., @a triggers, are
+ *  woken up.
+ *
+ *  At most one delayed assignment may be scheduled at a time, but a single
+ *  update may wake any number of sensitive routines.
+ *
+ *  @invariant @a later_time != #SSM_NEVER iff this variable in the event queue.
+ *  @invariant for all `ssm_sv_t v`, `v.mm.kind == SSM_SV_K`.
+ */
+typedef struct ssm_sv {
+  struct ssm_mm mm;
+  ssm_time_t later_time;   /**< When the variable should be next updated. */
+  ssm_time_t last_updated; /**< When the variable was last updated. */
+  ssm_trigger_t *triggers; /**< List of sensitive continuations. */
+  ssm_value_t value;       /**< Current value. */
+  ssm_value_t later_value; /**< Buffered value for delayed assignment. */
+} ssm_sv_t;
+
+/** @brief Allocate an #ssm_sv on the heap.
+ *
+ *  @note Initialization does not count as an update event; @a last_updated is
+ *        initialized to #SSM_NEVER.
+ *  @note The @a later_value field is left uninitialized.
+ *
+ *  @param val  the initial value of the scheduled variable.
+ *  @returns    #ssm_value_t pointing to the #ssm_sv on the heap.
+ */
+ssm_value_t ssm_new_sv(ssm_value_t val);
+
+/** @brief Retrieve #ssm_sv pointer pointed to by an #ssm_value_t.
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that does not
+ *        point to a scheduled variable is undefined.
+ *
+ *  @param val  the #ssm_value_t
+ *  @returns    pointer to the #ssm_sv_t
+ */
+#define ssm_to_sv(val) container_of((val).heap_ptr, ssm_sv_t, mm)
+
+/** @brief Read the value of a scheduled variable.
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that does not
+ *        point to a scheduled variable is undefined.
+ *  @note The behavior of using the result of this macro as an l-value is
+ *        undefined. To assign to a scheduled variable, use ssm_assign() or
+ *        ssm_later().
+ *
+ *  @param val  #ssm_value_t that points to a scheduled variable.
+ *  @returns    the value that @a val points to.
+ */
+#define ssm_deref(val) (ssm_to_sv(val)->value)
+
+/** @brief Instantaneous assignment to a scheduled variable.
+ *
+ *  Updates the value of @a var in the current instant, and wakes up all
+ *  sensitive processes at a lower priority than the calling routine.
+ *
+ *  ssm_assign() will ssm_drop() the previous value of @a var and ssm_dup() the
+ *  new @a val. If the caller already knows whether @a var and @a val reside on
+ *  the heap, they may call ssm_assign_unsafe() to forego the ssm_drop() and
+ *  ssm_dup() calls, but will be responsible for reference counting themselves
+ *  (i.e., calling ssm_dup_unsafe() and ssm_drop_unsafe() for heap objects).
+ *
+ *  @note Does not overwrite a scheduled assignment.
+ *  @note The behavior of this macro when @a var does not point to a scheduled
+ *        variable is undefined.
+ *
+ *  @param var  pointer to the scheduled variable.
+ *  @param prio priority of the calling routine.
+ *  @param val  the value to be assigned to @a var.
+ */
+#define ssm_assign(var, prio, val)                                             \
+  do {                                                                         \
+    ssm_dup(val);                                                              \
+    ssm_drop(ssm_deref(var));                                                  \
+    ssm_sv_assign_unsafe(ssm_to_sv(var), prio, val);                           \
+  } while (0)
+
+/** @brief Delayed assignment to a scheduled variable.
+ *
+ *  Schedules a delayed assignment to @a var at a later time.
+ *
+ *  ssm_later() will ssm_dup() the scheduled @a val. If the caller already
+ *  knows whether @a val resides on the heap, they may call ssm_later_unsafe()
+ *  to forego the ssm_dup(), but will be responsible for reference counting
+ *  themselves (i.e., calling ssm_dup_unsafe() for heap objects).
+ *
+ *  Overwrites any previously scheduled update, if any.
+ *
+ *  @note The behavior of this macro when @a var does not point to a scheduled
+ *        variable is undefined.
+ *
+ *  @param var  pointer to the scheduled variable.
+ *  @param when the time when the update should take place.
+ *  @param val  the value to be assigned to @a var.
+ *
+ *  @throws SSM_INVALID_TIME          @a later is greater than ssm_now().
+ *  @throws SSM_EXHAUSTED_EVENT_QUEUE event queue ran out of space.
+ */
+#define ssm_later(var, when, val)                                              \
+  do {                                                                         \
+    ssm_dup(val);                                                              \
+    ssm_sv_later_unsafe(ssm_to_sv(var), when, val);                            \
+  } while (0)
+
+/** @brief ssm_assign() without automatic reference counting.
+ *
+ *  @note Does not overwrite a scheduled assignment.
+ *
+ *  @param var  pointer to the scheduled variable.
+ *  @param prio priority of the calling routine.
+ *  @param val  the value to be assigned to @a var.
+ *
+ *  @sa ssm_assign().
+ */
+void ssm_sv_assign_unsafe(ssm_sv_t *var, ssm_priority_t prio, ssm_value_t val);
+
+/** @brief ssm_later() without automatic reference counting.
+ *
+ *  Overwrites any previously scheduled update, if ssm_laterr
+ *
+ *  @note ssm_drop() <em>will</em> be called on the previous @a later_value,
+ *        so the caller is not responsible for checking that.
+ *
+ *  @param var  pointer to the scheduled variable.
+ *  @param when the time when the update should take place.
+ *  @param val  the value to be assigned to @a var.
+ *
+ *  @throws SSM_INVALID_TIME          @a later is greater than ssm_now().
+ *  @throws SSM_EXHAUSTED_EVENT_QUEUE event queue ran out of space.
+ *
+ *  @sa ssm_later().
+ */
+void ssm_sv_later_unsafe(ssm_sv_t *var, ssm_time_t when, ssm_value_t val);
+
+/** @brief Sensitize a trigger to a scheduled variable.
+ *
+ *  Macro provided for convenience.
+ *
+ *  @sa ssm_sv_sensitize().
+ *
+ *  @param var  #ssm_value_t pointing to a scheduled variable.
+ *  @param trig  trigger to be registered on @a var.
+ */
+#define ssm_sensitize(var, trig) ssm_sv_sensitize(ssm_to_sv(var), trig)
+
+/** @brief Desensitize a trigger.
+ *
+ *  Macro provided for convenience.
+ *
+ *  @sa ssm_sv_desensitize().
+ *
+ *  @param trig  the trigger.
+ */
+#define ssm_desensitize(trig) ssm_sv_desensitize(trig)
+
+/** @brief Sensitize a variable to a trigger.
+ *
+ *  Adds a trigger to a scheduled variable, so that @a trig's activation
+ *  record is awoken when the variable is updated.
+ *
+ *  This function should be called by a routine before sleeping (yielding).
+ *
+ *  @param var  pointer to the scheduled variable.
+ *  @param trig trigger to be registered on @a var.
+ */
+void ssm_sv_sensitize(ssm_sv_t *var, ssm_trigger_t *trig);
+
+/** @brief Desensitize a variable from a trigger.
+ *
+ *  Remove a trigger from its variable.
+ *
+ *  This function should be called by a routine after returning from sleeping.
+ *
+ *  @param trig the trigger.
+ */
+void ssm_sv_desensitize(ssm_trigger_t *trig);
+
+/** @} */
+
+/**
+ * @addtogroup adt
+ * @{
+ */
+
+/** @brief The struct template of a heap-allocated ADT object.
+ *
+ *  This ADT struct is meant to be used as a template for performing other
+ *  ADT-related pointer arithmetic; no instance of this should ever be declared.
+ *
+ *  Though this struct's @a fields is only declared with 1 #ssm_value_t, actual
+ *  heap-allocated ADT objects may have more fields. For instance, an object
+ *  with 3 fields might look like:
+ *
+ *  ~~~{.c}
+ *  struct ssm_adt3 {
+ *    struct ssm_mm mm;
+ *    ssm_value_t fields[3];
+ *  };
+ *  ~~~
+ *
+ *  Note that the memory layout of all ADTs is the same save for the length of
+ *  the @a fields, so we use this struct definition as the "base case" of ADT
+ *  object lengths.
+ */
+struct ssm_adt1 {
+  struct ssm_mm mm;
+  ssm_value_t fields[1];
+};
+
+/** @brief Allocate a new ADT object on the heap.
+ *
+ *  @note This function fully initializes the #ssm_mm header of the ADT object,
+ *        but leaves its fields uninitialized. It is the responsibility of the
+ *        caller to properly <em>all</em> @a val_count fields.
+ *
+ *  @param val_count  the number of fields in the ADT object.
+ *  @param tag        the tag of the ADT object, stored in the #ssm_mm header.
+ *  @returns          #ssm_value_t poining to the ADT object on the heap.
+ */
+ssm_value_t ssm_new_adt(uint8_t val_count, uint8_t tag);
+
+/** @brief Access the field of an ADT object.
+ *
+ *  The result of this macro can also be used as an l-value, i.e., it may be
+ *  assigned to, e.g.,:
+ *
+ *  ~~~{.c}
+ *  ssm_adt_field(v, 0) = ssm_marshal(1);
+ *  ~~~
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that does not
+ *        point to an ADT object of sufficient size (@a val_count greater than
+ *        @a i) is undefined.
+ *
+ *  @param v  the #ssm_value_t pointing to a heap-allocated ADT object.
+ *  @param i  the 0-base index of the field in @a v to be accessed.
+ *  @returns  the @a i'th field of @a v.
+ */
+#define ssm_adt_field(v, i)                                                    \
+  (&*container_of((v).heap_ptr, struct ssm_adt1, mm)->fields)[i]
+
+/** @brief Retrieve the tag of an ADT object.
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that points to
+ *        anything other than an ADT object is undefined.
+ *
+ *  @param v  the #ssm_value_t whose tag is being retrieved.
+ *  @returns  the tag of @a v.
+ */
+#define ssm_tag(v) (ssm_on_heap(v) ? (v).heap_ptr->tag : ssm_unmarshal(v))
+
+/** @} */
+
+/**
+ * @addtogroup mem
+ * @{
+ */
+
+/** @brief Allocate a contiguous range of memory.
+ *
+ *  Memory will be allocated from an appropriately sized memory pool, if one is
+ *  available. Guaranteed to be aligned against the smallest power of 2 greater
+ *  than @a size.
+ *
+ *  @param size   the requested memory range size, in bytes.
+ *  @returns      pointer to the first byte of the allocate memory block.
+ */
+void *ssm_mem_alloc(size_t size);
+
+/** @brief Preallocate memory pages to ensure capacity in memory pools.
+ *
+ *  Does nothing if no memory pool will fit a block of @a size.
+ *
+ *  @param size       size whose memory pool should be preallocaed pages.
+ *  @param num_pages  number of pages to allocate.
+ */
+void ssm_mem_prealloc(size_t size, size_t num_pages);
+
+/** @brief Deallocate memory allocated by ssm_mem_alloc().
+ *
+ *  The behavior of freeing memory not allocated by ssm_mem_alloc() is
+ *  undefined.
+ *
+ *  @param m      pointer to the memory range allocated by ssm_mem_alloc().
+ *  @param size   the size of the memory range allocated by ssm_mem_alloc().
+ */
+void ssm_mem_free(void *m, size_t size);
+
+/** @} */
+
+/** @ingroup util
+ *  @def member_type
+ *  @brief Obtain the type of a struct member.
+ *
+ *  Intended for use in #container_of, for type safety.
+ *
+ *  When GNU C is not available, falls back to ISO C99 and returns `const void`
+ *  (see https://stackoverflow.com/a/10269925/10497710).
+ *
+ *  For instance, given the following struct definition:
+ *
+ *  ~~~{.c}
+ *  struct foo { int bar; float baz; };
+ *  ~~~
+ *
+ *  `member_type(struct foo, baz)` expands to `float`.
+ *
+ *  @param type   the struct type.
+ *  @param member the name of the member in @a type.
+ *  @returns      the type of @a member in @a type.
  */
 #ifdef __GNUC__
 #define member_type(type, member) __typeof__(((type *)0)->member)
 #else
 #define member_type(type, member) const void
 #endif
+
+/** @ingroup util
+ *  @brief Obtain the pointer to an outer, enclosing struct.
+ *
+ *  For example, with the following struct definition:
+ *
+ *  ~~~{.c}
+ *  struct foo { int bar; float baz; };
+ *  ~~~
+ *
+ *  Given some `float *p`, `container_of(p, struct foo, baz)` will return
+ *  a pointer to the enclosing `struct foo`. The caller is responsible for
+ *  ensuring that such an enclosing pointer actually exists.
+ *
+ *  Use this macro instead of pointer casting or pointer arithmetic; this macro
+ *  is more principled in what it does and, with GNU C support, will trigger
+ *  compiler warnings when @a ptr and the @a member type do not agree.
+ *
+ *  Adapted from the Linux kernel source
+ *  (see https://stackoverflow.com/a/10269925/10497710).
+ *
+ *  @param ptr    pointer to member.
+ *  @param type   type of enclosing struct.
+ *  @param member name of member in enclosing struct.
+ *  @returns      pointer to enclosing struct.
+ */
 #define container_of(ptr, type, member)                                        \
   ((type *)((char *)(member_type(type, member) *){ptr} -                       \
             offsetof(type, member)))
-
-typedef struct { ssm_sv_t sv; } ssm_event_t;
-#define ssm_later_event(var, then) ssm_schedule(&(var)->sv, (then))
-extern void ssm_assign_event(ssm_event_t *var, ssm_priority_t prio);
-extern void ssm_initialize_event(ssm_event_t *);
-
-
-#define SSM_DECLARE_SV_SCALAR(payload_t)                                       \
-  typedef struct {                                                             \
-    ssm_sv_t sv;                                                          \
-    payload_t value;       /* Current value */                                 \
-    payload_t later_value; /* Buffered value */                                \
-  } ssm_##payload_t##_t;                                                       \
-  void ssm_assign_##payload_t(ssm_##payload_t##_t *sv, ssm_priority_t prio,    \
-                          const payload_t value);                              \
-  void ssm_later_##payload_t(ssm_##payload_t##_t *sv, ssm_time_t then,         \
-                         const payload_t value);                               \
-  void ssm_initialize_##payload_t(ssm_##payload_t##_t *v);
-
-#define SSM_DEFINE_SV_SCALAR(payload_t)                                        \
-  static void ssm_update_##payload_t(ssm_sv_t *sv) {                      \
-    ssm_##payload_t##_t *v = container_of(sv, ssm_##payload_t##_t, sv);        \
-    v->value = v->later_value;                                                 \
-  }                                                                            \
-  void ssm_assign_##payload_t(ssm_##payload_t##_t *v, ssm_priority_t prio,     \
-                              const payload_t value) {                         \
-    v->value = value;					                       \
-    v->sv.last_updated = ssm_now();			  		       \
-    ssm_trigger(&v->sv, prio);                                                 \
-  }                                                                            \
-  void ssm_later_##payload_t(ssm_##payload_t##_t *v, ssm_time_t then,          \
-                         const payload_t value) {                              \
-    v->later_value = value;                                                    \
-    ssm_schedule(&v->sv, then);					               \
-  }		 	 						       \
-  void ssm_initialize_##payload_t(ssm_##payload_t##_t *v) {                    \
-    ssm_initialize(&v->sv, ssm_update_##payload_t);	     	               \
-  }
- 
-typedef int8_t   i8;   /**< 8-bit Signed Integer */
-typedef int16_t  i16;  /**< 16-bit Signed Integer */
-typedef int32_t  i32;  /**< 32-bit Signed Integer */
-typedef int64_t  i64;  /**< 64-bit Signed Integer */
-typedef uint8_t  u8;   /**< 8-bit Unsigned Integer */
-typedef uint16_t u16;  /**< 16-bit Unsigned Integer */
-typedef uint32_t u32;  /**< 32-bit Unsigned Integer */
-typedef uint64_t u64;  /**< 64-bit Unsigned Integer */
-
-/** \struct ssm_bool_t
-    Scheduled Boolean variable */
-/** \struct ssm_i8_t
-    Scheduled 8-bit Signed Integer variable */
-/** \struct ssm_i16_t
-    Scheduled 16-bit Signed Integer variable */
-/** \struct ssm_i32_t
-    Scheduled 32-bit Signed Integer variable */
-/** \struct ssm_i64_t
-    Scheduled 64-bit Signed Integer variable */
-/** \struct ssm_u8_t
-    Scheduled 8-bit Unsigned Integer variable */
-/** \struct ssm_u16_t
-    Scheduled 16-bit Unsigned Integer variable */
-/** \struct ssm_u32_t
-    Scheduled 32-bit Unsigned Integer variable */
-/** \struct ssm_u64_t
-    Scheduled 64-bit Unsigned Integer variable */
-
-SSM_DECLARE_SV_SCALAR(bool)
-SSM_DECLARE_SV_SCALAR(i8)
-SSM_DECLARE_SV_SCALAR(i16)
-SSM_DECLARE_SV_SCALAR(i32)
-SSM_DECLARE_SV_SCALAR(i64)
-SSM_DECLARE_SV_SCALAR(u8)
-SSM_DECLARE_SV_SCALAR(u16)
-SSM_DECLARE_SV_SCALAR(u32)
-SSM_DECLARE_SV_SCALAR(u64)
-
-/** @} */
 
 #endif
