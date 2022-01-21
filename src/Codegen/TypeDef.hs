@@ -1,8 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
-
 module Codegen.TypeDef where
 
-import Codegen.Identifiers
+import Codegen.LibSSM
 import Common.Identifiers
   ( DConId,
     TConId,
@@ -121,7 +120,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
                   where
                     tagBits = length intDCons
                 ptrTagFunc :: C.Exp -> C.Exp
-                ptrTagFunc v = [cexp|($exp:v.$id:mm.tag)|]
+                ptrTagFunc = adt_tag -- [cexp|($exp:v.$id:mm.tag)|]
                 isInt v = [cexp| (($exp:v) & 0x1 == 0x1) |]
                 tagFunc cond a b = [cexp| (($exp:cond) ? ($exp:a) : ($exp:b)) |]
             initVals = M.fromList intInitVals
@@ -132,9 +131,9 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
 
             pFields = M.fromList $ zip (fst <$> intgrs) (repeat accessField)
               where
-                accessField :: (C.Exp -> Int -> C.Exp)
-                accessField nm index =
-                  [cexp|$exp:(ssm_to_obj nm)->$id:payload[$uint:index] |]
+                accessField :: C.Exp -> Int -> C.Exp
+                accessField = adt_field
+                  -- [cexp|$exp:(ssm_to_obj nm)->$id:payload[$uint:index] |]
 
     dConSize :: (DConId, L.TypeVariant L.Type) -> Int
     dConSize (_, L.VariantNamed fields) = sum $ fieldSize . snd <$> fields
