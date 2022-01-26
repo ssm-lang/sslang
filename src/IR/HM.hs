@@ -327,10 +327,13 @@ initTypeVars e@(I.Data d _) = do
         $  "Unable to type ADT expression: "
         ++ show e
     Just t' -> return $ I.Data d t'
-initTypeVars (I.App a@(I.Data _ _) b _) = do
+initTypeVars (I.App a@(I.Data _ _) b annT) = do
+  let annT' = collapseAnnT annT
   a' <- initTypeVars a
   b' <- initTypeVars b
-  return $ I.App a' b' (extract a')
+  tout <- fresh
+  t <- typeCheck annT' tout
+  return $ I.App a' b' t
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
   a'   <- initTypeVars a
@@ -534,10 +537,6 @@ getType e@(I.Data d                   _) = do
         $  "Unable to type ADT expression: "
         ++ show e
     Just t' -> return $ I.Data d t'
-getType (I.App a@(I.Data _ _) b _) = do
-  a' <- getType a
-  b' <- getType b
-  return $ I.App a' b' (extract a')
 getType (I.App a b t) = do
   a' <- getType a
   b' <- getType b
@@ -607,8 +606,9 @@ solveType (Classes.TBuiltin (Arrow t1 t2)) = do
   t1' <- solveType t1
   t2' <- solveType t2
   return $ Classes.TBuiltin $ Arrow t1' t2'
+solveType t@(Classes.TCon (I.TConId _) _) = return t
 solveType t =
-  throwError $ Compiler.TypeError $ fromString $ "Solve Type error" ++ show t
+  throwError $ Compiler.TypeError $ fromString $ "Solve Type error " ++ show t
 
 -- | 'findRoot' @t@ finds the root of @t@ inside 'unionFindTree'.
 findRoot :: Classes.Type -> InferFn Classes.Type

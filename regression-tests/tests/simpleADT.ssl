@@ -10,6 +10,8 @@ type MyBool
 main ( cout : & Int ) -> () =
   let a = 78
   let b = (MyTrue 999)
-//  let c = (My False 949 38) //doesn't work yet
-//  let d = Leaf //doesn't work yet
+  let c = (MyFalse 949 38) 
+  let d = Leaf 
+  let e = OneChild 777 Leaf
+  // let f = OneChild 888 e //doesn't work yet
   after 10 , (cout : & Int) <- a
