@@ -123,7 +123,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       intInitVals = intInitVal . fst <$> intgrs
        where
         intInitVal :: DConId -> (DConId, C.Exp)
-        intInitVal tg = (tg, [cexp|(($id:tg << 1)&0x1)|])
+        intInitVal tg = (tg, marshal [cexp|$id:tg|])
 
       pFields = M.fromList $ zip (fst <$> intgrs) (repeat accessField)
        where
