@@ -37,9 +37,7 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( fromId
-                                                , ident
-                                                )
+import           Common.Identifiers             ( fromId )
 import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
@@ -216,11 +214,11 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
   let genAdt = (\acc adt -> acc <> genTypeDef adt)
   in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
-      in      --  if null typedefs
+      in       --  if null typedefs
           --  then error "where are all the ADT definitions???? "
           --  else
           do
-                                -- p@I.Program
+                                    -- p@I.Program
             (cdecls, cdefs) <-
               bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
             return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
@@ -492,25 +490,13 @@ genExpr a@(I.App _ _ ty) = do
         Just False -> fail "Cannot handle integer types with fields yet"
         Just True  -> do
           tmpName <- nextTmp dty
-          let tmp = [cexp|$id:acts->$id:tmpName|]
-          case M.lookup tg (dconType info) of
-            Nothing -> do
-              let theMap = show (M.toList (dconType info))
-              fail
-                (  "couldn't find "
-                ++ ident tg
-                ++ "in the lookup table!\n"
-                ++ theMap
-                )
-            --Just typ -> do
-            Just _ -> do
-
-              -- let (Just typ) = M.lookup tg (dconType info)
-            --  let (Just sz)  = M.lookup typ (typeSize info)
-              let alloc      = undefined -- [[citem|$exp:tmp = $id:ssm_new($int:sz,$id:tg);|]]
-              let initField  = undefined -- (\y i -> undefined) -- [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
-              let initFields = zipWith initField argVals [0 :: Int, 1 ..]
-              return (undefined tmp, concat evalStms ++ alloc ++ initFields)
+          let tmp        = [cexp|$id:acts->$id:tmpName|]
+          let Just typ   = M.lookup tg (dconType info)
+          let Just sz    = M.lookup typ (typeSize info)
+          let alloc      = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
+          let initField  = \y i -> [citem|$exp:(adt_field tmp i) = $exp:y;|]
+          let initFields = zipWith initField argVals [0 :: Int, 1 ..]
+          return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr I.Match{}       = nope
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
@@ -657,11 +643,11 @@ genPrimOp I.PrimNeg [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|- $exp:val|], stms)
 genPrimOp I.PrimBitAnd [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <- 
+  ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal & $exp:rhsVal|], stms)
 genPrimOp I.PrimBitOr [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <- 
+  ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal | $exp:rhsVal|], stms)
 genPrimOp I.PrimBitNot [opr] _ = do

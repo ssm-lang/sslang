@@ -33,6 +33,7 @@ TODO:
 {-# LANGUAGE BlockArguments #-}
 module IR.HM where
 
+import           Data.Bifunctor                 ( second )
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 
@@ -42,14 +43,9 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Classes
 
-import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , int
-                                                , unit
-                                                , void
-                                                )
 import           Common.Identifiers             ( Binder
-                                                , TVarId(..)
                                                 , Identifier(..)
+                                                , TVarId(..)
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
@@ -64,13 +60,21 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 , replicateM
                                                 )
+import           IR.Types.TypeSystem            ( Builtin(..)
+                                                , TypeDef(TypeDef)
+                                                , int
+                                                , unit
+                                                , variants
+                                                , void
+                                                )
 
 -- | Inference State.
 data InferState = InferState
-  { varMap :: M.Map I.VarId Classes.Scheme
-  , equations :: [(Classes.Type, Classes.Type)]
+  { varMap        :: M.Map I.VarId Classes.Scheme
+  , equations     :: [(Classes.Type, Classes.Type)]
   , unionFindTree :: M.Map Classes.Type Classes.Type
-  , count :: Int
+  , count         :: Int
+  , dConMap       :: M.Map I.DConId Classes.Type
   }
 
 -- | Inference Monad.
@@ -84,30 +88,53 @@ newtype InferFn a = InferFn (StateT InferState Compiler.Pass a)
 
 -- | Run a InferFn computation.
 runInferFn :: InferFn a -> Compiler.Pass a
-runInferFn (InferFn m) = evalStateT m InferState { unionFindTree = M.empty
-                                                 , varMap = M.empty
-                                                 , count = 0
-                                                 , equations = [] }
+runInferFn (InferFn m) = evalStateT
+  m
+  InferState { unionFindTree = M.empty
+             , varMap        = M.empty
+             , count         = 0
+             , equations     = []
+             , dConMap       = M.empty
+             }
 
--- | 'inferProgram' @p@ infers the type of all the programDefs of the given porgram @p@.
+-- | 'inferProgram' @p@ infers the type of all the programDefs of the given program @p@.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
-  defs' <- inferProgramDefs $ I.programDefs p
+  typeDefs' <- recordADTs $ I.typeDefs p
+  defs'     <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
-                     , I.typeDefs     = [] }
+                     , I.typeDefs     = typeDefs'
+                     }
+
+-- | 'recordADTs' saves the type of each data constructor in the Inference State for future use
+recordADTs
+  :: [(I.TConId, TypeDef Ann.Type)]
+  -> InferFn [(I.TConId, TypeDef Classes.Type)]
+recordADTs defs = do
+  mapM_ recordADT defs
+  return $ second (fmap collapseAnnT) <$> defs
+ where
+  recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
+  recordADT (tcon, TypeDef { variants = vars }) =
+    mapM_ (insertType tcon . fst) vars
+  -- save type of DCon as a (DCon,TCon) key-value pair
+  insertType :: I.TConId -> I.DConId -> InferFn ()
+  insertType t d =
+    modify $ \st -> st { dConMap = M.insert d (Classes.TCon t []) $ dConMap st }
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
-inferProgramDefs :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
-inferProgramDefs [] = return []
-inferProgramDefs ((v, e):xs) = do
+inferProgramDefs
+  :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
+inferProgramDefs []            = return []
+inferProgramDefs ((v, e) : xs) = do
   e' <- initTypeVars e
   unifyAll
   e'' <- getType e'
-  s <- generalize $ extract e''
+  s   <- generalize $ extract e''
   insertVar v s
   xs' <- inferProgramDefs xs
-  return $ (v, e''):xs'
+  return $ (v, e'') : xs'
 
 -- | Class of things that may contain free type variables.
 class HasFreeTVars a where
@@ -126,16 +153,16 @@ instance HasFreeTVars Classes.Scheme where
 
 instance HasFreeTVars Classes.Type where
   freeTVars (Classes.TBuiltin b) = freeTVars b
-  freeTVars (Classes.TCon _ ts)  = freeTVars ts
-  freeTVars (Classes.TVar n)     = S.singleton n
+  freeTVars (Classes.TCon _ ts ) = freeTVars ts
+  freeTVars (Classes.TVar n    ) = S.singleton n
 
 instance HasFreeTVars t => HasFreeTVars (Builtin t) where
-  freeTVars Unit         = S.empty
-  freeTVars Void         = S.empty
-  freeTVars (Ref t     ) = freeTVars t
-  freeTVars (Arrow l r ) = S.union (freeTVars l) (freeTVars r)
-  freeTVars (Tuple tys ) = freeTVars tys
-  freeTVars (Integral _) = S.empty
+  freeTVars Unit           = S.empty
+  freeTVars Void           = S.empty
+  freeTVars (Ref t       ) = freeTVars t
+  freeTVars (Arrow l r   ) = S.union (freeTVars l) (freeTVars r)
+  freeTVars (Tuple    tys) = freeTVars tys
+  freeTVars (Integral _  ) = S.empty
 
 instance HasFreeTVars a => HasFreeTVars [a] where
   -- | Lifts 'freeTVars' to lists.
@@ -150,7 +177,8 @@ instantiate :: Classes.Scheme -> InferFn Classes.Type
 instantiate (Classes.Forall ns t) = do
   ns' <- mapM (const fresh) ns
   withNewTypeScope do
-    modify $ \st -> st { unionFindTree = M.fromList (zip (map Classes.TVar ns) ns') }
+    modify $ \st ->
+      st { unionFindTree = M.fromList (zip (map Classes.TVar ns) ns') }
     solveType t
 
 {- | Generalizes the type @t@ into a type scheme given the typing context @ctx@.
@@ -162,16 +190,18 @@ is leftover can be generalized into a type scheme.
 -}
 generalize :: Classes.Type -> InferFn Classes.Scheme
 generalize t = do
-  vm <- gets varMap
+  vm  <- gets varMap
   uft <- gets unionFindTree
-  let vs = S.toList $ S.difference (freeTVars t) $ S.union (freeTVars (M.elems uft)) (freeTVars (M.elems vm))
+  let vs = S.toList $ S.difference (freeTVars t) $ S.union
+        (freeTVars (M.elems uft))
+        (freeTVars (M.elems vm))
   return $ Classes.Forall vs t
 
 -- | 'letters' represents list of identifiers to be used to construct free type
 -- variables assigned during type inference. The leading '_' distinguish them
 -- from user-annotated type variables.
 letters :: [String]
-letters = map ('_':) $ [1 ..] >>= flip replicateM ['a' .. 'z']
+letters = map ('_' :) $ [1 ..] >>= flip replicateM ['a' .. 'z']
 
 -- | @dummyAnnT@ represents empty type annotation list.
 dummyAnnT :: Classes.Type
@@ -182,12 +212,16 @@ fresh :: InferFn Classes.Type
 fresh = do
   n <- gets count
   let t = Classes.TVar $ TVarId $ Identifier (letters !! n)
-  modify $ \st -> st { count = n+1 }
+  modify $ \st -> st { count = n + 1 }
   return t
 
 -- | 'lookupVar' @v@ looks up the type scheme of a variable in the current 'varMap' given its variable ID @v@.
 lookupVar :: I.VarId -> InferFn (Maybe Classes.Scheme)
 lookupVar v = M.lookup v <$> gets varMap
+
+-- | Look up the type of a data constructor in the inference state.
+lookupDCon :: I.DConId -> InferFn (Maybe Classes.Type)
+lookupDCon d = M.lookup d <$> gets dConMap
 
 -- | 'insertVar' @v t@ Insert a variable ID and its type scheme into current 'varMap'.
 insertVar :: I.VarId -> Classes.Scheme -> InferFn ()
@@ -195,7 +229,7 @@ insertVar v t = modify $ \st -> st { varMap = M.insert v t $ varMap st }
 
 -- | 'insertBinder' is a wrapper of 'insertVar' for 'Binder' type.
 insertBinder :: Binder -> Classes.Scheme -> InferFn ()
-insertBinder Nothing _ = return ()
+insertBinder Nothing    _ = return ()
 insertBinder (Just vid) t = insertVar vid t
 
 -- | 'insertEquation' @e@ inserts @e@ into the current 'equations' list.
@@ -204,13 +238,14 @@ insertEquation e = modify $ \st -> st { equations = e : equations st }
 
 -- | 'insertUnion' @t1 t2@ inserts @t1 : t2@ into the current 'unionFindTree'.
 insertUnion :: Classes.Type -> Classes.Type -> InferFn ()
-insertUnion t1 t2 = modify $ \st -> st { unionFindTree = M.insert t1 t2 $ unionFindTree st}
+insertUnion t1 t2 =
+  modify $ \st -> st { unionFindTree = M.insert t1 t2 $ unionFindTree st }
 
 -- | Helper function to support local modificaton of 'varMap'.
 withNewScope :: InferFn a -> InferFn a
 withNewScope inf = do
   vm <- gets varMap
-  x <- inf
+  x  <- inf
   modify $ \st -> st { varMap = vm }
   return x
 
@@ -230,15 +265,15 @@ withNewTypeScope inf = do
 -- specific type annotation from the list. Need yo add support for annotating
 -- type variables as well.
 collapseAnnT :: Ann.Type -> Classes.Type
-collapseAnnT (Ann.Type []) = dummyAnnT
+collapseAnnT (Ann.Type []  ) = dummyAnnT
 collapseAnnT (Ann.Type anns) = case head anns of
-  Ann.TBuiltin tb -> Classes.TBuiltin $ fmap collapseAnnT tb
-  Ann.TVar tvar -> Classes.TVar tvar
-  _ -> dummyAnnT
+  Ann.TBuiltin tb   -> Classes.TBuiltin $ fmap collapseAnnT tb
+  Ann.TVar     tvar -> Classes.TVar tvar
+  Ann.TCon tcon tys -> Classes.TCon tcon $ fmap collapseAnnT tys
 
 {- | Stage 1: Assign symbolic typenames
 
-'initTypeVars' @e@ walks into the expression @e@ revursively, assign a fresh
+'initTypeVars' @e@ walks into the expression @e@ recursively, assign a fresh
 'TVar' to each unknown type, and build type equations that will be solved later.
 -}
 initTypeVars :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
@@ -246,15 +281,20 @@ initTypeVars e@(I.Var v annT) = do
   let annT' = collapseAnnT annT
   record <- lookupVar v
   case record of
-    Nothing -> throwError $ Compiler.TypeError $ fromString $ "Unbound variable: " ++ show e
+    Nothing ->
+      throwError
+        $  Compiler.TypeError
+        $  fromString
+        $  "Unbound variable: "
+        ++ show e
     Just s -> do
-      t' <- instantiate s
+      t'  <- instantiate s
       t'' <- typeCheck annT' t'
       return $ I.Var v t''
 initTypeVars (I.Lambda v b annT) = do
   let annT' = collapseAnnT annT
   tin <- fresh
-  b' <- withNewScope do
+  b'  <- withNewScope do
     insertBinder v (Classes.Forall [] tin)
     initTypeVars b
   t <- typeCheck annT' (Classes.TBuiltin $ Arrow tin (extract b'))
@@ -262,25 +302,39 @@ initTypeVars (I.Lambda v b annT) = do
 initTypeVars (I.Let vs b annT) = do
   let annT' = collapseAnnT annT
   (vs', b') <- withNewScope $ localinitTypeVars vs b
-  t <- typeCheck annT' (extract b')
+  t         <- typeCheck annT' (extract b')
   return $ I.Let vs' b' t
-  where
-    localinitTypeVars bs body = do
-      bs' <- mapM fn bs
-      body' <- initTypeVars body
-      return (bs', body')
-      where
-        fn (binder, e) = do
-          e' <- initTypeVars e
-          unifyAll
-          e'' <- getType e'
-          s <- generalize $ extract e''
-          insertBinder binder s
-          return (binder, e'')
-initTypeVars (I.App a b annT) = do
-  let annT' = collapseAnnT annT
+ where
+  localinitTypeVars bs body = do
+    bs'   <- mapM fn bs
+    body' <- initTypeVars body
+    return (bs', body')
+   where
+    fn (binder, e) = do
+      e' <- initTypeVars e
+      unifyAll
+      e'' <- getType e'
+      s   <- generalize $ extract e''
+      insertBinder binder s
+      return (binder, e'')
+initTypeVars e@(I.Data d _) = do
+  tcon <- lookupDCon d
+  case tcon of
+    Nothing ->
+      throwError
+        $  Compiler.TypeError
+        $  fromString
+        $  "Unable to type ADT expression: "
+        ++ show e
+    Just t' -> return $ I.Data d t'
+initTypeVars (I.App a@(I.Data _ _) b _) = do
   a' <- initTypeVars a
   b' <- initTypeVars b
+  return $ I.App a' b' (extract a')
+initTypeVars (I.App a b annT) = do
+  let annT' = collapseAnnT annT
+  a'   <- initTypeVars a
+  b'   <- initTypeVars b
   tout <- fresh
   insertEquation (Classes.TBuiltin (Arrow (extract b') tout), extract a')
   t <- typeCheck annT' tout
@@ -297,37 +351,37 @@ initTypeVars (I.Lit i@(I.LitIntegral _) annT) = do
 initTypeVars (I.Prim I.New [e] annT) = do
   let annT' = collapseAnnT annT
   e' <- initTypeVars e
-  t <- typeCheck annT' (Classes.TBuiltin (Ref (extract e')))
+  t  <- typeCheck annT' (Classes.TBuiltin (Ref (extract e')))
   return $ I.Prim I.New [e'] t
 initTypeVars (I.Prim I.Deref [e] annT) = do
   let annT' = collapseAnnT annT
   e' <- initTypeVars e
-  t <- fresh
+  t  <- fresh
   insertEquation (Classes.TBuiltin (Ref t), extract e')
   t' <- typeCheck annT' t
   return $ I.Prim I.Deref [e'] t'
 initTypeVars (I.Prim I.Dup [e] annT) = do
   let annT' = collapseAnnT annT
   e' <- initTypeVars e
-  t <- typeCheck annT' (extract e')
+  t  <- typeCheck annT' (extract e')
   return $ I.Prim I.Dup [e'] t
 initTypeVars (I.Prim I.Assign [lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' unit
+  t    <- typeCheck annT' unit
   lhs' <- initTypeVars lhs
   rhs' <- initTypeVars rhs
   return $ I.Prim I.Assign [lhs', rhs'] t
 initTypeVars (I.Prim (I.PrimOp I.PrimSub) [e1, e2] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' (int 32)
+  t   <- typeCheck annT' (int 32)
   e1' <- initTypeVars e1
   e2' <- initTypeVars e2
   insertEquation (extract e1', int 32)
   insertEquation (extract e2', int 32)
   return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] t
-initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  annT) = do
+initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' (int 32)
+  t   <- typeCheck annT' (int 32)
   e1' <- initTypeVars e1
   e2' <- initTypeVars e2
   insertEquation (extract e1', int 32)
@@ -335,7 +389,7 @@ initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  annT) = do
   return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] t
 initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' unit
+  t    <- typeCheck annT' unit
   del' <- initTypeVars del
   rhs' <- initTypeVars rhs
   lhs' <- initTypeVars lhs
@@ -352,21 +406,31 @@ initTypeVars (I.Prim I.Return [] annT) = do
   return $ I.Prim I.Return [] t
 initTypeVars (I.Prim I.Loop es annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' unit
+  t   <- typeCheck annT' unit
   es' <- mapM initTypeVars es
   return $ I.Prim I.Loop es' t
 initTypeVars (I.Prim I.Wait es annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' unit
+  t   <- typeCheck annT' unit
   es' <- mapM initTypeVars es
   return $ I.Prim I.Wait es' t
 initTypeVars (I.Prim I.Par es annT) = do
   let annT' = collapseAnnT annT
   es' <- mapM initTypeVars es
-  t <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
+  t   <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
   return $ I.Prim I.Par es' t
-initTypeVars e@I.Prim {} = throwError $ Compiler.TypeError $ fromString $ "Unsupported Prim expression: " ++ show e
-initTypeVars e = throwError $ Compiler.TypeError $ fromString $ "Unable to type unknown expression: " ++ show e
+initTypeVars e@I.Prim{} =
+  throwError
+    $  Compiler.TypeError
+    $  fromString
+    $  "Unsupported Prim expression: "
+    ++ show e
+initTypeVars e =
+  throwError
+    $  Compiler.TypeError
+    $  fromString
+    $  "Unable to type unknown expression: "
+    ++ show e
 
 -- | @typeCheck annT expectedT@ checks whether the type annotation @annT@ is
 -- compatible with the expected type @expectedT@. Insert new type equations when
@@ -374,20 +438,29 @@ initTypeVars e = throwError $ Compiler.TypeError $ fromString $ "Unable to type 
 -- TODO: currently only consider equality as compatibility. Need to support the
 -- case when type annotation is more specific than the expected type.
 typeCheck :: Classes.Type -> Classes.Type -> InferFn Classes.Type
-typeCheck annT expectedT | annT == dummyAnnT || annT == expectedT = return expectedT
+typeCheck annT expectedT | annT == dummyAnnT || annT == expectedT =
+  return expectedT
 typeCheck (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = do
   t <- typeCheck t1 t2
   return $ Classes.TBuiltin (Ref t)
-typeCheck (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = do
-  t1' <- typeCheck t1 t3
-  t2' <- typeCheck t2 t4
-  return $ Classes.TBuiltin (Arrow t1' t2')
+typeCheck (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) =
+  do
+    t1' <- typeCheck t1 t3
+    t2' <- typeCheck t2 t4
+    return $ Classes.TBuiltin (Arrow t1' t2')
 typeCheck (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = do
   ts <- zipWithM typeCheck ts1 ts2
   return $ Classes.TBuiltin (Tuple ts)
-typeCheck annT expectedT@(Classes.TVar _) = insertEquation (expectedT, annT) >> return expectedT
-typeCheck annT expectedT = throwError $ Compiler.TypeError $ fromString $
-  "Incompatible type annotation: expected " ++ show expectedT ++ ", but got " ++ show annT
+typeCheck annT expectedT@(Classes.TVar _) =
+  insertEquation (expectedT, annT) >> return expectedT
+typeCheck annT expectedT =
+  throwError
+    $  Compiler.TypeError
+    $  fromString
+    $  "Incompatible type annotation: expected "
+    ++ show expectedT
+    ++ ", but got "
+    ++ show annT
 
 {- | Stage 2: Solve type equations using unification.
 
@@ -398,29 +471,36 @@ unifyAll :: InferFn ()
 unifyAll = do
   eq <- gets equations
   case eq of
-    [] -> return ()
-    ((l,r):eqs) -> do
+    []             -> return ()
+    ((l, r) : eqs) -> do
       unify l r
       modify $ \st -> st { equations = eqs }
       unifyAll
 
 -- |'unify' @t1 t2@ solves the type equation t1 ~ t2 and put the solution into 'unionFindTree'.
 unify :: Classes.Type -> Classes.Type -> InferFn ()
-unify t1 t2
-  | t1 == t2 = return ()
+unify t1 t2 | t1 == t2                          = return ()
 unify tv1@(Classes.TVar _) tv2@(Classes.TVar _) = do
   r1 <- findRoot tv1
   r2 <- findRoot tv2
   if r1 == tv1 && r2 == tv2 then insertUnion r1 r2 else unify r1 r2
-unify t tv@(Classes.TVar _) = unify tv t
-unify tv@(Classes.TVar _) t = do
+unify t                   tv@(Classes.TVar _) = unify tv t
+unify tv@(Classes.TVar _) t                   = do
   r1 <- findRoot tv
   if r1 == tv then insertUnion r1 t else unify r1 t
 unify (Classes.TBuiltin (Ref t1)) (Classes.TBuiltin (Ref t2)) = unify t1 t2
-unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) = unify t1 t3 >> unify t2 t4
-unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) = zipWithM_ unify ts1 ts2
-unify t1 t2 = throwError $ Compiler.TypeError $ fromString $
-  "Single unification error: " ++ show t1 ++ ", " ++ show t2
+unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) =
+  unify t1 t3 >> unify t2 t4
+unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) =
+  zipWithM_ unify ts1 ts2
+unify t1 t2 =
+  throwError
+    $  Compiler.TypeError
+    $  fromString
+    $  "Single unification error: "
+    ++ show t1
+    ++ ", "
+    ++ show t2
 
 {- | Stage 3: Find the type of the expression based on 'unionFindTree'.
 
@@ -436,14 +516,28 @@ getType (I.Lambda v b t) = do
   return $ I.Lambda v b' t'
 getType (I.Let vs b _) = do
   vs' <- mapM (fmapSnd getType) vs
-  b' <- getType b
+  b'  <- getType b
   return $ I.Let vs' b' (extract b')
-  where
-    fmapSnd fn (v, e) = do
-      e' <- fn e
-      return (v, e')
-getType (I.Lit I.LitEvent _) = return $ I.Lit I.LitEvent unit
-getType (I.Lit i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
+ where
+  fmapSnd fn (v, e) = do
+    e' <- fn e
+    return (v, e')
+getType (  I.Lit  I.LitEvent          _) = return $ I.Lit I.LitEvent unit
+getType (  I.Lit  i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
+getType e@(I.Data d                   _) = do
+  tcon <- lookupDCon d
+  case tcon of
+    Nothing ->
+      throwError
+        $  Compiler.TypeError
+        $  fromString
+        $  "Unable to type ADT expression: "
+        ++ show e
+    Just t' -> return $ I.Data d t'
+getType (I.App a@(I.Data _ _) b _) = do
+  a' <- getType a
+  b' <- getType b
+  return $ I.App a' b' (extract a')
 getType (I.App a b t) = do
   a' <- getType a
   b' <- getType b
@@ -465,11 +559,11 @@ getType (I.Prim I.Assign [lhs, rhs] _) = do
   lhs' <- getType lhs
   rhs' <- getType rhs
   return $ I.Prim I.Assign [lhs', rhs'] unit
-getType (I.Prim (I.PrimOp I.PrimSub) [e1, e2]  _) = do
+getType (I.Prim (I.PrimOp I.PrimSub) [e1, e2] _) = do
   e1' <- getType e1
   e2' <- getType e2
   return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-getType (I.Prim (I.PrimOp I.PrimAdd) [e1, e2]  _) = do
+getType (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] _) = do
   e1' <- getType e1
   e2' <- getType e2
   return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
@@ -478,27 +572,32 @@ getType (I.Prim I.After [del, lhs, rhs] _) = do
   rhs' <- getType rhs
   lhs' <- getType lhs
   return $ I.Prim I.After [del', lhs', rhs'] unit
-getType (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
+getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] void
 getType (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
-getType (I.Prim I.Loop es _) = do
-    es' <- mapM getType es
-    return $ I.Prim I.Loop es' unit
+getType (I.Prim I.Loop   es _) = do
+  es' <- mapM getType es
+  return $ I.Prim I.Loop es' unit
 getType (I.Prim I.Wait es _) = do
-    es' <- mapM getType es
-    return $ I.Prim I.Wait es' unit
+  es' <- mapM getType es
+  return $ I.Prim I.Wait es' unit
 getType (I.Prim I.Par es _) = do
-    es' <- mapM getType es
-    return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
-getType e = throwError $ Compiler.TypeError $ fromString $ "Unable to get the type of unknown expression: " ++ show e
+  es' <- mapM getType es
+  return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
+getType e =
+  throwError
+    $  Compiler.TypeError
+    $  fromString
+    $  "Unable to get the type of unknown expression: "
+    ++ show e
 
 -- | 'solveType' @t@ solves the type @t@ by replacing any embeded 'TVar' @tvar@
 --   with its real type, which is the root of @tvar@ in the 'unionFindTree'.
 solveType :: Classes.Type -> InferFn Classes.Type
-solveType t@(Classes.TBuiltin (Integral 32)) = return t
-solveType t@(Classes.TBuiltin Unit) = return t
-solveType t@(Classes.TBuiltin Void) = return t
-solveType tv@(Classes.TVar _) = findRoot tv
-solveType (Classes.TBuiltin (Ref t)) = do
+solveType t@( Classes.TBuiltin (Integral 32)) = return t
+solveType t@( Classes.TBuiltin Unit         ) = return t
+solveType t@( Classes.TBuiltin Void         ) = return t
+solveType tv@(Classes.TVar     _            ) = findRoot tv
+solveType (   Classes.TBuiltin (Ref t)      ) = do
   t' <- solveType t
   return $ Classes.TBuiltin $ Ref t'
 solveType (Classes.TBuiltin (Tuple ts)) = do
@@ -508,7 +607,8 @@ solveType (Classes.TBuiltin (Arrow t1 t2)) = do
   t1' <- solveType t1
   t2' <- solveType t2
   return $ Classes.TBuiltin $ Arrow t1' t2'
-solveType t = throwError $ Compiler.TypeError $ fromString $ "Solve Type error" ++ show t
+solveType t =
+  throwError $ Compiler.TypeError $ fromString $ "Solve Type error" ++ show t
 
 -- | 'findRoot' @t@ finds the root of @t@ inside 'unionFindTree'.
 findRoot :: Classes.Type -> InferFn Classes.Type
@@ -517,5 +617,5 @@ findRoot t@(Classes.TVar _) = do
   -- We find the root of @t@ if @t@ exists in the tree as a key and its value is different from itself
   case M.lookup t sb of
     Just t' | t' /= t -> findRoot t'
-    _ -> return t
+    _                 -> return t
 findRoot t = solveType t

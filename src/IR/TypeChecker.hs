@@ -195,7 +195,6 @@ inferExpr (I.App a@(I.Data _ _) b _) = do
     a' <- inferExpr a
     b' <- inferExpr b
     return $ I.App a' b' (extract a')
-
 inferExpr e@(I.App a b _) = do
   a' <- inferExpr a
   b' <- inferExpr b

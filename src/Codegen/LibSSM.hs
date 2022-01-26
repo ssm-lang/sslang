@@ -7,7 +7,7 @@ module Codegen.LibSSM where
 import           Common.Identifiers             ( Identifiable(..)
                                                 , Identifier(..)
                                                 , VarId(..)
-                                                , fromId
+                                                , fromId, DConId
                                                 )
 import           Data.String                    ( IsString(..) )
 import           Language.C.Quote               ( Id(Id)
@@ -231,8 +231,8 @@ desensitize :: C.Exp -> C.Exp
 desensitize trig = [cexp|ssm_desensitize($exp:trig)|]
 
 -- | @ssm_new_adt@, allocate a new ADT object on the heap.
-new_adt :: Int -> Int -> C.Exp
-new_adt val_count tag = [cexp|ssm_new_adt($uint:val_count, $uint:tag)|]
+new_adt :: Int -> DConId  -> C.Exp
+new_adt val_count tag = [cexp|ssm_new_adt($uint:val_count, $id:tag)|]
 
 -- | @ssm_adt_field@, access the @i@th field of an ADT object. Assignable.
 adt_field :: C.Exp -> Int -> C.Exp
