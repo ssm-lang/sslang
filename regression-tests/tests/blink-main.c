@@ -2,6 +2,7 @@
 #include "ssm-internal.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 ssm_act_t *enter_main(struct ssm_act *caller, ssm_priority_t priority,
                       ssm_depth_t depth, ssm_value_t out, ssm_value_t *ret);
