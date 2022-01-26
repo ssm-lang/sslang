@@ -502,12 +502,13 @@ genExpr a@(I.App _ _ ty) = do
                 ++ "in the lookup table!\n"
                 ++ theMap
                 )
-            Just typ -> do
+            --Just typ -> do
+            Just _ -> do
 
               -- let (Just typ) = M.lookup tg (dconType info)
-              let (Just sz)  = M.lookup typ (typeSize info)
+            --  let (Just sz)  = M.lookup typ (typeSize info)
               let alloc      = undefined -- [[citem|$exp:tmp = $id:ssm_new($int:sz,$id:tg);|]]
-              let initField  = (\y i -> undefined) -- [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
+              let initField  = undefined -- (\y i -> undefined) -- [citem| $exp:tmp->$id:payload[$uint:i] = $exp:y;|]
               let initFields = zipWith initField argVals [0 :: Int, 1 ..]
               return (undefined tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
