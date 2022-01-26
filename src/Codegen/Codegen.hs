@@ -41,6 +41,7 @@ import           Common.Identifiers             ( fromId
                                                 , ident
                                                 )
 import           Control.Comonad                ( Comonad(..) )
+import           Control.Monad                  ( forM_ )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -50,7 +51,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( isJust )
+import           Data.Maybe                     ( mapMaybe )
 import           Prelude                 hiding ( drop )
 
 -- | Possible, but temporarily punted for the sake of expediency.
@@ -73,6 +74,7 @@ data GenFnState = GenFnState
   , fnRetTy    :: I.Type                -- ^ Function return type
   , fnBody     :: I.Expr I.Type         -- ^ Function body
   , fnLocs     :: [(I.VarId, I.Type)]   -- ^ Function local variables
+  , fnVars     :: M.Map I.VarId C.Exp   -- ^ How to resolve variables
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
   , fnTmps     :: Int                   -- ^ Temporary variable name counter
@@ -107,11 +109,14 @@ runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
   , fnRetTy    = ret
   , fnBody     = body
   , fnLocs     = []
+  , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
   , adtInfo    = adtinfo
   , fnMaxWaits = 0
   , fnCases    = 0
   , fnTmps     = 0
   }
+  where resolveParam (Just v) = Just (v, acts_ $ fromId v)
+        resolveParam _        = Nothing
 
 -- | Read and increment the number of cases in a procedure, i.e., @fnCases++@.
 nextCase :: GenFn Int
@@ -120,13 +125,27 @@ nextCase = do
   modify $ \st -> st { fnCases = n + 1 }
   return n
 
--- | Register a local variable, to be declared in activation record.
+-- | Bind a variable to a C expression.
+addBinding :: I.Binder -> C.Exp -> GenFn ()
+addBinding (Just v) e = modify $ \st -> st { fnVars = M.insert v e $ fnVars st }
+addBinding Nothing _ = return ()
+
+-- | Register a new local variable, to be declared in activation record.
 addLocal :: (I.VarId, I.Type) -> GenFn ()
-addLocal l = modify $ \st -> st { fnLocs = l : fnLocs st }
+addLocal (v, t) = do
+  modify $ \st -> st { fnLocs = (v, t) : fnLocs st }
+  addBinding (Just v) (acts_ $ fromId v)
 
 -- | Register number of wait statements track of number of triggers needed.
 maxWait :: Int -> GenFn ()
 maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
+
+-- | Generate a fresh label.
+nextLabel :: GenFn CIdent
+nextLabel = do
+  l <- fromId . label_ <$> gets fnTmps
+  modify $ \st -> st { fnTmps = fnTmps st + 1 }
+  return l
 
 -- | Allocate a temp variable of given type, registered as a local variable.
 nextTmp :: I.Type -> GenFn I.VarId
@@ -139,54 +158,6 @@ nextTmp ty = do
 -- | Generate local variable in activation record for temporary storage.
 genTmp :: I.Type -> GenFn C.Exp
 genTmp ty = acts_ . fromId <$> nextTmp ty
-
-{- | Whether the given variable can be found in the activation record.
-
-Returns true iff it appears as local variable or as a parameter.
--}
-isLocalVar :: I.VarId -> GenFn Bool
-isLocalVar name = do
-  params <- gets fnParams
-  locs   <- gets fnLocs
-  return $ isJust (lookup (Just name) params) || isJust (lookup name locs)
-
-{-------- Type compilation --------}
---
--- -- | Wrap a 'C.Type' with pointers, according to some 'I.Type'.
--- ptrs_ :: I.Type -> C.Type -> C.Type
--- ptrs_ (I.TBuiltin (I.Ref _)) t = [cty|$ty:t *|]
--- ptrs_ _ t = t
--- -- ^ TODO: this does not handle stacked pointers
---
--- -- | Obtains the C type name corresponding to an SSM type.
--- typeId :: I.Type -> CIdent
--- typeId (I.TCon t) = fromId t
--- typeId (I.TBuiltin bt) = builtinId bt
---
--- -- | Obtains the C type name corresponding to an SSM built-in type.
--- builtinId :: I.Builtin I.Type -> CIdent
--- builtinId I.Unit = "unit"
--- builtinId I.Void = todo
--- builtinId (I.Arrow _ _) = todo
--- builtinId (I.Tuple _) = todo
--- builtinId (I.Integral s) = int_ s
--- builtinId (I.Ref t) = sv_ $ typeId t -- NOTE: this does not add pointers
---
--- -- | Translate an SSM type to a 'C.Type'.
--- genType :: I.Type -> C.Type
--- genType typ = ptrs_ typ $ ctype $ typeId typ
---
--- -- | Obtain the initialize method for a given SSM scheduled variable type.
--- genInit :: I.Type -> Maybe C.Exp
--- genInit ty = cexpr . initialize_ . typeId <$> I.deref ty
---
--- -- | Obtain the assign method for a given SSM scheduled variable type.
--- genAssign :: I.Type -> Maybe C.Exp
--- genAssign ty = cexpr . assign_ . typeId <$> I.deref ty
---
--- -- | Obtain the later method for a given SSM scheduled variable type.
--- genLater :: I.Type -> Maybe C.Exp
--- genLater ty = cexpr . later_ . typeId <$> I.deref ty
 
 -- | Translate a list of SSM parameters to C parameters.
 genParams :: [(I.Binder, I.Type)] -> [(CIdent, C.Type)]
@@ -451,12 +422,14 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
   -- we just return a handle to its enter function.
   return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
-  -- isLocal <- isLocalVar n -- TODO: check for global vs local variable
-  return ([cexp|$id:acts->$id:n|], [])
+  mv <- M.lookup n <$> gets fnVars
+  case mv of
+    Just v  -> return (v, [])
+    Nothing -> Compiler.unexpected $ "Unknown variable: " ++ show n
 genExpr (I.Data tg _) = do
   info <- gets adtInfo
   let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
-genExpr (I.Lit l t              ) = genLiteral l t
+genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
   addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
@@ -511,7 +484,40 @@ genExpr a@(I.App _ _ ty) = do
               let initFields = zipWith initField argVals [0 :: Int, 1 ..]
               return (undefined tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
-genExpr I.Match{}       = nope
+genExpr (I.Match s as t) = do
+  (sExp, sStms) <- genExpr s
+  scrut         <- genTmp $ extract s
+  val           <- genTmp t
+  joinLabel     <- nextLabel
+
+  let tag          = adt_tag scrut
+      switch cases = [citems|switch ($exp:tag) { $items:cases }|]
+      joinStm      = [citems|$id:joinLabel:;|]
+      assignScrut  = [citems|$exp:scrut = $exp:sExp;|]
+      assignVal e  = [citems|$exp:val = $exp:e;|]
+
+      genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
+      genArm (alt, arm) = do
+        armLabel <- nextLabel
+        altLabel <- genAlt alt
+        (armExp, armStms) <- genExpr arm
+        let armCase = [citems|$item:altLabel goto $id:armLabel;|]
+            armBlk  = [citems|$id:armLabel:;|] ++ armStms ++ assignVal armExp
+        return (armCase, armBlk)
+
+      genAlt :: I.Alt -> GenFn C.BlockItem
+      genAlt (I.AltData dcon fields) = do
+        forM_ fields $ \field ->
+          addBinding field $ adt_field scrut 0  -- TODO: use the correct field number
+        let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
+        return [citem|case $exp:dconTag:;|]
+      genAlt (I.AltLit l)     = return [citem|case $exp:(genLiteral l):;|]
+      genAlt (I.AltDefault b) = do
+        addBinding b scrut
+        return [citem|default:;|]
+
+  (cases, blks) <- bimap concat concat . unzip <$> mapM genArm as
+  return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
 
@@ -617,11 +623,11 @@ genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
 -- | Generate C value for SSM literal.
-genLiteral :: I.Literal -> I.Type -> GenFn (C.Exp, [C.BlockItem])
-genLiteral (I.LitIntegral i    ) _ = return (marshal [cexp|$int:i|], [])
-genLiteral (I.LitBool     True ) _ = return (marshal [cexp|true|], [])
-genLiteral (I.LitBool     False) _ = return (marshal [cexp|false|], [])
-genLiteral I.LitEvent            _ = return (marshal [cexp|1|], [])
+genLiteral :: I.Literal -> C.Exp
+genLiteral (I.LitIntegral i    ) = marshal [cexp|$int:i|]
+genLiteral (I.LitBool     True ) = marshal [cexp|true|]
+genLiteral (I.LitBool     False) = marshal [cexp|false|]
+genLiteral I.LitEvent            = marshal [cexp|1|]
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp
@@ -656,11 +662,11 @@ genPrimOp I.PrimNeg [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|- $exp:val|], stms)
 genPrimOp I.PrimBitAnd [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <- 
+  ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal & $exp:rhsVal|], stms)
 genPrimOp I.PrimBitOr [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <- 
+  ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal | $exp:rhsVal|], stms)
 genPrimOp I.PrimBitNot [opr] _ = do

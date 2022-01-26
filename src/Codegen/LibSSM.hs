@@ -287,6 +287,10 @@ trig_ i = "__trig_" <> fromString (show i)
 tmp_ :: Int -> CIdent
 tmp_ i = "__tmp_" <> fromString (show i)
 
+-- | Obtain the name of a label.
+label_ :: Int -> CIdent
+label_ i = "__label_" <> fromString (show i)
+
 -- | Obtain the name of an argument variable.
 arg_ :: Int -> CIdent
 arg_ i = "__arg_" <> fromString (show i)
