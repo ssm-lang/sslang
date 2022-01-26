@@ -113,8 +113,9 @@ runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
   , fnCases    = 0
   , fnTmps     = 0
   }
-  where resolveParam (Just v) = Just (v, acts_ $ fromId v)
-        resolveParam _        = Nothing
+ where
+  resolveParam (Just v) = Just (v, acts_ $ fromId v)
+  resolveParam _        = Nothing
 
 -- | Read and increment the number of cases in a procedure, i.e., @fnCases++@.
 nextCase :: GenFn Int
@@ -125,7 +126,8 @@ nextCase = do
 
 -- | Bind a variable to a C expression.
 addBinding :: I.Binder -> C.Exp -> GenFn ()
-addBinding (Just v) e = modify $ \st -> st { fnVars = M.insert v e $ fnVars st }
+addBinding (Just v) e =
+  modify $ \st -> st { fnVars = M.insert v e $ fnVars st }
 addBinding Nothing _ = return ()
 
 -- | Register a new local variable, to be declared in activation record.
@@ -477,28 +479,32 @@ genExpr (I.Match s as t) = do
   val           <- genTmp t
   joinLabel     <- nextLabel
 
-  let tag          = adt_tag scrut
+  let assignScrut = [citems|$exp:scrut = $exp:sExp;|]
+      tag         = adt_tag scrut
       switch cases = [citems|switch ($exp:tag) { $items:cases }|]
-      joinStm      = [citems|$id:joinLabel:;|]
-      assignScrut  = [citems|$exp:scrut = $exp:sExp;|]
-      assignVal e  = [citems|$exp:val = $exp:e;|]
+      assignVal e = [citems|$exp:val = $exp:e;|]
+      joinStm = [citems|$id:joinLabel:;|]
 
       genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
       genArm (alt, arm) = do
-        armLabel <- nextLabel
-        altLabel <- genAlt alt
+        armLabel          <- nextLabel
+        altLabel          <- genAlt alt
         (armExp, armStms) <- genExpr arm
         let armCase = [citems|$item:altLabel goto $id:armLabel;|]
-            armBlk  = [citems|$id:armLabel:;|] ++ armStms ++ assignVal armExp
+            armBlk =
+              [citems|$id:armLabel:;|]
+                ++ armStms
+                ++ assignVal armExp
+                ++ [citems|goto $id:joinLabel;|]
         return (armCase, armBlk)
 
       genAlt :: I.Alt -> GenFn C.BlockItem
       genAlt (I.AltData dcon fields) = do
-        forM_ fields $ \field ->
+        forM_ fields $ \field -> do
           addBinding field $ adt_field scrut 0  -- TODO: use the correct field number
         let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
         return [citem|case $exp:dconTag:;|]
-      genAlt (I.AltLit l)     = return [citem|case $exp:(genLiteral l):;|]
+      genAlt (I.AltLit     l) = return [citem|case $exp:(genLiteral l):;|]
       genAlt (I.AltDefault b) = do
         addBinding b scrut
         return [citem|default:;|]
