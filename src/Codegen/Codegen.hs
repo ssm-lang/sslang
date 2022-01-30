@@ -37,9 +37,11 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( fromId )
+import           Common.Identifiers             ( fromId
+                                                , fromString
+                                                )
 import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad                  ( forM_ )
+import           Control.Monad                  ( forM )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -71,11 +73,11 @@ data GenFnState = GenFnState
   , fnParams   :: [(I.Binder, I.Type)]  -- ^ Function parameters
   , fnRetTy    :: I.Type                -- ^ Function return type
   , fnBody     :: I.Expr I.Type         -- ^ Function body
-  , fnLocs     :: [(I.VarId, I.Type)]   -- ^ Function local variables
+  , fnLocs     :: M.Map I.VarId I.Type  -- ^ Function local variables
   , fnVars     :: M.Map I.VarId C.Exp   -- ^ How to resolve variables
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
-  , fnTmps     :: Int                   -- ^ Temporary variable name counter
+  , fnFresh    :: Int                   -- ^ Temporary variable name counter
   , adtInfo    :: TypeDefInfo           -- ^ ADT information
   }
 
@@ -106,12 +108,12 @@ runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
   , fnParams   = params
   , fnRetTy    = ret
   , fnBody     = body
-  , fnLocs     = []
+  , fnLocs     = M.empty
   , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
   , adtInfo    = adtinfo
   , fnMaxWaits = 0
   , fnCases    = 0
-  , fnTmps     = 0
+  , fnFresh    = 0
   }
  where
   resolveParam (Just v) = Just (v, acts_ $ fromId v)
@@ -124,6 +126,12 @@ nextCase = do
   modify $ \st -> st { fnCases = n + 1 }
   return n
 
+getFresh :: GenFn Int
+getFresh = do
+  n <- gets fnFresh
+  modify $ \st -> st { fnFresh = n + 1 }
+  return n
+
 -- | Bind a variable to a C expression.
 addBinding :: I.Binder -> C.Exp -> GenFn ()
 addBinding (Just v) e =
@@ -131,33 +139,46 @@ addBinding (Just v) e =
 addBinding Nothing _ = return ()
 
 -- | Register a new local variable, to be declared in activation record.
-addLocal :: (I.VarId, I.Type) -> GenFn ()
-addLocal (v, t) = do
-  modify $ \st -> st { fnLocs = (v, t) : fnLocs st }
-  addBinding (Just v) (acts_ $ fromId v)
+addLocal :: I.VarId -> I.Type -> GenFn I.VarId
+addLocal v t = do
+  fnl <- gets fnLocs
+  v'  <- if v `M.member` fnl
+    then do
+      ctr <- getFresh
+      return $ v <> fromString (show ctr)
+    else return v
+  modify $ \st -> st { fnLocs = M.insert v' t fnl }
+  return v'
+
+-- | Bind a variable to a C expression only while computing the given monad.
+withBindings :: [(I.Binder, C.Exp)] -> GenFn a -> GenFn a
+withBindings bs m = do
+  fnv <- gets fnVars
+  mapM_ (uncurry addBinding) bs
+  a <- m
+  modify $ \st -> st { fnVars = fnv }
+  return a
+
+-- | Register a local variable and bind its C expression during a monad.
+withNewLocal :: (I.VarId, I.Type) -> GenFn a -> GenFn a
+withNewLocal (v, t) m = do
+  v' <- addLocal v t
+  withBindings [(Just v, acts_ $ fromId v')] m
 
 -- | Register number of wait statements track of number of triggers needed.
 maxWait :: Int -> GenFn ()
 maxWait n = modify $ \st -> st { fnMaxWaits = n `max` fnMaxWaits st }
 
 -- | Generate a fresh label.
-nextLabel :: GenFn CIdent
-nextLabel = do
-  l <- fromId . label_ <$> gets fnTmps
-  modify $ \st -> st { fnTmps = fnTmps st + 1 }
-  return l
+freshLabel :: GenFn CIdent
+freshLabel = fromId . label_ <$> getFresh
 
--- | Allocate a temp variable of given type, registered as a local variable.
-nextTmp :: I.Type -> GenFn I.VarId
-nextTmp ty = do
-  t <- fromId . tmp_ <$> gets fnTmps
-  modify $ \st -> st { fnTmps = fnTmps st + 1 }
-  addLocal (t, ty)
-  return t
-
--- | Generate local variable in activation record for temporary storage.
+-- | Generate anonymous local variable in activation record for storage.
 genTmp :: I.Type -> GenFn C.Exp
-genTmp ty = acts_ . fromId <$> nextTmp ty
+genTmp ty = do
+  v  <- fromId . tmp_ <$> getFresh
+  v' <- addLocal v ty
+  return $ acts_ $ fromId v'
 
 -- | Translate a list of SSM parameters to C parameters.
 genParams :: [(I.Binder, I.Type)] -> [(CIdent, C.Type)]
@@ -187,11 +208,11 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
   let genAdt = (\acc adt -> acc <> genTypeDef adt)
   in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
-      in       --  if null typedefs
+      in               --  if null typedefs
           --  then error "where are all the ADT definitions???? "
           --  else
           do
-                                    -- p@I.Program
+                                                                    -- p@I.Program
             (cdecls, cdefs) <-
               bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
             return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
@@ -253,7 +274,7 @@ genStruct = do
   name   <- gets fnName
   params <- gets fnParams
   -- retTy  <- gets fnRetTy
-  locs   <- gets fnLocs
+  locs   <- M.toList <$> gets fnLocs
   trigs  <- gets fnMaxWaits
 
   return [cedecl|
@@ -422,20 +443,20 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
   -- we just return a handle to its enter function.
   return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
-  mv <- M.lookup n <$> gets fnVars
-  case mv of
-    Just v  -> return (v, [])
-    Nothing -> Compiler.unexpected $ "Unknown variable: " ++ show n
+  Just v <- M.lookup n <$> gets fnVars
+  return (v, [])
 genExpr (I.Data tg _) = do
   info <- gets adtInfo
   let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
 genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
-  addLocal (n, extract d)
   (defVal, defStms) <- genExpr d
-  let defInit = [citems| $id:acts->$id:n = $exp:defVal; |]
-  (bodyVal, bodyStms) <- genExpr b
-  return (bodyVal, defStms ++ defInit ++ bodyStms)
+  withNewLocal (n, extract d) $ do
+    -- Look up n because withNewLocal may have mangled its name.
+    Just n' <- M.lookup n <$> gets fnVars
+    let defInit = [citems|$exp:n' = $exp:defVal;|]
+    (bodyVal, bodyStms) <- genExpr b
+    return (bodyVal, defStms ++ defInit ++ bodyStms)
 genExpr (I.Let [(Nothing, d)] b _) = do
   (_      , defStms ) <- genExpr d -- Throw away value
   (bodyVal, bodyStms) <- genExpr b
@@ -446,10 +467,9 @@ genExpr a@(I.App _ _ ty) = do
   (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
   case fn of
     (I.Var _ _) -> do
-      tmpName <- nextTmp ty
-      yield   <- genYield
-      let tmp = [cexp|$id:acts->$id:tmpName|]
-          enterArgs =
+      tmp   <- genTmp ty
+      yield <- genYield
+      let enterArgs =
             [ [cexp|$id:actg|]
               , [cexp|$id:actg->$id:act_priority|]
               , [cexp|$id:actg->$id:act_depth|]
@@ -464,8 +484,7 @@ genExpr a@(I.App _ _ ty) = do
         Nothing    -> fail "Couldn't find tag"
         Just False -> fail "Cannot handle integer types with fields yet"
         Just True  -> do
-          tmpName <- nextTmp dty
-          let tmp        = [cexp|$id:acts->$id:tmpName|]
+          tmp <- genTmp dty
           let Just typ   = M.lookup tg (dconType info)
           let Just sz    = M.lookup typ (typeSize info)
           let alloc      = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
@@ -474,40 +493,53 @@ genExpr a@(I.App _ _ ty) = do
           return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
+  -- TODO: document this
   (sExp, sStms) <- genExpr s
   scrut         <- genTmp $ extract s
   val           <- genTmp t
-  joinLabel     <- nextLabel
+  joinLabel     <- freshLabel
 
-  let assignScrut = [citems|$exp:scrut = $exp:sExp;|]
-      tag         = adt_tag scrut
-      switch cases = [citems|switch ($exp:tag) { $items:cases }|]
-      assignVal e = [citems|$exp:val = $exp:e;|]
-      joinStm = [citems|$id:joinLabel:;|]
+  let
+    assignScrut = [citems|$exp:scrut = $exp:sExp;|]
+    tag         = adt_tag scrut
+    switch cases = [citems|switch ($exp:tag) { $items:cases }|]
+    assignVal e = [citems|$exp:val = $exp:e;|]
+    joinStm = [citems|$id:joinLabel:;|]
 
-      genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
-      genArm (alt, arm) = do
-        armLabel          <- nextLabel
-        altLabel          <- genAlt alt
+    -- TODO: document this
+    genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
+    genArm (alt, arm) = do
+      armLabel           <- freshLabel
+      (altLabel, armBlk) <- withAltScope armLabel alt $ do
         (armExp, armStms) <- genExpr arm
-        let armCase = [citems|$item:altLabel goto $id:armLabel;|]
-            armBlk =
-              [citems|$id:armLabel:;|]
-                ++ armStms
-                ++ assignVal armExp
-                ++ [citems|goto $id:joinLabel;|]
-        return (armCase, armBlk)
+        return $ armStms ++ assignVal armExp
+      let armCase = [citems|$item:altLabel goto $id:armLabel;|]
+      return (armCase, armBlk)
 
-      genAlt :: I.Alt -> GenFn C.BlockItem
-      genAlt (I.AltData dcon fields) = do
-        forM_ fields $ \field -> do
-          addBinding field $ adt_field scrut 0  -- TODO: use the correct field number
-        let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
-        return [citem|case $exp:dconTag:;|]
-      genAlt (I.AltLit     l) = return [citem|case $exp:(genLiteral l):;|]
-      genAlt (I.AltDefault b) = do
-        addBinding b scrut
-        return [citem|default:;|]
+    -- TODO: document this
+    mkBlk :: CIdent -> [C.BlockItem] -> [C.BlockItem]
+    mkBlk label blk =
+      [citems|$id:label:;|] ++ blk ++ [citems|goto $id:joinLabel;|]
+
+    -- TODO: document this
+    withAltScope
+      :: CIdent
+      -> I.Alt
+      -> GenFn [C.BlockItem]
+      -> GenFn (C.BlockItem, [C.BlockItem])
+    withAltScope label (I.AltData dcon fields) m = do
+      let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
+      fieldBinds <- forM fields $ \field -> do
+        return (field, adt_field scrut 0)     -- TODO: use the correct field number
+      blk <- withBindings fieldBinds m
+      return ([citem|case $exp:dconTag:;|], mkBlk label blk)
+    withAltScope label (I.AltLit l) m = do
+      blk <- m
+      return ([citem|case $exp:(genLiteral l):;|], mkBlk label blk)
+    withAltScope label (I.AltDefault b) m = do
+      blk <- withBindings [(b, scrut)] m
+      addBinding b scrut
+      return ([citem|default:;|], mkBlk label blk)
 
   (cases, blks) <- bimap concat concat . unzip <$> mapM genArm as
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
@@ -574,9 +606,8 @@ genPrim I.Par procs _ = do
     genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
       let (fn, args) = I.collectApp a
       (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-      tmpName                       <- nextTmp ty
-      let tmp = [cexp|$id:acts->$id:tmpName|]
-          enterArgs =
+      tmp                           <- genTmp ty
+      let enterArgs =
             [[cexp|$id:actg|], prioArg, depthArg]
               ++ argVals
               ++ [[cexp|&$exp:tmp|]]
