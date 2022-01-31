@@ -166,11 +166,16 @@ lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt
-lowerAlt A.PatWildcard  = I.AltDefault Nothing
-lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
-lowerAlt (A.PatLit l  ) = I.AltLit $ lowerLit l
-lowerAlt (A.PatTup _  ) = error "I.Alt for A.PatTup not implemented yet"
-lowerAlt (A.PatApp _  ) = error "No way to lower A.PatApp to I.DataCons yet"
+lowerAlt A.PatWildcard = I.AltDefault Nothing
+lowerAlt (A.PatId  d)  = I.AltData (I.DConId d) [] -- TODO: check d is a valid dconid
+lowerAlt (A.PatLit l)  = I.AltLit $ lowerLit l
+lowerAlt (A.PatTup _)  = error "I.Alt for A.PatTup not implemented yet"
+lowerAlt (A.PatApp (A.PatId d: t)) = I.AltData (I.DConId d) (lowerPatArg <$> t)
+ where
+  lowerPatArg :: A.Pat -> I.Binder
+  lowerPatArg (A.PatId id) = Just . I.VarId $ id
+  lowerPatArg _ = error "currently only accept identifiers as args to a PatApp"
+lowerAlt (A.PatApp _) = error "this should never happen!"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
 lowerAlt (A.PatAs  _ p) = lowerAlt p
 
