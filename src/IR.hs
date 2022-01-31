@@ -14,7 +14,6 @@ import qualified Front.Ast                     as A
 import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
-import qualified IR.Types.Flat                 as Flat
 import qualified IR.Types.Poly                 as Poly
 import qualified IR.TypeChecker                as TC
 import qualified IR.HM                         as HM
@@ -22,7 +21,6 @@ import qualified IR.HM                         as HM
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-import           IR.Monomorphize                ( monoProgram )
 
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
@@ -87,10 +85,13 @@ lower opt prg = do
   when (mode opt == DumpIR) $ dump ir
   return ir
 
--- | IR compiler sub-stage, ultimately producing a fully-typed IR. Run HM type
--- inference, type checker, or both (default) based on the command line option.
--- Note that when both algorithms are run, the program doesn't type check iff
--- both algorithms throw an error.
+{- | IR compiler sub-stage, ultimately producing a fully-typed IR.
+
+Runs HM inference, type checker, or both (default) based on the CLI option.
+
+When both algorithms are run, the program fails type check iff both algorithms
+throw an error.
+-}
 ann2Class :: Options -> I.Program Ann.Type -> Pass (I.Program Cls.Type)
 ann2Class opt ir = do
   irInferred <- do
@@ -110,23 +111,18 @@ ann2Class opt ir = do
 class2Poly :: Options -> I.Program Cls.Type -> Pass (I.Program Poly.Type)
 class2Poly _ = instProgram
 
-{- | IR compiler sub-stage, ultimately monomorphizing the polymorphic type
-system.
-
-TODO: This is probably not necessary in the future.
--}
-poly2Flat :: Options -> I.Program Poly.Type -> Pass (I.Program Flat.Type)
-poly2Flat opt ir = do
+-- | IR compiler sub-stage, performing source-to-source translations.
+poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
+poly2Poly opt ir = do
   irLifted <- liftProgramLambdas ir
   when (mode opt == DumpIRLifted) $ dump irLifted
-  ir' <- monoProgram irLifted
-  when (mode opt == DumpIRFinal) $ dump ir'
-  return ir'
+  when (mode opt == DumpIRFinal) $ dump irLifted
+  return irLifted
 
 -- | IR compiler stage.
-run :: Options -> A.Program -> Pass (I.Program Flat.Type)
+run :: Options -> A.Program -> Pass (I.Program Poly.Type)
 run opt prg =
-  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Flat opt
+  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Poly opt
 
 -- | Helper function to set ti type to HM-only
 setHM :: Options -> Options

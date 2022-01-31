@@ -30,7 +30,7 @@ import           Codegen.TypeDef                ( TypeDefInfo
                                                 )
 
 import qualified IR.IR                         as I
-import qualified IR.Types.Flat                 as I
+import qualified IR.Types.Poly                 as I
 import qualified IR.Types.TypeSystem           as I
 
 import           Language.C.Quote.GCC
