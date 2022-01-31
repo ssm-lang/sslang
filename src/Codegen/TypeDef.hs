@@ -93,7 +93,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       typs         = M.fromList $ zip (fst <$> intgrs ++ ptrs) (repeat typ)
 
       typsz        = M.fromList [(typ, sz)]
-      sz           = dConSize $ maximumBy (compare `on` dConSize) heapObjs
+      sz           = flip div 32 $ dConSize $ maximumBy (compare `on` dConSize) heapObjs
 
       isPtr        = M.fromList $ intDCons ++ heapDCons
       intDCons     = zip (fst <$> intgrs) (repeat False)
