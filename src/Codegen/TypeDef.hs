@@ -11,7 +11,7 @@ import           Data.List                      ( maximumBy
                                                 , partition
                                                 )
 import qualified Data.Map                      as M
-import qualified IR.Types.Flat                 as L
+import qualified IR.Types.Poly                 as L
 import qualified IR.Types.TypeSystem           as L
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
@@ -134,6 +134,6 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
   dConSize :: (DConId, L.TypeVariant L.Type) -> Int
   dConSize (_, L.VariantNamed fields  ) = sum $ fieldSize . snd <$> fields
   dConSize (_, L.VariantUnnamed fields) = sum $ fieldSize <$> fields
+
   fieldSize :: L.Type -> Int
-  fieldSize (L.TBuiltin _) = 32
-  fieldSize (L.TCon     _) = 32
+  fieldSize = const 32

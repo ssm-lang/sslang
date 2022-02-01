@@ -9,7 +9,7 @@ import qualified Common.Compiler               as Compiler
 import           Common.Default                 ( Default(..) )
 
 import qualified IR.IR                         as I
-import qualified IR.Types.Flat                 as Flat
+import qualified IR.Types.Poly                 as I
 
 import qualified Text.PrettyPrint.Mainland     as C
 import qualified Text.PrettyPrint.Mainland.Class
@@ -45,7 +45,7 @@ options =
 
 
 -- | Codegen compiler stage.
-run :: Options -> I.Program Flat.Type -> Compiler.Pass String
+run :: Options -> I.Program I.Type -> Compiler.Pass String
 run opt ir = do
   cdefs <- genProgram ir
   return $ C.pretty (textWidth opt) $ C.pprList cdefs
