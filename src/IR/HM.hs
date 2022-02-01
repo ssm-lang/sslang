@@ -67,6 +67,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , variants
                                                 , void
                                                 )
+import Language.C (condPrec)
 
 -- | Inference State.
 data InferState = InferState
@@ -422,6 +423,25 @@ initTypeVars (I.Prim I.Par es annT) = do
   es' <- mapM initTypeVars es
   t   <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
   return $ I.Prim I.Par es' t
+  --Match (Expr t) [(Alt, Expr t)] t
+initTypeVars (I.Match cond arms annT) =  x
+--Match Expr [(Pat, Expr)]
+--     TBuiltin (Builtin Type)         -- ^ Builtin types
+--   | TVar TVarId                     -- ^ Type variables, e.g., '0
+-- wildcard: TBuiltin Void
+-- TVar varId without just
+  where --y = throwError $ Compiler.TypeError $ fromString "ohohoho~! "
+        x = do
+          let annT' = collapseAnnT annT
+         -- let t  = Classes.TBuiltin Void
+          -- tout <- fresh
+          -- t <- typeCheck annT' tout
+          cond' <- initTypeVars cond
+          arms' <- mapM (initTypeVars . snd) arms 
+          let arms'' = zip (fst <$> arms) arms'
+          return (I.Match cond' arms'' annT')
+
+
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError
@@ -582,6 +602,15 @@ getType (I.Prim I.Wait es _) = do
 getType (I.Prim I.Par es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
+-- getType (I.Match _ ((_,arm):_) _) = getType arm
+getType (I.Match cond arms@((alt,arm):tl) _) = 
+  --let getArmType = (\x-> case x of Expr t -> t) in
+  do
+  cond' <- getType cond 
+  arms' <- mapM (getType.snd) arms 
+  let arms'' = zip (fst<$>arms) arms'
+  let t = Classes.TBuiltin (Integral 32)
+  return (I.Match cond' arms'' t)
 getType e =
   throwError
     $  Compiler.TypeError

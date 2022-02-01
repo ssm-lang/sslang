@@ -8,8 +8,8 @@ type MyBool
   MyFalse Int Int
 
 main ( cout : & Int ) -> () =
-  let b = (MyTrue 999)
-  let c = (MyFalse 949 38) 
+//  let b = (MyTrue 999)
+//  let c = (MyFalse 949 38) 
   let d = Leaf 
   let e = OneChild 777 Leaf
   let a = match d

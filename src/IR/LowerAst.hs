@@ -173,8 +173,9 @@ lowerAlt (A.PatTup _)  = error "I.Alt for A.PatTup not implemented yet"
 lowerAlt (A.PatApp (A.PatId d: t)) = I.AltData (I.DConId d) (lowerPatArg <$> t)
  where
   lowerPatArg :: A.Pat -> I.Binder
-  lowerPatArg (A.PatId id) = Just . I.VarId $ id
-  lowerPatArg _ = error "currently only accept identifiers as args to a PatApp"
+  lowerPatArg (A.PatId arg) = Just . I.VarId $ arg
+  lowerPatArg A.PatWildcard = Nothing
+  lowerPatArg _ = error "currently only accept identifiers or wildcards as args to a PatApp"
 lowerAlt (A.PatApp _) = error "this should never happen!"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
 lowerAlt (A.PatAs  _ p) = lowerAlt p
