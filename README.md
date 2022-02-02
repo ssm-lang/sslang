@@ -1,5 +1,8 @@
 # sslang
 
+![tests](https://github.com/ssm-lang/ssm-runtime/actions/workflows/test.yml/badge.svg?branch=dev)
+[![doc](https://github.com/ssm-lang/ssm-runtime/actions/workflows/doc.yml/badge.svg?branch=dev)](https://ssm-lang.github.io/sslang)
+
 A language built atop the Sparse Synchronous Model.
 
 ## Quickstart
