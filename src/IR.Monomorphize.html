@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">IR.Monomorphize</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Common.Compiler.html"><span class="hs-identifier">Common.Compiler</span></a></span><span>               </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Compiler</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.IR.html"><span class="hs-identifier">IR.IR</span></a></span><span>                         </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">I</span></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.Types.Flat.html"><span class="hs-identifier">IR.Types.Flat</span></a></span><span>                 </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Flat</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.Types.Poly.html"><span class="hs-identifier">IR.Types.Poly</span></a></span><span>                 </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Poly</span></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="IR.Monomorphize.html#monoProgram"><span class="hs-identifier hs-type">monoProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Flat.html#Type"><span class="hs-identifier hs-type">Flat.Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span id="monoProgram"><span class="annot"><span class="annottext">monoProgram :: Program Type -&gt; Pass (Program Type)
+</span><a href="IR.Monomorphize.html#monoProgram"><span class="hs-identifier hs-var hs-var">monoProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; Pass (Program Type))
+-&gt; (Program Type -&gt; Program Type)
+-&gt; Program Type
+-&gt; Pass (Program Type)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Program Type -&gt; Program Type
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679381728"><span class="hs-identifier hs-var">poly2Flat</span></a></span><span>
+</span><span id="line-11"></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>  </span><span class="annot"><a href="#local-6989586621679381728"><span class="hs-identifier hs-type">poly2Flat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Types.Flat.html#Type"><span class="hs-identifier hs-type">Flat.Type</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span id="local-6989586621679381728"><span class="annot"><span class="annottext">poly2Flat :: Type -&gt; Type
+</span><a href="#local-6989586621679381728"><span class="hs-identifier hs-var hs-var">poly2Flat</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Poly.html#TBuiltin"><span class="hs-identifier hs-type">Poly.TBuiltin</span></a></span><span> </span><span id="local-6989586621679381726"><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679381726"><span class="hs-identifier hs-var">bty</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Type
+</span><a href="IR.Types.Flat.html#TBuiltin"><span class="hs-identifier hs-var">Flat.TBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Builtin Type -&gt; Type) -&gt; Builtin Type -&gt; Type
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Builtin Type -&gt; Builtin Type
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679381728"><span class="hs-identifier hs-var">poly2Flat</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679381726"><span class="hs-identifier hs-var">bty</span></a></span><span>
+</span><span id="line-14"></span><span>  </span><span class="annot"><a href="#local-6989586621679381728"><span class="hs-identifier hs-var">poly2Flat</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Poly.html#TCon"><span class="hs-identifier hs-type">Poly.TCon</span></a></span><span> </span><span id="local-6989586621679381723"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679381723"><span class="hs-identifier hs-var">tid</span></a></span></span><span> </span><span id="local-6989586621679381722"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679381722"><span class="hs-identifier hs-var">tys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="annottext">TConId -&gt; Type
+</span><a href="IR.Types.Flat.html#TCon"><span class="hs-identifier hs-var">Flat.TCon</span></a></span><span> </span><span class="annot"><span class="annottext">(TConId -&gt; Type) -&gt; TConId -&gt; Type
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; TConId
+</span><a href="IR.Types.Flat.html#flattenApp"><span class="hs-identifier hs-var">Flat.flattenApp</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679381723"><span class="hs-identifier hs-var">tid</span></a></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; TConId) -&gt; [Type] -&gt; TConId
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; [Type] -&gt; [Type]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679381728"><span class="hs-identifier hs-var">poly2Flat</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679381722"><span class="hs-identifier hs-var">tys</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span class="annot"><a href="#local-6989586621679381728"><span class="hs-identifier hs-var">poly2Flat</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Poly.html#TVar"><span class="hs-identifier hs-type">Poly.TVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Type
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;Cannot handle this right now&quot;</span></span><span>
+</span><span id="line-17"></span></pre></body></html>
