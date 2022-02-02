@@ -1,0 +1,31 @@
+type Tree
+  TwoChildren Tree Tree
+  OneChild Int Tree
+  Leaf
+
+type MyBool 
+  MyTrue Int
+  MyFalse Int Int
+
+main ( cout : & Int ) -> () =
+  let b = MyTrue 65                            // A
+  let c = (MyFalse 83 84)                      // S T
+  let d = Leaf 
+  let e = OneChild 82 Leaf                     // R
+  let a = match c
+            MyFalse fst snd = snd              // chooses this one
+            _ = 66                             // B
+  let g = match d
+              Leaf = 78                        // chooses this one, N
+              OneChild e1 e2 = e1              
+              TwoChildren b' b'' = 68          // D
+  let h = match e
+              Leaf = 78                        // N
+              OneChild e' e'' = e'             // chooses this one    
+              TwoChildren b' b'' = 68          // D
+  after 10 , (cout : & Int) <- a
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- g
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- h
+  wait (cout : & Int)

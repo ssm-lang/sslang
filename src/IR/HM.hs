@@ -60,14 +60,18 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , modify
                                                 , replicateM
                                                 )
+import           IR.Types.Classes               ( Scheme(Forall) )
 import           IR.Types.TypeSystem            ( Builtin(..)
                                                 , TypeDef(TypeDef)
+                                                , TypeVariant
+                                                  ( VariantNamed
+                                                  , VariantUnnamed
+                                                  )
                                                 , int
                                                 , unit
                                                 , variants
                                                 , void
                                                 )
-import Language.C (condPrec)
 
 -- | Inference State.
 data InferState = InferState
@@ -75,7 +79,8 @@ data InferState = InferState
   , equations     :: [(Classes.Type, Classes.Type)]
   , unionFindTree :: M.Map Classes.Type Classes.Type
   , count         :: Int
-  , dConMap       :: M.Map I.DConId Classes.Type
+  , dConType      :: M.Map I.DConId Classes.Type
+  , dConArgType   :: M.Map I.DConId [Classes.Type]
   }
 
 -- | Inference Monad.
@@ -95,7 +100,8 @@ runInferFn (InferFn m) = evalStateT
              , varMap        = M.empty
              , count         = 0
              , equations     = []
-             , dConMap       = M.empty
+             , dConType      = M.empty
+             , dConArgType   = M.empty
              }
 
 -- | 'inferProgram' @p@ infers the type of all the programDefs of the given program @p@.
@@ -108,21 +114,36 @@ inferProgram p = runInferFn $ do
                      , I.typeDefs     = typeDefs'
                      }
 
--- | 'recordADTs' saves the type of each data constructor in the Inference State for future use
+
+{- | 'recordADTs' saves information about ADTs in the Inference State for future use
+
+saves type of DCon as a (DCon,TCon) key-value pair
+transforms Ann.Type to Classes.Type
+saves types of DCon args (the ADT fields) as (DCon, [type]) key-value pairs
+-}
 recordADTs
   :: [(I.TConId, TypeDef Ann.Type)]
   -> InferFn [(I.TConId, TypeDef Classes.Type)]
 recordADTs defs = do
   mapM_ recordADT defs
-  return $ second (fmap collapseAnnT) <$> defs
+  let defs' = second (fmap collapseAnnT) <$> defs
+  mapM_ insertArg $ concat $ variants . snd <$> defs'
+  return defs'
  where
   recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-  recordADT (tcon, TypeDef { variants = vars }) =
-    mapM_ (insertType tcon . fst) vars
-  -- save type of DCon as a (DCon,TCon) key-value pair
-  insertType :: I.TConId -> I.DConId -> InferFn ()
-  insertType t d =
-    modify $ \st -> st { dConMap = M.insert d (Classes.TCon t []) $ dConMap st }
+  recordADT (tcon, TypeDef { variants = vars }) = mapM_
+    (insertType tcon . fst)
+    vars   where
+    insertType :: I.TConId -> I.DConId -> InferFn ()
+    insertType t d = modify
+      $ \st -> st { dConType = M.insert d (Classes.TCon t []) $ dConType st }
+  insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
+  insertArg (dcon, VariantNamed vars) = modify $ \st ->
+    st { dConArgType = M.insert dcon (snd <$> vars) $ dConArgType st }
+  insertArg (dcon, VariantUnnamed ts) =
+    modify $ \st -> st { dConArgType = M.insert dcon ts $ dConArgType st }
+
+-- | 'recordADTFields' save the type of each ADT field in the Inference State for future use
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs
@@ -222,7 +243,11 @@ lookupVar v = M.lookup v <$> gets varMap
 
 -- | Look up the type of a data constructor in the inference state.
 lookupDCon :: I.DConId -> InferFn (Maybe Classes.Type)
-lookupDCon d = M.lookup d <$> gets dConMap
+lookupDCon d = M.lookup d <$> gets dConType
+
+-- | Look up the types of an ADT's fields in the inference state.
+lookupFieldTypes :: I.DConId -> InferFn (Maybe [Classes.Type])
+lookupFieldTypes d = M.lookup d <$> gets dConArgType
 
 -- | 'insertVar' @v t@ Insert a variable ID and its type scheme into current 'varMap'.
 insertVar :: I.VarId -> Classes.Scheme -> InferFn ()
@@ -330,10 +355,10 @@ initTypeVars e@(I.Data d _) = do
     Just t' -> return $ I.Data d t'
 initTypeVars (I.App a@(I.Data _ _) b annT) = do
   let annT' = collapseAnnT annT
-  a' <- initTypeVars a
-  b' <- initTypeVars b
+  a'   <- initTypeVars a
+  b'   <- initTypeVars b
   tout <- fresh
-  t <- typeCheck annT' tout
+  t    <- typeCheck annT' tout
   return $ I.App a' b' t
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
@@ -423,23 +448,24 @@ initTypeVars (I.Prim I.Par es annT) = do
   es' <- mapM initTypeVars es
   t   <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
   return $ I.Prim I.Par es' t
-  --Match (Expr t) [(Alt, Expr t)] t
-initTypeVars (I.Match cond arms annT) =  x
---Match Expr [(Pat, Expr)]
---     TBuiltin (Builtin Type)         -- ^ Builtin types
---   | TVar TVarId                     -- ^ Type variables, e.g., '0
--- wildcard: TBuiltin Void
--- TVar varId without just
-  where --y = throwError $ Compiler.TypeError $ fromString "ohohoho~! "
-        x = do
-          let annT' = collapseAnnT annT
-         -- let t  = Classes.TBuiltin Void
-          -- tout <- fresh
-          -- t <- typeCheck annT' tout
-          cond' <- initTypeVars cond
-          arms' <- mapM (initTypeVars . snd) arms 
-          let arms'' = zip (fst <$> arms) arms'
-          return (I.Match cond' arms'' annT')
+initTypeVars (I.Match cond arms annT) = x
+ where
+  x = do
+    let annT' = collapseAnnT annT
+    cond' <- initTypeVars cond
+    arms' <- mapM checkArm arms
+    let arms'' = zip (fst <$> arms) arms'
+    return (I.Match cond' arms'' annT')
+  checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
+  checkArm (I.AltData dcon args, rhs) = do
+    Just ts <- lookupFieldTypes dcon
+    -- TODO: make sure not overriding a map element
+    -- if map elt already exists, save it, replace it, and then,
+    -- when done checking arm, restore old element 
+    -- (Need to implement manual shadowing for local arm scope)
+    mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
+    initTypeVars rhs
+  checkArm (_, rhs) = initTypeVars rhs
 
 
 initTypeVars e@I.Prim{} =
@@ -602,14 +628,14 @@ getType (I.Prim I.Wait es _) = do
 getType (I.Prim I.Par es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
--- getType (I.Match _ ((_,arm):_) _) = getType arm
-getType (I.Match cond arms@((alt,arm):tl) _) = 
+getType (I.Match cond arms@((_, _) : _) _) =
+--getType (I.Match cond arms@((alt, arm) : tl) _) =
   --let getArmType = (\x-> case x of Expr t -> t) in
-  do
-  cond' <- getType cond 
-  arms' <- mapM (getType.snd) arms 
-  let arms'' = zip (fst<$>arms) arms'
-  let t = Classes.TBuiltin (Integral 32)
+                                             do
+  cond' <- getType cond
+  arms' <- mapM (getType . snd) arms
+  let arms'' = zip (fst <$> arms) arms'       -- TODO: make sure all arms are same type!
+  let t      = Classes.TBuiltin (Integral 32) -- TODO: make match type the type of its arm
   return (I.Match cond' arms'' t)
 getType e =
   throwError
