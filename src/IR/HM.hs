@@ -143,8 +143,6 @@ recordADTs defs = do
   insertArg (dcon, VariantUnnamed ts) =
     modify $ \st -> st { dConArgType = M.insert dcon ts $ dConArgType st }
 
--- | 'recordADTFields' save the type of each ADT field in the Inference State for future use
-
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs
   :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
@@ -448,9 +446,7 @@ initTypeVars (I.Prim I.Par es annT) = do
   es' <- mapM initTypeVars es
   t   <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
   return $ I.Prim I.Par es' t
-initTypeVars (I.Match cond arms annT) = x
- where
-  x = do
+initTypeVars (I.Match cond arms annT) = do
     let annT' = collapseAnnT annT
     cond' <- initTypeVars cond
     arms' <- mapM checkArm arms
@@ -462,8 +458,6 @@ initTypeVars (I.Match cond arms annT) = x
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
   checkArm (_, rhs) = initTypeVars rhs
-
-
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError
