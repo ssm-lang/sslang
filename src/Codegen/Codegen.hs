@@ -24,9 +24,7 @@ import           Codegen.TypeDef                ( TypeDefInfo
                                                 , genTypeDef
                                                 , intInit
                                                 , isPointer
-                                                ,
-    -- , tag
-                                                  typeSize
+                                                , typeSize
                                                 )
 
 import qualified IR.IR                         as I
@@ -41,7 +39,6 @@ import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad                  ( forM )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -208,11 +205,11 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
   let genAdt = (\acc adt -> acc <> genTypeDef adt)
   in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
-      in                --  if null typedefs
+      in                  --  if null typedefs
           --  then error "where are all the ADT definitions???? "
           --  else
           do
-                                                                        -- p@I.Program
+                                                                                -- p@I.Program
             (cdecls, cdefs) <-
               bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
             return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
@@ -529,8 +526,8 @@ genExpr (I.Match s as t) = do
       -> GenFn (C.BlockItem, [C.BlockItem])
     withAltScope label (I.AltData dcon fields) m = do
       let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
-      fieldBinds <- forM (zip [0, 1 ..] fields) $ \(i, field) -> do
-        return (field, adt_field scrut i)
+      let fieldBinds =
+            zipWith (\field i -> (field, adt_field scrut i)) fields [0 ..]
       blk <- withBindings fieldBinds m
       return ([citem|case $exp:dconTag:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do

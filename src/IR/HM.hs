@@ -457,12 +457,8 @@ initTypeVars (I.Match cond arms annT) = x
     let arms'' = zip (fst <$> arms) arms'
     return (I.Match cond' arms'' annT')
   checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
-  checkArm (I.AltData dcon args, rhs) = do
+  checkArm (I.AltData dcon args, rhs) = withNewScope do
     Just ts <- lookupFieldTypes dcon
-    -- TODO: make sure not overriding a map element
-    -- if map elt already exists, save it, replace it, and then,
-    -- when done checking arm, restore old element 
-    -- (Need to implement manual shadowing for local arm scope)
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
   checkArm (_, rhs) = initTypeVars rhs
@@ -628,15 +624,18 @@ getType (I.Prim I.Wait es _) = do
 getType (I.Prim I.Par es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Par es' $ Classes.TBuiltin (Tuple (map extract es'))
-getType (I.Match cond arms@((_, _) : _) _) =
---getType (I.Match cond arms@((alt, arm) : tl) _) =
-  --let getArmType = (\x-> case x of Expr t -> t) in
-                                             do
-  cond' <- getType cond
-  arms' <- mapM (getType . snd) arms
-  let arms'' = zip (fst <$> arms) arms'       -- TODO: make sure all arms are same type!
-  let t      = Classes.TBuiltin (Integral 32) -- TODO: make match type the type of its arm
-  return (I.Match cond' arms'' t)
+getType (I.Match cond arms _) = do
+  cond'         <- getType cond
+  arms'@(h : _) <- mapM (getType . snd) arms
+  -- make sure all arms are of the same type
+  if any (/= extract h) (extract <$> arms')
+    then throwError $ Compiler.TypeError $ fromString
+      "RHS of match arms are different types "
+    else do
+      let arms'' = zip (fst <$> arms) arms'
+      let t      = extract h 
+      -- type of match is type of one of its arms
+      return (I.Match cond' arms'' t)
 getType e =
   throwError
     $  Compiler.TypeError

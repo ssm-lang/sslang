@@ -167,7 +167,7 @@ lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt
 lowerAlt A.PatWildcard              = I.AltDefault Nothing
-lowerAlt (A.PatId  d              ) = I.AltData (I.DConId d) []
+lowerAlt (A.PatId  d              ) = I.AltData (I.DConId d) [] 
 lowerAlt (A.PatLit l              ) = I.AltLit $ lowerLit l
 lowerAlt (A.PatTup _) = error "I.Alt for A.PatTup not implemented yet"
 lowerAlt (A.PatApp (A.PatId d : t)) = I.AltData (I.DConId d)
@@ -176,7 +176,7 @@ lowerAlt (A.PatApp (A.PatId d : t)) = I.AltData (I.DConId d)
   lowerPatArg :: A.Pat -> I.Binder
   lowerPatArg (A.PatId arg) = Just . I.VarId $ arg
   lowerPatArg A.PatWildcard = Nothing
-  lowerPatArg _ = -- TODO: make PatApp take in literals
+  lowerPatArg _ =
     error "currently only accept identifiers or wildcards as args to a PatApp"
 lowerAlt (A.PatApp _  ) = error "this should never happen!"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
