@@ -633,7 +633,7 @@ getType (I.Match cond arms _) = do
       "RHS of match arms are different types "
     else do
       let arms'' = zip (fst <$> arms) arms'
-      let t      = extract h 
+      let t      = extract h
       -- type of match is type of one of its arms
       return (I.Match cond' arms'' t)
 getType e =

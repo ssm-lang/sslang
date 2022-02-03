@@ -72,8 +72,14 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       small                         = smallEnough
       tagList                       = ident . fst <$> (small ++ big)
 
+      -- is the data constructor greater or less than a word?
       (greater    , lessThan      ) = partition ((>= 32) . dConSize) dataCons
-
+      
+      {-
+      Is this "small" data constructor small enough to be a packed value?
+      Data constructors that are "small enough" have taken into account
+      the edge case of many nullary data constructors.
+      -}
       (smallEnough, notSmallEnough) = partition isSmallEnough lessThan
        where
         isSmallEnough = (< 32) . (tagBits +) . dConSize

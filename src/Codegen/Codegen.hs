@@ -206,7 +206,7 @@ genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
   let (adts, adtsInfo) =
         foldl (\acc adt -> acc <> genTypeDef adt) ([], mempty) typedefs
   in  do
-                                                                                    -- p@I.Program
+                                                                                        -- p@I.Program
         (cdecls, cdefs) <-
           bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
         return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
@@ -482,6 +482,9 @@ genExpr a@(I.App _ _ ty) = do
           let Just typ   = M.lookup tg (dconType info)
           let Just sz    = M.lookup typ (typeSize info)
           let alloc      = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
+          {- TODO: Make sure all possible fields (there are sz of them)
+             first get initialized to a constant like SSM_NIL 0xffffffff 
+          -}
           let initField  = \y i -> [citem|$exp:(adt_field tmp i) = $exp:y;|]
           let initFields = zipWith initField argVals [0 :: Int, 1 ..]
           return (tmp, concat evalStms ++ alloc ++ initFields)
