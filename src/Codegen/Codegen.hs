@@ -203,16 +203,13 @@ undef = [cexp|0xdeadbeef|]
 -- | Generate a C compilation from an SSM program.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
-  let genAdt = (\acc adt -> acc <> genTypeDef adt)
-  in  let (adts, adtsInfo) = foldl genAdt ([], mempty) typedefs
-      in                  --  if null typedefs
-          --  then error "where are all the ADT definitions???? "
-          --  else
-          do
-                                                                                -- p@I.Program
-            (cdecls, cdefs) <-
-              bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
-            return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
+  let (adts, adtsInfo) =
+        foldl (\acc adt -> acc <> genTypeDef adt) ([], mempty) typedefs
+  in  do
+                                                                                    -- p@I.Program
+        (cdecls, cdefs) <-
+          bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
+        return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
