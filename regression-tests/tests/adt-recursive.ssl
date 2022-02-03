@@ -46,3 +46,4 @@ main ( cout : & Int ) -> () =
   wait (cout : & Int)
   after 10 , (cout : & Int) <- rmd
   wait (cout : & Int)
+  

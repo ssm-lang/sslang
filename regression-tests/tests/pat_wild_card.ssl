@@ -9,3 +9,4 @@ main ( cout : & Int ) -> () =
             _ = 66                             // B
   after 10 , (cout : & Int) <- a
   wait (cout : & Int)
+  
