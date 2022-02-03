@@ -17,12 +17,12 @@ import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
 
 data TypeDefInfo = TypeDefInfo
-  { dconType  :: M.Map DConId TConId
-  , typeSize  :: M.Map TConId Int
-  , isPointer :: M.Map DConId Bool
-  , tag       :: M.Map TConId (C.Exp -> C.Exp)
-  , intInit   :: M.Map DConId C.Exp
-  , ptrFields :: M.Map DConId (C.Exp -> Int -> C.Exp)
+  { dconType  :: M.Map DConId TConId                   -- ^ ('DConId', 'TConId') key value pairs
+  , typeSize  :: M.Map TConId Int                      -- ^ size of ADT as its maximum number of fields
+  , isPointer :: M.Map DConId Bool                     -- ^ whether the ADT is represented as a heap object
+  , tag       :: M.Map TConId (C.Exp -> C.Exp)         -- ^ ('TConId', extract-tag c expression) key value pairs
+  , intInit   :: M.Map DConId C.Exp                    -- ^ ('DConId', initialization c expression) key value pairs
+  , ptrFields :: M.Map DConId (C.Exp -> Int -> C.Exp)  -- ^ ('DConId', access field c expression) key value pairs
   }
 
 instance Semigroup TypeDefInfo where
@@ -53,7 +53,11 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
   enumElts =
     [cenum|$id:(head dConTags) = 0|]
       : ((\n -> [cenum|$id:n|]) <$> tail dConTags)
-
+  {- 
+  Determine which data constructors are small enough to be represented as an integer,
+  and which data constructors are large enough that they should be represented on the heap.
+  The tags will be ordered in the enum from smallest to largest data constructor.
+  -}
   (heapObjs, intObjs, dConTags) = analyze dCons
    where
     analyze
@@ -75,6 +79,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
         isSmallEnough = (< 32) . (tagBits +) . dConSize
         tagBits       = q + r where (q, r) = length lessThan `quotRem` 2
 
+  -- |  Save information about the analyzed ADT. 
   info = saveInfo tconid heapObjs intObjs
    where
     saveInfo
@@ -93,7 +98,7 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
       typs         = M.fromList $ zip (fst <$> intgrs ++ ptrs) (repeat typ)
 
       typsz        = M.fromList [(typ, sz)]
-      sz           = flip div 32 $ dConSize $ maximumBy (compare `on` dConSize) heapObjs
+      sz = flip div 32 $ dConSize $ maximumBy (compare `on` dConSize) heapObjs
 
       isPtr        = M.fromList $ intDCons ++ heapDCons
       intDCons     = zip (fst <$> intgrs) (repeat False)
@@ -131,9 +136,11 @@ genTypeDef (tconid, L.TypeDef dCons _) = ([tagEnum], info)
         accessField = adt_field
                 -- [cexp|$exp:(ssm_to_obj nm)->$id:payload[$uint:index] |]
 
+  -- | Return size of data constructor in bits
   dConSize :: (DConId, L.TypeVariant L.Type) -> Int
   dConSize (_, L.VariantNamed fields  ) = sum $ fieldSize . snd <$> fields
   dConSize (_, L.VariantUnnamed fields) = sum $ fieldSize <$> fields
 
+  -- | Return size of field in bits
   fieldSize :: L.Type -> Int
   fieldSize = const 32
