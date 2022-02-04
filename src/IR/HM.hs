@@ -452,12 +452,15 @@ initTypeVars (I.Match cond arms annT) = do
     arms' <- mapM checkArm arms
     let arms'' = zip (fst <$> arms) arms'
     return (I.Match cond' arms'' annT')
+  where
   checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
   checkArm (I.AltData dcon args, rhs) = withNewScope do
     Just ts <- lookupFieldTypes dcon
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
   checkArm (_, rhs) = initTypeVars rhs
+
+
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError
