@@ -10,10 +10,11 @@ For now, just the polymorphic types.
 module IR.Types.Classes
   ( Builtin(..)
   , Type(..)
+  , Scheme(..)
   ) where
 
 import           Common.Identifiers             ( TConId
-                                                , TVarIdx
+                                                , TVarId
                                                 )
 import           Data.Data                      ( Data
                                                 , Typeable
@@ -28,8 +29,17 @@ import           Prettyprinter
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
-  | TVar TVarIdx                    -- ^ Type variables, e.g., '0
-  deriving (Eq, Show, Typeable, Data)
+  | TVar TVarId                     -- ^ Type variables, e.g., '0
+  deriving (Eq, Show, Ord, Typeable, Data)
+
+-- | Type scheme.
+data Scheme = Forall [TVarId] Type
+  deriving (Eq, Ord, Typeable, Data)
+
+instance Show Scheme where
+  show (Forall [] t) = "Forall . " ++ show t
+  show (Forall args t)
+    = "Forall " ++ unwords (map show args) ++ " . " ++ show t
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

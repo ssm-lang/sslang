@@ -32,7 +32,7 @@ module IR.Types.Poly
   ) where
 
 import           Common.Identifiers             ( TConId
-                                                , TVarIdx
+                                                , TVarId
                                                 )
 import           Common.Pretty
 import           Data.Data                      ( Data
@@ -47,7 +47,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., @Option '0@
-  | TVar TVarIdx                    -- ^ Type variables, e.g., @'0@
+  | TVar TVarId                     -- ^ Type variables, e.g., @'0@
   deriving (Eq, Show, Typeable, Data)
 
 instance TypeSystem Type where

@@ -6,7 +6,7 @@ without the help of a type environment/context.
 -}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE BlockArguments #-}
-module IR.TypeInference where
+module IR.TypeChecker where
 
 import qualified Data.Map                      as M
 
@@ -69,7 +69,7 @@ lookupVar v = M.lookup v <$> gets varMap
 -- | Infer all the program defs of the given porgram.
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
-  defs' <- inferTop $ I.programDefs p
+  defs' <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
                      , I.typeDefs     = [] -- TODO: something with I.typeDefs p
@@ -81,12 +81,12 @@ This will infer the (VarId, Expr) pair sequentially and add the infered types
 into the type context so that these info can be used when infering the following
 expressions.
 -}
-inferTop :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
-inferTop [] = return []
-inferTop ((v, e):xs) = do
+inferProgramDefs :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
+inferProgramDefs [] = return []
+inferProgramDefs ((v, e):xs) = do
   e' <- inferExpr e
   insertVar v (extract e')
-  xs' <- inferTop xs
+  xs' <- inferProgramDefs xs
   return $ (v, e'):xs'
 
 {- | Infer a single expression @e@.
@@ -99,12 +99,14 @@ expression is known.
 inferExpr :: I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
 inferExpr (I.Var v t) = do
   record <- lookupVar v
+  t' <- anns2Class t
   case record of
     Nothing -> do
-      t' <- anns2Class t
       insertVar v t'
       return $ I.Var v t'
-    Just t' -> return $ I.Var v t'
+    Just t'' | t'' == t' -> return $ I.Var v t'
+    Just t'' -> throwError $ Compiler.TypeError $ fromString $
+      "Var expression has inconsistent type annotaation: " ++ show t' ++ ", expected " ++ show t''
 inferExpr e@(I.Lambda v b t) = do
   b' <- withNewScope $ withVty e v t >> inferExpr b
   t' <- anns2Class t

@@ -1,0 +1,40 @@
+name: "Setup cached build environment"
+description: "Setup the build using cache"
+inputs:
+  os:
+    description: "Operating system: Linux, Windows or macOS"
+    required: true
+  resolver:
+    description: "Stack resolver"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Cache Stack files
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.stack
+          .stack-work
+        # tie cache to Stack resolver and package config
+        # https://raehik.github.io/2021/03/01/caching-stack-and-cabal-haskell-builds-on-github-actions.html
+        key: ${{ inputs.os }}-stack-${{ inputs.resolver }}-${{ hashFiles('stack.yaml.lock', 'package.yaml') }}
+        restore-keys: |
+          ${{ inputs.os }}-stack-${{ inputs.resolver }}-
+          ${{ inputs.os }}-stack-
+
+    - name: Install Haskell Stack
+      uses: haskell/actions/setup@v1
+      with:
+        enable-stack: true
+        stack-version: latest
+
+    - name: Setup Haskell Stack
+      shell: bash
+      run: |
+        stack setup --resolver ${{ inputs.resolver }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        stack build --no-terminal --only-dependencies
