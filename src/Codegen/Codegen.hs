@@ -2,20 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
--- | Translate SSM program to C compilation unit.
---
--- What is expected of the IR:
---
--- - Well-formed: All primitive functions are applied to the right number of
---  arguments.
---
--- - Fully-applied: All applications are fully-applied; the only time a term of
---  type @a -> b@ appears anywhere is on the left-hand side of an application.
---
--- - Defunctionalized: No lambdas/closures; the only kinds of terms with an arrow
---  type are variables.
---
--- - Name mangled: All variable identifiers are unique.
+{-  | Translate SSM program to C compilation unit.
+
+What is expected of the IR:
+
+Well-formed: All primitive functions are applied to the right number of
+arguments.
+
+Fully-applied: All applications are fully-applied; the only time a term of
+type @a -> b@ appears anywhere is on the left-hand side of an application.
+
+Defunctionalized: No lambdas/closures; the only kinds of terms with an arrow
+type are variables.
+
+Name mangled: All variable identifiers are unique.
+ -}
 module Codegen.Codegen where
 
 import           Codegen.LibSSM
@@ -75,7 +76,7 @@ data GenFnState = GenFnState
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
   , fnFresh    :: Int                   -- ^ Temporary variable name counter
-  , adtInfo    :: TypeDefInfo           -- ^ ADT information
+  , fnAdtInfo  :: TypeDefInfo           -- ^ ADT information
   }
 
 {- | Translation monad for procedures, with derived typeclass instances.
@@ -84,12 +85,12 @@ We declare 'GenFn' as a newtype so that we can implement 'MonadFail' for it,
 allowing us to use monadic pattern matching.
 -}
 newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
-  deriving (Functor) via (StateT GenFnState Compiler.Pass)
-  deriving (Applicative) via (StateT GenFnState Compiler.Pass)
-  deriving (Monad) via (StateT GenFnState Compiler.Pass)
-  deriving (MonadFail) via (StateT GenFnState Compiler.Pass)
-  deriving (MonadError Compiler.Error) via (StateT GenFnState Compiler.Pass)
-  deriving (MonadState GenFnState) via (StateT GenFnState Compiler.Pass)
+  deriving Functor via StateT GenFnState Compiler.Pass
+  deriving Applicative via StateT GenFnState Compiler.Pass
+  deriving Monad via StateT GenFnState Compiler.Pass
+  deriving MonadFail via StateT GenFnState Compiler.Pass
+  deriving (MonadError Compiler.Error) via StateT GenFnState Compiler.Pass
+  deriving (MonadState GenFnState) via StateT GenFnState Compiler.Pass
 
 -- | Run a 'GenFn' computation on a procedure.
 runGenFn
@@ -107,7 +108,7 @@ runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
   , fnBody     = body
   , fnLocs     = M.empty
   , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
-  , adtInfo    = adtinfo
+  , fnAdtInfo  = adtinfo
   , fnMaxWaits = 0
   , fnCases    = 0
   , fnFresh    = 0
@@ -123,6 +124,7 @@ nextCase = do
   modify $ \st -> st { fnCases = n + 1 }
   return n
 
+-- | Obtain fresh integer in the 'GenFn' monad
 getFresh :: GenFn Int
 getFresh = do
   n <- gets fnFresh
@@ -202,14 +204,12 @@ undef = [cexp|0xdeadbeef|]
 
 -- | Generate a C compilation from an SSM program.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } =
+genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
+  -- p@I.Program
   let (adts, adtsInfo) =
         foldl (\acc adt -> acc <> genTypeDef adt) ([], mempty) typedefs
-  in  do
-                                                                                        -- p@I.Program
-        (cdecls, cdefs) <-
-          bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
-        return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
+  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
+  return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -217,10 +217,6 @@ includes = [cunit|
 $esc:("#include \"ssm.h\"")
 typedef char unit;
 |]
--- $esc:("#define ssm_initialize_unit(v) ssm_initialize_event(v)")
--- $esc:("#define ssm_later_unit(l, d, r) ssm_later_event(l, d)")
--- $esc:("#define ssm_assign_unit(l, p, r) ssm_assign_event(l, p)")
--- typedef typename ssm_event_t ssm_unit_t;
 
 -- | Setup the entry point of the program.
 genInitProgram :: I.Program I.Type -> [C.Definition]
@@ -440,7 +436,7 @@ genExpr (I.Var n _) = do
   Just v <- M.lookup n <$> gets fnVars
   return (v, [])
 genExpr (I.Data tg _) = do
-  info <- gets adtInfo
+  info <- gets fnAdtInfo
   let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
 genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
@@ -473,20 +469,20 @@ genExpr a@(I.App _ _ ty) = do
           call = [citems|$exp:(activate $ fnEnter `ccall` enterArgs);|]
       return (tmp, concat evalStms ++ call ++ yield)
     (I.Data tg dty) -> do
-      info <- gets adtInfo
+      info <- gets fnAdtInfo
       case M.lookup tg (isPointer info) of
         Nothing    -> fail "Couldn't find tag"
         Just False -> fail "Cannot handle integer types with fields yet"
         Just True  -> do
           tmp <- genTmp dty
-          let Just typ   = M.lookup tg (dconType info)
-          let Just sz    = M.lookup typ (typeSize info)
-          let alloc      = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
+          let Just typ = M.lookup tg (dconType info)
+          let Just sz  = M.lookup typ (typeSize info)
+          let alloc    = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
           {- TODO: Make sure all possible fields (there are sz of them)
              first get initialized to a constant like SSM_NIL 0xffffffff 
           -}
-          let initField  = \y i -> [citem|$exp:(adt_field tmp i) = $exp:y;|]
-          let initFields = zipWith initField argVals [0 :: Int, 1 ..]
+          let initField y i = [citem|$exp:(adt_field tmp i) = $exp:y;|]
+              initFields = zipWith initField argVals [0 ..]
           return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
@@ -498,7 +494,7 @@ genExpr (I.Match s as t) = do
 
   let
     assignScrut = [citems|$exp:scrut = $exp:sExp;|]
-    tag         = adt_tag scrut
+    tag         = adt_tag scrut   -- TODO: I think this is the place we can get correct tag from adtinfo
     switch cases = [citems|switch ($exp:tag) { $items:cases }|]
     assignVal e = [citems|$exp:val = $exp:e;|]
     joinStm = [citems|$id:joinLabel:;|]
@@ -525,7 +521,7 @@ genExpr (I.Match s as t) = do
       -> GenFn [C.BlockItem]
       -> GenFn (C.BlockItem, [C.BlockItem])
     withAltScope label (I.AltData dcon fields) m = do
-      let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag
+      let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag <- see line 497!
       let fieldBinds =
             zipWith (\field i -> (field, adt_field scrut i)) fields [0 ..]
       blk <- withBindings fieldBinds m
