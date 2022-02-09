@@ -194,7 +194,7 @@ genTrigs numTrigs = zip (map trig_ [1 .. numTrigs]) (repeat trigger_t)
 
 -- | The constant unit value, the singleton inhabitant of the type Unit.
 unit :: C.Exp
-unit = [cexp|0|]
+unit = marshal [cexp|0|]
 
 -- | Fake undefined value used for expressions of type Void.
 undef :: C.Exp
@@ -342,7 +342,7 @@ genStep = do
   actName   <- gets fnName
   actBody   <- gets fnBody
   firstCase <- nextCase
-  (_, stms) <- genExpr actBody -- Toss away return value
+  (ret_expr, stms) <- genExpr actBody -- Toss away return value
   let act      = act_ actName
       get_acts = to_act (cexpr actg) actName
       do_leave = leave (cexpr actg) (csizeof act)
@@ -359,6 +359,7 @@ genStep = do
           default:
             break;
           }
+        *$id:acts->$id:ret_val = $exp:ret_expr;  
         $id:leave_label:
           $exp:do_leave;
         }
