@@ -353,10 +353,9 @@ initTypeVars e@(I.Data d _) = do
     Just t' -> return $ I.Data d t'
 initTypeVars (I.App a@(I.Data _ _) b annT) = do
   let annT' = collapseAnnT annT
-  a'   <- initTypeVars a
-  b'   <- initTypeVars b
-  tout <- fresh
-  t    <- typeCheck annT' tout
+  a' <- initTypeVars a
+  b' <- initTypeVars b
+  t  <- typeCheck annT' (extract a')
   return $ I.App a' b' t
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
@@ -447,12 +446,12 @@ initTypeVars (I.Prim I.Par es annT) = do
   t   <- typeCheck annT' (Classes.TBuiltin (Tuple (map extract es')))
   return $ I.Prim I.Par es' t
 initTypeVars (I.Match cond arms annT) = do
-    let annT' = collapseAnnT annT
-    cond' <- initTypeVars cond
-    arms' <- mapM checkArm arms
-    let arms'' = zip (fst <$> arms) arms'
-    return (I.Match cond' arms'' annT')
-  where
+  let annT' = collapseAnnT annT
+  cond' <- initTypeVars cond
+  arms' <- mapM checkArm arms
+  let arms'' = zip (fst <$> arms) arms'
+  return (I.Match cond' arms'' annT')
+ where
   checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
   checkArm (I.AltData dcon args, rhs) = withNewScope do
     Just ts <- lookupFieldTypes dcon
@@ -521,8 +520,10 @@ unifyAll = do
 
 -- |'unify' @t1 t2@ solves the type equation t1 ~ t2 and put the solution into 'unionFindTree'.
 unify :: Classes.Type -> Classes.Type -> InferFn ()
-unify t1 t2 | t1 == t2                          = return ()
-unify tv1@(Classes.TVar _) tv2@(Classes.TVar _) = do
+unify t1@(Classes.TCon _ _) t2                    = insertUnion t1 t2  -- ADT always "wins", right?
+unify t1                    t2@(Classes.TCon _ _) = insertUnion t1 t2  -- ADT always "wins", right?
+unify t1 t2 | t1 == t2                            = return ()
+unify tv1@(Classes.TVar _) tv2@(Classes.TVar _)   = do
   r1 <- findRoot tv1
   r2 <- findRoot tv2
   if r1 == tv1 && r2 == tv2 then insertUnion r1 r2 else unify r1 r2

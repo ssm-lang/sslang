@@ -21,11 +21,11 @@ module Codegen.Codegen where
 
 import           Codegen.LibSSM
 import           Codegen.TypeDef                ( TypeDefInfo
-                                                , dconType
+                                                , dconSize
+                                                , dtags
                                                 , genTypeDef
                                                 , intInit
                                                 , isPointer
-                                                , typeSize
                                                 )
 
 import qualified IR.IR                         as I
@@ -339,9 +339,9 @@ genEnter = do
 -- 'genExpr'.
 genStep :: GenFn (C.Definition, C.Definition)
 genStep = do
-  actName   <- gets fnName
-  actBody   <- gets fnBody
-  firstCase <- nextCase
+  actName          <- gets fnName
+  actBody          <- gets fnBody
+  firstCase        <- nextCase
   (ret_expr, stms) <- genExpr actBody -- Toss away return value
   let act      = act_ actName
       get_acts = to_act (cexpr actg) actName
@@ -437,8 +437,9 @@ genExpr (I.Var n _) = do
   Just v <- M.lookup n <$> gets fnVars
   return (v, [])
 genExpr (I.Data tg _) = do
-  info <- gets fnAdtInfo
-  let Just initExpr = M.lookup tg (intInit info) in return (initExpr, [])
+  info <- intInit <$> gets fnAdtInfo
+  let Just initExpr = M.lookup tg info
+  return (initExpr, [])
 genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
   (defVal, defStms) <- genExpr d
@@ -476,12 +477,8 @@ genExpr a@(I.App _ _ ty) = do
         Just False -> fail "Cannot handle integer types with fields yet"
         Just True  -> do
           tmp <- genTmp dty
-          let Just typ = M.lookup tg (dconType info)
-          let Just sz  = M.lookup typ (typeSize info)
-          let alloc    = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
-          {- TODO: Make sure all possible fields (there are sz of them)
-             first get initialized to a constant like SSM_NIL 0xffffffff 
-          -}
+          let Just sz = M.lookup tg (dconSize info)
+          let alloc   = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
           let initField y i = [citem|$exp:(adt_field tmp i) = $exp:y;|]
               initFields = zipWith initField argVals [0 ..]
           return (tmp, concat evalStms ++ alloc ++ initFields)
@@ -495,7 +492,7 @@ genExpr (I.Match s as t) = do
 
   let
     assignScrut = [citems|$exp:scrut = $exp:sExp;|]
-    tag         = adt_tag scrut   -- TODO: I think this is the place we can get correct tag from adtinfo
+    tag         = adt_tag scrut
     switch cases = [citems|switch ($exp:tag) { $items:cases }|]
     assignVal e = [citems|$exp:val = $exp:e;|]
     joinStm = [citems|$id:joinLabel:;|]
@@ -522,7 +519,8 @@ genExpr (I.Match s as t) = do
       -> GenFn [C.BlockItem]
       -> GenFn (C.BlockItem, [C.BlockItem])
     withAltScope label (I.AltData dcon fields) m = do
-      let dconTag = [cexp|$id:dcon|]          -- TODO: use the correct dcon tag <- see line 497!
+      Just tagExp <- M.lookup dcon . dtags <$> gets fnAdtInfo
+      let dconTag = tagExp
       let fieldBinds =
             zipWith (\field i -> (field, adt_field scrut i)) fields [0 ..]
       blk <- withBindings fieldBinds m

@@ -21,6 +21,8 @@ main ( cout : & Int ) -> () =
   let b = TwoChildren d e 66
   let c = OneChild 67 Leaf
   let root = TwoChildren b c 65
+
+// Pattern match on root of tree to extract the left most descendant.
   let lmd = match root
                 OneChild v kid = 88
                 TwoChildren l r v = match l 
@@ -33,6 +35,7 @@ main ( cout : & Int ) -> () =
                                                                   _ = 88
                                        _ = 88
                 _ = 88
+// Pattern match on root of tree to extract the right most descendant.               
   let rmd = match root
                 OneChild v kid = 88
                 TwoChildren l r v = match r 
@@ -42,6 +45,8 @@ main ( cout : & Int ) -> () =
                                        Leaf = 87
                                        _ = 88
                 _ = 88
+// Print out the value of the left and right most 
+// descendants to make sure we traversed the tree correctly.
   after 10 , (cout : & Int) <- lmd
   wait (cout : & Int)
   after 10 , (cout : & Int) <- rmd
