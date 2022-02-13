@@ -131,13 +131,15 @@ recordADTs defs = do
   return defs'
  where
   recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-  recordADT (tcon, TypeDef { variants = vars }) = mapM_
-    (insertType tcon . fst)
-    vars   where
-    insertType :: I.TConId -> I.DConId -> InferFn ()
-    insertType t d = modify
+  recordADT (tcon, TypeDef { variants = vars }) = mapM_ (insertType tcon . fst) vars
+
+-- | 'insertType' inserts the overall type of an ADT's 'DConid' into the Inference State
+insertType :: I.TConId -> I.DConId -> InferFn ()
+ insertType t d = modify
       $ \st -> st { dConType = M.insert d (Classes.TCon t []) $ dConType st }
-  insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
+
+-- | 'insertArg' inserts the type of a 'DConid''s arguments into the Inference State
+insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
   insertArg (dcon, VariantNamed vars) = modify $ \st ->
     st { dConArgType = M.insert dcon (snd <$> vars) $ dConArgType st }
   insertArg (dcon, VariantUnnamed ts) =
