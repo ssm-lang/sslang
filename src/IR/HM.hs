@@ -131,19 +131,20 @@ recordADTs defs = do
   return defs'
  where
   recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-  recordADT (tcon, TypeDef { variants = vars }) = mapM_ (insertType tcon . fst) vars
+  recordADT (tcon, TypeDef { variants = vars }) =
+    mapM_ (insertType tcon . fst) vars
 
 -- | 'insertType' inserts the overall type of an ADT's 'DConid' into the Inference State
 insertType :: I.TConId -> I.DConId -> InferFn ()
- insertType t d = modify
-      $ \st -> st { dConType = M.insert d (Classes.TCon t []) $ dConType st }
+insertType t d =
+  modify $ \st -> st { dConType = M.insert d (Classes.TCon t []) $ dConType st }
 
 -- | 'insertArg' inserts the type of a 'DConid''s arguments into the Inference State
 insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
-  insertArg (dcon, VariantNamed vars) = modify $ \st ->
-    st { dConArgType = M.insert dcon (snd <$> vars) $ dConArgType st }
-  insertArg (dcon, VariantUnnamed ts) =
-    modify $ \st -> st { dConArgType = M.insert dcon ts $ dConArgType st }
+insertArg (dcon, VariantNamed vars) = modify
+  $ \st -> st { dConArgType = M.insert dcon (snd <$> vars) $ dConArgType st }
+insertArg (dcon, VariantUnnamed ts) =
+  modify $ \st -> st { dConArgType = M.insert dcon ts $ dConArgType st }
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs
