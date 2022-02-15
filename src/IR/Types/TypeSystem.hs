@@ -154,5 +154,3 @@ instance Functor TypeVariant where
 variantFields :: TypeVariant t -> Int
 variantFields (VariantNamed fields ) = length fields
 variantFields (VariantUnnamed fields ) = length fields
-
-
