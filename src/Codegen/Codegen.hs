@@ -20,12 +20,10 @@ Name mangled: All variable identifiers are unique.
 module Codegen.Codegen where
 
 import           Codegen.LibSSM
-import           Codegen.TypeDef                ( TypeDefInfo
-                                                , dconSize
-                                                , dtags
-                                                , genTypeDef
-                                                , intInit
-                                                , isPointer
+import           Codegen.Typegen                ( DConInfo(..)
+                                                , TConInfo(..)
+                                                , TypegenInfo(..)
+                                                , genTypes
                                                 )
 
 import qualified IR.IR                         as I
@@ -40,6 +38,7 @@ import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
+import           Control.Monad                  ( unless )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -76,7 +75,7 @@ data GenFnState = GenFnState
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
   , fnFresh    :: Int                   -- ^ Temporary variable name counter
-  , fnAdtInfo  :: TypeDefInfo           -- ^ ADT information
+  , fnTypeInfo :: TypegenInfo           -- ^ (User-defined) type information
   }
 
 {- | Translation monad for procedures, with derived typeclass instances.
@@ -98,24 +97,37 @@ runGenFn
   -> [(I.Binder, I.Type)] -- ^ Names and types of parameters to procedure
   -> I.Type               -- ^ Name and type of return parameter of procedure
   -> I.Expr I.Type        -- ^ Body of procedure
-  -> TypeDefInfo          -- ^ ADT information
+  -> TypegenInfo          -- ^ Type information
   -> GenFn a              -- ^ Translation monad to run
   -> Compiler.Pass a      -- ^ Pass on errors to caller
-runGenFn name params ret body adtinfo (GenFn tra) = evalStateT tra $ GenFnState
-  { fnName     = name
-  , fnParams   = params
-  , fnRetTy    = ret
-  , fnBody     = body
-  , fnLocs     = M.empty
-  , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
-  , fnAdtInfo  = adtinfo
-  , fnMaxWaits = 0
-  , fnCases    = 0
-  , fnFresh    = 0
-  }
+runGenFn name params ret body typeInfo (GenFn tra) =
+  evalStateT tra $ GenFnState
+    { fnName     = name
+    , fnParams   = params
+    , fnRetTy    = ret
+    , fnBody     = body
+    , fnLocs     = M.empty
+    , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
+    , fnTypeInfo = typeInfo
+    , fnMaxWaits = 0
+    , fnCases    = 0
+    , fnFresh    = 0
+    }
  where
   resolveParam (Just v) = Just (v, acts_ $ fromId v)
   resolveParam _        = Nothing
+
+-- | Lookup some information associated with a type constructor.
+getsTCon :: (TConInfo -> a) -> I.TConId -> GenFn a
+getsTCon f i = do
+  Just a <- fmap f . (`tconInfo` i) <$> gets fnTypeInfo
+  return a
+
+-- | Lookup some information associated with a data constructor.
+getsDCon :: (DConInfo -> a) -> I.DConId -> GenFn a
+getsDCon f i = do
+  Just a <- fmap f . (`dconInfo` i) <$> gets fnTypeInfo
+  return a
 
 -- | Read and increment the number of cases in a procedure, i.e., @fnCases++@.
 nextCase :: GenFn Int
@@ -206,8 +218,7 @@ undef = [cexp|0xdeadbeef|]
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
   -- p@I.Program
-  let (adts, adtsInfo) =
-        foldl (\acc adt -> acc <> genTypeDef adt) ([], mempty) typedefs
+  (adts, adtsInfo) <- genTypes typedefs
   (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
   return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
 
@@ -241,7 +252,7 @@ genInitProgram I.Program { I.programEntry = entry } = [cunit|
 --
 -- Items 2 and 3 include both declarations and definitions.
 genTop
-  :: TypeDefInfo
+  :: TypegenInfo
   -> (I.VarId, I.Expr I.Type)
   -> Compiler.Pass ([C.Definition], [C.Definition])
 genTop info (name, l@(I.Lambda _ _ ty)) =
@@ -436,10 +447,9 @@ genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
 genExpr (I.Var n _) = do
   Just v <- M.lookup n <$> gets fnVars
   return (v, [])
-genExpr (I.Data tg _) = do
-  info <- intInit <$> gets fnAdtInfo
-  let Just initExpr = M.lookup tg info
-  return (initExpr, [])
+genExpr (I.Data dcon _) = do
+  e <- getsDCon dconConstruct dcon
+  return (e, [])
 genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
   (defVal, defStms) <- genExpr d
@@ -470,21 +480,35 @@ genExpr a@(I.App _ _ ty) = do
               ++ [[cexp|&$exp:tmp|]]
           call = [citems|$exp:(activate $ fnEnter `ccall` enterArgs);|]
       return (tmp, concat evalStms ++ call ++ yield)
-    (I.Data tg dty) -> do
-      info <- gets fnAdtInfo
-      case M.lookup tg (isPointer info) of
-        Nothing    -> fail "Couldn't find tag"
-        Just False -> fail "Cannot handle integer types with fields yet"
-        Just True  -> do
-          tmp <- genTmp dty
-          let Just sz = M.lookup tg (dconSize info)
-          let alloc   = [[citem|$exp:tmp = $exp:(new_adt sz tg);|]]
-          let initField y i = [citem|$exp:(adt_field tmp i) = $exp:y;|]
-              initFields = zipWith initField argVals [0 ..]
-          return (tmp, concat evalStms ++ alloc ++ initFields)
+    (I.Data dcon dty) -> do
+      onHeap <- getsDCon dconOnHeap dcon
+      unless onHeap $ do
+        fail $ "Cannot handle packed fields yet, for: " ++ show dcon
+      construct <- getsDCon dconConstruct dcon
+      destruct  <- getsDCon dconDestruct dcon
+      tmp       <- genTmp dty
+      let alloc = [[citem|$exp:tmp = $exp:construct;|]]
+          initField y i = [citem|$exp:(destruct i tmp) = $exp:y;|]
+          initFields = zipWith initField argVals [0 ..]
+      return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
 genExpr (I.Match s as t) = do
-  -- TODO: document this
+  -- To implement a match expression, we need to generate a C switch statement
+  --
+  -- which switches on the tag of the scrutinee @s@.
+  -- However, since we're already using a switch statement for jumping to
+  -- program counters, we cannot simply nest the switch statement, since we will
+  -- risk the inner switch statement (for the match expression) shadowing the
+  -- cases of the outer switch statement (for the program counters). In
+  -- particular, we will be unable to yield inside of match expression arm with
+  -- this naive compilation scheme.
+  --
+  -- So, in order to keep the C statements "flat", we use a basic block-style
+  -- scheme, where the inner switch statement only jumps (using @goto@) to
+  -- blocks corresponding to each arm of the match expression; this ensures that
+  -- we never need to yield in the inner switch statement, thus side-stepping
+  -- C's limitation. At the end of each block, we jump to a join statement that
+  -- follows the blocks generated for each arm.
   (sExp, sStms) <- genExpr s
   scrut         <- genTmp $ extract s
   val           <- genTmp t
@@ -492,12 +516,17 @@ genExpr (I.Match s as t) = do
 
   let
     assignScrut = [citems|$exp:scrut = $exp:sExp;|]
-    tag         = adt_tag scrut
+    tag         = adt_tag scrut -- TODO: look this up using typeScrut
     switch cases = [citems|switch ($exp:tag) { $items:cases }|]
     assignVal e = [citems|$exp:val = $exp:e;|]
     joinStm = [citems|$id:joinLabel:;|]
 
-    -- TODO: document this
+    {- | Generate statements for a sslang match arm.
+
+    Produces two C blocks; the first is just the case statements inside of the
+    inner switch matching on the tag, while the second is the basic block
+    corresponding to the consequence of a match arm.
+    -}
     genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
     genArm (alt, arm) = do
       armLabel           <- freshLabel
@@ -507,24 +536,29 @@ genExpr (I.Match s as t) = do
       let armCase = [citems|$item:altLabel goto $id:armLabel;|]
       return (armCase, armBlk)
 
-    -- TODO: document this
+    -- | Generate the case statements for the inner switch.
     mkBlk :: CIdent -> [C.BlockItem] -> [C.BlockItem]
     mkBlk label blk =
       [citems|$id:label:;|] ++ blk ++ [citems|goto $id:joinLabel;|]
 
-    -- TODO: document this
+    {- | Generate the basic block for each match arm's consequence.
+
+    This helper follows a reader monad pattern, taking a monad as an argument,
+    since scope of the consequence expression is extended by the variables bound
+    by the match expression's pattern.
+    -}
     withAltScope
       :: CIdent
       -> I.Alt
       -> GenFn [C.BlockItem]
       -> GenFn (C.BlockItem, [C.BlockItem])
     withAltScope label (I.AltData dcon fields) m = do
-      Just tagExp <- M.lookup dcon . dtags <$> gets fnAdtInfo
-      let dconTag = tagExp
+      destruct <- getsDCon dconDestruct dcon
+      cas      <- getsDCon dconCase dcon
       let fieldBinds =
-            zipWith (\field i -> (field, adt_field scrut i)) fields [0 ..]
+            zipWith (\field i -> (field, destruct i scrut)) fields [0 ..]
       blk <- withBindings fieldBinds m
-      return ([citem|case $exp:dconTag:;|], mkBlk label blk)
+      return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do
       blk <- m
       return ([citem|case $exp:(genLiteral l):;|], mkBlk label blk)

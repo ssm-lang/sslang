@@ -91,6 +91,9 @@ packed_val = "packed_val"
 heap_ptr :: CIdent
 heap_ptr = "heap_ptr"
 
+mm_tag :: CIdent
+mm_tag = "tag"
+
 -- TODO: skip ssm mm
 
 -- | @ssm_marshal@, construct a 'value_t' out of a 31-bit integral value.
@@ -241,6 +244,10 @@ adt_field v i = [cexp|ssm_adt_field($exp:v, $uint:i)|]
 -- | @ssm_tag@, extract the tag of an ADT value.
 adt_tag :: C.Exp -> C.Exp
 adt_tag v = [cexp|ssm_tag($exp:v)|]
+
+-- | Extract the tag of a heap-allocated ADT value.
+adt_heap_tag :: C.Exp -> C.Exp
+adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
 
 -- | Name of the pseudonymous macro from the Linux kernel.
 container_of :: CIdent

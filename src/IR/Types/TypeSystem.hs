@@ -149,3 +149,10 @@ instance Functor TypeDef where
 instance Functor TypeVariant where
   fmap f (VariantNamed   fs) = VariantNamed $ fmap (second f) fs
   fmap f (VariantUnnamed fs) = VariantUnnamed $ fmap f fs
+
+-- | The number of fields in a 'TypeVariant'.
+variantFields :: TypeVariant t -> Int
+variantFields (VariantNamed fields ) = length fields
+variantFields (VariantUnnamed fields ) = length fields
+
+
