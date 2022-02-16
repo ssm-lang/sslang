@@ -366,12 +366,6 @@ initTypeVars e@(I.Data d _) = do
     Just s -> do
       t' <- instantiate s
       return $ I.Data d t'
--- initTypeVars (I.App a@(I.Data _ _) b annT) = do
---   let annT' = collapseAnnT annT
---   a' <- initTypeVars a
---   b' <- initTypeVars b
---   t  <- typeCheck annT' (extract a')
---   return $ I.App a' b' t
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
   a'   <- initTypeVars a
