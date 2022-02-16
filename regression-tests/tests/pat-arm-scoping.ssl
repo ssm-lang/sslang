@@ -1,0 +1,57 @@
+type Tree
+  TwoChildren Tree Tree Int
+  OneChild Int Tree
+  Leaf
+ 
+//         A                         A ~ 65
+//       /   \                       B ~ 66
+//      B     C                      C ~ 67
+//     / \     \                     D ~ 68
+//    D   E     *                    E ~ 69
+//   /     \
+//  *       *      
+
+// 1) print out the left-most descendant
+// 2) print out the right-most descendant
+// expected output: DC
+
+main ( cout : & Int ) -> () =
+  let d = OneChild 68 Leaf
+  let e = OneChild 69 Leaf
+  let b = TwoChildren d e 66
+  let c = OneChild 67 Leaf
+  let root = TwoChildren b c 65
+
+// Make sure scope is local to each arm by 
+// giving different arms the same identifiers. 
+
+  let lmd = match root
+// OneChild and TwoChildren both have identifiers kid and v...
+// will the correct "kid" be matched on? 
+                OneChild v kid = 88
+                TwoChildren kid r v = match kid
+                                       OneChild v kid = 89
+                                       Leaf = 87
+                                       TwoChildren l r v = match l
+                                                                  OneChild v kid = match kid
+                                                                                        Leaf = v 
+                                                                                        _ = 88
+                                                                  _ = 88
+                                       _ = 88
+                _ = 88
+  let rmd = match root
+// Here, every arm in the pattern match as an identifier v...
+// Is the correct v returned? 
+                OneChild v kid = 88
+                TwoChildren l r v = match r 
+                                       OneChild v kid = match kid
+                                                           Leaf = v 
+                                                           _ = 88
+                                       Leaf = 87
+                                       _ = 88
+                _ = 88
+// Make sure scoping behaves as we expect
+  after 10 , (cout : & Int) <- lmd
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- rmd
+  wait (cout : & Int)
