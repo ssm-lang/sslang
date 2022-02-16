@@ -1,0 +1,14 @@
+type MyBool 
+  MyTrue Int
+  MyFalse Int Int
+
+// test whether wild card can be successfully chosen by match
+// expected output is B
+
+main ( cout : & Int ) -> () =
+  let b = MyTrue 65                            // A
+  let a = match b
+            MyFalse fst snd = snd - 10         
+            _ = 66                             // B
+  after 10 , (cout : & Int) <- a
+  wait (cout : & Int)

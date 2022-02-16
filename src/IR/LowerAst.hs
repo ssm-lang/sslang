@@ -22,6 +22,7 @@ import qualified IR.Types.TypeSystem           as I
 import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 , isCons
+                                                , TVarId (..)
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -74,7 +75,7 @@ lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef I.Type)
 lowerTypeDef A.TypeDef { A.typeName = tn, A.typeParams = tvs, A.typeVariants = tds }
   = return
     ( fromId tn
-    , I.TypeDef { I.arity = length tvs, I.variants = map lowerTypeVariant tds }
+    , I.TypeDef { I.targs = map TVarId tvs, I.variants = map lowerTypeVariant tds }
     )
  where
   lowerTypeVariant (A.VariantUnnamed vn ts) =
@@ -166,11 +167,19 @@ lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt
-lowerAlt A.PatWildcard  = I.AltDefault Nothing
-lowerAlt (A.PatId  _  ) = error "I.Alt for A.PatID not implemented yet"
-lowerAlt (A.PatLit l  ) = I.AltLit $ lowerLit l
-lowerAlt (A.PatTup _  ) = error "I.Alt for A.PatTup not implemented yet"
-lowerAlt (A.PatApp _  ) = error "No way to lower A.PatApp to I.DataCons yet"
+lowerAlt A.PatWildcard              = I.AltDefault Nothing
+lowerAlt (A.PatId  d              ) = I.AltData (I.DConId d) []
+lowerAlt (A.PatLit l              ) = I.AltLit $ lowerLit l
+lowerAlt (A.PatTup _) = error "I.Alt for A.PatTup not implemented yet"
+lowerAlt (A.PatApp (A.PatId d : t)) = I.AltData (I.DConId d)
+                                                (lowerPatArg <$> t)
+ where
+  lowerPatArg :: A.Pat -> I.Binder
+  lowerPatArg (A.PatId arg) = Just . I.VarId $ arg
+  lowerPatArg A.PatWildcard = Nothing
+  lowerPatArg _ = -- TODO: allow A.PatApp as an argument to A.PatApp
+    error "currently only accept identifiers or wildcards as args to a PatApp"
+lowerAlt (A.PatApp _  ) = error "this should never happen!"
 lowerAlt (A.PatAnn _ p) = lowerAlt p
 lowerAlt (A.PatAs  _ p) = lowerAlt p
 
