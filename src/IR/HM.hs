@@ -62,14 +62,13 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           IR.Types.Classes               ( Scheme(Forall) )
 import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , TypeDef(TypeDef)
+                                                , TypeDef(..)
                                                 , TypeVariant
                                                   ( VariantNamed
                                                   , VariantUnnamed
                                                   )
                                                 , int
                                                 , unit
-                                                , variants
                                                 , void
                                                 )
 
@@ -79,7 +78,7 @@ data InferState = InferState
   , equations     :: [(Classes.Type, Classes.Type)]
   , unionFindTree :: M.Map Classes.Type Classes.Type
   , count         :: Int
-  , dConType      :: M.Map I.DConId Classes.Type
+  , dConType      :: M.Map I.DConId Classes.Scheme
   , dConArgType   :: M.Map I.DConId [Classes.Type]
   }
 
@@ -131,13 +130,24 @@ recordADTs defs = do
   return defs'
  where
   recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-  recordADT (tcon, TypeDef { variants = vars }) =
-    mapM_ (insertType tcon . fst) vars
+  recordADT (tcon, TypeDef { variants = vars, targs = tvs }) =
+    mapM_ (insertDCon tcon tvs) vars
+
+-- | 'buildDConType' recursively builds the type for a data constructor
+buildDConType :: I.TConId -> [TVarId] -> TypeVariant Ann.Type -> Classes.Type
+buildDConType tcon tvs variant = case variant of
+  VariantNamed [] -> Classes.TCon tcon (map Classes.TVar tvs)
+  VariantUnnamed [] -> Classes.TCon tcon (map Classes.TVar tvs)
+  VariantNamed ((_,t):ts) -> Classes.TBuiltin $ Arrow (collapseAnnT t) ts'
+    where ts' = buildDConType tcon tvs (VariantNamed ts)
+  VariantUnnamed (t:ts) -> Classes.TBuiltin $ Arrow (collapseAnnT t) ts'
+    where ts' = buildDConType tcon tvs (VariantUnnamed ts)
 
 -- | 'insertType' inserts the overall type of an ADT's 'DConid' into the Inference State
-insertType :: I.TConId -> I.DConId -> InferFn ()
-insertType t d =
-  modify $ \st -> st { dConType = M.insert d (Classes.TCon t []) $ dConType st }
+insertDCon :: I.TConId -> [TVarId] -> (I.DConId, TypeVariant Ann.Type) -> InferFn ()
+insertDCon tcon tvs (dcon, variant) =
+  modify $ \st -> st { dConType = M.insert dcon t $ dConType st}
+  where t = Classes.Forall tvs (buildDConType tcon tvs variant)
 
 -- | 'insertArg' inserts the type of a 'DConid''s arguments into the Inference State
 insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
@@ -243,7 +253,7 @@ lookupVar :: I.VarId -> InferFn (Maybe Classes.Scheme)
 lookupVar v = M.lookup v <$> gets varMap
 
 -- | Look up the type of a data constructor in the inference state.
-lookupDCon :: I.DConId -> InferFn (Maybe Classes.Type)
+lookupDCon :: I.DConId -> InferFn (Maybe Classes.Scheme)
 lookupDCon d = M.lookup d <$> gets dConType
 
 -- | Look up the types of an ADT's fields in the inference state.
@@ -353,13 +363,15 @@ initTypeVars e@(I.Data d _) = do
         $  fromString
         $  "Unable to type ADT expression: "
         ++ show e
-    Just t' -> return $ I.Data d t'
-initTypeVars (I.App a@(I.Data _ _) b annT) = do
-  let annT' = collapseAnnT annT
-  a' <- initTypeVars a
-  b' <- initTypeVars b
-  t  <- typeCheck annT' (extract a')
-  return $ I.App a' b' t
+    Just s -> do
+      t' <- instantiate s
+      return $ I.Data d t'
+-- initTypeVars (I.App a@(I.Data _ _) b annT) = do
+--   let annT' = collapseAnnT annT
+--   a' <- initTypeVars a
+--   b' <- initTypeVars b
+--   t  <- typeCheck annT' (extract a')
+--   return $ I.App a' b' t
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
   a'   <- initTypeVars a
@@ -523,8 +535,8 @@ unifyAll = do
 
 -- |'unify' @t1 t2@ solves the type equation t1 ~ t2 and put the solution into 'unionFindTree'.
 unify :: Classes.Type -> Classes.Type -> InferFn ()
-unify t1@(Classes.TCon _ _) t2                    = insertUnion t1 t2  -- ADT always "wins", right?
-unify t1                    t2@(Classes.TCon _ _) = insertUnion t1 t2  -- ADT always "wins", right?
+-- unify t1@(Classes.TCon _ _) t2                    = insertUnion t1 t2  -- ADT always "wins", right?
+-- unify t1                    t2@(Classes.TCon _ _) = insertUnion t1 t2  -- ADT always "wins", right?
 unify t1 t2 | t1 == t2                            = return ()
 unify tv1@(Classes.TVar _) tv2@(Classes.TVar _)   = do
   r1 <- findRoot tv1
@@ -539,6 +551,8 @@ unify (Classes.TBuiltin (Arrow t1 t2)) (Classes.TBuiltin (Arrow t3 t4)) =
   unify t1 t3 >> unify t2 t4
 unify (Classes.TBuiltin (Tuple ts1)) (Classes.TBuiltin (Tuple ts2)) =
   zipWithM_ unify ts1 ts2
+unify (Classes.TCon d1 tvs1) (Classes.TCon d2 tvs2) | d1 == d2 = do
+  zipWithM_ unify tvs1 tvs2
 unify t1 t2 =
   throwError
     $  Compiler.TypeError
@@ -570,16 +584,9 @@ getType (I.Let vs b _) = do
     return (v, e')
 getType (  I.Lit  I.LitEvent          _) = return $ I.Lit I.LitEvent unit
 getType (  I.Lit  i@(I.LitIntegral _) _) = return $ I.Lit i (int 32)
-getType e@(I.Data d                   _) = do
-  tcon <- lookupDCon d
-  case tcon of
-    Nothing ->
-      throwError
-        $  Compiler.TypeError
-        $  fromString
-        $  "Unable to type ADT expression: "
-        ++ show e
-    Just t' -> return $ I.Data d t'
+getType (I.Data d t) = do
+  t' <- solveType t
+  return $ I.Data d t'
 getType (I.App a b t) = do
   a' <- getType a
   b' <- getType b

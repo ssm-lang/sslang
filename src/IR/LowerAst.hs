@@ -22,6 +22,7 @@ import qualified IR.Types.TypeSystem           as I
 import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 , isCons
+                                                , TVarId (..)
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -74,7 +75,7 @@ lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef I.Type)
 lowerTypeDef A.TypeDef { A.typeName = tn, A.typeParams = tvs, A.typeVariants = tds }
   = return
     ( fromId tn
-    , I.TypeDef { I.arity = length tvs, I.variants = map lowerTypeVariant tds }
+    , I.TypeDef { I.targs = map TVarId tvs, I.variants = map lowerTypeVariant tds }
     )
  where
   lowerTypeVariant (A.VariantUnnamed vn ts) =

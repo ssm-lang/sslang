@@ -29,7 +29,7 @@ import IR.Types.TypeSystem
   ( Builtin (..),
     TypeDef (TypeDef),
     TypeVariant (VariantNamed, VariantUnnamed),
-    arity,
+    targs,
     dearrow,
     deref,
     int,
@@ -112,13 +112,13 @@ inferADT adts@((tconId, h) : tl) = do
       insertDCon :: I.TConId -> I.DConId ->  InferFn ()
       insertDCon t d = modify $ \st -> st {dConMap = M.insert d (Classes.TCon t []) $ dConMap st}
     inferTypeDef :: TypeDef Ann.Type -> InferFn (TypeDef Classes.Type)
-    inferTypeDef TypeDef {variants = vars, arity = ar} =
+    inferTypeDef TypeDef {variants = vars, targs = ar} =
       case vars of
-        [] -> pure TypeDef {variants = [], arity = ar}
+        [] -> pure TypeDef {variants = [], targs = ar}
         ((dconId, h2) : tl2) -> do
           h2' <- inferTypeVariant h2
-          TypeDef {variants = tl2'} <- inferTypeDef TypeDef {variants = tl2, arity = ar}
-          return TypeDef {variants = (dconId, h2') : tl2', arity = ar}
+          TypeDef {variants = tl2'} <- inferTypeDef TypeDef {variants = tl2, targs = ar}
+          return TypeDef {variants = (dconId, h2') : tl2', targs = ar}
     inferTypeVariant :: TypeVariant Ann.Type -> InferFn (TypeVariant Classes.Type)
     inferTypeVariant (VariantUnnamed []) = do return (VariantUnnamed [])
     inferTypeVariant (VariantUnnamed (h3 : tl3)) = do
