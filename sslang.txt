@@ -232,13 +232,10 @@ instance GHC.Base.Monoid Common.Identifiers.Identifier
 instance Prettyprinter.Internal.Pretty Common.Identifiers.Identifier
 
 
--- | Identifiers in generated C code and helper functions for constructing
---   them.
-module Codegen.Identifiers
+-- | Bindings to the ssm-runtime library.
+module Codegen.LibSSM
 
--- | Use snake_case for c literals
---   
---   Identifiers in C.
+-- | Identifiers in C.
 newtype CIdent
 CIdent :: Identifier -> CIdent
 
@@ -248,48 +245,174 @@ ctype :: CIdent -> Type
 -- | Construct an expression from a C identifier.
 cexpr :: CIdent -> Exp
 
--- | C type that represents model time
+-- | Construct an expression of the size of a C type.
+csizeof :: Type -> Exp
+ccall :: Exp -> [Exp] -> Exp
+amp :: Exp -> Exp
+star :: Exp -> Exp
+
+-- | <tt>enum ssm_error</tt>, an enumeration of possible runtime errors.
+data SSMError
+
+-- | Reserved for unforeseen, non-user-facing errors.
+INTERNAL_ERROR :: SSMError
+
+-- | Tried to insert into full ready queue.
+EXHAUSTED_ACT_QUEUE :: SSMError
+
+-- | Tried to insert into full event queue.
+EXHAUSTED_EVENT_QUEUE :: SSMError
+
+-- | Could not allocate more memory.
+EXHAUSTED_MEMORY :: SSMError
+
+-- | Tried to exceed available recursion depth.
+EXHAUSTED_PRIORITY :: SSMError
+
+-- | Not yet ready to perform the requested action.
+NOT_READY :: SSMError
+
+-- | Specified invalid time.
+INVALID_TIME :: SSMError
+
+-- | Invalid memory layout.
+INVALID_MEMORY :: SSMError
+
+-- | <tt>SSM_THROW</tt>, throw a runtime error.
+throw :: SSMError -> Exp
+
+-- | <tt>ssm_word_t</tt>, the largest supported machine word size.
+word_t :: Type
+
+-- | <tt>ssm_value_t</tt>, runtime representation for sslang values.
+value_t :: Type
+
+-- | Name of the <tt>packed_val</tt> field in a <a>value_t</a>.
+packed_val :: CIdent
+
+-- | Name of the <tt>heap_ptr</tt> field in a <a>value_t</a>.
+heap_ptr :: CIdent
+mm_tag :: CIdent
+
+-- | <tt>ssm_marshal</tt>, construct a <a>value_t</a> out of a 31-bit
+--   integral value.
+marshal :: Exp -> Exp
+
+-- | <tt>ssm_unmarshal</tt>, extract 31-bit integral value out of a
+--   <a>value_t</a>.
+unmarshal :: Exp -> Exp
+
+-- | <tt>ssm_on_heap</tt>, whether a <a>value_t</a> points to something on
+--   the heap.
+on_heap :: Exp -> Exp
+
+-- | <tt>ssm_dup</tt>, increment the reference count of a value.
+dup :: Exp -> Exp
+
+-- | <tt>ssm_drop</tt>, drop the reference count of a value and free if
+--   necessary.
+drop :: Exp -> Exp
+
+-- | <tt>ssm_time_t</tt>, 64-bit time type.
 time_t :: Type
 
--- | C type that represents process priorities
+-- | <tt>struct ssm_time</tt>, the heap-representation of a <a>time_t</a>.
+time_obj_t :: Type
+
+-- | <tt>SSM_NEVER</tt>, a <a>time_t</a> that is never reached.
+never :: Exp
+
+-- | <tt>ssm_now</tt>, the current time.
+now :: Exp
+
+-- | <tt>ssm_new_time</tt>, allocate a <a>time_obj_t</a> on the heap.
+new_time :: Exp -> Exp
+
+-- | <tt>ssm_time_read</tt>, read the time in a <a>time_obj_t</a>.
+read_time :: Exp -> Exp
+
+-- | <tt>ssm_priority_t</tt>, thread priority.
 priority_t :: Type
 
--- | C type that represents process depths
+-- | <tt>ssm_depth_t</tt>, thread depth.
 depth_t :: Type
 
--- | C type that represents triggers, aka processes that are sensitized on
---   variables
-trigger_t :: Type
+-- | <tt>SSM_ROOT_PRIORITY</tt>, the depth of the root process.
+root_priority :: Exp
 
--- | C type that represents the step function of a process
-stepf_t :: Type
+-- | <tt>SSM_ROOT_DEPTH</tt>, the depth of the root process.
+root_depth :: Exp
 
--- | C type that represents booleans
-bool_t :: Type
-
--- | The type of the activation record base class.
+-- | <tt>ssm_act_t</tt>, the generic activation record type.
 act_t :: Type
 
 -- | Name of the program counter field in an <a>act_t</a>.
-pc :: CIdent
+act_pc :: CIdent
 
 -- | Name of the caller field in an <a>act_t</a>.
-caller :: CIdent
+act_caller :: CIdent
 
 -- | Name of the depth field in an <a>act_t</a>.
-depth :: CIdent
+act_depth :: CIdent
 
 -- | Name of the priority field in an <a>act_t</a>.
-priority :: CIdent
+act_priority :: CIdent
 
--- | The type of the scheduled variable base class.
+-- | <tt>ssm_trigger_t</tt>, nodes in the linked list of triggers.
+trigger_t :: Type
+
+-- | <tt>ssm_enter</tt>, allocate and initialize activation record.
+enter :: Exp -> Exp -> Exp -> Exp -> Exp -> Exp
+
+-- | <tt>ssm_leave</tt>, deallocate an activation record before leaving.
+leave :: Exp -> Exp -> Exp
+
+-- | <tt>ssm_activate</tt>, schedule an activation record on the ready
+--   queue.
+activate :: Exp -> Exp
+
+-- | <tt>ssm_top_parent</tt>, Name of top level parent activation record
+top_parent :: Exp
+
+-- | <tt>ssm_sv_t</tt>, polymorphic scheduled variables.
 sv_t :: Type
 
--- | The word size as type uint32_t
-word_t :: Type
+-- | <tt>ssm_new_sv</tt>, allocate a new <a>sv_t</a> on the heap.
+new_sv :: Exp -> Exp
 
--- | The conventional name of the payload field in a type-specialized SV.
-value :: CIdent
+-- | <tt>ssm_to_sv</tt>, retrieve the <a>sv_t</a> pointer pointed to by a
+--   <a>value_t</a>.
+to_sv :: Exp -> Exp
+
+-- | <tt>ssm_deref</tt>, read the value of an <a>sv_t</a> pointed to by a
+--   <a>value_t</a>.
+deref :: Exp -> Exp
+
+-- | <tt>ssm_assign</tt>, assign to a scheduled variable.
+assign :: Exp -> Exp -> Exp -> Exp
+
+-- | <tt>ssm_later</tt>, schedule a delayed assignment to a scheduled
+--   variable.
+later :: Exp -> Exp -> Exp -> Exp
+
+-- | <tt>ssm_sensitize</tt>, sensitize a trigger to a variable.
+sensitize :: Exp -> Exp -> Exp
+
+-- | <tt>ssm_sensitize</tt>, sensitize a trigger to a variable.
+desensitize :: Exp -> Exp
+
+-- | <tt>ssm_new_adt</tt>, allocate a new ADT object on the heap.
+new_adt :: Int -> DConId -> Exp
+
+-- | <tt>ssm_adt_field</tt>, access the <tt>i</tt>th field of an ADT
+--   object. Assignable.
+adt_field :: Exp -> Int -> Exp
+
+-- | <tt>ssm_tag</tt>, extract the tag of an ADT value.
+adt_tag :: Exp -> Exp
+
+-- | Extract the tag of a heap-allocated ADT value.
+adt_heap_tag :: Exp -> Exp
 
 -- | Name of the pseudonymous macro from the Linux kernel.
 container_of :: CIdent
@@ -297,65 +420,17 @@ container_of :: CIdent
 -- | Name of top level program initialization function
 initialize_program :: CIdent
 
--- | Name of the top level static input switch initialization function
-initialize_static_input_device :: CIdent
+-- | Obtain the name of a process activation record struct.
+act_typename :: VarId -> CIdent
 
--- | Name of the top level static output initialization function
-initialize_static_output_device :: CIdent
+-- | Identifier for act member in act struct.
+act_member :: CIdent
 
--- | Name of top level return step-function
-top_return :: CIdent
+-- | Obtain the type of a process activation record.
+act_ :: VarId -> Type
 
--- | Name of top level parent activation record
-top_parent :: CIdent
-
--- | Name of routine that forks procedures
-activate :: CIdent
-
--- | Name of routine that initialized an activation record
-enter :: CIdent
-
--- | Name of routine that deallocates an activation record
-leave :: CIdent
-
--- | Name of routine that checks if a reference has been written to
-event_on :: CIdent
-
--- | Name of routine that sensitizes a procedure
-sensitize :: CIdent
-
--- | Name of routine that desensitizes a procedure
-desensitize :: CIdent
-
--- | Name of routine that dequeues an event from the event queue
-unsched_event :: CIdent
-
--- | Name of routine that returns the current value of now.
-now :: CIdent
-
--- | Name of routine that returns the current value of now.
-never :: CIdent
-
--- | Priority of the root SSM routine.
-root_priority :: CIdent
-
--- | Depth of the root SSM routine.
-root_depth :: CIdent
-
--- | Name of macro that throws an error.
-throw :: CIdent
-
--- | Exhausted priority
-exhausted_priority :: CIdent
-
--- | Insert debug trace
-debug_trace :: CIdent
-
--- | Used for inserting
-debug_microtick :: CIdent
-
--- | Obtain the name of the activation record struct for a routine.
-act_ :: VarId -> CIdent
+-- | Obtain the process-specific activation record from a generic one.
+to_act :: Exp -> VarId -> Exp
 
 -- | Obtain the name of the step function of a routine.
 step_ :: VarId -> CIdent
@@ -369,55 +444,40 @@ trig_ :: Int -> CIdent
 -- | Obtain the name of a temporary variable.
 tmp_ :: Int -> CIdent
 
+-- | Obtain the name of a label.
+label_ :: Int -> CIdent
+
 -- | Obtain the name of an argument variable.
 arg_ :: Int -> CIdent
-
--- | Label in the step function where cleanup is performed before leaving.
-leave_cleanup :: CIdent
-
--- | Identifier for specialized (outer) struct act.
-acts :: CIdent
-
--- | Identifier for generic (inner) struct act.
-actg :: CIdent
-
--- | Identifier for act member in act struct.
-act_member :: CIdent
 
 -- | Name of return argument.
 ret_val :: CIdent
 
--- | Name of the scheduled variable type for an SSM Type.
-sv_ :: Identifiable a => a -> CIdent
+-- | Identifier for generic (inner) struct act.
+actg :: CIdent
 
--- | Name of the initialize method for an SSM Type.
-initialize_ :: Identifiable a => a -> CIdent
+-- | Identifier for specialized (outer) struct act.
+acts :: CIdent
+acts_ :: CIdent -> Exp
 
--- | Name of the assign method for an SSM Type.
-assign_ :: Identifiable a => a -> CIdent
+-- | Name of the caller argument of an enter call.
+enter_caller :: CIdent
 
--- | Name of the later method for an SSM Type.
-later_ :: Identifiable a => a -> CIdent
+-- | Name of the priority argument of an enter call.
+enter_priority :: CIdent
 
--- | Name of the generic ssm_sv_t embedded inside of a scheduled variable
---   type.
-sv :: CIdent
-
--- | Name of C integer type.
-int_ :: Int -> CIdent
-
--- | Allocate memory.
-mem_alloc :: CIdent
-
--- | Free memory.
-mem_free :: CIdent
-instance GHC.Base.Monoid Codegen.Identifiers.CIdent
-instance GHC.Base.Semigroup Codegen.Identifiers.CIdent
-instance Language.C.Quote.Base.ToIdent Codegen.Identifiers.CIdent
-instance Common.Identifiers.Identifiable Codegen.Identifiers.CIdent
-instance Data.String.IsString Codegen.Identifiers.CIdent
-instance GHC.Classes.Ord Codegen.Identifiers.CIdent
-instance GHC.Classes.Eq Codegen.Identifiers.CIdent
+-- | Name of the depth argument of an enter call.
+enter_depth :: CIdent
+leave_label :: CIdent
+instance GHC.Base.Monoid Codegen.LibSSM.CIdent
+instance GHC.Base.Semigroup Codegen.LibSSM.CIdent
+instance Language.C.Quote.Base.ToIdent Codegen.LibSSM.CIdent
+instance Common.Identifiers.Identifiable Codegen.LibSSM.CIdent
+instance Data.String.IsString Codegen.LibSSM.CIdent
+instance GHC.Classes.Ord Codegen.LibSSM.CIdent
+instance GHC.Classes.Eq Codegen.LibSSM.CIdent
+instance GHC.Show.Show Codegen.LibSSM.SSMError
+instance Language.C.Quote.Base.ToIdent Codegen.LibSSM.SSMError
 
 
 -- | Data types and helpers used to compose the compiler pipeline.
@@ -1126,8 +1186,8 @@ collectArrow :: TypeSystem t => t -> ([t], t)
 --   A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 --   
 --   <pre>
---   TypeDef { arity = 1
---           , [ (<a>Cons</a>, VariantUnnamed [TVar 0, TCon (<a>MyList</a> [TVar 0])])
+--   TypeDef { targs = [a]
+--           , [ (<a>Cons</a>, VariantUnnamed [TVar a, TCon (<a>MyList</a> [TVar a])])
 --             , (<a>Nil</a>, VariantUnnamed [])
 --             ]
 --           }
@@ -1136,11 +1196,11 @@ collectArrow :: TypeSystem t => t -> ([t], t)
 --   (Data constructors for identifiers are omitted for brevity.)
 --   
 --   Note that for a flat type system, where all type constructors are
---   nullary, arity will just be set to 0.
+--   nullary, targs will just be set to [].
 data TypeDef t
-TypeDef :: [(DConId, TypeVariant t)] -> Arity -> TypeDef t
+TypeDef :: [(DConId, TypeVariant t)] -> [TVarId] -> TypeDef t
 [variants] :: TypeDef t -> [(DConId, TypeVariant t)]
-[arity] :: TypeDef t -> Arity
+[targs] :: TypeDef t -> [TVarId]
 
 -- | Arguments to a data constructor, whose fields may or may not be named
 data TypeVariant t
@@ -1150,6 +1210,9 @@ VariantNamed :: [(VarId, t)] -> TypeVariant t
 
 -- | An algebraic type with unnamed fields
 VariantUnnamed :: [t] -> TypeVariant t
+
+-- | The number of fields in a <a>TypeVariant</a>.
+variantFields :: TypeVariant t -> Int
 instance Data.Data.Data t => Data.Data.Data (IR.Types.TypeSystem.Builtin t)
 instance GHC.Classes.Ord t => GHC.Classes.Ord (IR.Types.TypeSystem.Builtin t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.Types.TypeSystem.Builtin t)
@@ -1234,68 +1297,6 @@ instance GHC.Show.Show IR.Types.Poly.Type
 instance GHC.Classes.Eq IR.Types.Poly.Type
 instance IR.Types.TypeSystem.TypeSystem IR.Types.Poly.Type
 instance Prettyprinter.Internal.Pretty IR.Types.Poly.Type
-
-
--- | Basic type system with only nullary type constants and builtin types.
---   
---   Features (or lack thereof):
---   
---   <ul>
---   <li>No type variables</li>
---   <li>No type classes</li>
---   <li>No user-defined type application</li>
---   </ul>
---   
---   This should be the last type system before the IR is lowered to a
---   lower representation.
---   
---   Note that we do not flatten the type application for builtin type
---   constructors (e.g., Ref, Arrow, etc.) because their internal structure
---   must be understood by codegen. An alternate perspective is that these
---   are left unapplied because these are the same type constructors
---   available in lower-level languages, so we can easily lower them with a
---   1:1 encoding.
-module IR.Types.Flat
-
--- | The language of type expressions, e.g., what appears in a type
---   signature.
-data Type
-
--- | Builtin types
-TBuiltin :: Builtin Type -> Type
-
--- | Type constructors
-TCon :: TConId -> Type
-
--- | Builtin type constructors that should be preserved across all type
---   systems.
-data Builtin t
-
--- | Singleton type <tt>()</tt>
-Unit :: Builtin t
-
--- | Uninhabited type <tt>!</tt>, coerces with anything
-Void :: Builtin t
-
--- | Reference of <tt>&amp;</tt>
-Ref :: t -> Builtin t
-
--- | Function arrow <tt>a -&gt; b</tt>
-Arrow :: t -> t -> Builtin t
-
--- | Tuple with two or more fields
-Tuple :: [t] -> Builtin t
-
--- | Two's complement binary type with size in bits
-Integral :: Int -> Builtin t
-
--- | Flatten a list of type constructors into a
-flattenApp :: TConId -> [Type] -> TConId
-instance Data.Data.Data IR.Types.Flat.Type
-instance GHC.Show.Show IR.Types.Flat.Type
-instance GHC.Classes.Eq IR.Types.Flat.Type
-instance IR.Types.TypeSystem.TypeSystem IR.Types.Flat.Type
-instance Prettyprinter.Internal.Pretty IR.Types.Flat.Type
 
 
 -- | Types with Typeclasses, e.g., after type inference
@@ -1694,9 +1695,10 @@ instance Prettyprinter.Internal.Pretty IR.IR.Literal
 module IR.TypeChecker
 
 -- | Typing Environment
-newtype TypeCtx
-TypeCtx :: Map VarId Type -> TypeCtx
+data TypeCtx
+TypeCtx :: Map VarId Type -> Map DConId Type -> TypeCtx
 [varMap] :: TypeCtx -> Map VarId Type
+[dConMap] :: TypeCtx -> Map DConId Type
 newtype InferFn a
 InferFn :: StateT TypeCtx Pass a -> InferFn a
 
@@ -1713,8 +1715,17 @@ replaceCtx :: TypeCtx -> InferFn ()
 --   variable ID.
 lookupVar :: VarId -> InferFn (Maybe Type)
 
--- | Infer all the program defs of the given porgram.
+-- | Look up the type of a data constructor in the typing context.
+lookupDCon :: DConId -> InferFn (Maybe Type)
+
+-- | Infer all the program defs of the given program.
 inferProgram :: Program Type -> Pass (Program Type)
+
+-- | Pass all program typeDefs through the typechecker
+--   
+--   Change Ann.Type to Classes.Type For each ADT, save ('DConId, 'TConId)
+--   key-value pairs in typing context for future use
+inferADT :: [(TConId, TypeDef Type)] -> InferFn [(TConId, TypeDef Type)]
 
 -- | Top level inference.
 --   
@@ -1750,9 +1761,6 @@ instance Control.Monad.Fail.MonadFail IR.TypeChecker.InferFn
 instance GHC.Base.Monad IR.TypeChecker.InferFn
 instance GHC.Base.Applicative IR.TypeChecker.InferFn
 instance GHC.Base.Functor IR.TypeChecker.InferFn
-
-module IR.Monomorphize
-monoProgram :: Program Type -> Pass (Program Type)
 
 
 -- | Lower the representation of a sslang Ast into sslang IR.
@@ -1826,11 +1834,13 @@ module IR.HM
 
 -- | Inference State.
 data InferState
-InferState :: Map VarId Scheme -> [(Type, Type)] -> Map Type Type -> Int -> InferState
+InferState :: Map VarId Scheme -> [(Type, Type)] -> Map Type Type -> Int -> Map DConId Scheme -> Map DConId [Type] -> InferState
 [varMap] :: InferState -> Map VarId Scheme
 [equations] :: InferState -> [(Type, Type)]
 [unionFindTree] :: InferState -> Map Type Type
 [count] :: InferState -> Int
+[dConType] :: InferState -> Map DConId Scheme
+[dConArgType] :: InferState -> Map DConId [Type]
 
 -- | Inference Monad.
 newtype InferFn a
@@ -1840,8 +1850,28 @@ InferFn :: StateT InferState Pass a -> InferFn a
 runInferFn :: InferFn a -> Pass a
 
 -- | <a>inferProgram</a> <tt>p</tt> infers the type of all the programDefs
---   of the given porgram <tt>p</tt>.
+--   of the given program <tt>p</tt>.
 inferProgram :: Program Type -> Pass (Program Type)
+
+-- | <a>recordADTs</a> saves information about ADTs in the Inference State
+--   for future use
+--   
+--   saves type of DCon as a (DCon,TCon) key-value pair transforms Ann.Type
+--   to Classes.Type saves types of DCon args (the ADT fields) as (DCon,
+--   [type]) key-value pairs
+recordADTs :: [(TConId, TypeDef Type)] -> InferFn [(TConId, TypeDef Type)]
+
+-- | <a>buildDConType</a> recursively builds the type for a data
+--   constructor
+buildDConType :: TConId -> [TVarId] -> TypeVariant Type -> Type
+
+-- | <tt>insertType</tt> inserts the overall type of an ADT's
+--   <tt>DConid</tt> into the Inference State
+insertDCon :: TConId -> [TVarId] -> (DConId, TypeVariant Type) -> InferFn ()
+
+-- | <a>insertArg</a> inserts the type of a <tt>DConid'</tt>s arguments
+--   into the Inference State
+insertArg :: (DConId, TypeVariant Type) -> InferFn ()
 
 -- | <a>inferProgramDefs</a> <tt>ds</tt> infers the type of programDefs
 --   <tt>ds</tt> recursively and binds each varibale to its type.
@@ -1883,6 +1913,12 @@ fresh :: InferFn Type
 --   the current <a>varMap</a> given its variable ID <tt>v</tt>.
 lookupVar :: VarId -> InferFn (Maybe Scheme)
 
+-- | Look up the type of a data constructor in the inference state.
+lookupDCon :: DConId -> InferFn (Maybe Scheme)
+
+-- | Look up the types of an ADT's fields in the inference state.
+lookupFieldTypes :: DConId -> InferFn (Maybe [Type])
+
 -- | <a>insertVar</a> <tt>v t</tt> Insert a variable ID and its type scheme
 --   into current <a>varMap</a>.
 insertVar :: VarId -> Scheme -> InferFn ()
@@ -1917,7 +1953,7 @@ collapseAnnT :: Type -> Type
 -- | Stage 1: Assign symbolic typenames
 --   
 --   <a>initTypeVars</a> <tt>e</tt> walks into the expression <tt>e</tt>
---   revursively, assign a fresh <tt>TVar</tt> to each unknown type, and
+--   recursively, assign a fresh <tt>TVar</tt> to each unknown type, and
 --   build type equations that will be solved later.
 initTypeVars :: Expr Type -> InferFn (Expr Type)
 
@@ -1970,8 +2006,8 @@ instance IR.HM.HasFreeTVars a => IR.HM.HasFreeTVars [a]
 -- | Intermediate representation (IR) stage of the compiler pipeline.
 --   
 --   The IR stage is organized into 4 distinct substages: <a>lower</a>,
---   <a>ann2Class</a>, <a>class2Poly</a>, and <a>poly2Flat</a>, delineated
---   by each type system used in the compiler.
+--   <a>ann2Class</a>, <a>class2Poly</a>, and <tt>poly2Flat</tt>,
+--   delineated by each type system used in the compiler.
 module IR
 
 -- | Operation modes for the IR compiler stage.
@@ -2014,20 +2050,20 @@ options :: [OptDescr (Options -> Options)]
 -- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
 lower :: Options -> Program -> Pass (Program Type)
 
--- | IR compiler sub-stage, ultimately producing a fully-typed IR. Run HM
---   type inference, type checker, or both (default) based on the command
---   line option. Note that when both algorithms are run, the program
---   doesn't type check iff both algorithms throw an error.
+-- | IR compiler sub-stage, ultimately producing a fully-typed IR.
+--   
+--   Runs HM inference, type checker, or both (default) based on the CLI
+--   option.
+--   
+--   When both algorithms are run, the program fails type check iff both
+--   algorithms throw an error.
 ann2Class :: Options -> Program Type -> Pass (Program Type)
 
 -- | IR compiler sub-stage, ultimately instantiating all type classes.
 class2Poly :: Options -> Program Type -> Pass (Program Type)
 
--- | IR compiler sub-stage, ultimately monomorphizing the polymorphic type
---   system.
---   
---   TODO: This is probably not necessary in the future.
-poly2Flat :: Options -> Program Type -> Pass (Program Type)
+-- | IR compiler sub-stage, performing source-to-source translations.
+poly2Poly :: Options -> Program Type -> Pass (Program Type)
 
 -- | IR compiler stage.
 run :: Options -> Program -> Pass (Program Type)
@@ -2045,26 +2081,70 @@ instance GHC.Show.Show IR.Options
 instance GHC.Classes.Eq IR.Options
 instance Common.Default.Default IR.Options
 
-module Codegen.TypeDef
 
--- | Generate definitions for SSM type definitions.
-genTypeDef :: TypeDef Type -> Definition
+-- | Extract and encapsulate the type information needed during codegen.
+module Codegen.Typegen
 
+-- | Type-related information, abstracted behind partial lookup functions.
+data TypegenInfo
+TypegenInfo :: (DConId -> Maybe DConInfo) -> (TConId -> Maybe TConInfo) -> TypegenInfo
 
--- | Translate SSM program to C compilation unit.
---   
---   What is expected of the IR:
---   
---   <ul>
---   <li>Well-formed: All primitive functions are applied to the right
---   number of arguments.</li>
---   <li>Fully-applied: All applications are fully-applied; the only time a
---   term of type <tt>a -&gt; b</tt> appears anywhere is on the left-hand
---   side of an application.</li>
---   <li>Defunctionalized: No lambdas/closures; the only kinds of terms
---   with an arrow type are variables.</li>
---   <li>Name mangled: All variable identifiers are unique.</li>
---   </ul>
+-- | for each data constructor.
+[dconInfo] :: TypegenInfo -> DConId -> Maybe DConInfo
+
+-- | for each type constructor.
+[tconInfo] :: TypegenInfo -> TConId -> Maybe TConInfo
+
+-- | Information and codegen handlers associated with each data
+--   constructor.
+data DConInfo
+DConInfo :: TConId -> Int -> Bool -> Exp -> Exp -> (Int -> Exp -> Exp) -> DConInfo
+
+-- | the type that the data constructor inhabits
+[dconType] :: DConInfo -> TConId
+
+-- | number of fields
+[dconSize] :: DConInfo -> Int
+
+-- | whether the data constructor is heap-allocated
+[dconOnHeap] :: DConInfo -> Bool
+
+-- | the dcon tag to match on, i.e., in <tt>case tag</tt>
+[dconCase] :: DConInfo -> Exp
+
+-- | constructs a dcon instance
+[dconConstruct] :: DConInfo -> Exp
+
+-- | retrieve the ith field
+[dconDestruct] :: DConInfo -> Int -> Exp -> Exp
+
+-- | Information and codegen handlers associated with each type
+--   constructor.
+data TConInfo
+TConInfo :: TypeEncoding -> (Exp -> Exp) -> TConInfo
+
+-- | how the data type is encoded
+[typeEncoding] :: TConInfo -> TypeEncoding
+
+-- | how to retrieve the tag of an instance
+[typeScrut] :: TConInfo -> Exp -> Exp
+
+-- | How a data type may be encoded, i.e., heap-allocated, by value, or
+--   both.
+data TypeEncoding
+TypePacked :: TypeEncoding
+TypeHeap :: TypeEncoding
+TypeMixed :: TypeEncoding
+
+-- | Create codegen definitions and helpers for sslang type definitions.
+genTypes :: [(TConId, TypeDef Type)] -> Pass ([Definition], TypegenInfo)
+
+-- | Generate C enums for sslang type definitions, enumerating tags.
+genTypeDef :: (TConId, TypeDef Type) -> Pass Definition
+
+-- | Compute codgen helpers for each sslang type definition.
+genTypeInfo :: [(TConId, TypeDef Type)] -> Pass TypegenInfo
+
 module Codegen.Codegen
 
 -- | Possible, but temporarily punted for the sake of expediency.
@@ -2079,7 +2159,7 @@ nope :: a
 --   so that should be computed first, before this information is used to
 --   generate the act struct and enter definitions.
 data GenFnState
-GenFnState :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> [(VarId, Type)] -> Int -> Int -> Int -> GenFnState
+GenFnState :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> Map VarId Type -> Map VarId Exp -> Int -> Int -> Int -> TypegenInfo -> GenFnState
 
 -- | Function name
 [fnName] :: GenFnState -> VarId
@@ -2094,7 +2174,10 @@ GenFnState :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> [(VarId, Type)] 
 [fnBody] :: GenFnState -> Expr Type
 
 -- | Function local variables
-[fnLocs] :: GenFnState -> [(VarId, Type)]
+[fnLocs] :: GenFnState -> Map VarId Type
+
+-- | How to resolve variables
+[fnVars] :: GenFnState -> Map VarId Exp
 
 -- | Number of triggers needed
 [fnMaxWaits] :: GenFnState -> Int
@@ -2103,7 +2186,10 @@ GenFnState :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> [(VarId, Type)] 
 [fnCases] :: GenFnState -> Int
 
 -- | Temporary variable name counter
-[fnTmps] :: GenFnState -> Int
+[fnFresh] :: GenFnState -> Int
+
+-- | (User-defined) type information
+[fnTypeInfo] :: GenFnState -> TypegenInfo
 
 -- | Translation monad for procedures, with derived typeclass instances.
 --   
@@ -2113,49 +2199,42 @@ newtype GenFn a
 GenFn :: StateT GenFnState Pass a -> GenFn a
 
 -- | Run a <a>GenFn</a> computation on a procedure.
-runGenFn :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> GenFn a -> Pass a
+runGenFn :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> TypegenInfo -> GenFn a -> Pass a
+
+-- | Lookup some information associated with a type constructor.
+getsTCon :: (TConInfo -> a) -> TConId -> GenFn a
+
+-- | Lookup some information associated with a data constructor.
+getsDCon :: (DConInfo -> a) -> DConId -> GenFn a
 
 -- | Read and increment the number of cases in a procedure, i.e.,
 --   <tt>fnCases++</tt>.
 nextCase :: GenFn Int
 
--- | Register a local variable, to be declared in activation record.
-addLocal :: (VarId, Type) -> GenFn ()
+-- | Obtain fresh integer in the <a>GenFn</a> monad
+getFresh :: GenFn Int
+
+-- | Bind a variable to a C expression.
+addBinding :: Binder -> Exp -> GenFn ()
+
+-- | Register a new local variable, to be declared in activation record.
+addLocal :: VarId -> Type -> GenFn VarId
+
+-- | Bind a variable to a C expression only while computing the given
+--   monad.
+withBindings :: [(Binder, Exp)] -> GenFn a -> GenFn a
+
+-- | Register a local variable and bind its C expression during a monad.
+withNewLocal :: (VarId, Type) -> GenFn a -> GenFn a
 
 -- | Register number of wait statements track of number of triggers needed.
 maxWait :: Int -> GenFn ()
 
--- | Allocate a temp variable of given type, registered as a local
---   variable.
-nextTmp :: Type -> GenFn VarId
+-- | Generate a fresh label.
+freshLabel :: GenFn CIdent
 
--- | Whether the given variable can be found in the activation record.
---   
---   Returns true iff it appears as local variable or as a parameter.
-isLocalVar :: VarId -> GenFn Bool
-
--- | TODO: this does not handle stacked pointers
---   
---   Wrap a <a>Type</a> with pointers, according to some <a>Type</a>.
-ptrs_ :: Type -> Type -> Type
-
--- | Obtains the C type name corresponding to an SSM type.
-typeId :: Type -> CIdent
-
--- | Obtains the C type name corresponding to an SSM built-in type.
-builtinId :: Builtin Type -> CIdent
-
--- | Translate an SSM type to a <a>Type</a>.
-genType :: Type -> Type
-
--- | Obtain the initialize method for a given SSM scheduled variable type.
-genInit :: Type -> Maybe Exp
-
--- | Obtain the assign method for a given SSM scheduled variable type.
-genAssign :: Type -> Maybe Exp
-
--- | Obtain the later method for a given SSM scheduled variable type.
-genLater :: Type -> Maybe Exp
+-- | Generate anonymous local variable in activation record for storage.
+genTmp :: Type -> GenFn Exp
 
 -- | Translate a list of SSM parameters to C parameters.
 genParams :: [(Binder, Type)] -> [(CIdent, Type)]
@@ -2193,7 +2272,7 @@ genInitProgram :: Program Type -> [Definition]
 --   </ol>
 --   
 --   Items 2 and 3 include both declarations and definitions.
-genTop :: (VarId, Expr Type) -> Pass ([Definition], [Definition])
+genTop :: TypegenInfo -> (VarId, Expr Type) -> Pass ([Definition], [Definition])
 
 -- | Generate struct definition for an SSM procedure.
 --   
@@ -2285,19 +2364,13 @@ genExpr :: Expr Type -> GenFn (Exp, [BlockItem])
 genPrim :: Primitive -> [Expr Type] -> Type -> GenFn (Exp, [BlockItem])
 
 -- | Generate C value for SSM literal.
-genLiteral :: Literal -> Type -> GenFn (Exp, [BlockItem])
+genLiteral :: Literal -> Exp
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr Type] -> Type -> GenFn (Exp, [BlockItem])
 
 -- | Helper for sequencing across binary operations.
 genBinop :: Expr Type -> Expr Type -> GenFn ((Exp, Exp), [BlockItem])
-
--- | Marshal a C expression evaluating to a 32 bit int
-marshal :: Exp -> Exp
-
--- | Unmarshal a C expression evaluating to a SSLANG 31 bit
-unmarshal :: Exp -> Exp
 
 -- | Compute priority and depth arguments for a par fork of given width.
 genParArgs :: Int -> (Exp, Exp) -> [(Exp, Exp)]
