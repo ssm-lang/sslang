@@ -529,8 +529,6 @@ unifyAll = do
 
 -- |'unify' @t1 t2@ solves the type equation t1 ~ t2 and put the solution into 'unionFindTree'.
 unify :: Classes.Type -> Classes.Type -> InferFn ()
--- unify t1@(Classes.TCon _ _) t2                    = insertUnion t1 t2  -- ADT always "wins", right?
--- unify t1                    t2@(Classes.TCon _ _) = insertUnion t1 t2  -- ADT always "wins", right?
 unify t1 t2 | t1 == t2                            = return ()
 unify tv1@(Classes.TVar _) tv2@(Classes.TVar _)   = do
   r1 <- findRoot tv1
