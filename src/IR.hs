@@ -23,6 +23,7 @@ import           IR.ClassInstantiation          ( instProgram )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.Monomorphize                ( monoProgram )
+import           IR.DropInference               ( insertDropsProgram )
 
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
@@ -45,7 +46,11 @@ data TIType
  deriving (Eq, Show)
 
 -- | Compiler options for the IR compiler stage.
-data Options = Options { mode :: Mode, tiType :: TIType } deriving (Eq, Show)
+data Options = Options
+  { mode   :: Mode
+  , tiType :: TIType
+  }
+  deriving (Eq, Show)
 
 instance Default Options where
   def = Options { mode = Continue, tiType = Both }
@@ -69,14 +74,8 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option ""
-           ["only-hm"]
-           (NoArg $ setHM)
-           "Only run HM type inference"
-  , Option ""
-           ["only-tc"]
-           (NoArg $ setTC)
-           "Only run type checker"
+  , Option "" ["only-hm"] (NoArg $ setHM) "Only run HM type inference"
+  , Option "" ["only-tc"] (NoArg $ setTC) "Only run type checker"
   ]
   where setMode m o = o { mode = m }
 
@@ -99,8 +98,8 @@ ann2Class opt ir = do
     case tiType opt of
       HMOnly -> irHMInferred
       TCOnly -> irTCInferred
-      _ -> case (runPass irHMInferred, runPass irTCInferred) of
-        (Left e , Left _) -> throwError e
+      _      -> case (runPass irHMInferred, runPass irTCInferred) of
+        (Left  e, Left _) -> throwError e
         (Right _, _     ) -> irHMInferred
         _                 -> irTCInferred
   when (mode opt == DumpIRTyped) $ dump irInferred
@@ -135,3 +134,7 @@ setHM o = o { tiType = HMOnly }
 -- | Helper function to set ti type to TC-only
 setTC :: Options -> Options
 setTC o = o { tiType = TCOnly }
+
+-- | Drop inference stage.
+dropInf :: I.Program Poly.Type -> Pass (I.Program Poly.Type)
+dropInf = insertDropsProgram
