@@ -15,6 +15,7 @@ module IR.IR
   , wellFormed
   , collectLambda
   , makeLambdaChain
+  , extract
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
