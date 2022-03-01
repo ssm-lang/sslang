@@ -90,3 +90,10 @@ tests:
     source-dirs:
     - test/lib
     - test/trans
+
+  # Tests related to pattern matching
+  match:
+    <<: *test-suite
+    source-dirs:
+    - test/lib
+    - test/match
