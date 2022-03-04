@@ -10,6 +10,7 @@ import           Common.Identifiers             ( fromString
                                                 , ident
                                                 )
 import           Data.Bifunctor                 ( first )
+import           Data.Maybe                     ( mapMaybe )
 import qualified IR.IR                         as I
 import qualified IR.Types.Poly                 as Poly
 import           IR.Types.TypeSystem            ( TypeDef(..)
@@ -17,8 +18,10 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
                                                   ( VariantNamed
                                                   , VariantUnnamed
                                                   )
+                                                  , TypeSystem
+                                                  , arrow
+                                                  ,peel
                                                 )
-import Data.Maybe(mapMaybe)
 
 {-
 top level fuctions look like
@@ -90,20 +93,55 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
 
 -- | Create a group of top level functions for each type constructor
 createFuncs :: (I.TConId, TypeDef Poly.Type) -> [(I.VarId, I.Expr Poly.Type)]
-createFuncs (tconid, TypeDef { variants = vars }) = createFunc tconid `mapMaybe` vars
+createFuncs (tconid, TypeDef { variants = vars }) =
+  createFunc tconid `mapMaybe` vars
  where
   -- | Create a top level function for each data constructor
   createFunc
     :: I.TConId
     -> (I.DConId, TypeVariant Poly.Type)
     -> Maybe (I.VarId, I.Expr Poly.Type)
-  createFunc _ (_, VariantNamed []) = Nothing
-  createFunc tcon (I.DConId dcon, VariantNamed params) = Just (I.VarId dcon, lambda)
+  createFunc _    (_            , VariantNamed []    ) = Nothing
+  createFunc tcon (I.DConId dcon, VariantNamed params) = Just
+    (I.VarId dcon, lambda)
    where
-    lambda = I.makeLambdaChain args body
+    lambda = I.makeLambdaChain args body4
     args   = first Just <$> params
-    body   = I.makeAppChain (uncurry I.Var <$> params)
-                            (I.Data (I.DConId dcon) (Poly.TCon tcon []))
+    argsTyps = uncurry I.Var <$> params
+    z = Poly.TCon tcon []
+    zz = snd $ head params
+    typ = foldl1 arrow  $ (snd <$> params)++[Poly.TCon tcon []]
+    Just dtyp = peel typ
+    initial = I.App (I.Data (I.DConId dcon) typ) (head argsTyps) (arrow zz z)
+    --x = zip args y
+   -- saveSteps (arg, steps) arg2 = let step = arrow arg arg2 in (step, step:steps)
+    --x = \(arg, steps) arg2 -> let step = arrow arg arg2 in (step, step:steps)
+    -- typ    = extract
+    --   $ I.makeLambdaChain args (I.Lit (I.LitIntegral 1) (Poly.TCon tcon []))
+    body4 = I.makeAppChain (tail argsTyps) initial dtyp
+
+    --y = arrowSteps (tail hoot) (head hoot)
+    -- z = Poly.TCon tcon []
+    -- --typ = last y
+    --hoot = (snd <$> params)++[Poly.TCon tcon []]
+    -- --(typ,typSteps) = foldl (arrow) (tail y) []
+    -- args   = first Just <$> params
+    -- args2 = uncurry I.Var <$> params
+    -- zz = snd $ head params
+    -- dearrow  :: TypeSystem t => t -> Maybe t 
+    -- dearrow t = case injectBuiltin t of
+    --                  Just (Arrow _ b) -> Just b
+    --                  _               -> Nothing
+    -- test = (arrow (zz) z)
+    -- Just x = dearrow test
+    --dearrow (Builtin (Arrow _ (Builtin (Arrow l2 r))) )= Just (arrow l2 r)
+    --dearrow (Arrow l r) = Nothing 
+    --dearrow _ = Nothing
+    
+    -- body3 = I.App (I.Data (I.DConId dcon) typ) (head args2) (x)
+    -- body2 = I.makeDataAppChain (uncurry I.Var <$> params) (I.Data (I.DConId dcon) typ) (tail y)
+    -- body = I.makeAppChain (uncurry I.Var <$> params)
+    --                       (I.Data (I.DConId dcon) typ)
   createFunc tcon (I.DConId dcon, VariantUnnamed params) = createFunc
     tcon
     (I.DConId dcon, VariantNamed mangledNames)
@@ -113,6 +151,10 @@ createFuncs (tconid, TypeDef { variants = vars }) = createFunc tconid `mapMaybe`
       (I.VarId $ fromString ("__" ++ str ++ show index), typ)
     mangledNames = zipWith (mangle $ ident dcon) params [0 ..]
 
+arrowSteps ::  TypeSystem t => [t] -> t -> [t]
+arrowSteps [] acc = [acc]
+arrowSteps [a] acc = arrowSteps [] (arrow acc a)
+arrowSteps (h:t) acc = arrowSteps t (arrow acc h)
 
 {- | Replace data constructor application with function application
 

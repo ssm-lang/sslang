@@ -98,6 +98,15 @@ dearrow t = case injectBuiltin t of
   Just (Arrow a b) -> Just (a, b)
   _                -> Nothing
 
+{- | Helper to discard the outer layer of a nested 'Arrow' in any 'TypeSystem'.
+
+If the argument is not a nested Arrow, this function returns Nothing.
+-}
+peel  :: TypeSystem t => t -> Maybe t 
+peel t = case injectBuiltin t of
+                 Just (Arrow _ r) -> Just r
+                 _               -> Nothing
+
 -- | Helper to construct tuples from list of types, accounting for size < 2.
 tuple :: TypeSystem t => [t] -> t
 tuple []  = unit -- Empty tuples are just voids

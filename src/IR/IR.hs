@@ -26,13 +26,14 @@ import           Common.Pretty
 import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
-                                                )
+                                                , peel)
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
+
 
 {- | Top-level compilation unit.
 
@@ -193,10 +194,40 @@ collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
 
--- | Create an app chain given a list of arguments, a return type and a function name.
-makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> Expr t
-makeAppChain args f =
-  foldl (\acc arg -> App acc arg (arrow (extract acc) (extract arg))) f args
+-- -- | Create an app chain given a list of arguments, a return type and a function name.
+-- makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> Expr t
+-- makeAppChain args f =
+--   foldl (\acc arg -> App acc arg (extract f)) f args
+
+-- | Create an App chain given an initial App expr and a list of subsequent arguments
+makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> t -> Expr t
+makeAppChain [] accum@(App a b t) _ = case peel t of
+ Just typ -> App a b typ
+ Nothing -> accum
+makeAppChain args accum appTyp =
+  foldl (\acc arg -> case peel appTyp of 
+                      Just typ ->  App acc arg typ 
+                      Nothing -> App acc arg appTyp) accum args
+
+  -- where 
+  --   x = extract f
+  --   peel :: TypeSystem t => t -> t
+  --   peel ty = case ty of
+  --                   Builtin(Arrow l r) -> case l of (Arrow l1 r2) -> r2
+  --                   _ -> ty 
+        
+-- | Create an App chain given an initial App expr and a list of subsequent arguments
+-- | Create an app chain given a list of arguments, and a function name.
+-- makeDataAppChain :: TypeSystem t => [Expr t] -> Expr t -> [t] -> Expr t
+-- makeDataAppChain args f typs = d
+--   --foldl (\acc arg -> App acc arg (arrow (extract arg) (extract acc) )) f args
+--   --foldl (\acc arg -> App acc arg (arrow (extract arg) (extract acc) )) f args
+--  where
+--    x = zip args typs 
+--    g :: Expr t -> (Expr t, t) -> Expr t
+--    g acc (arg,typ) = App acc arg typ
+--    c = map (g f) x
+--    d = foldl g f x
 
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
