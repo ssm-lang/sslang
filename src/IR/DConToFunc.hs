@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 -- | Turns unapplied and partially applied data constructors into constructor functions.
 
 module IR.DConToFunc
@@ -6,9 +7,8 @@ module IR.DConToFunc
 
 import qualified Common.Compiler               as Compiler
 
-import           Common.Identifiers             ( fromString
-                                                , ident
-                                                )
+import           Common.Identifiers             ( fromString )
+import           Control.Comonad                ( Comonad(extract) )
 import           Data.Bifunctor                 ( first )
 import           Data.Maybe                     ( mapMaybe )
 import qualified IR.IR                         as I
@@ -18,143 +18,83 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
                                                   ( VariantNamed
                                                   , VariantUnnamed
                                                   )
-                                                  , TypeSystem
-                                                  , arrow
-                                                  ,peel
+                                                , arrow
+                                                , peel
                                                 )
-
-{-
-top level fuctions look like
-(I.VarId, I.Expr I.Type)
-where we match to get (name, l@(I.Lambda _ _ ty))
-so we have (varid, lambda expr)
-lamda should contain parameter names and body in a recursive/nested form
-
-so for every dcon and args, create a top level func called dcon
-which contains a lamda representing constructor.
-
-Take typdefs from program state, and create constructors directly from table???
-
--- | Create a lambda chain given a list of argument-type pairs and a body.
-makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
-makeLambdaChain args body = foldr chain body args
-  where chain (v, t) b = Lambda v b $ t `arrow` extract b
-
--- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
-type Binder = Maybe VarId
-
--- Items 2 and 3 include both declarations and definitions.
-genTop
-  :: TypegenInfo
-  -> (I.VarId, I.Expr I.Type)
-  -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop info (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body info $ do
-    (stepDecl , stepDefn ) <- genStep
-    (enterDecl, enterDefn) <- genEnter
-    structDefn             <- genStruct
-    return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
- where
-  (argIds, body ) = I.collectLambda l
-  (argTys, retTy) = I.collectArrow ty
-genTop _ (_, I.Lit _ _) = todo
-genTop _ (_, _        ) = nope
-
-
--}
-
-
-{-
-data Program t = Program
-  { programEntry :: VarId
-  , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef t)]
-  }
-
- | 
- Add constructor functions for every dcon to top level function defs (mangled if necessary)
- App (Expr t) (Expr t) t
-   let (fn, args) = I.collectApp a
-   case fn of --(For each App of type data constructor) 
-      (I.Data dcon dty) turn this into an (I.Var varid type)
-      where varid = constructor function name, and type is tcon corresponding to dcon!
-
--- | Create an app chain given a list of arguments, a return type and a function name.
-makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> t -> Expr t
-makeAppChain [h] f ret = App f h ret -- TODO make this func 1-2 lines instead of 3
-makeAppChain args f ret= App f (foldr (chain ret) (last args) (tail args)) ret
- where chain typ acc arg = App arg acc typ
--}
 
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   pure p { I.programDefs = defs ++ concat (createFuncs <$> tDefs) }
 
 
--- | Create a group of top level functions for each type constructor
+{- | Worked example of ADT definition and corresponding constructor functions
+
+type Shape 
+  Square Int 
+  Rect Int Int
+
+  Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
+  The function body is a lambda expression representing a "call" to a fully applied data constructor.
+
+  Let's first consider the top-level func for Square:
+  (Square, body) 
+  body = fun arg0 { App L R t } : Int -> Shape
+   where L = Square : Int -> Shape
+         R = arg0 : type Int
+         t = Shape, because the type of a fully applied data constructor is its type constructor
+
+  Next consider the top-level func for Rect:
+  (Rect, body*) *Notice the body of the lambda contains another lambda (curried arguments),
+                 and the Application expression contains another Application (curried arguments).  
+  body = fun arg0 { fun arg1 { App L R t } : Int -> Shape } : Int -> Int -> Shape
+   where L = App L2 R2 t
+         R = arg1 : Int
+         t = Shape, because the type of a fully applied data constructor is its type constructor
+          where L2 = Rect : Int -> Int -> Shape
+                R  = arg0 : Int
+                t = Int -> Shape, because at this point in the inner App, Rect is partially applied with only 1 arg.
+
+-}
+
+-- | Create a group of top level constructor functions for each type constructor
 createFuncs :: (I.TConId, TypeDef Poly.Type) -> [(I.VarId, I.Expr Poly.Type)]
 createFuncs (tconid, TypeDef { variants = vars }) =
   createFunc tconid `mapMaybe` vars
  where
-  -- | Create a top level function for each data constructor
+  {- | Create a top level function for each data constructor
+
+    Returns Nothing for nullary data constructors, 
+    which don't need top-level constructor functions.
+  -}
   createFunc
     :: I.TConId
     -> (I.DConId, TypeVariant Poly.Type)
     -> Maybe (I.VarId, I.Expr Poly.Type)
-  createFunc _    (_            , VariantNamed []    ) = Nothing
-  createFunc tcon (I.DConId dcon, VariantNamed params) = Just
+  -- case of nullary dcon; guarantees params to be non-empty in the next pattern
+  createFunc _    (_                     , VariantNamed []    ) = Nothing
+  createFunc tcon (dconid@(I.DConId dcon), VariantNamed params) = Just
     (I.VarId dcon, lambda)
    where
-    lambda = I.makeLambdaChain args body4
-    args   = first Just <$> params
-    argsTyps = uncurry I.Var <$> params
-    z = Poly.TCon tcon []
-    zz = snd $ head params
-    typ = foldl1 arrow  $ (snd <$> params)++[Poly.TCon tcon []]
-    Just dtyp = peel typ
-    initial = I.App (I.Data (I.DConId dcon) typ) (head argsTyps) (arrow zz z)
-    --x = zip args y
-   -- saveSteps (arg, steps) arg2 = let step = arrow arg arg2 in (step, step:steps)
-    --x = \(arg, steps) arg2 -> let step = arrow arg arg2 in (step, step:steps)
-    -- typ    = extract
-    --   $ I.makeLambdaChain args (I.Lit (I.LitIntegral 1) (Poly.TCon tcon []))
-    body4 = I.makeAppChain (tail argsTyps) initial dtyp
-
-    --y = arrowSteps (tail hoot) (head hoot)
-    -- z = Poly.TCon tcon []
-    -- --typ = last y
-    --hoot = (snd <$> params)++[Poly.TCon tcon []]
-    -- --(typ,typSteps) = foldl (arrow) (tail y) []
-    -- args   = first Just <$> params
-    -- args2 = uncurry I.Var <$> params
-    -- zz = snd $ head params
-    -- dearrow  :: TypeSystem t => t -> Maybe t 
-    -- dearrow t = case injectBuiltin t of
-    --                  Just (Arrow _ b) -> Just b
-    --                  _               -> Nothing
-    -- test = (arrow (zz) z)
-    -- Just x = dearrow test
-    --dearrow (Builtin (Arrow _ (Builtin (Arrow l2 r))) )= Just (arrow l2 r)
-    --dearrow (Arrow l r) = Nothing 
-    --dearrow _ = Nothing
-    
-    -- body3 = I.App (I.Data (I.DConId dcon) typ) (head args2) (x)
-    -- body2 = I.makeDataAppChain (uncurry I.Var <$> params) (I.Data (I.DConId dcon) typ) (tail y)
-    -- body = I.makeAppChain (uncurry I.Var <$> params)
-    --                       (I.Data (I.DConId dcon) typ)
+    lambda = I.makeLambdaChain names body
+    names  = first Just <$> params
+    body   = I.makeAppChain (tail args) initApp initTyp
+     where
+       -- create the inner-most App node first
+       -- initApp always has the form App DConId arg0 : arg0 -> TConId
+      initApp =
+        I.App (I.Data dconid dconTyp) arg0 (arrow (extract arg0) tconTyp) -- arg0 -> TConId
+      args@(arg0 : _) = uncurry I.Var <$> params -- guaranteed to be non-empty
+      Just initTyp    = peel dconTyp
+      tconTyp         = Poly.TCon tcon []
+      dconTyp         = foldl1 arrow $ (snd <$> params) ++ [tconTyp]
   createFunc tcon (I.DConId dcon, VariantUnnamed params) = createFunc
     tcon
     (I.DConId dcon, VariantNamed mangledNames)
    where
-    mangle :: [Char] -> t -> Int -> (I.VarId, t)
-    mangle str typ index =
-      (I.VarId $ fromString ("__" ++ str ++ show index), typ)
-    mangledNames = zipWith (mangle $ ident dcon) params [0 ..]
+    mangledNames = zipWith mangle params [0 ..]
+    mangle :: t -> Int -> (I.VarId, t)
+    mangle t i = (I.VarId $ fromString ("__arg" ++ show i), t)
 
-arrowSteps ::  TypeSystem t => [t] -> t -> [t]
-arrowSteps [] acc = [acc]
-arrowSteps [a] acc = arrowSteps [] (arrow acc a)
-arrowSteps (h:t) acc = arrowSteps t (arrow acc h)
 
 {- | Replace data constructor application with function application
 

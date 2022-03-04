@@ -1,0 +1,17 @@
+type Shape 
+  Rect Int Int
+  Square Int      
+
+// UpperCaseFunc a : Int -> Int = a // inorrect but throws weird error
+
+square_con sideLen : Int -> Shape = Square sideLen
+
+main ( cout : & Int ) -> () =
+  let b = Square 66                            // B
+  // test partial application works (not yet...)
+  let test = square_con 65
+  let bb = match b 
+            Square a = a 
+            _ = 88
+  after 10 , (cout : & Int) <- bb
+  wait (cout : & Int)
