@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
--- | Turns unapplied and partially applied data constructors into constructor functions.
+{-# LANGUAGE DerivingVia #-}
+-- | Turns unapplied and partially applied data constructors into calls to constructor functions.
 
 module IR.DConToFunc
   ( dConToFunc
@@ -7,11 +8,14 @@ module IR.DConToFunc
 
 import qualified Common.Compiler               as Compiler
 
+import           Common.Compiler                ( MonadError )
 import           Common.Identifiers             ( fromString
                                                 , ident
                                                 )
 import           Control.Comonad                ( Comonad(extract) )
+import           Control.Monad.Reader
 import           Data.Bifunctor                 ( first )
+import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified IR.IR                         as I
 import qualified IR.Types.Poly                 as Poly
@@ -24,9 +28,33 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , peel
                                                 )
 
+-- | Environment storing arity of each 'DCon' 
+type ArityEnv = M.Map I.DConId Int
+
+-- | Arity Reader Monad.
+newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
+  deriving Functor                      via (ReaderT ArityEnv Compiler.Pass)
+  deriving Applicative                  via (ReaderT ArityEnv Compiler.Pass)
+  deriving Monad                        via (ReaderT ArityEnv Compiler.Pass)
+  deriving MonadFail                    via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadError Compiler.Error)  via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
+
+-- | Run a computation within an arity environment
+runArityFn :: ArityFn a -> Compiler.Pass a
+runArityFn (ArityFn m) = runReaderT m M.empty
+
+{- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish three tasks:
+
+  1) Add top-level constructor functions for each 'DCon' to progamDefs
+  2) Turn unapplied data constuctors into calls to top level constructor funcs
+  3) Turn partially applied data constructors into calls to top level constructor funcs
+-}
+
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
-  pure p { I.programDefs = defs ++ concat (createFuncs <$> tDefs) }
+  runArityFn $ do
+    return p { I.programDefs = defs ++ concat (createFuncs <$> tDefs) }
 
 
 {- | Worked example of ADT definition and corresponding constructor functions
@@ -77,7 +105,7 @@ createFuncs (tconid, TypeDef { variants = vars }) =
   createFunc tcon (dconid@(I.DConId dcon), VariantNamed params) = Just
     (I.VarId func_name, lambda)
    where
-    func_name = fromString $ "__" ++ ident dcon
+    func_name = fromString $ "__" ++ ident dcon -- distinguish name from fully applied dcon in IR
     lambda    = I.makeLambdaChain names body
     names     = first Just <$> params
     body      = I.makeAppChain (tail args) initApp initTyp
@@ -102,4 +130,8 @@ createFuncs (tconid, TypeDef { variants = vars }) =
 {- | Replace data constructor application with function application
 
 Turn I.App instances of the form (I.Data _ _) into (I.Var _ _)
+
+Case 1: Unapplied Data Constructors that look like Nullary Data Constructors
+Case 2: Partially Applied Data Constructors
+
 -}
