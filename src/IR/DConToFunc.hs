@@ -26,6 +26,7 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
                                                   )
                                                 , arrow
                                                 , peel
+                                                , variantFields
                                                 )
 
 -- | Environment storing arity of each 'DCon' 
@@ -47,19 +48,18 @@ runArityFn (ArityFn m) = runReaderT m M.empty
 -- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
 createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
 createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
-  where 
+ where
   -- | Add a group of DCons to the arity environment
   insertArities :: (I.TConId, TypeDef Poly.Type) -> ArityEnv
-  insertArities (_, TypeDef { variants = vars }) =
-    foldl (\acc var -> acc <> insertArity var) M.empty vars
-    where
-      -- | Add single DCon to the arity environment
-      insertArity :: (I.DConId, TypeVariant Poly.Type) -> ArityEnv
-      insertArity (dconid, VariantNamed params) =
-        M.insert dconid (length params) M.empty
-      insertArity (dconid, VariantUnnamed params) =
-        M.insert dconid (length params) M.empty
-
+  insertArities (_, TypeDef { variants = vars }) = foldl
+    (\acc var -> acc <> insertArity var)
+    M.empty
+    vars
+   where
+    -- | Add single DCon to the arity environment
+    insertArity :: (I.DConId, TypeVariant Poly.Type) -> ArityEnv
+    insertArity (dconid, variant) =
+      M.insert dconid (variantFields variant) M.empty
 
 {- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish three tasks:
 
@@ -70,8 +70,8 @@ createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn $ do
-        defs' <- local (createArityEnv tDefs <>) (mapM dataToApp defs)
-        return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
+    defs' <- local (createArityEnv tDefs <>) (mapM dataToApp defs)
+    return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
 
 
 {- | Worked example of ADT definition and corresponding constructor functions
@@ -135,9 +135,9 @@ createFuncs (tconid, TypeDef { variants = vars }) =
       Just initTyp    = peel dconTyp
       tconTyp         = Poly.TCon tcon []
       dconTyp         = foldl1 arrow $ (snd <$> params) ++ [tconTyp]
-  createFunc tcon (I.DConId dcon, VariantUnnamed params) = createFunc
+  createFunc tcon (dcon, VariantUnnamed params) = createFunc
     tcon
-    (I.DConId dcon, VariantNamed mangledNames)
+    (dcon, VariantNamed mangledNames)
    where
     mangledNames = zipWith mangle params [0 ..]
     mangle :: t -> Int -> (I.VarId, t)
@@ -153,4 +153,4 @@ Case 2: Partially Applied Data Constructors
 
 -}
 dataToApp :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
-dataToApp = pure --stub
+dataToApp = pure -- stub
