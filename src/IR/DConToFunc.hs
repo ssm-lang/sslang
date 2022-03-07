@@ -7,7 +7,9 @@ module IR.DConToFunc
 
 import qualified Common.Compiler               as Compiler
 
-import           Common.Identifiers             ( fromString )
+import           Common.Identifiers             ( fromString
+                                                , ident
+                                                )
 import           Control.Comonad                ( Comonad(extract) )
 import           Data.Bifunctor                 ( first )
 import           Data.Maybe                     ( mapMaybe )
@@ -73,11 +75,12 @@ createFuncs (tconid, TypeDef { variants = vars }) =
   -- case of nullary dcon; guarantees params to be non-empty in the next pattern
   createFunc _    (_                     , VariantNamed []    ) = Nothing
   createFunc tcon (dconid@(I.DConId dcon), VariantNamed params) = Just
-    (I.VarId dcon, lambda)
+    (I.VarId func_name, lambda)
    where
-    lambda = I.makeLambdaChain names body
-    names  = first Just <$> params
-    body   = I.makeAppChain (tail args) initApp initTyp
+    func_name = fromString $ "__" ++ ident dcon
+    lambda    = I.makeLambdaChain names body
+    names     = first Just <$> params
+    body      = I.makeAppChain (tail args) initApp initTyp
      where
        -- create the inner-most App node first
        -- initApp always has the form App DConId arg0 : arg0 -> TConId

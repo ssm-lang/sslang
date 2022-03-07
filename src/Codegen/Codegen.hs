@@ -266,8 +266,7 @@ genTop info (name, l@(I.Lambda _ _ ty)) =
   (argIds, body ) = I.collectLambda l
   (argTys, retTy) = I.collectArrow ty
 genTop _ (_, I.Lit _ _) = todo
---genTop _ (_, _        ) = nope
-genTop _ a@(nm, e        ) = fail ("Cannot handle this top level thing " ++ ident nm ++ " ")
+genTop _ (_, _        ) = nope
 
 -- | Generate struct definition for an SSM procedure.
 --

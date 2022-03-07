@@ -1,17 +1,37 @@
+type Nullary
+  False
+  Leaf
+
 type Shape 
   Rect Int Int
-  Square Int      
+  Square Int    
 
-// UpperCaseFunc a : Int -> Int = a // inorrect but throws weird error
+// to check IR output, got to regression-tests directory, then do
+// stack exec -- sslc --dump-ir-final tests/adt-partially-applied.ssl 
 
 square_con sideLen : Int -> Shape = Square sideLen
 
+perimeter (shp : Shape) -> Int = 
+  match shp
+   Square a = a+a+a+a
+   Rect a b  = a+b+a+b
+
 main ( cout : & Int ) -> () =
+  // what a call to a constructor func should like
+  let a = square_con 66
+  // fully applied
   let b = Square 66                            // B
-  // test partial application works (not yet...)
-  let test = square_con 65
-  let bb = match b 
-            Square a = a 
-            _ = 88
-  after 10 , (cout : & Int) <- bb
+  // unapplied
+  let c = Square
+  //let d = Rect
+  // nullary dcon (should not get changed to func app!)
+  //let e = Leaf
+  // partially applied
+  // let d = Rect 2
+  // partially applied/unapplied inside another App
+
+  //let bb = match b 
+  //          Square a = a 
+  //          _ = 88
+  after 10 , (cout : & Int) <- 66
   wait (cout : & Int)
