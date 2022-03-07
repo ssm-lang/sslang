@@ -44,17 +44,34 @@ newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
 runArityFn :: ArityFn a -> Compiler.Pass a
 runArityFn (ArityFn m) = runReaderT m M.empty
 
+-- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
+createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
+createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
+  where 
+  -- | Add a group of DCons to the arity environment
+  insertArities :: (I.TConId, TypeDef Poly.Type) -> ArityEnv
+  insertArities (_, TypeDef { variants = vars }) =
+    foldl (\acc var -> acc <> insertArity var) M.empty vars
+    where
+      -- | Add single DCon to the arity environment
+      insertArity :: (I.DConId, TypeVariant Poly.Type) -> ArityEnv
+      insertArity (dconid, VariantNamed params) =
+        M.insert dconid (length params) M.empty
+      insertArity (dconid, VariantUnnamed params) =
+        M.insert dconid (length params) M.empty
+
+
 {- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish three tasks:
 
   1) Add top-level constructor functions for each 'DCon' to progamDefs
   2) Turn unapplied data constuctors into calls to top level constructor funcs
   3) Turn partially applied data constructors into calls to top level constructor funcs
 -}
-
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn $ do
-    return p { I.programDefs = defs ++ concat (createFuncs <$> tDefs) }
+        defs' <- local (createArityEnv tDefs <>) (mapM dataToApp defs)
+        return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
 
 
 {- | Worked example of ADT definition and corresponding constructor functions
@@ -129,9 +146,11 @@ createFuncs (tconid, TypeDef { variants = vars }) =
 
 {- | Replace data constructor application with function application
 
-Turn I.App instances of the form (I.Data _ _) into (I.Var _ _)
+Turn I.App instances of the form (I.Data _ _) into (I.Var _ _) where needed
 
 Case 1: Unapplied Data Constructors that look like Nullary Data Constructors
 Case 2: Partially Applied Data Constructors
 
 -}
+dataToApp :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
+dataToApp = pure --stub
