@@ -6,7 +6,7 @@ type Shape
   Rect Int Int
   Square Int    
 
-// to check IR output, got to regression-tests directory, then do
+// to check IR output, go to regression-tests directory, then do
 // stack exec -- sslc --dump-ir-final tests/adt-partially-applied.ssl 
 
 square_con sideLen : Int -> Shape = Square sideLen
@@ -22,7 +22,7 @@ main ( cout : & Int ) -> () =
   let a = square_con 16
 
   // fully applied
-  let b = Square 16   
+  let b = Square 16                // in a later pass, this call to constructor func should be optimized out
 
   // unapplied
   //let c = Square                 // throws errors because closures aren't in codegen yet
@@ -34,5 +34,5 @@ main ( cout : & Int ) -> () =
   // nullary dcon (should not get changed to func app!)
   let f = Leaf
 
-  after 10 , (cout : & Int) <- perimeter a + 2
+  after 10 , (cout : & Int) <- perimeter b + 2
   wait (cout : & Int)
