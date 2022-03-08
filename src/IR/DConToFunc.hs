@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TupleSections #-}
 -- | Turns unapplied and partially applied data constructors into calls to constructor functions.
 
 module IR.DConToFunc
@@ -70,7 +71,8 @@ createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn $ do
-    defs' <- local (createArityEnv tDefs <>) (mapM dataToApp defs)
+    --defs' <- local (createArityEnv tDefs <>) (mapM (second dataToApp) defs)
+    defs' <- local (createArityEnv tDefs <>) (mapM dataToAppW defs)
     return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
 
 
@@ -152,5 +154,140 @@ Case 1: Unapplied Data Constructors that look like Nullary Data Constructors
 Case 2: Partially Applied Data Constructors
 
 -}
-dataToApp :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
-dataToApp = pure -- stub
+
+{-
+
+  | Data DConId t
+  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
+  | Lit Literal t
+  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
+  | App (Expr t) (Expr t) t
+
+-}
+-- dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
+-- --dataToApp l@(I.Data dconid t) = pure l
+-- --dataToApp (I.App l@(I.Data dconid t2) r t) = 
+-- dataToApp (I.App l@(I.App _ _ _) r t) = do 
+--   l' <- dataToApp l
+--   return (I.App l' r t)
+-- dataToApp a = pure a
+
+
+
+
+
+
+-- dataToApp (I.App l@(I.App {}) r t) = do
+--  -- l' <- dataToApp l
+--   return (I.App l r t)
+-- dataToApp = pure -- stub
+
+dataToAppW
+  :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
+--dataToAppW = pure
+dataToAppW (v, e) = do
+  e' <- dataToApp e
+  return (v, e')
+
+
+dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
+dataToApp a@(I.Data _ _) = fst <$> helper (a, 0)
+dataToApp (I.App left right t) =
+  I.App
+    <$> (fst <$> helper (left, 1))
+    <*> (fst <$> helper (right, 0))
+    <*> pure t
+dataToApp (I.Let args body t) =
+  I.Let <$> mapM recurse args <*> dataToApp body <*> pure t
+  where recurse = \(b, e) -> (,) b <$> dataToApp e
+dataToApp (I.Lambda b e t) = I.Lambda b <$> dataToApp e <*> pure t
+dataToApp (I.Match scrut arms t) =
+  I.Match <$> dataToApp scrut <*> mapM recurse arms <*> pure t
+  where recurse = \(b, e) -> (,) b <$> dataToApp e
+dataToApp (I.Prim p es t) = I.Prim p <$> mapM dataToApp es <*> pure t
+dataToApp a               = pure a
+
+{-
+  
+  | Let [(Binder, Expr t)] (Expr t) t
+  {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
+
+  The bindings list may only be of length greater than 1 for a set of mutually
+  co-recursive functions.
+  -}
+  | Lambda Binder (Expr t) t
+  {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
+  a value to parameter @v@ in its body @b@.
+  -}
+  | Match (Expr t) [(Alt, Expr t)] t
+  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
+  @alts@, each producing a value of type @t@.
+  -}
+  | Prim Primitive [Expr t] t
+
+-}
+
+helper :: (I.Expr Poly.Type, Int) -> ArityFn (I.Expr Poly.Type, Int)
+helper (w@(I.Data dconid t), depth) = do
+  Just arity <- asks (M.lookup dconid)
+  if arity <= depth
+    then return (w, depth)
+    -- then fail
+    --   (  "arity of "
+    --   ++ show arity
+    --   ++ " <= "
+    --   ++ show (depth)
+    --   ++ "; "
+    --   ++ ident dconid
+    --   ++ "\n"
+    --   )
+    else pure (I.Var (I.VarId $ fromString $ "__" ++ ident dconid) t, depth)
+
+helper (I.App l r t, depth) =
+  (, depth)
+    <$> (   I.App
+        <$> (fst <$> helper (l, depth + 1))
+        <*> (fst <$> helper (r, depth))
+        <*> pure t
+        )
+
+  -- (,)
+  --   <$> (   I.App
+  --       <$> (fst <$> helper (l, depth + 1))
+  --       <*> (fst <$> helper (r, depth))
+  --       <*> pure t
+  --       )
+  --   <*> pure depth
+  --(fst <$>) <*>(fst <$>) <*>
+  -- do
+  -- (l', _) <- helper (l, depth + 1)
+  -- (r', _) <- helper (r, depth)
+  -- pure (I.App l' r' t, depth)
+helper e = pure e
+
+-- helper ( I.App l r t, depth) = do
+--   let l' = case l of
+--              I.App _ _ _ -> helper (l,depth+1)
+--              _ -> do return (l,0)
+--   let r' = case r of
+--              I.App _ _ _ -> helper (r,depth)
+--              _ -> do return (r,0)
+--   (l'',ld) <- l'
+--   (r'',rd) <- r'
+--   pure (I.App l'' r'' t, 1)
+--  -- pure w
+  -- (l',ld) <- case l of 
+  --              I.App _ _ _ -> helper (l,depth+1)
+  --              _ -> do return (l,0)
+
+-- helper depth w@(I.App (I.Data dconid t2) r t) = do
+--       Just arity <- asks (M.lookup dconid)
+--       if arity <= depth + 1 
+--       then return (w,0)
+--       else do
+--            let func = I.VarId $ fromString $ "__" ++ ident dconid
+--            return (I.App (Var func t2) r t, 1)
+-- helper depth (I.App l@I.App {} r t) = do
+--       (l', depth') <- helper (depth+1) l
+--       return (I.App l' r t, depth')
+-- helper d e = pure (e,d)
