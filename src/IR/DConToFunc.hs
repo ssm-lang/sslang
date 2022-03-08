@@ -33,7 +33,7 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 -- | Environment storing arity of each 'DCon' 
 type ArityEnv = M.Map I.DConId Int
 
--- | Arity Reader Monad.
+-- | Arity Reader Monad
 newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
   deriving Functor                      via (ReaderT ArityEnv Compiler.Pass)
   deriving Applicative                  via (ReaderT ArityEnv Compiler.Pass)
@@ -71,10 +71,61 @@ createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn $ do
-    --defs' <- local (createArityEnv tDefs <>) (mapM (second dataToApp) defs)
     defs' <- local (createArityEnv tDefs <>) (mapM dataToAppW defs)
     return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
 
+-- | Wrapper for recursive dataToApp function
+dataToAppW
+  :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
+dataToAppW (v, expr) = (v, ) <$> dataToApp expr
+  where
+  {- | Replace data constructor application with function application
+
+  Turn I.App instances of the form (I.Data _ _) into (I.Var _ _) where needed
+  -}
+  dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
+  dataToApp a@(I.Data _ _) = fst <$> dataToAppH (a, 0)
+  dataToApp (I.App left right t) =
+    I.App
+      <$> (fst <$> dataToAppH (left, 1))
+      <*> (fst <$> dataToAppH (right, 0))
+      <*> pure t
+  dataToApp (I.Let args body t) =
+    I.Let <$> mapM recurse args <*> dataToApp body <*> pure t
+    where recurse = \(b, e) -> (,) b <$> dataToApp e
+  dataToApp (I.Lambda b e t) = I.Lambda b <$> dataToApp e <*> pure t
+  dataToApp (I.Match scrut arms t) =
+    I.Match <$> dataToApp scrut <*> mapM recurse arms <*> pure t
+    where recurse = \(alt, e) -> (,) alt <$> dataToApp e
+  dataToApp (I.Prim p es t) = I.Prim p <$> mapM dataToApp es <*> pure t
+  dataToApp a               = pure a
+
+  {- | Helper function for dataToApp that keeps track of depth
+
+  This function recurses on an App node looking for a data constructor.
+
+  If a data constructor is unapplied or partially applied, its replaced with
+  the name of its constructor function, turning the App into a top-leve function call.
+
+  When a data constructor's arity <= its depth in the AST, it is fully applied. 
+  Depth is measured in terms of the number of encapsulating App nodes,
+  or how deeply the data constructor is nested inside an Application.
+  -}
+  dataToAppH :: (I.Expr Poly.Type, Int) -> ArityFn (I.Expr Poly.Type, Int)
+  dataToAppH (w@(I.Data dconid t), depth) = do
+    Just arity <- asks (M.lookup dconid)
+    if arity <= depth -- check whether data constructor is fully applied
+      then return (w, depth)
+      else pure (I.Var (I.VarId $ fromString $ "__" ++ ident dconid) t, depth)
+  dataToAppH (I.App l r t, depth) =
+    (, depth)
+      <$> (   I.App
+          <$> (fst <$> dataToAppH (l, depth + 1))
+          <*> (fst <$> dataToAppH (r, depth))
+          <*> pure t
+          )
+  dataToAppH e = pure e
+  
 
 {- | Worked example of ADT definition and corresponding constructor functions
 
@@ -144,150 +195,3 @@ createFuncs (tconid, TypeDef { variants = vars }) =
     mangledNames = zipWith mangle params [0 ..]
     mangle :: t -> Int -> (I.VarId, t)
     mangle t i = (I.VarId $ fromString ("__arg" ++ show i), t)
-
-
-{- | Replace data constructor application with function application
-
-Turn I.App instances of the form (I.Data _ _) into (I.Var _ _) where needed
-
-Case 1: Unapplied Data Constructors that look like Nullary Data Constructors
-Case 2: Partially Applied Data Constructors
-
--}
-
-{-
-
-  | Data DConId t
-  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
-  | Lit Literal t
-  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
-  | App (Expr t) (Expr t) t
-
--}
--- dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
--- --dataToApp l@(I.Data dconid t) = pure l
--- --dataToApp (I.App l@(I.Data dconid t2) r t) = 
--- dataToApp (I.App l@(I.App _ _ _) r t) = do 
---   l' <- dataToApp l
---   return (I.App l' r t)
--- dataToApp a = pure a
-
-
-
-
-
-
--- dataToApp (I.App l@(I.App {}) r t) = do
---  -- l' <- dataToApp l
---   return (I.App l r t)
--- dataToApp = pure -- stub
-
-dataToAppW
-  :: (I.VarId, I.Expr Poly.Type) -> ArityFn (I.VarId, I.Expr Poly.Type)
---dataToAppW = pure
-dataToAppW (v, e) = do
-  e' <- dataToApp e
-  return (v, e')
-
-
-dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
-dataToApp a@(I.Data _ _) = fst <$> helper (a, 0)
-dataToApp (I.App left right t) =
-  I.App
-    <$> (fst <$> helper (left, 1))
-    <*> (fst <$> helper (right, 0))
-    <*> pure t
-dataToApp (I.Let args body t) =
-  I.Let <$> mapM recurse args <*> dataToApp body <*> pure t
-  where recurse = \(b, e) -> (,) b <$> dataToApp e
-dataToApp (I.Lambda b e t) = I.Lambda b <$> dataToApp e <*> pure t
-dataToApp (I.Match scrut arms t) =
-  I.Match <$> dataToApp scrut <*> mapM recurse arms <*> pure t
-  where recurse = \(b, e) -> (,) b <$> dataToApp e
-dataToApp (I.Prim p es t) = I.Prim p <$> mapM dataToApp es <*> pure t
-dataToApp a               = pure a
-
-{-
-  
-  | Let [(Binder, Expr t)] (Expr t) t
-  {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
-
-  The bindings list may only be of length greater than 1 for a set of mutually
-  co-recursive functions.
-  -}
-  | Lambda Binder (Expr t) t
-  {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
-  a value to parameter @v@ in its body @b@.
-  -}
-  | Match (Expr t) [(Alt, Expr t)] t
-  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
-  @alts@, each producing a value of type @t@.
-  -}
-  | Prim Primitive [Expr t] t
-
--}
-
-helper :: (I.Expr Poly.Type, Int) -> ArityFn (I.Expr Poly.Type, Int)
-helper (w@(I.Data dconid t), depth) = do
-  Just arity <- asks (M.lookup dconid)
-  if arity <= depth
-    then return (w, depth)
-    -- then fail
-    --   (  "arity of "
-    --   ++ show arity
-    --   ++ " <= "
-    --   ++ show (depth)
-    --   ++ "; "
-    --   ++ ident dconid
-    --   ++ "\n"
-    --   )
-    else pure (I.Var (I.VarId $ fromString $ "__" ++ ident dconid) t, depth)
-
-helper (I.App l r t, depth) =
-  (, depth)
-    <$> (   I.App
-        <$> (fst <$> helper (l, depth + 1))
-        <*> (fst <$> helper (r, depth))
-        <*> pure t
-        )
-
-  -- (,)
-  --   <$> (   I.App
-  --       <$> (fst <$> helper (l, depth + 1))
-  --       <*> (fst <$> helper (r, depth))
-  --       <*> pure t
-  --       )
-  --   <*> pure depth
-  --(fst <$>) <*>(fst <$>) <*>
-  -- do
-  -- (l', _) <- helper (l, depth + 1)
-  -- (r', _) <- helper (r, depth)
-  -- pure (I.App l' r' t, depth)
-helper e = pure e
-
--- helper ( I.App l r t, depth) = do
---   let l' = case l of
---              I.App _ _ _ -> helper (l,depth+1)
---              _ -> do return (l,0)
---   let r' = case r of
---              I.App _ _ _ -> helper (r,depth)
---              _ -> do return (r,0)
---   (l'',ld) <- l'
---   (r'',rd) <- r'
---   pure (I.App l'' r'' t, 1)
---  -- pure w
-  -- (l',ld) <- case l of 
-  --              I.App _ _ _ -> helper (l,depth+1)
-  --              _ -> do return (l,0)
-
--- helper depth w@(I.App (I.Data dconid t2) r t) = do
---       Just arity <- asks (M.lookup dconid)
---       if arity <= depth + 1 
---       then return (w,0)
---       else do
---            let func = I.VarId $ fromString $ "__" ++ ident dconid
---            return (I.App (Var func t2) r t, 1)
--- helper depth (I.App l@I.App {} r t) = do
---       (l', depth') <- helper (depth+1) l
---       return (I.App l' r t, depth')
--- helper d e = pure (e,d)

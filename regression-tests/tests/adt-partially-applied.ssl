@@ -17,16 +17,22 @@ perimeter (shp : Shape) -> Int =
    Rect a b  = a+b+a+b
 
 main ( cout : & Int ) -> () =
+
   // what a call to a constructor func should like
   let a = square_con 16
+
   // fully applied
-  let b = Square 16                            
+  let b = Square 16   
+
   // unapplied
-  let c = Square
-  let d = Rect
+  //let c = Square                 // throws errors because closures aren't in codegen yet
+  //let d = Rect                   // throws errors because closures aren't in codegen yet
+
   // partially applied
-  let d = Rect 2
+  //let e = Rect 2                 // throws errors because closures aren't in codegen yet
+
   // nullary dcon (should not get changed to func app!)
-  let e = Leaf
-  after 10 , (cout : & Int) <- perimeter b + 2
+  let f = Leaf
+
+  after 10 , (cout : & Int) <- perimeter a + 2
   wait (cout : & Int)
