@@ -15,6 +15,7 @@ set -euf
 set -o pipefail
 
 BUILD_DIR=./build
+declare -a VG_FLAGS=("--leak-check=full" "--show-leak-kinds=all")
 
 scriptname="$(basename "$0")"
 
@@ -26,6 +27,7 @@ run () {
   local exe="$BUILD_DIR/$1"
   shift
   echo "$exe" "$@"
+  echo "$exe" "$@" >&2
   set +e
   "$exe" "$@" 2>&1 | sed 's/^/# /'
   local exit_code="$?"
@@ -39,9 +41,10 @@ run () {
 vg () {
   local exe="$BUILD_DIR/$1"
   shift
-  echo "$exe" "$@"
+  echo valgrind "${VG_FLAGS[@]}" "$exe" "$@"
+  echo valgrind "${VG_FLAGS[@]}" "$exe" "$@" >&2
   set +e
-  valgrind "$exe" "$@" 2>&1 | sed 's/^/# /'
+  valgrind "${VG_FLAGS[@]}" "$exe" "$@" 2>&1 | sed 's/^/# /'
   local exit_code="$?"
   set -e
   if [ "$exit_code" -ne 0 ]; then
@@ -70,6 +73,8 @@ rm -f build/examples.out
   run counter
   run list
   run list 2048
+  run closures
+  run map-closure
 } >> build/examples.out
 
 if diff build/examples.out test/examples.out &> build/examples.diff ; then
@@ -94,7 +99,7 @@ else
 fi
 
 make clean
-CFLAGS=-DSSM_DEBUG_NO_ALLOC make exes tests
+make exes tests
 
 if command -v valgrind >/dev/null ; then
   rm -f build/examples.vg-out
@@ -107,6 +112,10 @@ if command -v valgrind >/dev/null ; then
     vg onetwo
     vg clock
     vg counter
+    vg list
+    vg list 2048
+    vg closures
+    vg map-closure
   } >> build/examples.vg-out
   say "Examples do not have any memory errors"
 

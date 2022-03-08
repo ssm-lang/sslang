@@ -2,19 +2,19 @@
 
 <div>
 <a>
-  <img src="https://github.com/ssm-lang/ssm-runtime/actions/workflows/test.yml/badge.svg?branch=dev">
+  <img src="https://github.com/ssm-lang/ssm-runtime/actions/workflows/test.yml/badge.svg?branch=main">
 </a>
 <a href="https://ssm-lang.github.io/ssm-runtime">
-  <img src="https://github.com/ssm-lang/ssm-runtime/actions/workflows/doc.yml/badge.svg?branch=dev"/>
+  <img src="https://github.com/ssm-lang/ssm-runtime/actions/workflows/doc.yml/badge.svg?branch=main"/>
 </a>
 <a href="https://codecov.io/gh/ssm-lang/ssm-runtime">
-  <img src="https://codecov.io/gh/ssm-lang/ssm-runtime/branch/dev/graph/badge.svg?token=TYCPPY7Y92"/>
+  <img src="https://codecov.io/gh/ssm-lang/ssm-runtime/branch/main/graph/badge.svg?token=TYCPPY7Y92"/>
 </a>
 </div>
 
 The Sparse Synchronous Model (SSM) is a deterministic real-time execution technique that allows explicit, precise timing control.
 
-The source code for this library is hosted on GitHub at <https://github.com/ssm-lang/ssm-runtime/tree/dev>.
+The source code for this library is hosted on GitHub at <https://github.com/ssm-lang/ssm-runtime/tree/main>.
 
 ## Documentation
 

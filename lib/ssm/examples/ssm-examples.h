@@ -49,7 +49,7 @@ void ssm_throw(enum ssm_error reason, const char *file, int line,
 }
 
 #define MAX_PAGES 2048
-static void *pages[MAX_PAGES];
+static uint8_t *pages[SSM_MEM_PAGE_SIZE][MAX_PAGES];
 static size_t allocated_pages = 0;
 
 static void *alloc_page(void) {
@@ -57,7 +57,7 @@ static void *alloc_page(void) {
     SSM_THROW(SSM_EXHAUSTED_MEMORY);
     exit(3);
   }
-  void *m = pages[allocated_pages++] = malloc(SSM_MEM_PAGE_SIZE);
+  void *m = pages[allocated_pages++];
   memset(m, 0, SSM_MEM_PAGE_SIZE);
   return m;
 }
@@ -65,6 +65,8 @@ static void *alloc_page(void) {
 static void *alloc_mem(size_t size) { return malloc(size); }
 
 static void free_mem(void *mem, size_t size) { free(mem); }
+
+static void free_page(void *mem) { allocated_pages--; }
 
 static void print_help(char *prog) {
   printf("Usage: %s [OPTION]... [--] [ARG]...\n", prog);
@@ -84,8 +86,6 @@ static void print_help(char *prog) {
 char **ssm_init_args;
 
 int main(int argc, char *argv[]) {
-  ssm_mem_init(alloc_page, alloc_mem, free_mem);
-
   size_t stop_at_s = 20;
   char *prog = *argv;
 
@@ -118,8 +118,11 @@ int main(int argc, char *argv[]) {
   }
 
   ssm_init_args = argv;
-
   ssm_time_t stop_at = stop_at_s == 0 ? SSM_NEVER : stop_at_s * SSM_SECOND;
+  printf("%s: simulating up to %lu seconds\n", prog,
+         (unsigned long)stop_at / SSM_SECOND);
+
+  ssm_mem_init(alloc_page, alloc_mem, free_mem);
 
   ssm_program_init();
 
@@ -128,12 +131,12 @@ int main(int argc, char *argv[]) {
   while (ssm_next_event_time() != SSM_NEVER && ssm_now() < stop_at)
     ssm_tick();
 
-  printf("%s: simulated %lu seconds\n", prog, ssm_now() / SSM_SECOND);
+  printf("%s: simulated %lu seconds\n", prog,
+         (unsigned long)ssm_now() / SSM_SECOND);
 
   ssm_program_exit();
 
-  for (size_t p = 0; p < allocated_pages; p++)
-    free(pages[p]);
+  ssm_mem_destroy(free_page);
 
   return 0;
 }
