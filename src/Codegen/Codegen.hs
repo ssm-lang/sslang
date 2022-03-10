@@ -38,7 +38,9 @@ import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad                  ( unless )
+import           Control.Monad                  ( foldM
+                                                , unless
+                                                )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -485,24 +487,33 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
-genExpr a@(I.App _ _ ty) = do
-  let (fn, args) = I.collectApp a
-  (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
+genExpr e@(I.App _ _ ty) = do
+  let (fn, args) = I.collectApp e
+  -- args must be non-empty because a is an App
+  -- (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
   case fn of
     (I.Var _ _) -> do
-      tmp   <- genTmp ty
-      yield <- genYield
-      let enterArgs =
-            [ [cexp|$id:actg|]
-              , [cexp|$id:actg->$id:act_priority|]
-              , [cexp|$id:actg->$id:act_depth|]
-              ]
-              ++ argVals
-              ++ [[cexp|&$exp:tmp|]]
-          call = [citems|$exp:(activate $ fnEnter `ccall` enterArgs);|]
-      return (tmp, concat evalStms ++ call ++ yield)
+      (fnExp, fnStms) <- genExpr fn
+      foldM apply (fnExp, fnStms) args
+     where
+      apply (f, stms) a = do
+        (aVal, aStms) <- genExpr a  -- first evaluate argument
+        ret           <- genTmp ty  -- allocate return value address
+        yield         <- genYield   -- application might necessitate yield
+        let current = [cexp|$id:actg|]
+            prio    = [cexp|$exp:current->$id:act_priority|]
+            depth   = [cexp|$exp:current->$id:act_depth|]
+            retp    = [cexp|&$exp:ret|]
+            appStms = [citems|
+              $exp:(closure_apply f aVal current prio depth retp);
+              if ($exp:(has_children current)) {
+                $items:yield;
+              }
+            |]
+        return (ret, stms ++ aStms ++ appStms)
     (I.Data dcon dty) -> do
-      onHeap <- getsDCon dconOnHeap dcon
+      (argVals, evalStms) <- unzip <$> mapM genExpr args
+      onHeap              <- getsDCon dconOnHeap dcon
       unless onHeap $ do
         fail $ "Cannot handle packed fields yet, for: " ++ show dcon
       construct <- getsDCon dconConstruct dcon
@@ -636,39 +647,38 @@ genPrim I.After [time, lhs, rhs] _ = do
         |]
   return (unit, laterBlock)
 genPrim I.Par procs _ = do
-  yield <- genYield
-  let
-    numChildren = length procs
-    parArgs     = genParArgs
-      numChildren
-      ([cexp|$id:actg->$id:act_priority|], [cexp|$id:actg->$id:act_depth|])
-    checkNewDepth = [citems|
-                        if ($id:actg->$id:act_depth < $exp:(depthSub numChildren))
-                          $exp:(throw EXHAUSTED_PRIORITY);
-                      |]
+  let numChildren = length procs
+      parArgs     = genParArgs
+        numChildren
+        ([cexp|$id:actg->$id:act_priority|], [cexp|$id:actg->$id:act_depth|])
 
-    genActivate
-      :: ((C.Exp, C.Exp), I.Expr I.Type)
-      -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
-    genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
-      let (fn, args) = I.collectApp a
-      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-      tmp                           <- genTmp ty
-      let enterArgs =
-            [[cexp|$id:actg|], prioArg, depthArg]
-              ++ argVals
-              ++ [[cexp|&$exp:tmp|]]
-      return
-        ( tmp
-        , concat evalStms
-        , [citem|$exp:(activate $ fnEnter `ccall` enterArgs);|]
-        )
-    -- For now, we only support forking expressions that have a top-level
-    -- application (i.e., no thunks), whose left operand is a var.
-    genActivate _ = nope
+      checkNewDepth = [citems|
+          if ($id:actg->$id:act_depth < $exp:(depthSub numChildren))
+            $exp:(throw EXHAUSTED_PRIORITY);
+        |]
 
-  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip parArgs procs)
-  return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
+      -- Par expressions must all be parallel applications that don't
+      -- yield/block
+      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
+      apply (a@(I.App fn arg ty), (prio, depth)) = do
+        (fnExp , fnStms ) <- genExpr fn
+        (argExp, argStms) <- genExpr arg
+        unless (null $ fnStms ++ argStms) $ do
+          -- FIXME:
+          fail $ "Cannot compile par with non-pure application: " ++ show a
+        ret <- genTmp ty
+        let current = [cexp|$id:actg|]
+            retp = [cexp|&$exp:ret|]
+            appStms = [citems|
+              $exp:(closure_apply fnExp argExp current prio depth retp);
+            |]
+        return (ret, appStms)
+      apply (e, _) = do
+        fail $ "Cannot compile par with non-application expression: " ++ show e
+
+  (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
+  yield              <- genYield
+  return (todo, checkNewDepth ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals

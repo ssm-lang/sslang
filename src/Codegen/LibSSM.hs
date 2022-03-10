@@ -280,8 +280,9 @@ static_closure f argc =
     .argv = {0},
   }|]
 
+-- | Promote a static object to an @ssm_value_t@ (warning: hacky!).
 static_value :: CIdent -> C.Exp
-static_value name = [cinit|($ty:value_t) { .heap_ptr = &$id:name.mm }|]
+static_value name = [cexp|($ty:value_t) { .heap_ptr = &$id:name.mm }|]
 
 -- | @ssm_new_closure@, allocate a new closure object on the heap.
 new_closure :: CIdent -> Int -> C.Exp
