@@ -201,5 +201,9 @@ do
   esac    
 done
 
+if [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
+  cat "$globallog"
+fi
+
 exit $globalerror
 
