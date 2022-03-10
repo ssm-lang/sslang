@@ -1,0 +1,12 @@
+foo x y z =
+  x + y + z
+
+main (out : &Int) -> () =
+  let f = foo 1
+  let g = f 2
+  let a = foo 3 4 5
+  let h = f a
+  let b = g a
+  let c = g b
+  after 20, out <- h (a + b + c)
+  wait out
