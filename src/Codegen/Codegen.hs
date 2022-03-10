@@ -95,6 +95,7 @@ newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
   deriving MonadFail via StateT GenFnState Compiler.Pass
   deriving (MonadError Compiler.Error) via StateT GenFnState Compiler.Pass
   deriving (MonadState GenFnState) via StateT GenFnState Compiler.Pass
+  deriving (Compiler.MonadWriter [Compiler.Warning]) via StateT GenFnState Compiler.Pass
 
 -- | Run a 'GenFn' computation on a procedure.
 runGenFn
@@ -126,7 +127,7 @@ runGenFn name params ret body typeInfo globals (GenFn tra) =
   resolveParam v = (v, acts_ $ fromId v)
 
   genGlobal :: (I.VarId, I.Type) -> (I.VarId, C.Exp)
-  genGlobal (v, t) | isJust $ dearrow t = (v, static_value $ enter_ v)
+  genGlobal (v, t) | isJust $ dearrow t = (v, static_value $ closure_ v)
                    | otherwise          = todo
 
 -- | Lookup some information associated with a type constructor.
@@ -227,12 +228,40 @@ undef = [cexp|0xdeadbeef|]
 {-------- Compilation --------}
 
 -- | Generate a C compilation from an SSM program.
+--
+-- Each top-level function in a program is turned into three components:
+--
+-- 1. a struct (the activation record);
+-- 2. an initialization function (the enter function); and
+-- 3. a step function, which corresponds to the actual procedure body.
+--
+-- Items 2 and 3 include both declarations and definitions.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
-  -- p@I.Program
-  (adts, adtsInfo) <- genTypes typedefs
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
-  return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
+  (tdefs , tinfo) <- genTypes typedefs
+  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
+  return $ includes ++ tdefs ++ cdecls ++ cdefs -- ++ genInitProgram p
+ where
+  genTop
+    :: TypegenInfo
+    -> (I.VarId, I.Expr I.Type)
+    -> Compiler.Pass ([C.Definition], [C.Definition])
+  genTop tinfo (name, l@(I.Lambda _ _ ty)) =
+    runGenFn (fromId name) (zip argIds argTys) retTy body tinfo tops $ do
+      (stepDecl   , stepDefn   ) <- genStep
+      (enterDecl  , enterDefn  ) <- genEnter
+      (closureDecl, closureDefn) <- genClosure
+      structDefn                 <- genStruct
+      return
+        ( [structDefn, enterDecl, closureDecl, stepDecl]
+        , [enterDefn, closureDefn, stepDefn]
+        )
+   where
+    tops            = map (second extract) defs
+    (argIds, body ) = I.collectLambda l
+    (argTys, retTy) = I.collectArrow ty
+  genTop _ (_, I.Lit _ _) = todo
+  genTop _ (_, _        ) = nope
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -244,44 +273,18 @@ typedef char unit;
 -- | Setup the entry point of the program.
 genInitProgram :: I.Program I.Type -> [C.Definition]
 genInitProgram I.Program { I.programEntry = entry } = [cunit|
-    int $id:initialize_program(void) {
+    int $id:initialize_program($ty:value_t *argv, $ty:value_t *ret) {
        $exp:(activate enter_entry);
       return 0;
     }
   |]
  where
   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
-                                          $exp:root_priority,
-                                          $exp:root_depth)|]
+                                         $exp:root_priority,
+                                         $exp:root_depth,
+                                         argv,
+                                         ret)|]
 
--- | Generate C declarations and definitions for a top-level SSM function.
---
--- Each top-level function in a program is turned into three components:
---
--- 1. a struct (the activation record);
--- 2. an initialization function (the enter function); and
--- 3. a step function, which corresponds to the actual procedure body.
---
--- Items 2 and 3 include both declarations and definitions.
-genTop
-  :: TypegenInfo
-  -> (I.VarId, I.Expr I.Type)
-  -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop tinfo (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body tinfo [] $ do
-    (stepDecl   , stepDefn   ) <- genStep
-    (enterDecl  , enterDefn  ) <- genEnter
-    (closureDecl, closureDefn) <- genClosure
-    structDefn                 <- genStruct
-    return
-      ( [structDefn, enterDecl, closureDecl, stepDecl]
-      , [enterDefn, closureDefn, stepDefn]
-      )
- where
-  (argIds, body ) = I.collectLambda l
-  (argTys, retTy) = I.collectArrow ty
-genTop _ (_, I.Lit _ _) = todo
-genTop _ (_, _        ) = nope
 
 -- | Generate struct definition for an SSM procedure.
 --

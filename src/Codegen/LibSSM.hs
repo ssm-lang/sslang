@@ -261,7 +261,7 @@ adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
 
 -- | @ssm_closure1_t@, the (template) type of a closure with a single argument.
 closure1_t :: C.Type
-closure1_t = [cty|typename ssm_closure1_t|]
+closure1_t = [cty|struct ssm_closure1|]
 
 -- | Inintializer for a "static" closure that contains no arguments.
 --
@@ -277,7 +277,7 @@ static_closure f argc =
       .tag = $int:argc,
     },
     .f = $exp:f,
-    .argv = {0},
+    .argv = {{0}}, // https://stackoverflow.com/q/13746033/10497710
   }|]
 
 -- | Promote a static object to an @ssm_value_t@ (warning: hacky!).
