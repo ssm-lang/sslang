@@ -2,21 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-{-  | Translate SSM program to C compilation unit.
+{- | Translate SSM program to C compilation unit.
 
 What is expected of the IR:
 
 Well-formed: All primitive functions are applied to the right number of
 arguments.
 
-Fully-applied: All applications are fully-applied; the only time a term of
-type @a -> b@ appears anywhere is on the left-hand side of an application.
+Pure par expression: All par-expressions' operands are applications that have no
+side effects.
 
-Defunctionalized: No lambdas/closures; the only kinds of terms with an arrow
-type are variables.
+Defunctionalized: No lambdas; the only terms with an arrow type are variables
+or applications.
 
 Name mangled: All variable identifiers are unique.
- -}
+-}
 module Codegen.Codegen where
 
 import           Codegen.LibSSM
@@ -250,7 +250,7 @@ genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
     runGenFn (fromId name) (zip argIds argTys) retTy body tinfo tops $ do
       (stepDecl   , stepDefn   ) <- genStep
       (enterDecl  , enterDefn  ) <- genEnter
-      (closureDecl, closureDefn) <- genClosure
+      (closureDecl, closureDefn) <- genStaticClosure
       structDefn                 <- genStruct
       return
         ( [structDefn, enterDecl, closureDecl, stepDecl]
@@ -362,8 +362,9 @@ genEnter = do
       |]
     )
 
-genClosure :: GenFn (C.Definition, C.Definition)
-genClosure = do
+-- | Generate static closure for top-level function
+genStaticClosure :: GenFn (C.Definition, C.Definition)
+genStaticClosure = do
   actName <- gets fnName
   argc    <- length <$> gets fnParams
   let closure_name = closure_ actName
