@@ -16,6 +16,7 @@ import           Language.C.Quote               ( Id(Id)
                                                 )
 import           Language.C.Quote.GCC           ( cexp
                                                 , cty
+                                                , cinit
                                                 )
 import qualified Language.C.Syntax             as C
 
@@ -258,6 +259,30 @@ adt_tag v = [cexp|ssm_tag($exp:v)|]
 adt_heap_tag :: C.Exp -> C.Exp
 adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
 
+-- | @ssm_closure1_t@, the (template) type of a closure with a single argument.
+closure1_t :: C.Type
+closure1_t = [cty|typename ssm_closure1_t|]
+
+-- | Inintializer for a "static" closure that contains no arguments.
+--
+-- FIXME: An ugly hack that shouldn't exist because John didn't have the
+-- foresight to provide an interface to define static closures.
+static_closure :: C.Exp -> Int -> C.Initializer
+static_closure f argc =
+  [cinit|{
+    .mm = {
+      .ref_count = 1,
+      .kind = 3, // Ugly awful hack
+      .val_count = 0,
+      .tag = $int:argc,
+    },
+    .f = $exp:f,
+    .argv = {0},
+  }|]
+
+static_value :: CIdent -> C.Exp
+static_value name = [cinit|($ty:value_t) { .heap_ptr = &$id:name.mm }|]
+
 -- | @ssm_new_closure@, allocate a new closure object on the heap.
 new_closure :: CIdent -> Int -> C.Exp
 new_closure f n = [cexp|ssm_new_closure(&$id:f, $int:n)|]
@@ -314,13 +339,17 @@ to_act :: C.Exp -> VarId -> C.Exp
 to_act act name =
   [cexp|$id:container_of($exp:act, $id:(act_typename name), $id:act_member)|]
 
--- | Obtain the name of the step function of a routine.
-step_ :: VarId -> CIdent
-step_ name = "step_" <> fromId name
-
 -- | Obtain the name for the enter function of a routine.
 enter_ :: VarId -> CIdent
-enter_ name = "enter_" <> fromId name
+enter_ name = "__enter_" <> fromId name
+
+-- | Obtain the name for the static closure of a routine.
+closure_ :: VarId -> CIdent
+closure_ name = "__closure_" <> fromId name
+
+-- | Obtain the name of the step function of a routine.
+step_ :: VarId -> CIdent
+step_ name = "__step_" <> fromId name
 
 -- | Obtain the name of each trigger for a routine.
 trig_ :: Int -> CIdent

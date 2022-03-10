@@ -48,7 +48,10 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( mapMaybe )
+import           Data.Maybe                     ( isJust
+                                                , mapMaybe
+                                                )
+import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
 
 -- | Possible, but temporarily punted for the sake of expediency.
@@ -70,7 +73,7 @@ data GenFnState = GenFnState
   , fnParams   :: [(I.Binder, I.Type)]  -- ^ Function parameters
   , fnRetTy    :: I.Type                -- ^ Function return type
   , fnBody     :: I.Expr I.Type         -- ^ Function body
-  , fnLocs     :: M.Map I.VarId I.Type  -- ^ Function local variables
+  , fnLocals   :: M.Map I.VarId I.Type  -- ^ Function local variables
   , fnVars     :: M.Map I.VarId C.Exp   -- ^ How to resolve variables
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
@@ -98,24 +101,31 @@ runGenFn
   -> I.Type               -- ^ Name and type of return parameter of procedure
   -> I.Expr I.Type        -- ^ Body of procedure
   -> TypegenInfo          -- ^ Type information
+  -> [(I.VarId, I.Type)]  -- ^ Other global identifiers
   -> GenFn a              -- ^ Translation monad to run
   -> Compiler.Pass a      -- ^ Pass on errors to caller
-runGenFn name params ret body typeInfo (GenFn tra) =
+runGenFn name params ret body typeInfo globals (GenFn tra) =
   evalStateT tra $ GenFnState
     { fnName     = name
     , fnParams   = params
     , fnRetTy    = ret
     , fnBody     = body
-    , fnLocs     = M.empty
-    , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
+    , fnLocals   = M.empty
+    , fnVars     = M.fromList
+                   $  mapMaybe (fmap resolveParam . fst) params
+                   ++ map genGlobal globals
     , fnTypeInfo = typeInfo
     , fnMaxWaits = 0
     , fnCases    = 0
     , fnFresh    = 0
     }
  where
-  resolveParam (Just v) = Just (v, acts_ $ fromId v)
-  resolveParam _        = Nothing
+  resolveParam :: I.VarId -> (I.VarId, C.Exp)
+  resolveParam v = (v, acts_ $ fromId v)
+
+  genGlobal :: (I.VarId, I.Type) -> (I.VarId, C.Exp)
+  genGlobal (v, t) | isJust $ dearrow t = (v, static_value $ enter_ v)
+                   | otherwise          = todo
 
 -- | Lookup some information associated with a type constructor.
 getsTCon :: (TConInfo -> a) -> I.TConId -> GenFn a
@@ -152,13 +162,13 @@ addBinding Nothing _ = return ()
 -- | Register a new local variable, to be declared in activation record.
 addLocal :: I.VarId -> I.Type -> GenFn I.VarId
 addLocal v t = do
-  fnl <- gets fnLocs
+  fnl <- gets fnLocals
   v'  <- if v `M.member` fnl
     then do
       ctr <- getFresh
       return $ v <> fromString (show ctr)
     else return v
-  modify $ \st -> st { fnLocs = M.insert v' t fnl }
+  modify $ \st -> st { fnLocals = M.insert v' t fnl }
   return v'
 
 -- | Bind a variable to a C expression only while computing the given monad.
@@ -255,12 +265,16 @@ genTop
   :: TypegenInfo
   -> (I.VarId, I.Expr I.Type)
   -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop info (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body info $ do
-    (stepDecl , stepDefn ) <- genStep
-    (enterDecl, enterDefn) <- genEnter
-    structDefn             <- genStruct
-    return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
+genTop tinfo (name, l@(I.Lambda _ _ ty)) =
+  runGenFn (fromId name) (zip argIds argTys) retTy body tinfo [] $ do
+    (stepDecl   , stepDefn   ) <- genStep
+    (enterDecl  , enterDefn  ) <- genEnter
+    (closureDecl, closureDefn) <- genClosure
+    structDefn                 <- genStruct
+    return
+      ( [structDefn, enterDecl, closureDecl, stepDecl]
+      , [enterDefn, closureDefn, stepDefn]
+      )
  where
   (argIds, body ) = I.collectLambda l
   (argTys, retTy) = I.collectArrow ty
@@ -275,7 +289,7 @@ genStruct = do
   name   <- gets fnName
   params <- gets fnParams
   -- retTy  <- gets fnRetTy
-  locs   <- M.toList <$> gets fnLocs
+  locs   <- M.toList <$> gets fnLocals
   trigs  <- gets fnMaxWaits
 
   return [cedecl|
@@ -301,27 +315,27 @@ genEnter :: GenFn (C.Definition, C.Definition)
 genEnter = do
   actName <- gets fnName
   params  <- gets fnParams
-  -- retTy   <- gets fnRetTy
   trigs   <- gets fnMaxWaits
   let act = act_ actName
-      declParam (n, t) = [cparam|$ty:t $id:n|]
-      initParam (n, _) = [[cstm|$id:acts->$id:n = $id:n;|]]
-      initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
-
       enterParams =
         [ [cparam|$ty:act_t *$id:enter_caller|]
-          , [cparam|$ty:priority_t $id:enter_priority|]
-          , [cparam|$ty:depth_t $id:enter_depth|]
-          ]
-          ++ map declParam (genParams params)
-          ++ [[cparam|$ty:value_t *$id:ret_val|]]
-
+        , [cparam|$ty:priority_t $id:enter_priority|]
+        , [cparam|$ty:depth_t $id:enter_depth|]
+        , [cparam|$ty:value_t *$id:argv|]
+        , [cparam|$ty:value_t *$id:ret_val|]
+        ]
       alloc_act = enter [cexp|sizeof($ty:act)|]
                         [cexp|$id:(step_ actName)|]
                         [cexp|$id:enter_caller|]
                         [cexp|$id:enter_priority|]
                         [cexp|$id:enter_depth|]
       get_acts = to_act (cexpr actg) actName
+
+      initParam :: (CIdent, b) -> Int -> C.Stm
+      initParam (n, _) i = [cstm|$id:acts->$id:n = $id:argv[$int:i];|]
+
+      initTrig :: (CIdent, b) -> C.Stm
+      initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
   return
     ( [cedecl|$ty:act_t *$id:(enter_ actName)($params:enterParams);|]
     , [cedecl|
@@ -330,7 +344,7 @@ genEnter = do
           $ty:act *$id:acts = $exp:get_acts;
 
           /* Assign parameters */
-          $stms:(concatMap initParam $ genParams params)
+          $stms:(zipWith initParam (genParams params) [0..])
 
           /* Set return value */
           $id:acts->$id:ret_val = $id:ret_val;
@@ -341,6 +355,17 @@ genEnter = do
           return $id:actg;
         }
       |]
+    )
+
+genClosure :: GenFn (C.Definition, C.Definition)
+genClosure = do
+  actName <- gets fnName
+  argc    <- length <$> gets fnParams
+  let closure_name = closure_ actName
+      enter_f      = [cexp|$id:(enter_ actName)|]
+  return
+    ( [cedecl|extern $ty:closure1_t $id:closure_name;|]
+    , [cedecl|$ty:closure1_t $id:closure_name = $init:(static_closure enter_f argc);|]
     )
 
 -- | Generate the step function for an SSM procedure.
@@ -370,7 +395,7 @@ genStep = do
           default:
             break;
           }
-        *$id:acts->$id:ret_val = $exp:ret_expr;  
+        *$id:acts->$id:ret_val = $exp:ret_expr;
         $id:leave_label:
           $exp:do_leave;
         }
@@ -440,10 +465,6 @@ genYield = do
 -- yields, even if this is not usually necessary. We leave it to later compiler
 -- passes to optimize this.
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
-genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
-  -- NOTE: Any identifiers of I.Arrow type must refer to a (global) function, so
-  -- we just return a handle to its enter function.
-  return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
   Just v <- M.lookup n <$> gets fnVars
   return (v, [])
