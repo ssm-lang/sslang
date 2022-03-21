@@ -9,35 +9,20 @@ module IR.DropInference
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
 import qualified IR.IR                         as I
-
-import qualified IR.Types.Poly                 as Poly
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
                                                 , gets
                                                 , modify
+                                                , forM
                                                 )
-
-import           Data.Maybe                      ( mapMaybe )                    
+import qualified IR.Types.Poly                 as Poly
+import           Data.Maybe                     ( isNothing
+                                                , fromJust
+                                                )
 import qualified Data.Set                      as S
 
-{-
-import           IR.Types.TypeSystem            ( collectArrow
-                                                , dearrow
-                                                )
-import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad                  ( forM_ )
-import IR.IR (Program(programEntry))
-import           Data.Bifunctor                 ( first )
-import           Data.List                      ( intersperse )
-import qualified Data.Map                      as M
--}
-
-{-
-inferDrops :: I.Expr t -> I.Expr t
-inferDrops = error "todo"
--}
 
 -- | Inserting State
 data InsertState = InsertState
@@ -56,19 +41,38 @@ newtype InsertFn a = InsertFn (StateT InsertState Compiler.Pass a)
   deriving (MonadError Compiler.Error)  via (StateT InsertState Compiler.Pass)
   deriving (MonadState InsertState)     via (StateT InsertState Compiler.Pass)
 
-
 -- | Run a InsertFn computation.
 runInsertFn :: InsertFn a -> Compiler.Pass a
 runInsertFn (InsertFn m) = evalStateT
   m
-  InsertState { globScope = S.empty, currScope = S.empty, newDrops = [], anonCount = 0 }
+  InsertState { globScope = S.empty
+              , currScope = S.empty
+              , newDrops  = []
+              , anonCount = 0
+              }
 
-getFresh :: InsertFn I.VarId
-getFresh = do
+
+-- | Top level helper functions
+
+-- | Get a fresh variable name
+getFresh :: String -> InsertFn I.VarId
+getFresh str = do
   curCount <- gets anonCount
   modify $ \st -> st { anonCount = anonCount st + 1 }
-  let name = fromString $ "anon" <> show curCount
-  return name
+  return $ fromString $ ("anon" <> show curCount) ++ str
+
+-- | Make a drop primitive with unit type
+makeDrop :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
+makeDrop e = (Nothing, I.Prim I.Drop [e] $ Poly.TBuiltin Poly.Unit)
+
+-- | Given @a@ and @b@, construct @a ; b@ (i.e., @let _ = a ; b@). 
+seqExpr :: (Maybe I.VarId, I.Expr a) -> I.Expr a -> I.Expr a
+seqExpr a b = I.Let [a] b (I.extract b)
+
+-- | Given @[a1 .. an]@ and @b@, construct @a1 ; .. ; an ; b@. 
+seqExprs :: [(Maybe I.VarId, I.Expr a)] -> I.Expr a -> I.Expr a
+seqExprs as b = foldr seqExpr b as
+
 
 -- | Entry-point to insert dup/drops.
 insertDropsProgram
@@ -90,19 +94,63 @@ insertDropTop (var, expr) = do
 
 -- | Entry-point to inserting into expressions.
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
+
+-- | Inserting drops into Let bindings
 insertDropExpr (I.Let bins expr typ) = do
+  retVar <- getFresh "_let"
+  bins'  <- forM bins $ \(v, d) -> do
+    temp <- getFresh "_let_underscore"
+    d'   <- insertDropExpr d
+    return (if isNothing v then Just temp else v, d')
+  let makeDrops = \b -> makeDrop $ I.Var (fromJust $ fst b) (I.extract $ snd b)
+      exprBins  = (Just retVar, expr) : map makeDrops bins'
+      retExpr   = seqExprs exprBins $ I.Var retVar typ
+  return $ I.Let bins' retExpr typ
 
-  ret_var <- getFresh
-  bins'   <- mapM (\(v, d) -> insertDropExpr d >>= (\d' -> return (v, d'))) bins
+-- | Inserting drops into lambda functions
+insertDropExpr (I.Lambda var expr typ) = do
+  retVar <- getFresh "_lambda"
+  expr'  <- insertDropExpr expr
+  let varDrop  = makeDrop $ I.Var (fromJust var) (I.extract expr')
+      exprBins = (Just retVar, expr') : [varDrop]
+      retExpr  = seqExprs exprBins $ I.Var retVar typ
+  return $ I.Lambda var retExpr typ
 
-  let var       = mapMaybe fst bins
-  let utyp      = Poly.TBuiltin Poly.Unit
-  let var_bin   = map (\v -> (Nothing, I.Prim I.Drop [I.Var v typ] utyp)) var
-  let expr_bin  = (Just ret_var, expr) : var_bin
-  let lfolder   = \x y -> I.Let [x] y typ
-  let ret_expr  = I.Var ret_var typ
-  let ret_expr' = foldr lfolder ret_expr expr_bin
+-- | Inserting drops into pattern-matching
+insertDropExpr (I.Match expr alts typ) = do
+  alts' <- forM alts $ \(v, e) -> do
+    insertDropAlt (v, e) expr
+  return $ I.Match expr alts' typ
 
-  return $ I.Let bins' ret_expr' typ
 -- | placeholder for other exprs
 insertDropExpr expr = return expr
+
+
+-- | Entry-point to inserting into pattern-matching arms.
+insertDropAlt
+  :: (I.Alt, I.Expr Poly.Type)
+  -> I.Expr Poly.Type
+  -> InsertFn (I.Alt, I.Expr Poly.Type)
+
+-- | Inserting drops into AltDefault Binder
+insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do
+  retVar      <- getFresh "_alt_default"
+  exprReturn' <- insertDropExpr exprReturn
+  let varDrop  = makeDrop $ I.Var (fromJust var) (I.extract exprMatch)
+      exprBins = (Just retVar, exprReturn') : [varDrop]
+      retExpr  = seqExprs exprBins $ I.Var retVar (I.extract exprReturn')
+  return (I.AltDefault var, retExpr)
+
+-- | TODO: type is currently wrong and is only a placeholder
+-- | to fix, will need to enumerate through all expr constructors
+-- | makes more sense to do when inserting dups
+insertDropAlt (I.AltData dcon vars, exprReturn) exprMatch = do
+  retVar      <- getFresh "_alt_data"
+  exprReturn' <- insertDropExpr exprReturn
+  let makeDrops = \v -> makeDrop $ I.Var (fromJust v) (I.extract exprMatch)
+      exprBins  = (Just retVar, exprReturn') : map makeDrops vars
+      retExpr   = seqExprs exprBins $ I.Var retVar (I.extract exprReturn')
+  return (I.AltData dcon vars, retExpr)
+
+insertDropAlt (I.AltLit l, exprReturn) _ = do
+  return (I.AltLit l, exprReturn)
