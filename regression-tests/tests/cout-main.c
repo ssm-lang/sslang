@@ -42,8 +42,8 @@ void step_cout(ssm_act_t *act) {
   }
 }
 
-struct ssm_act *enter_main(struct ssm_act *caller, ssm_priority_t priority,
-                           ssm_depth_t depth, ssm_value_t cout, ssm_value_t *__ret);
+struct ssm_act *__enter_main(struct ssm_act *caller, ssm_priority_t priority,
+                           ssm_depth_t depth, ssm_value_t *cout, ssm_value_t *__ret);
 
 void ssm_throw(enum ssm_error reason, const char *file, int line,
                const char *func) {
@@ -79,7 +79,7 @@ int main(void) {
     ssm_priority_t new_priority = SSM_ROOT_PRIORITY;
     ssm_priority_t pinc = 1 << new_depth;
     ssm_dup(cout);
-    ssm_activate(enter_main(&ssm_top_parent, new_priority, new_depth, cout, &ret));
+    ssm_activate(__enter_main(&ssm_top_parent, new_priority, new_depth, &cout, &ret));
     new_priority += pinc;
     ssm_dup(cout);
     ssm_activate(enter_cout(&ssm_top_parent, new_priority, new_depth, cout));

@@ -1,0 +1,23 @@
+foo x y z =
+  x + y + z
+
+main (out : &Int) -> () =
+  let f = foo 1
+  let g = f 2
+  let a = foo 3 4 5
+  let h = f a
+  let b = g a
+  let c = g b
+  after 20, out <- h (a + b + c)
+  wait out
+
+// a = foo 3 4 5 = 3 + 4 + 5 = 12
+// b = g a = f 2 a = foo 1 2 a = 1 + 2 + 12 = 15
+// c = g b = f 2 b = foo 1 2 b = 1 + 2 + 15 = 18
+
+// h (a + b + c) =
+// f a (a + b + c) =
+// foo 1 a (a + b + c) =
+// 1 + a + (a + b +c) =
+// 1 + 12 + (12 + b + c) =
+// 1 + 12 + 12 + 15 + 18 = 58 <-- expected result
