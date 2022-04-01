@@ -465,7 +465,7 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr a@(I.App _ _ ty) = do
-  let (fn, args) = I.collectApp a
+  let (fn, args) = second (map fst) $ I.unzipApp a
   (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
   case fn of
     (I.Var _ _) -> do
@@ -585,9 +585,6 @@ genPrim I.Dup [e] _ = do
 genPrim I.Drop [e] _ = do
   (val, stms) <- genExpr e
   return (unit, stms ++ [citems|$exp:(drop val);|])
-genPrim I.Reuse [_] _ = do
-  -- TODO: delet this
-  todo
 genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   tmp         <- genTmp ty
@@ -630,7 +627,7 @@ genPrim I.Par procs _ = do
       :: ((C.Exp, C.Exp), I.Expr I.Type)
       -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
     genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
-      let (fn, args) = I.collectApp a
+      let (fn, args) = second (map fst) $ I.unzipApp a
       (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
       tmp                           <- genTmp ty
       let enterArgs =
