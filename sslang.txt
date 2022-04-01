@@ -1507,10 +1507,8 @@ PrimLe :: PrimOp
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
 
--- | <tt>New e t</tt> allocates a schedule variable initialized to
---   <tt>e</tt>, and returns a reference to it. If reuse token <tt>t</tt>
---   is non-null, this will use token <tt>t</tt> instead of allocating new
---   memory.
+-- | <tt>New e</tt> allocates a schedule variable initialized to
+--   <tt>e</tt>, and returns a reference to it.
 New :: Primitive
 
 -- | <tt>Dup r</tt> duplicates the reference <tt>r</tt> (i.e., increments
@@ -1520,10 +1518,6 @@ Dup :: Primitive
 -- | <tt>Drop r</tt> brings reference <tt>r</tt> out of scope, and frees it
 --   if it is the last remaining reference to the scheduled variable.
 Drop :: Primitive
-
--- | <tt>Reuse r</tt> is like <tt>Drop r</tt>, except it returns a reuse
---   token that should be passed to <tt>New</tt> for reuse.
-Reuse :: Primitive
 
 -- | <tt>Deref r</tt> dereferences reference <tt>r</tt> to obtain its
 --   value.
@@ -1625,10 +1619,6 @@ AltLit :: Literal -> Alt
 -- | <tt>AltDefault v</tt> matches anything, and bound to name <tt>v</tt>.
 AltDefault :: Binder -> Alt
 
--- | Collect a curried application into the function applied to a list of
---   args.
-collectApp :: Expr t -> (Expr t, [Expr t])
-
 -- | Identifier for data variables, e.g., <tt>x</tt>.
 newtype VarId
 VarId :: Identifier -> VarId
@@ -1657,6 +1647,29 @@ collectLambda :: Expr t -> ([Binder], Expr t)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
 makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
+
+-- | Apply a function to zero or more arguments.
+--   
+--   <a>zipApp</a> is the inverse of <a>unzipApp</a>.
+zipApp :: Expr t -> [(Expr t, t)] -> Expr t
+
+-- | Collect a curried application into the function and argument list.
+--   
+--   The type accompanying each argument represents type produced by the
+--   application, and is extracted from the <a>App</a> node that this
+--   function unwraps.
+--   
+--   For example, the term <tt>f a b</tt> (where <tt>a: A</tt> and <tt>b:
+--   B</tt>) would be represented by the following AST: @<tt> (App (App
+--   (Var f (A -&gt; B -&gt; C)) (Var a A) (B -&gt; C)) (Var b B) C) </tt>@
+--   
+--   which, when unzipped, gives:
+--   
+--   @<tt> (Var f (A -&gt; B -&gt; C)) [(Var a A, B -&gt; C), (Var b B, C)]
+--   </tt>@
+--   
+--   <a>unzipApp</a> is the inverse of <a>zipApp</a>.
+unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
 instance Data.Data.Data IR.IR.Literal
 instance GHC.Show.Show IR.IR.Literal
 instance GHC.Classes.Eq IR.IR.Literal
@@ -1761,6 +1774,25 @@ instance Control.Monad.Fail.MonadFail IR.TypeChecker.InferFn
 instance GHC.Base.Monad IR.TypeChecker.InferFn
 instance GHC.Base.Applicative IR.TypeChecker.InferFn
 instance GHC.Base.Functor IR.TypeChecker.InferFn
+
+
+-- | Substitute AST nodes with magical primitives.
+module IR.SubstMagic
+
+-- | Substitute AST nodes with magical primitives.
+--   
+--   Implemented as a syb-style generic tree traversal.
+--   
+--   Example usage:
+--   
+--   @@ -- Given: myExpr :: Expr Poly.Type
+--   
+--   <ul>
+--   <li>- Do: substMagic (Proxy :: Proxy Poly.Type) myExpr</li>
+--   <li>- Given: myProm :: Program Annotated.Type</li>
+--   <li>- Do: substMagic (Proxy :: Proxy Annotated.Type) myProg @@</li>
+--   </ul>
+substMagic :: (Data t, Data a) => Proxy t -> a -> a
 
 
 -- | Lower the representation of a sslang Ast into sslang IR.
