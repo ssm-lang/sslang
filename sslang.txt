@@ -1885,6 +1885,10 @@ runInferFn :: InferFn a -> Pass a
 --   of the given program <tt>p</tt>.
 inferProgram :: Program Type -> Pass (Program Type)
 
+-- | <a>recordFDefs</a> saves information about all the declared functions
+--   for future use
+recordFDefs :: [(VarId, Expr Type)] -> InferFn ()
+
 -- | <a>recordADTs</a> saves information about ADTs in the Inference State
 --   for future use
 --   
@@ -1908,6 +1912,13 @@ insertArg :: (DConId, TypeVariant Type) -> InferFn ()
 -- | <a>inferProgramDefs</a> <tt>ds</tt> infers the type of programDefs
 --   <tt>ds</tt> recursively and binds each varibale to its type.
 inferProgramDefs :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
+
+-- | <a>initAllTypeVars</a> initialize all the funcitons' type at once
+initAllTypeVars :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
+
+-- | <a>getAllTypes</a> replace all the type variables in the initial
+--   funciton types
+getAllTypes :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
 
 -- | Class of things that may contain free type variables.
 class HasFreeTVars a

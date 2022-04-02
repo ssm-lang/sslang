@@ -34,14 +34,14 @@ compiler.
 </span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpIRTyped"><span class="annot"><a href="IR.html#DumpIRTyped"><span class="hs-identifier hs-var">DumpIRTyped</span></a></span></span><span>       </span><span class="hs-comment">-- ^ Print the fully-typed IR after type inference.</span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpIRLifted"><span class="annot"><a href="IR.html#DumpIRLifted"><span class="hs-identifier hs-var">DumpIRLifted</span></a></span></span><span>      </span><span class="hs-comment">-- ^ Print the IR after lambda lifting.</span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpIRFinal"><span class="annot"><a href="IR.html#DumpIRFinal"><span class="hs-identifier hs-var">DumpIRFinal</span></a></span></span><span>       </span><span class="hs-comment">-- ^ Print the final IR representation before codegen.</span><span>
-</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679396899"><span id="local-6989586621679396901"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679397079"><span id="local-6989586621679397081"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 (Mode -&gt; Mode -&gt; Bool) -&gt; (Mode -&gt; Mode -&gt; Bool) -&gt; Eq Mode
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Mode -&gt; Mode -&gt; Bool
 $c/= :: Mode -&gt; Mode -&gt; Bool
 == :: Mode -&gt; Mode -&gt; Bool
 $c== :: Mode -&gt; Mode -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679396892"><span id="local-6989586621679396894"><span id="local-6989586621679396896"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679397072"><span id="local-6989586621679397074"><span id="local-6989586621679397076"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
 [Mode] -&gt; ShowS
 Mode -&gt; String
 (Int -&gt; Mode -&gt; ShowS)
@@ -60,7 +60,7 @@ $cshowsPrec :: Int -&gt; Mode -&gt; ShowS
 </span><span id="line-40"></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="HMOnly"><span class="annot"><a href="IR.html#HMOnly"><span class="hs-identifier hs-var">HMOnly</span></a></span></span><span>             </span><span class="hs-comment">-- ^ Only run HM type inference</span><span>
 </span><span id="line-41"></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="TCOnly"><span class="annot"><a href="IR.html#TCOnly"><span class="hs-identifier hs-var">TCOnly</span></a></span></span><span>             </span><span class="hs-comment">-- ^ Only run type checker</span><span>
 </span><span id="line-42"></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Both"><span class="annot"><a href="IR.html#Both"><span class="hs-identifier hs-var">Both</span></a></span></span><span>               </span><span class="hs-comment">-- ^ Run both HM type Inference and type checker</span><span>
-</span><span id="line-43"></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679396884"><span id="local-6989586621679396886"><span class="annot"><span class="annottext">TIType -&gt; TIType -&gt; Bool
+</span><span id="line-43"></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679397064"><span id="local-6989586621679397066"><span class="annot"><span class="annottext">TIType -&gt; TIType -&gt; Bool
 (TIType -&gt; TIType -&gt; Bool)
 -&gt; (TIType -&gt; TIType -&gt; Bool) -&gt; Eq TIType
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -68,7 +68,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: TIType -&gt; TIType -&gt; Bool
 == :: TIType -&gt; TIType -&gt; Bool
 $c== :: TIType -&gt; TIType -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679396878"><span id="local-6989586621679396880"><span id="local-6989586621679396882"><span class="annot"><span class="annottext">Int -&gt; TIType -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679397058"><span id="local-6989586621679397060"><span id="local-6989586621679397062"><span class="annot"><span class="annottext">Int -&gt; TIType -&gt; ShowS
 [TIType] -&gt; ShowS
 TIType -&gt; String
 (Int -&gt; TIType -&gt; ShowS)
@@ -86,7 +86,7 @@ $cshowsPrec :: Int -&gt; TIType -&gt; ShowS
 </span><span id="line-45"></span><span class="hs-comment">-- | Compiler options for the IR compiler stage.</span><span>
 </span><span id="line-46"></span><span class="hs-keyword">data</span><span> </span><span id="Options"><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Options"><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span> </span><span class="hs-special">{</span><span> </span><span id="mode"><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var hs-var">mode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span><span class="hs-special">,</span><span> </span><span id="tiType"><span class="annot"><span class="annottext">Options -&gt; TIType
-</span><a href="IR.html#tiType"><span class="hs-identifier hs-var hs-var">tiType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#TIType"><span class="hs-identifier hs-type">TIType</span></a></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679396871"><span id="local-6989586621679396873"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
+</span><a href="IR.html#tiType"><span class="hs-identifier hs-var hs-var">tiType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#TIType"><span class="hs-identifier hs-type">TIType</span></a></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679397051"><span id="local-6989586621679397053"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
 (Options -&gt; Options -&gt; Bool)
 -&gt; (Options -&gt; Options -&gt; Bool) -&gt; Eq Options
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -94,7 +94,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: Options -&gt; Options -&gt; Bool
 == :: Options -&gt; Options -&gt; Bool
 $c== :: Options -&gt; Options -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679396865"><span id="local-6989586621679396867"><span id="local-6989586621679396869"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679397045"><span id="local-6989586621679397047"><span id="local-6989586621679397049"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
 [Options] -&gt; ShowS
 Options -&gt; String
 (Int -&gt; Options -&gt; ShowS)
@@ -110,7 +110,7 @@ $cshowsPrec :: Int -&gt; Options -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-47"></span><span>
 </span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Default.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-49"></span><span>  </span><span id="local-6989586621679396862"><span class="annot"><span class="annottext">def :: Options
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679397042"><span class="annot"><span class="annottext">def :: Options
 </span><a href="Common.Default.html#def"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options :: Mode -&gt; TIType -&gt; Options
 </span><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">mode :: Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var">mode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mode
@@ -138,7 +138,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679396857"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679397037"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIR"><span class="hs-identifier hs-var">DumpIR</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the IR immediately after lowering&quot;</span></span><span>
@@ -158,7 +158,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679396857"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679397037"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRTyped"><span class="hs-identifier hs-var">DumpIRTyped</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the fully-typed IR after type inference&quot;</span></span><span>
@@ -178,7 +178,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679396857"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679397037"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRLifted"><span class="hs-identifier hs-var">DumpIRLifted</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-65"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the IR after lambda lifting&quot;</span></span><span>
@@ -198,7 +198,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679396857"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679397037"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRFinal"><span class="hs-identifier hs-var">DumpIRFinal</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-69"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the last IR representation before code generation&quot;</span></span><span>
@@ -241,29 +241,29 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span id="line-77"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Only run type checker&quot;</span></span><span>
 </span><span id="line-78"></span><span>  </span><span class="hs-special">]</span><span>
-</span><span id="line-79"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679396857"><span class="annot"><span class="annottext">setMode :: Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679396857"><span class="hs-identifier hs-var hs-var">setMode</span></a></span></span><span> </span><span id="local-6989586621679396854"><span class="annot"><span class="annottext">Mode
-</span><a href="#local-6989586621679396854"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679396853"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396853"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396853"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">mode :: Mode
+</span><span id="line-79"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679397037"><span class="annot"><span class="annottext">setMode :: Mode -&gt; Options -&gt; Options
+</span><a href="#local-6989586621679397037"><span class="hs-identifier hs-var hs-var">setMode</span></a></span></span><span> </span><span id="local-6989586621679397034"><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679397034"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679397033"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397033"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397033"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">mode :: Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var">mode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mode
-</span><a href="#local-6989586621679396854"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679397034"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-80"></span><span>
 </span><span id="line-81"></span><span class="hs-comment">-- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.</span><span>
 </span><span id="line-82"></span><span class="annot"><a href="IR.html#lower"><span class="hs-identifier hs-type">lower</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Ann.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-83"></span><span id="lower"><span class="annot"><span class="annottext">lower :: Options -&gt; Program -&gt; Pass (Program Type)
-</span><a href="IR.html#lower"><span class="hs-identifier hs-var hs-var">lower</span></a></span></span><span> </span><span id="local-6989586621679396851"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396851"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679396850"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679396850"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-84"></span><span>  </span><span id="local-6989586621679396849"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396849"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass (Program Type)
+</span><a href="IR.html#lower"><span class="hs-identifier hs-var hs-var">lower</span></a></span></span><span> </span><span id="local-6989586621679397031"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397031"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679397030"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679397030"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679397029"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679397029"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass (Program Type)
 </span><a href="IR.LowerAst.html#lowerProgram"><span class="hs-identifier hs-var">lowerProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679396850"><span class="hs-identifier hs-var">prg</span></a></span><span>
+</span><a href="#local-6989586621679397030"><span class="hs-identifier hs-var">prg</span></a></span><span>
 </span><span id="line-85"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var hs-var">mode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396851"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679397031"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIR"><span class="hs-identifier hs-var">DumpIR</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -271,11 +271,11 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass ()
 forall a x. Pretty a =&gt; a -&gt; Pass x
 </span><a href="Common.Compiler.html#dump"><span class="hs-identifier hs-var">dump</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396849"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><a href="#local-6989586621679397029"><span class="hs-identifier hs-var">ir</span></a></span><span>
 </span><span id="line-86"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396849"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><a href="#local-6989586621679397029"><span class="hs-identifier hs-var">ir</span></a></span><span>
 </span><span id="line-87"></span><span>
 </span><span id="line-88"></span><span class="hs-comment">{- | IR compiler sub-stage, ultimately producing a fully-typed IR.
 
@@ -286,55 +286,55 @@ throw an error.
 -}</span><span>
 </span><span id="line-95"></span><span class="annot"><a href="IR.html#ann2Class"><span class="hs-identifier hs-type">ann2Class</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Ann.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Classes.html#Type"><span class="hs-identifier hs-type">Cls.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-96"></span><span id="ann2Class"><span class="annot"><span class="annottext">ann2Class :: Options -&gt; Program Type -&gt; Pass (Program Type)
-</span><a href="IR.html#ann2Class"><span class="hs-identifier hs-var hs-var">ann2Class</span></a></span></span><span> </span><span id="local-6989586621679396846"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396846"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679396845"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396845"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-97"></span><span>  </span><span id="local-6989586621679396844"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396844"><span class="hs-identifier hs-var">irInferred</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-98"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679396843"><span class="annot"><span class="annottext">irHMInferred :: Pass (Program Type)
-</span><a href="#local-6989586621679396843"><span class="hs-identifier hs-var hs-var">irHMInferred</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
+</span><a href="IR.html#ann2Class"><span class="hs-identifier hs-var hs-var">ann2Class</span></a></span></span><span> </span><span id="local-6989586621679397026"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397026"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679397025"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679397025"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621679397024"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679397024"><span class="hs-identifier hs-var">irInferred</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-98"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679397023"><span class="annot"><span class="annottext">irHMInferred :: Pass (Program Type)
+</span><a href="#local-6989586621679397023"><span class="hs-identifier hs-var hs-var">irHMInferred</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 </span><a href="IR.HM.html#inferProgram"><span class="hs-identifier hs-var">HM.inferProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396845"><span class="hs-identifier hs-var">ir</span></a></span><span>
-</span><span id="line-99"></span><span>        </span><span id="local-6989586621679396841"><span class="annot"><span class="annottext">irTCInferred :: Pass (Program Type)
-</span><a href="#local-6989586621679396841"><span class="hs-identifier hs-var hs-var">irTCInferred</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
+</span><a href="#local-6989586621679397025"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><span id="line-99"></span><span>        </span><span id="local-6989586621679397021"><span class="annot"><span class="annottext">irTCInferred :: Pass (Program Type)
+</span><a href="#local-6989586621679397021"><span class="hs-identifier hs-var hs-var">irTCInferred</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 </span><a href="IR.TypeChecker.html#inferProgram"><span class="hs-identifier hs-var">TC.inferProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396845"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><a href="#local-6989586621679397025"><span class="hs-identifier hs-var">ir</span></a></span><span>
 </span><span id="line-100"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Options -&gt; TIType
 </span><a href="IR.html#tiType"><span class="hs-identifier hs-var hs-var">tiType</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396846"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679397026"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-101"></span><span>      </span><span class="annot"><span class="annottext">TIType
 </span><a href="IR.html#HMOnly"><span class="hs-identifier hs-var">HMOnly</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396843"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span>
+</span><a href="#local-6989586621679397023"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span>
 </span><span id="line-102"></span><span>      </span><span class="annot"><span class="annottext">TIType
 </span><a href="IR.html#TCOnly"><span class="hs-identifier hs-var">TCOnly</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396841"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span>
+</span><a href="#local-6989586621679397021"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span>
 </span><span id="line-103"></span><span>      </span><span class="annot"><span class="annottext">TIType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pass (Program Type) -&gt; Either Error (Program Type, [Warning])
 forall a. Pass a -&gt; Either Error (a, [Warning])
 </span><a href="Common.Compiler.html#runPass"><span class="hs-identifier hs-var">runPass</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396843"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type) -&gt; Either Error (Program Type, [Warning])
+</span><a href="#local-6989586621679397023"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type) -&gt; Either Error (Program Type, [Warning])
 forall a. Pass a -&gt; Either Error (a, [Warning])
 </span><a href="Common.Compiler.html#runPass"><span class="hs-identifier hs-var">runPass</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396841"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-104"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679396838"><span class="annot"><span class="annottext">Error
-</span><a href="#local-6989586621679396838"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">Error
+</span><a href="#local-6989586621679397021"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-104"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679397018"><span class="annot"><span class="annottext">Error
+</span><a href="#local-6989586621679397018"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">Error
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Error -&gt; Pass (Program Type)
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">Error
-</span><a href="#local-6989586621679396838"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621679397018"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-105"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="annot"><span class="annottext">(Program Type, [Warning])
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Either Error (Program Type, [Warning])
 </span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396843"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span>
+</span><a href="#local-6989586621679397023"><span class="hs-identifier hs-var">irHMInferred</span></a></span><span>
 </span><span id="line-106"></span><span>        </span><span class="annot"><span class="annottext">(Either Error (Program Type, [Warning]),
  Either Error (Program Type, [Warning]))
 </span><span class="hs-identifier">_</span></span><span>                 </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
-</span><a href="#local-6989586621679396841"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span>
+</span><a href="#local-6989586621679397021"><span class="hs-identifier hs-var">irTCInferred</span></a></span><span>
 </span><span id="line-107"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var hs-var">mode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396846"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679397026"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRTyped"><span class="hs-identifier hs-var">DumpIRTyped</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -342,11 +342,11 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass ()
 forall a x. Pretty a =&gt; a -&gt; Pass x
 </span><a href="Common.Compiler.html#dump"><span class="hs-identifier hs-var">dump</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396844"><span class="hs-identifier hs-var">irInferred</span></a></span><span>
+</span><a href="#local-6989586621679397024"><span class="hs-identifier hs-var">irInferred</span></a></span><span>
 </span><span id="line-108"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396844"><span class="hs-identifier hs-var">irInferred</span></a></span><span>
+</span><a href="#local-6989586621679397024"><span class="hs-identifier hs-var">irInferred</span></a></span><span>
 </span><span id="line-109"></span><span>
 </span><span id="line-110"></span><span class="hs-comment">-- | IR compiler sub-stage, ultimately instantiating all type classes.</span><span>
 </span><span id="line-111"></span><span class="annot"><a href="IR.html#class2Poly"><span class="hs-identifier hs-type">class2Poly</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Classes.html#Type"><span class="hs-identifier hs-type">Cls.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
@@ -358,18 +358,18 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span id="line-114"></span><span class="hs-comment">-- | IR compiler sub-stage, performing source-to-source translations.</span><span>
 </span><span id="line-115"></span><span class="annot"><a href="IR.html#poly2Poly"><span class="hs-identifier hs-type">poly2Poly</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-116"></span><span id="poly2Poly"><span class="annot"><span class="annottext">poly2Poly :: Options -&gt; Program Type -&gt; Pass (Program Type)
-</span><a href="IR.html#poly2Poly"><span class="hs-identifier hs-var hs-var">poly2Poly</span></a></span></span><span> </span><span id="local-6989586621679396834"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396834"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679396833"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396833"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-117"></span><span>  </span><span id="local-6989586621679396832"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396832"><span class="hs-identifier hs-var">irLifted</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
+</span><a href="IR.html#poly2Poly"><span class="hs-identifier hs-var hs-var">poly2Poly</span></a></span></span><span> </span><span id="local-6989586621679397014"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397014"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679397013"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679397013"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-117"></span><span>  </span><span id="local-6989586621679397012"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679397012"><span class="hs-identifier hs-var">irLifted</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 </span><a href="IR.LambdaLift.html#liftProgramLambdas"><span class="hs-identifier hs-var">liftProgramLambdas</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396833"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><a href="#local-6989586621679397013"><span class="hs-identifier hs-var">ir</span></a></span><span>
 </span><span id="line-118"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var hs-var">mode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396834"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679397014"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRLifted"><span class="hs-identifier hs-var">DumpIRLifted</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -377,12 +377,12 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass ()
 forall a x. Pretty a =&gt; a -&gt; Pass x
 </span><a href="Common.Compiler.html#dump"><span class="hs-identifier hs-var">dump</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396832"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
+</span><a href="#local-6989586621679397012"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
 </span><span id="line-119"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="IR.html#mode"><span class="hs-identifier hs-var hs-var">mode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396834"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679397014"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="IR.html#DumpIRFinal"><span class="hs-identifier hs-var">DumpIRFinal</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -390,53 +390,53 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass ()
 forall a x. Pretty a =&gt; a -&gt; Pass x
 </span><a href="Common.Compiler.html#dump"><span class="hs-identifier hs-var">dump</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396832"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
+</span><a href="#local-6989586621679397012"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
 </span><span id="line-120"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679396832"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
+</span><a href="#local-6989586621679397012"><span class="hs-identifier hs-var">irLifted</span></a></span><span>
 </span><span id="line-121"></span><span>
 </span><span id="line-122"></span><span class="hs-comment">-- | IR compiler stage.</span><span>
 </span><span id="line-123"></span><span class="annot"><a href="IR.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-124"></span><span id="run"><span class="annot"><span class="annottext">run :: Options -&gt; Program -&gt; Pass (Program Type)
-</span><a href="IR.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679396830"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396830"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679396829"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679396829"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="IR.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679397010"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397010"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679397009"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679397009"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-125"></span><span>  </span><span class="annot"><span class="annottext">Options -&gt; Program -&gt; Pass (Program Type)
 </span><a href="IR.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396830"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679396829"><span class="hs-identifier hs-var">prg</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
+</span><a href="#local-6989586621679397010"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679397009"><span class="hs-identifier hs-var">prg</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
 -&gt; (Program Type -&gt; Pass (Program Type)) -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Options -&gt; Program Type -&gt; Pass (Program Type)
 </span><a href="IR.html#ann2Class"><span class="hs-identifier hs-var">ann2Class</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396830"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
+</span><a href="#local-6989586621679397010"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
 -&gt; (Program Type -&gt; Pass (Program Type)) -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Options -&gt; Program Type -&gt; Pass (Program Type)
 </span><a href="IR.html#class2Poly"><span class="hs-identifier hs-var">class2Poly</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396830"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
+</span><a href="#local-6989586621679397010"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Pass (Program Type)
 -&gt; (Program Type -&gt; Pass (Program Type)) -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Options -&gt; Program Type -&gt; Pass (Program Type)
 </span><a href="IR.html#poly2Poly"><span class="hs-identifier hs-var">poly2Poly</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396830"><span class="hs-identifier hs-var">opt</span></a></span><span>
+</span><a href="#local-6989586621679397010"><span class="hs-identifier hs-var">opt</span></a></span><span>
 </span><span id="line-126"></span><span>
 </span><span id="line-127"></span><span class="hs-comment">-- | Helper function to set ti type to HM-only</span><span>
 </span><span id="line-128"></span><span class="annot"><a href="IR.html#setHM"><span class="hs-identifier hs-type">setHM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
 </span><span id="line-129"></span><span id="setHM"><span class="annot"><span class="annottext">setHM :: Options -&gt; Options
-</span><a href="IR.html#setHM"><span class="hs-identifier hs-var hs-var">setHM</span></a></span></span><span> </span><span id="local-6989586621679396828"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396828"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396828"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">tiType :: TIType
+</span><a href="IR.html#setHM"><span class="hs-identifier hs-var hs-var">setHM</span></a></span></span><span> </span><span id="local-6989586621679397008"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397008"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397008"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">tiType :: TIType
 </span><a href="IR.html#tiType"><span class="hs-identifier hs-var">tiType</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TIType
 </span><a href="IR.html#HMOnly"><span class="hs-identifier hs-var">HMOnly</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-130"></span><span>
 </span><span id="line-131"></span><span class="hs-comment">-- | Helper function to set ti type to TC-only</span><span>
 </span><span id="line-132"></span><span class="annot"><a href="IR.html#setTC"><span class="hs-identifier hs-type">setTC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
 </span><span id="line-133"></span><span id="setTC"><span class="annot"><span class="annottext">setTC :: Options -&gt; Options
-</span><a href="IR.html#setTC"><span class="hs-identifier hs-var hs-var">setTC</span></a></span></span><span> </span><span id="local-6989586621679396827"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396827"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679396827"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">tiType :: TIType
+</span><a href="IR.html#setTC"><span class="hs-identifier hs-var hs-var">setTC</span></a></span></span><span> </span><span id="local-6989586621679397007"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397007"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679397007"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">tiType :: TIType
 </span><a href="IR.html#tiType"><span class="hs-identifier hs-var">tiType</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TIType
 </span><a href="IR.html#TCOnly"><span class="hs-identifier hs-var">TCOnly</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-134"></span></pre></body></html>
