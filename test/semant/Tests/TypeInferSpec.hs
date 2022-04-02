@@ -240,3 +240,44 @@ spec = do
     shouldPass (recFn def)
     shouldPass (recFn (IR.setHM def))
     shouldFailWith (recFn (IR.setTC def)) expectedError
+
+  it "can correctly infer terminated direct recursion" $ do
+    let rec1 = parseInfer [here|
+          type MyBool
+            MyFalse
+            MyTrue
+
+          main x =
+            match x
+              MyFalse = main(MyTrue)
+              _ = 1
+          |]
+    shouldPass rec1
+
+  it "can correctly infer terminated indirect recursion" $ do
+    let rec2 = parseInfer [here|
+          type MyBool
+            MyFalse
+            MyTrue
+
+          type Number
+            Zero
+            One
+            Two
+            Three
+
+          isOdd x =
+            match x
+              Zero = MyFalse
+              One = isEven(Zero)
+              Two = isEven(One)
+              Three = isEven(Two)
+
+          isEven x =
+            match x
+              Zero = MyTrue
+              One = isOdd(Zero)
+              Two = isOdd(One)
+              Three = isOdd(Two)
+          |]
+    shouldPass rec2
