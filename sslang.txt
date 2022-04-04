@@ -309,6 +309,10 @@ on_heap :: Exp -> Exp
 -- | <tt>ssm_dup</tt>, increment the reference count of a value.
 dup :: Exp -> Exp
 
+-- | <tt>ssm_dups</tt>, increment the reference count on a vector of
+--   values.
+dups :: Exp -> Exp -> Exp
+
 -- | <tt>ssm_drop</tt>, drop the reference count of a value and free if
 --   necessary.
 drop :: Exp -> Exp
@@ -367,6 +371,10 @@ enter :: Exp -> Exp -> Exp -> Exp -> Exp -> Exp
 -- | <tt>ssm_leave</tt>, deallocate an activation record before leaving.
 leave :: Exp -> Exp -> Exp
 
+-- | <tt>ssm_has_children</tt>, returns non-zero if <tt>act</tt> has at
+--   least one child.
+has_children :: Exp -> Exp
+
 -- | <tt>ssm_activate</tt>, schedule an activation record on the ready
 --   queue.
 activate :: Exp -> Exp
@@ -414,6 +422,39 @@ adt_tag :: Exp -> Exp
 -- | Extract the tag of a heap-allocated ADT value.
 adt_heap_tag :: Exp -> Exp
 
+-- | <tt>ssm_closure1_t</tt>, the (template) type of a closure with a
+--   single argument.
+closure1_t :: Type
+
+-- | Inintializer for a "static" closure that contains no arguments.
+--   
+--   FIXME: An ugly hack that shouldn't exist because John didn't have the
+--   foresight to provide an interface to define static closures.
+static_closure :: Exp -> Int -> Initializer
+
+-- | Promote a static object to an <tt>ssm_value_t</tt> (warning: hacky!).
+static_value :: CIdent -> Exp
+
+-- | <tt>ssm_new_closure</tt>, allocate a new closure object on the heap.
+new_closure :: CIdent -> Int -> Exp
+
+-- | <tt>ssm_closure_push</tt>, add a new argument to a closure.
+closure_push :: Exp -> Exp -> Exp
+
+-- | <tt>ssm_closure_pop</tt>, remove an argument from a closure.
+closure_pop :: Exp -> Exp
+
+-- | <tt>ssm_closure_apply</tt>, apply a closure to an argument.
+closure_apply :: Exp -> Exp -> Exp -> Exp -> Exp -> Exp -> Exp
+
+-- | <tt>ssm_closure_apply</tt>, apply a closure to an argument, consuming
+--   the closure.
+closure_apply_final :: Exp -> Exp -> Exp -> Exp -> Exp -> Exp -> Exp
+
+-- | <tt>ssm_closure_free</tt>, free a closure (without performing
+--   reference counting).
+closure_free :: Exp -> Exp
+
 -- | Name of the pseudonymous macro from the Linux kernel.
 container_of :: CIdent
 
@@ -432,11 +473,14 @@ act_ :: VarId -> Type
 -- | Obtain the process-specific activation record from a generic one.
 to_act :: Exp -> VarId -> Exp
 
--- | Obtain the name of the step function of a routine.
-step_ :: VarId -> CIdent
-
 -- | Obtain the name for the enter function of a routine.
 enter_ :: VarId -> CIdent
+
+-- | Obtain the name for the static closure of a routine.
+closure_ :: VarId -> CIdent
+
+-- | Obtain the name of the step function of a routine.
+step_ :: VarId -> CIdent
 
 -- | Obtain the name of each trigger for a routine.
 trig_ :: Int -> CIdent
@@ -450,6 +494,9 @@ label_ :: Int -> CIdent
 -- | Obtain the name of an argument variable.
 arg_ :: Int -> CIdent
 
+-- | Obtain the name of an argument variable.
+argv :: CIdent
+
 -- | Name of return argument.
 ret_val :: CIdent
 
@@ -458,6 +505,8 @@ actg :: CIdent
 
 -- | Identifier for specialized (outer) struct act.
 acts :: CIdent
+
+-- | Access activation record member.
 acts_ :: CIdent -> Exp
 
 -- | Name of the caller argument of an enter call.
@@ -468,6 +517,8 @@ enter_priority :: CIdent
 
 -- | Name of the depth argument of an enter call.
 enter_depth :: CIdent
+
+-- | Label to jump to terminate execution.
 leave_label :: CIdent
 instance GHC.Base.Monoid Codegen.LibSSM.CIdent
 instance GHC.Base.Semigroup Codegen.LibSSM.CIdent
@@ -2188,6 +2239,21 @@ genTypeDef :: (TConId, TypeDef Type) -> Pass Definition
 -- | Compute codgen helpers for each sslang type definition.
 genTypeInfo :: [(TConId, TypeDef Type)] -> Pass TypegenInfo
 
+
+-- | Translate SSM program to C compilation unit.
+--   
+--   What is expected of the IR:
+--   
+--   Well-formed: All primitive functions are applied to the right number
+--   of arguments.
+--   
+--   Pure par expression: All par-expressions' operands are applications
+--   that have no side effects.
+--   
+--   Defunctionalized: No lambdas; the only terms with an arrow type are
+--   variables or applications.
+--   
+--   Name mangled: All variable identifiers are unique.
 module Codegen.Codegen
 
 -- | Possible, but temporarily punted for the sake of expediency.
@@ -2217,7 +2283,7 @@ GenFnState :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> Map VarId Type -
 [fnBody] :: GenFnState -> Expr Type
 
 -- | Function local variables
-[fnLocs] :: GenFnState -> Map VarId Type
+[fnLocals] :: GenFnState -> Map VarId Type
 
 -- | How to resolve variables
 [fnVars] :: GenFnState -> Map VarId Exp
@@ -2242,7 +2308,7 @@ newtype GenFn a
 GenFn :: StateT GenFnState Pass a -> GenFn a
 
 -- | Run a <a>GenFn</a> computation on a procedure.
-runGenFn :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> TypegenInfo -> GenFn a -> Pass a
+runGenFn :: VarId -> [(Binder, Type)] -> Type -> Expr Type -> TypegenInfo -> [(VarId, Type)] -> GenFn a -> Pass a
 
 -- | Lookup some information associated with a type constructor.
 getsTCon :: (TConInfo -> a) -> TConId -> GenFn a
@@ -2295,15 +2361,6 @@ unit :: Exp
 undef :: Exp
 
 -- | Generate a C compilation from an SSM program.
-genProgram :: Program Type -> Pass [Definition]
-
--- | Include statements in the generated C file.
-includes :: [Definition]
-
--- | Setup the entry point of the program.
-genInitProgram :: Program Type -> [Definition]
-
--- | Generate C declarations and definitions for a top-level SSM function.
 --   
 --   Each top-level function in a program is turned into three components:
 --   
@@ -2315,7 +2372,13 @@ genInitProgram :: Program Type -> [Definition]
 --   </ol>
 --   
 --   Items 2 and 3 include both declarations and definitions.
-genTop :: TypegenInfo -> (VarId, Expr Type) -> Pass ([Definition], [Definition])
+genProgram :: Program Type -> Pass [Definition]
+
+-- | Include statements in the generated C file.
+includes :: [Definition]
+
+-- | Setup the entry point of the program.
+genInitProgram :: Program Type -> [Definition]
 
 -- | Generate struct definition for an SSM procedure.
 --   
@@ -2328,6 +2391,9 @@ genStruct :: GenFn Definition
 --   Its struct is allocated and initialized (partially; local variables'
 --   values are left uninitialized).
 genEnter :: GenFn (Definition, Definition)
+
+-- | Generate static closure for top-level function
+genStaticClosure :: GenFn (Definition, Definition)
 
 -- | Generate the step function for an SSM procedure.
 --   
@@ -2420,6 +2486,7 @@ genParArgs :: Int -> (Exp, Exp) -> [(Exp, Exp)]
 
 -- | How much the depth should be decreased when par forking given width.
 depthSub :: Int -> Exp
+instance Control.Monad.Writer.Class.MonadWriter [Common.Compiler.Warning] Codegen.Codegen.GenFn
 instance Control.Monad.State.Class.MonadState Codegen.Codegen.GenFnState Codegen.Codegen.GenFn
 instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Codegen.Codegen.GenFn
 instance Control.Monad.Fail.MonadFail Codegen.Codegen.GenFn
