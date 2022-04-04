@@ -57,11 +57,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Doxygen-generated documentation
-doc/html
-doc/html/*
-doc/latex/*
-
 # gcov output
 *.gcov
 *.gcda
@@ -70,3 +65,7 @@ doc/latex/*
 build/
 
 .pio
+
+compile_commands.json
+
+vgcore.*

@@ -1,0 +1,40 @@
+type MyBool 
+  MyFalse Int Int
+  MyTrue Int      
+
+type Tree
+  TwoChildren Tree Tree  // declare larger dcon first
+  Leaf                   // ouput enum should still list "packable" dcons first
+  OneChild Int Tree
+
+// ^ tests whether ADTs can be defined, specifically with 
+// ^ nullary data constructors and integer fields
+
+main ( cout : & Int ) -> () =
+// test initialization of ADTs works
+  let b = MyTrue 65                            // A
+  let c = (MyFalse 83 84)                      // S T
+  let d = Leaf 
+  let e = OneChild 82 Leaf                     // R
+  let a = match c
+// test accessing second field of an ADT works
+            MyFalse fst snd = snd - 10         // chooses this one
+            _ = 66                             // B
+  let g = match d
+              Leaf = 78                        // chooses this one, N
+              OneChild e1 e2 = e1              
+              TwoChildren b' b'' = 68          // D
+  let h = match e
+              Leaf = 78                        // N
+// test the second arm of pattern match can be selected 
+// (not always picking the first option)
+              OneChild e' e'' = e'             // chooses this one    
+              TwoChildren b' b'' = 68          // D
+// make sure pattern matching/field access worked as expected 
+// by printing out particular integer fields
+  after 10 , (cout : & Int) <- a
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- g
+  wait (cout : & Int)
+  after 10 , (cout : & Int) <- h
+  wait (cout : & Int)

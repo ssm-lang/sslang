@@ -6,8 +6,8 @@ SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
-CC="cc -O -Wall -pedantic -std=c99 -I ${SSMINC} -I out"
-LINK="cc -L $SSMLIBDIR"
+CC="cc -O -g -Wall -Wno-unused-label -pedantic -std=c99 -I ${SSMINC} -I out"
+LINK="cc -g -L $SSMLIBDIR"
 
 globallog=runtests.log
 rm -f $globallog
@@ -200,6 +200,10 @@ do
 	  ;;
   esac    
 done
+
+if [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
+  cat "$globallog"
+fi
 
 exit $globalerror
 

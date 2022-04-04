@@ -1,0 +1,42 @@
+type MyBool
+  MyFalse
+  MyTrue
+
+type Number
+  Zero
+  One
+  Two
+  Three
+
+isOdd x =
+  match x
+    Zero  = MyFalse
+    One   = MyTrue
+    Two   = isOdd(Zero)
+    Three = isOdd(One)
+
+main(led) =
+  match isOdd(Zero)
+    MyFalse = after 10 , led <- 69
+    MyTrue  = after 10 , led <- 79
+  wait led
+  after 10 , led <- 10
+  wait led
+  match isOdd(One)
+    MyFalse = after 10 , led <- 69
+    MyTrue  = after 10 , led <- 79
+  wait led
+  after 10 , led <- 10
+  wait led
+  match isOdd(Two)
+    MyFalse = after 10 , led <- 69
+    MyTrue  = after 10 , led <- 79
+  wait led
+  after 10 , led <- 10
+  wait led
+  match isOdd(Three)
+    MyFalse = after 10 , led <- 69
+    MyTrue  = after 10 , led <- 79
+  wait led
+  after 10 , led <- 10
+  wait led

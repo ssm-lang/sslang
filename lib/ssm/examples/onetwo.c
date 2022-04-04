@@ -1,156 +1,141 @@
+#include "ssm-examples.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "ssm.h"
 
-/* 
-one &a
-  wait a
-  a = a + 1
-
-two &a
-  wait a
-  a = a * 2
-
-main
-  var a = 0
-  after 1s a = 10
-  ssm_activate one(a) two(a)
-  // a = 22 here
-
-
+/*
+ * one a =
+ *   wait a
+ *   a <- deref a + 1
+ *
+ * two a =
+ *   wait a
+ *   a <- deref a * 2
+ *
+ * main =
+ *   let a = new 0
+ *   after 1s, a <- 10
+ *   par one a
+ *       two a
+ *   // a = 22 here
  */
 
 typedef struct {
-  SSM_ACT_FIELDS;
-  ssm_i32_t *a;
-  struct ssm_trigger trigger1;
-} rar_one_t;
-
-typedef struct {
-  SSM_ACT_FIELDS;
-  ssm_i32_t *a;
-  struct ssm_trigger trigger1;
-} rar_two_t;
-
-typedef struct {
-  SSM_ACT_FIELDS;
+  ssm_act_t act;
   ssm_i32_t a;
-} rar_main_t;
+  struct ssm_trigger trigger1;
+} act_one_t;
+
+typedef struct {
+  ssm_act_t act;
+  ssm_i32_t a;
+  struct ssm_trigger trigger1;
+} act_two_t;
+
+typedef struct {
+  ssm_act_t act;
+  ssm_i32_t a;
+} act_main_t;
 
 ssm_stepf_t step_one;
 
-rar_one_t *ssm_enter_one(struct ssm_act *cont, ssm_priority_t priority,
-		     ssm_depth_t depth, ssm_i32_t *a)
-{
-  rar_one_t *rar = (rar_one_t *) ssm_enter(sizeof(rar_one_t),
-					     step_one, cont,
-					     priority, depth);
-  rar->trigger1.act = (struct ssm_act *) rar;
-  rar->a = a;
+ssm_act_t *ssm_enter_one(struct ssm_act *parent, ssm_priority_t priority,
+                         ssm_depth_t depth, ssm_i32_t a) {
+  act_one_t *cont = container_of(
+      ssm_enter(sizeof(act_one_t), step_one, parent, priority, depth),
+      act_one_t, act);
+  cont->trigger1.act = &cont->act;
+  cont->a = a;
 
-  return rar;
+  return &cont->act;
 }
 
-void step_one(struct ssm_act *act)  
-{
-  rar_one_t *rar = (rar_one_t *) act;
-  switch (rar->pc) {
+void step_one(struct ssm_act *act) {
+  act_one_t *cont = container_of(act, act_one_t, act);
+
+  switch (act->pc) {
   case 0:
-    ssm_sensitize((struct ssm_sv *) rar->a, &rar->trigger1);
-    rar->pc = 1;
+    ssm_sensitize(cont->a, &cont->trigger1);
+    act->pc = 1;
     return;
   case 1:
-    ssm_desensitize(&rar->trigger1);
-    ssm_assign_i32(rar->a, rar->priority, rar->a->value + 1);
-    ssm_leave((struct ssm_act *) rar, sizeof(rar_one_t));
-    return;
+    ssm_desensitize(&cont->trigger1);
+    ssm_assign(cont->a, act->priority,
+               ssm_marshal(ssm_unmarshal(ssm_deref(cont->a)) + 1));
   }
+  ssm_drop(cont->a);
+  ssm_leave(act, sizeof(act_one_t));
 }
-
-
 
 ssm_stepf_t step_two;
 
-rar_two_t *ssm_enter_two(struct ssm_act *cont, ssm_priority_t priority,
-			 ssm_depth_t depth, ssm_i32_t *a)
-{
-  rar_two_t *rar = (rar_two_t *) ssm_enter(sizeof(rar_two_t),
-					   step_two, cont,
-					   priority, depth);
-  rar->trigger1.act = (struct ssm_act *) rar;
-  rar->a = a;
+ssm_act_t *ssm_enter_two(struct ssm_act *parent, ssm_priority_t priority,
+                         ssm_depth_t depth, ssm_i32_t a) {
+  act_two_t *cont = container_of(
+      ssm_enter(sizeof(act_two_t), step_two, parent, priority, depth),
+      act_two_t, act);
+  cont->trigger1.act = &cont->act;
+  cont->a = a;
 
-  return rar;
+  return &cont->act;
 }
 
-void step_two(struct ssm_act *act)  
-{
-  rar_two_t *rar = (rar_two_t *) act;
-  switch (rar->pc) {
+void step_two(struct ssm_act *act) {
+  act_two_t *cont = container_of(act, act_two_t, act);
+  switch (act->pc) {
   case 0:
-    ssm_sensitize((struct ssm_sv *) rar->a, &rar->trigger1);
-    rar->pc = 1;
+    ssm_sensitize(cont->a, &cont->trigger1);
+    act->pc = 1;
     return;
   case 1:
-    ssm_desensitize(&rar->trigger1);
-    ssm_assign_i32(rar->a, rar->priority, rar->a->value * 2);
-    ssm_leave((struct ssm_act *) rar, sizeof(rar_two_t));
-    return;
+    ssm_desensitize(&cont->trigger1);
+    ssm_assign(cont->a, act->priority,
+               ssm_marshal(ssm_unmarshal(ssm_deref(cont->a)) * 2));
   }
+  ssm_drop(cont->a);
+  ssm_leave(act, sizeof(act_two_t));
 }
-
 
 ssm_stepf_t step_main;
 
-rar_main_t *ssm_enter_main(struct ssm_act *cont, ssm_priority_t priority,
-		     ssm_depth_t depth)
-{
-  rar_main_t *rar = (rar_main_t *) ssm_enter(sizeof(rar_main_t), step_main, cont,
-				       priority, depth);
-  ssm_initialize_i32(&rar->a);
-  rar->a.value = 0;
-
-  return rar;
+ssm_act_t *ssm_enter_main(struct ssm_act *parent, ssm_priority_t priority,
+                          ssm_depth_t depth) {
+  act_main_t *cont = container_of(
+      ssm_enter(sizeof(act_main_t), step_main, parent, priority, depth),
+      act_main_t, act);
+  return &cont->act;
 }
 
-void step_main(struct ssm_act *act)  
-{
-  rar_main_t *rar = (rar_main_t *) act;
-  switch (rar->pc) {    
+void step_main(struct ssm_act *act) {
+  act_main_t *cont = container_of(act, act_main_t, act);
+  switch (act->pc) {
   case 0:
-    ssm_later_i32(&rar->a, ssm_now() + 100, 10);
-    { ssm_depth_t new_depth = rar->depth - 1; // 2 children
-      ssm_priority_t new_priority = rar->priority;
+    cont->a = ssm_new_sv(ssm_marshal(0));
+
+    ssm_later(cont->a, ssm_now() + 100, ssm_marshal(10));
+    {
+      ssm_depth_t new_depth = act->depth - 1; // 2 children
+      ssm_priority_t new_priority = act->priority;
       ssm_priority_t pinc = 1 << new_depth;
-      ssm_activate((struct ssm_act *) ssm_enter_one( (struct ssm_act *) rar, new_priority, new_depth,
-				&rar->a));
+
+      ssm_dup(cont->a);
+      ssm_activate(ssm_enter_one(act, new_priority, new_depth, cont->a));
+
       new_priority += pinc;
-      ssm_activate((struct ssm_act *) ssm_enter_two( (struct ssm_act *) rar, new_priority, new_depth,
-				&rar->a));
+      ssm_dup(cont->a);
+      ssm_activate(ssm_enter_two(act, new_priority, new_depth, cont->a));
     }
-    rar->pc = 1;
+    act->pc = 1;
     return;
   case 1:
-    printf("a = %d\n", rar->a.value);
-    ssm_leave((struct ssm_act *) rar, sizeof(rar_main_t));
-    return;
+    printf("a = %d\n", (int)ssm_unmarshal(ssm_deref(cont->a)));
   }
+  ssm_drop(cont->a);
+  ssm_leave(act, sizeof(act_main_t));
 }
 
-void top_return(struct ssm_act *cont)
-{
-  return;
+void ssm_program_init(void) {
+  ssm_activate(
+      ssm_enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH));
 }
 
-int main()
-{  
-  struct ssm_act top = { .step = top_return };
-  ssm_activate((struct ssm_act *) ssm_enter_main(&top, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH));
-
-  do {
-    ssm_tick();
-    printf("finished time %lu\n", ssm_now());
-  } while (ssm_next_event_time() != SSM_NEVER);
-  
-  return 0;
-}
+void ssm_program_exit(void) {}

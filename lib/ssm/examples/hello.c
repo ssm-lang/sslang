@@ -1,134 +1,134 @@
-#include "ssm.h"
+#include "ssm-examples.h"
 #include <stdio.h>
 
 typedef struct {
-  SSM_ACT_FIELDS;
+  ssm_act_t act;
   ssm_u8_t stdout;
 } main_act_t;
 
 typedef struct {
-  SSM_ACT_FIELDS;
-  ssm_u8_t *stdout;
-  char *ptr;
-  char nextc;
+  ssm_act_t act;
+  ssm_u8_t stdout;
   ssm_trigger_t trigger1;
 } hello_act_t;
 
 typedef struct {
-  SSM_ACT_FIELDS;
-  ssm_u8_t *stdout;
+  ssm_act_t act;
+  ssm_u8_t stdout;
   ssm_trigger_t trigger1;
 } print_act_t;
 
 ssm_stepf_t step_main, step_hello, step_print;
 
-hello_act_t *enter_hello(ssm_act_t *parent, ssm_priority_t priority,
-			 ssm_depth_t depth, ssm_u8_t *stdout)
-{
-  hello_act_t *act = (hello_act_t *)
-    ssm_enter(sizeof(hello_act_t), step_hello, parent, priority, depth);
-  act->trigger1.act = (ssm_act_t *) act;
-  act->stdout = stdout;
-  return act;
+ssm_act_t *enter_hello(ssm_act_t *parent, ssm_priority_t priority,
+                       ssm_depth_t depth, ssm_u8_t stdout) {
+
+  hello_act_t *cont = container_of(
+      ssm_enter(sizeof(hello_act_t), step_hello, parent, priority, depth),
+      hello_act_t, act);
+  cont->trigger1.act = &cont->act;
+  cont->stdout = stdout;
+  return &cont->act;
 }
 
-void step_hello(ssm_act_t *sact)
-{
-  static char hello_string[] = "Hello World!\n";
-  
-  hello_act_t *act = (hello_act_t *) sact;
-
+void step_hello(ssm_act_t *act) {
+  hello_act_t *cont = container_of(act, hello_act_t, act);
   switch (act->pc) {
   case 0:
-    act->ptr = hello_string;
-    ssm_sensitize((ssm_sv_t *) act->stdout, &act->trigger1);
-    do {
-      act->nextc = *(act->ptr);
-      ssm_later_u8(act->stdout, ssm_now() + 10, act->nextc);
-      act->pc = 1;
-      return;
 
-    case 1:
-      ++act->ptr;
-    } while (act->nextc != 0);
-    ssm_desensitize(&act->trigger1);
-    ssm_leave((ssm_act_t *) act, sizeof(hello_act_t));
-    return;
+#define print_yield(p, c)                                                      \
+  ssm_later(cont->stdout, ssm_now() + 10, ssm_marshal(c));                     \
+  ssm_sensitize(cont->stdout, &cont->trigger1);                     \
+  act->pc = p;                                                                 \
+  return;                                                                      \
+  case p:                                                                      \
+    ssm_desensitize(&cont->trigger1)
+
+    print_yield(1, 'H');
+    print_yield(2, 'e');
+    print_yield(3, 'l');
+    print_yield(4, 'l');
+    print_yield(5, 'o');
+    print_yield(6, ' ');
+    print_yield(7, 'w');
+    print_yield(8, 'o');
+    print_yield(9, 'r');
+    print_yield(10, 'l');
+    print_yield(11, 'd');
+    print_yield(12, '!');
+    print_yield(13, '\r');
+    print_yield(14, '\n');
+    print_yield(15, 0);
   }
+  ssm_drop(cont->stdout);
+  ssm_leave(&cont->act, sizeof(hello_act_t));
 }
 
-print_act_t *enter_print(ssm_act_t *parent, ssm_priority_t priority,
-			 ssm_depth_t depth, ssm_u8_t *stdout)
-{
-  print_act_t *act = (print_act_t *)
-    ssm_enter(sizeof(print_act_t), step_print, parent, priority, depth);
-  act->stdout = stdout;
-  act->trigger1.act = (ssm_act_t *) act;
-  return act;
+ssm_act_t *enter_print(ssm_act_t *parent, ssm_priority_t priority,
+                       ssm_depth_t depth, ssm_u8_t stdout) {
+  print_act_t *cont = container_of(
+      ssm_enter(sizeof(print_act_t), step_print, parent, priority, depth),
+      print_act_t, act);
+  cont->stdout = stdout;
+  cont->trigger1.act = &cont->act;
+  return &cont->act;
 }
 
-void step_print(ssm_act_t *sact)
-{
-  print_act_t *act = (print_act_t *) sact;
+void step_print(ssm_act_t *act) {
+  print_act_t *cont = container_of(act, print_act_t, act);
 
   switch (act->pc) {
   case 0:
-    ssm_sensitize((ssm_sv_t *) act->stdout, &act->trigger1);
     for (;;) {
+      ssm_sensitize(cont->stdout, &cont->trigger1);
       act->pc = 1;
       return;
     case 1:
-      if (ssm_event_on((ssm_sv_t *) act->stdout)) {
-	if (act->stdout->value == 0) {
-	  ssm_desensitize(&act->trigger1);
-	  ssm_leave((ssm_act_t *) act, sizeof(print_act_t));
-	  return;
-	}
-	putchar(act->stdout->value);	
+      ssm_desensitize(&cont->trigger1);
+      char c = ssm_unmarshal(ssm_deref(cont->stdout));
+      if (c) {
+        putchar(c);
+      } else {
+        break;
       }
     }
   }
+  ssm_drop(cont->stdout);
+  ssm_leave(&cont->act, sizeof(hello_act_t));
 }
 
-main_act_t *enter_main(ssm_act_t *parent, ssm_priority_t priority,
-		       ssm_depth_t depth)
-{
-  main_act_t *act = (main_act_t *)
-    ssm_enter(sizeof(main_act_t), step_main, parent, priority, depth);
-  ssm_initialize_u8(&act->stdout);
-  return act;
+ssm_act_t *enter_main(ssm_act_t *parent, ssm_priority_t priority,
+                      ssm_depth_t depth) {
+
+  main_act_t *cont = container_of(
+      ssm_enter(sizeof(main_act_t), step_main, parent, priority, depth),
+      main_act_t, act);
+  return &cont->act;
 }
 
-void step_main(ssm_act_t *sact)
-{
-  main_act_t *act = (main_act_t *) sact;
+void step_main(ssm_act_t *act) {
+  main_act_t *cont = container_of(act, main_act_t, act);
   switch (act->pc) {
   case 0:
-    ssm_assign_u8(&act->stdout, act->priority, 0);
-    {
-      ssm_depth_t new_depth = act->depth - 1; // 2 children
-      ssm_priority_t new_priority = act->priority;
-      ssm_priority_t pinc = 1 << new_depth;
-      ssm_activate((ssm_act_t *) enter_hello(sact, new_priority, new_depth,
-					     &act->stdout));
-      new_priority += pinc;
-      ssm_activate((ssm_act_t *) enter_print(sact, new_priority, new_depth,
-					     &act->stdout));
-    }
+    cont->stdout = ssm_new_sv(ssm_marshal(0));
+    ssm_depth_t new_depth = act->depth - 1;
+    ssm_priority_t new_priority = act->priority;
+    ssm_priority_t pinc = 1 << new_depth;
+    ssm_dup(cont->stdout);
+    ssm_activate(enter_hello(act, new_priority, new_depth, cont->stdout));
+    new_priority += pinc;
+    ssm_dup(cont->stdout);
+    ssm_activate(enter_print(act, new_priority, new_depth, cont->stdout));
     act->pc = 1;
-    return;    
-  case 1:
-    ssm_leave((ssm_act_t *) act, sizeof(main_act_t));
     return;
   }
+  ssm_leave((ssm_act_t *)act, sizeof(main_act_t));
 }
 
-int main()
-{
-  ssm_activate( (ssm_act_t *)
-		enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH));
-  do ssm_tick();
-  while (ssm_next_event_time() != SSM_NEVER);      
-
-  return 0;
+void ssm_program_init(void) {
+  ssm_act_t *act =
+      enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH);
+  ssm_activate(act);
 }
+
+void ssm_program_exit(void) {}

@@ -21,6 +21,7 @@ module IR.Types.TypeSystem where
 
 import           Common.Identifiers             ( DConId
                                                 , VarId
+                                                , TVarId (..)
                                                 )
 import           Common.Pretty
 
@@ -118,8 +119,8 @@ collectArrow t = case dearrow t of
 A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 
 @
-  TypeDef { arity = 1
-          , [ ("Cons", VariantUnnamed [TVar 0, TCon ("MyList" [TVar 0])])
+  TypeDef { targs = [a]
+          , [ ("Cons", VariantUnnamed [TVar a, TCon ("MyList" [TVar a])])
             , ("Nil", VariantUnnamed [])
             ]
           }
@@ -127,12 +128,12 @@ A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
 
 (Data constructors for identifiers are omitted for brevity.)
 
-Note that for a flat type system, where all type constructors are nullary, arity
-will just be set to 0.
+Note that for a flat type system, where all type constructors are nullary, targs
+will just be set to [].
 -}
 data TypeDef t = TypeDef
   { variants :: [(DConId, TypeVariant t)]
-  , arity    :: Arity
+  , targs    :: [TVarId]
   }
   deriving (Show, Eq, Typeable, Data)
 
@@ -143,9 +144,14 @@ data TypeVariant t
   deriving (Show, Eq, Typeable, Data)
 
 instance Functor TypeDef where
-  fmap f TypeDef { variants = vs, arity = a } =
-    TypeDef { variants = fmap (second $ fmap f) vs, arity = a }
+  fmap f TypeDef { variants = vs, targs = a } =
+    TypeDef { variants = fmap (second $ fmap f) vs, targs = a }
 
 instance Functor TypeVariant where
   fmap f (VariantNamed   fs) = VariantNamed $ fmap (second f) fs
   fmap f (VariantUnnamed fs) = VariantUnnamed $ fmap f fs
+
+-- | The number of fields in a 'TypeVariant'.
+variantFields :: TypeVariant t -> Int
+variantFields (VariantNamed fields ) = length fields
+variantFields (VariantUnnamed fields ) = length fields
