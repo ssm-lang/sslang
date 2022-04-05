@@ -211,8 +211,10 @@ dataDecl i = do
 -- | Validate a reference to a data 'Identifier'.
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
+  let iStr = showId i
+  let isDupDrop = iStr == "dup" || iStr == "drop"
   inScope <- asks $ M.member i . dataMap
-  unless inScope $ throwError $ ScopeError $ "Not in scope: " <> showId i
+  unless (inScope || isDupDrop) $ throwError $ ScopeError $ "Not in scope: " <> showId i
 
 -- | Validate a reference to a type 'Identifier'.
 typeRef :: Identifier -> ScopeFn ()

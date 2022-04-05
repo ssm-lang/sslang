@@ -1,8 +1,14 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+
 -- | Sanity check test suite for equivalent and unequivalent programs.
 module Tests.DropInferenceSpec where
 import           Sslang.Test
 
+import           Data.Data                      ( Data
+                                                , Proxy(..)
+                                                )
 import qualified Front
 import           Front.Ast
 import qualified IR
@@ -10,80 +16,40 @@ import           IR.DropInference               ( insertDropsProgram )
 import qualified IR.IR                         as I
 import           IR.IR
 import           IR.LambdaLift                  ( liftProgramLambdas )
+import           IR.SubstMagic                  ( substMagic )
+import           IR.Types.Annotated            as I
 import           IR.Types.Poly                 as Poly
-parseLift :: String -> Pass (I.Program Poly.Type)
-parseLift s =
-  Front.run def s
-    >>= IR.lower def
-    >>= IR.ann2Class def
-    >>= IR.class2Poly def
-    >>= insertDropsProgram
+
+p :: Proxy (I.Program I.Type)
+p = Proxy
+
+parseDrop :: String -> Pass (I.Program I.Type)
+parseDrop s = Front.run def s >>= IR.lower def
+  -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
+
 
 spec :: Spec
 spec = do
   it "drop inference in named let binding" $ do
-    let undropped = parseLift [here|
+    let undropped = do
+          parseDrop [here|
         top = 
             let a: Int = 5
                 b: Int = 10
+                _: Int = 2
             a + b
-        |]  
-    print $ runPass undropped
-    --undropped `shouldPassAs` dropped
+        |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
 
-
-    {-
-    Right
-      ( Program
-        { programEntry = VarId main
-        , programDefs  = [ ( VarId top
-                           , Let
-                             [ ( Just (VarId a)
-                               , Lit (LitIntegral 5) (TBuiltin (Integral 32))
-                               )
-                             , ( Just (VarId b)
-                               , Lit (LitIntegral 10) (TBuiltin (Integral 32))
-                               )
-                             ]
-                             (Let
-                               [ ( Just (VarId anon0)
-                                 , Prim
-                                   (PrimOp PrimAdd)
-                                   [ Var (VarId a) (TBuiltin (Integral 32))
-                                   , Var (VarId b) (TBuiltin (Integral 32))
-                                   ]
-                                   (TBuiltin (Integral 32))
-                                 )
-                               ]
-                               (Let
-                                 [ ( Nothing
-                                   , Prim
-                                     Drop
-                                     [Var (VarId a) (TBuiltin (Integral 32))]
-                                     (TBuiltin (Integral 32))
-                                   )
-                                 ]
-                                 (Let
-                                   [ ( Nothing
-                                     , Prim
-                                       Drop
-                                       [Var (VarId b) (TBuiltin (Integral 32))]
-                                       (TBuiltin (Integral 32))
-                                     )
-                                   ]
-                                   (Var (VarId anon0) (TBuiltin (Integral 32)))
-                                   (TBuiltin (Integral 32))
-                                 )
-                                 (TBuiltin (Integral 32))
-                               )
-                               (TBuiltin (Integral 32))
-                             )
-                             (TBuiltin (Integral 32))
-                           )
-                         ]
-        , typeDefs     = []
-        }
-      , []
-      )
-      -}
-    return ()
+    let dropped = substMagic p <$> do
+          parseDrop [here|
+        top =
+            let a: Int = 5
+                b: Int = 10
+            let anon0_let = a + b
+            drop b
+            drop a
+            anon0_let
+        |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
+    -- print $ runPass undropped
+    undropped `shouldPassAs` dropped
+    -- return ()
