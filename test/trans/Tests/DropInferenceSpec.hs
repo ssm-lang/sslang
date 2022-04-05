@@ -24,15 +24,15 @@ p :: Proxy (I.Program I.Type)
 p = Proxy
 
 parseDrop :: String -> Pass (I.Program I.Type)
-parseDrop s = Front.run def s >>= IR.lower def
+parseDrop s = substMagic p <$> do
+  Front.run def s >>= IR.lower def
   -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
 
 
 spec :: Spec
 spec = do
   it "drop inference in named let binding" $ do
-    let undropped = do
-          parseDrop [here|
+    let undropped = parseDrop [here|
         top = 
             let a: Int = 5
                 b: Int = 10
@@ -40,8 +40,7 @@ spec = do
             a + b
         |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
 
-    let dropped = substMagic p <$> do
-          parseDrop [here|
+    let dropped = parseDrop [here|
         top =
             let a: Int = 5
                 b: Int = 10
@@ -50,6 +49,55 @@ spec = do
             drop a
             anon0_let
         |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
+        
     -- print $ runPass undropped
     undropped `shouldPassAs` dropped
     -- return ()
+
+    {- 
+    Program
+      { programEntry = VarId main
+      , programDefs  =
+        [ ( VarId top
+          , Let
+            [ ( Just (VarId a)
+              , Lit (LitIntegral 5) (Type [TBuiltin (Integral 32)])
+              )
+            , ( Just (VarId b)
+              , Lit (LitIntegral 10) (Type [TBuiltin (Integral 32)])
+              )
+            ]
+            (Let
+              [ ( Just (VarId anon0_let)
+                , Prim (PrimOp PrimAdd)
+                       [Var (VarId a) (Type []), Var (VarId b) (Type [])]
+                       (Type [])
+                )
+              ]
+              (Let
+                [ ( Nothing
+                  , App (Var (VarId drop) (Type []))
+                        (Var (VarId b) (Type []))
+                        (Type [])
+                  )
+                ]
+                (Let
+                  [ ( Nothing
+                    , App (Var (VarId drop) (Type []))
+                          (Var (VarId a) (Type []))
+                          (Type [])
+                    )
+                  ]
+                  (Var (VarId anon0_let) (Type []))
+                  (Type [])
+                )
+                (Type [])
+              )
+              (Type [])
+            )
+            (Type [])
+          )
+        ]
+      , typeDefs     = []
+      }
+    -}
