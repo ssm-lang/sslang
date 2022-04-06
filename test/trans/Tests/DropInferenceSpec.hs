@@ -20,11 +20,9 @@ import           IR.SubstMagic                  ( substMagic )
 import           IR.Types.Annotated            as I
 import           IR.Types.Poly                 as Poly
 
-p :: Proxy (I.Program I.Type)
-p = Proxy
 
 parseDrop :: String -> Pass (I.Program I.Type)
-parseDrop s = substMagic p <$> do
+parseDrop s = substMagic (Proxy :: Proxy I.Type) <$> do
   Front.run def s >>= IR.lower def
   -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
 
@@ -32,72 +30,28 @@ parseDrop s = substMagic p <$> do
 spec :: Spec
 spec = do
   it "drop inference in named let binding" $ do
-    let undropped = parseDrop [here|
+    let undropped =
+          parseDrop [here|
         top = 
             let a: Int = 5
                 b: Int = 10
-                _: Int = 2
             a + b
-        |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
+        |]
+            >>= IR.ann2Class def
+            >>= IR.class2Poly def
+            >>= insertDropsProgram
 
-    let dropped = parseDrop [here|
+    let dropped =
+          parseDrop [here|
         top =
             let a: Int = 5
                 b: Int = 10
             let anon0_let = a + b
-            drop b
-            drop a
+            let _ = drop a
+            let _ = drop b
             anon0_let
-        |] -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
-        
-    -- print $ runPass undropped
-    undropped `shouldPassAs` dropped
-    -- return ()
+        |]
+            >>= IR.ann2Class def
+            >>= IR.class2Poly def
 
-    {- 
-    Program
-      { programEntry = VarId main
-      , programDefs  =
-        [ ( VarId top
-          , Let
-            [ ( Just (VarId a)
-              , Lit (LitIntegral 5) (Type [TBuiltin (Integral 32)])
-              )
-            , ( Just (VarId b)
-              , Lit (LitIntegral 10) (Type [TBuiltin (Integral 32)])
-              )
-            ]
-            (Let
-              [ ( Just (VarId anon0_let)
-                , Prim (PrimOp PrimAdd)
-                       [Var (VarId a) (Type []), Var (VarId b) (Type [])]
-                       (Type [])
-                )
-              ]
-              (Let
-                [ ( Nothing
-                  , App (Var (VarId drop) (Type []))
-                        (Var (VarId b) (Type []))
-                        (Type [])
-                  )
-                ]
-                (Let
-                  [ ( Nothing
-                    , App (Var (VarId drop) (Type []))
-                          (Var (VarId a) (Type []))
-                          (Type [])
-                    )
-                  ]
-                  (Var (VarId anon0_let) (Type []))
-                  (Type [])
-                )
-                (Type [])
-              )
-              (Type [])
-            )
-            (Type [])
-          )
-        ]
-      , typeDefs     = []
-      }
-    -}
+    undropped `shouldPassAs` dropped
