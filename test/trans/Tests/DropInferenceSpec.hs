@@ -40,7 +40,6 @@ spec = do
             >>= IR.ann2Class def
             >>= IR.class2Poly def
             >>= insertDropsProgram
-
     let dropped =
           parseDrop [here|
         top =
@@ -53,5 +52,23 @@ spec = do
         |]
             >>= IR.ann2Class def
             >>= IR.class2Poly def
+    undropped `shouldPassAs` dropped
 
+  it "drop inference in lambda" $ do
+    let undropped =
+          parseDrop [here|
+        add_fun a : Int -> Int = a + 2  
+        |]
+            >>= IR.ann2Class def
+            >>= IR.class2Poly def
+            >>= insertDropsProgram
+    let dropped =
+          parseDrop [here|
+        add_fun a : Int -> Int = 
+          let anon0_lambda = a + 2
+          let _ = drop a
+          anon0_lambda
+        |]
+            >>= IR.ann2Class def
+            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped

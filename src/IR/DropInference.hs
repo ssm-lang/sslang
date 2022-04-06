@@ -111,9 +111,11 @@ insertDropExpr (I.Let bins expr typ) = do
 insertDropExpr (I.Lambda var expr typ) = do
   retVar <- getFresh "_lambda"
   expr'  <- insertDropExpr expr
-  let varDrop  = makeDrop $ I.Var (fromJust var) (I.extract expr')
+  let typArg (Poly.TBuiltin(Poly.Arrow l _)) = l
+      typArg t = t
+  let varDrop  = makeDrop $ I.Var (fromJust var) (typArg typ)
       exprBins = (Just retVar, expr') : [varDrop]
-      retExpr  = seqExprs exprBins $ I.Var retVar typ
+      retExpr  = seqExprs exprBins $ I.Var retVar (typArg typ)
   return $ I.Lambda var retExpr typ
 
 -- | Inserting drops into pattern-matching
