@@ -9,27 +9,45 @@ type Shape
   Square Int 
   Rect Int Int
 
-  Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
-  The function body is a lambda expression representing a "call" to a fully applied data constructor.
+Let's turn data constructor 'Square' into constructor function '__Square':
 
-  Let's first consider the top-level func for Square:
-  (Square, body) 
-  body = fun arg0 { App L R t } : Int -> Shape
-   where L = Square : Int -> Shape
-         R = arg0 : type Int
-         t = Shape, because the type of a fully applied data constructor is its type constructor
+__Square arg0 : Int -> Shape =  Square arg0
 
-  Next consider the top-level func for Rect:
-  (Rect, body*) *Notice the body of the lambda contains another lambda (curried arguments),
-                 and the Application expression contains another Application (curried arguments).  
-  body = fun arg0 { fun arg1 { App L R t } : Int -> Shape } : Int -> Int -> Shape
-   where L = App L2 R2 t
-         R = arg1 : Int
-         t = Shape, because the type of a fully applied data constructor is its type constructor
-          where L2 = Rect : Int -> Int -> Shape
-                R  = arg0 : Int
-                t = Int -> Shape, because at this point in the inner App, Rect is partially applied with only 1 arg.
+The difference is that `Square` cannot be partially-applied, whereas `__Square` can.
 
+Next, Rect turns into this:
+
+__Rect arg0 arg1 : Int -> Int -> Shape =  Rect arg0 arg1
+
+The difference is that `Rect` cannot be partially-applied, whereas `__Rect` can.
+
+
+Representing constructor functions in the IR
+
+Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
+The function body is a lambda expression representing a "call" to the fully applied data constructor.
+
+Let's turn the top-level func for Square into IR: 
+
+(__Square, body) 
+
+body = fun arg0 { App L R t } : Int -> Shape
+ where L = Square : Int -> Shape
+       R = arg0 : type Int
+       t = Shape, because the type of a fully applied data constructor is its type constructor
+
+Next Rect turns into this:
+
+(Rect, body*) *Notice the body of the lambda contains another lambda (curried arguments),
+               and the application expression contains another application (curried arguments). 
+
+body = fun arg0 { fun arg1 { App L R t } : Int -> Shape } : Int -> Int -> Shape
+ where L = App L2 R2 t
+       R = arg1 : Int
+       t = Shape, because the type of a fully applied data constructor is its type constructor
+        where L2 = Rect : Int -> Int -> Shape
+              R  = arg0 : Int
+              t = Int -> Shape, because at this point in the inner App, Rect is partially applied with only 1 arg.
 -}
 module IR.DConToFunc
   ( dConToFunc
