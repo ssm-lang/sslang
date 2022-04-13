@@ -26,7 +26,7 @@ import           Common.Pretty
 import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
-                                                , peel)
+                                                , dearrow)
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
@@ -196,11 +196,11 @@ collectLambda e = ([], e)
 
 -- | Create an App chain given an initial App expr and a list of subsequent argument-type pairs
 makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> t -> Expr t
-makeAppChain [] accum@(App a b t) _ = case peel t of
+makeAppChain [] accum@(App a b t) _ = case snd <$> dearrow t of
  Just typ -> App a b typ
  Nothing -> accum
 makeAppChain args accum appTyp =
-  foldl (\acc arg -> case peel appTyp of 
+  foldl (\acc arg -> case snd <$> dearrow appTyp of 
                       Just typ ->  App acc arg typ 
                       Nothing -> App acc arg appTyp) accum args
 

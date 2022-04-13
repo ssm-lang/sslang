@@ -1,102 +1,9 @@
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE TupleSections #-}
--- | Turns non-nullary data constructors into calls to constructor functions.
 
-module IR.DConToFunc
-  ( dConToFunc
-  ) where
+{- | Turns non-nullary data constructors into calls to constructor functions.
 
-import qualified Common.Compiler               as Compiler
-
-import           Common.Compiler                ( MonadError )
-import           Common.Identifiers             ( fromString
-                                                , ident
-                                                )
-import           Control.Comonad                ( Comonad(extract) )
-import           Control.Monad.Reader
-import           Data.Bifunctor                 ( first )
-import qualified Data.Map                      as M
-import           Data.Maybe                     ( mapMaybe )
-import qualified IR.IR                         as I
-import qualified IR.Types.Poly                 as Poly
-import           IR.Types.TypeSystem            ( TypeDef(..)
-                                                , TypeVariant
-                                                  ( VariantNamed
-                                                  , VariantUnnamed
-                                                  )
-                                                , arrow
-                                                , peel
-                                                , variantFields
-                                                )
-
--- | Environment storing arity of each 'DCon' 
-type ArityEnv = M.Map I.DConId Int
-
--- | Arity Reader Monad
-newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
-  deriving Functor                      via (ReaderT ArityEnv Compiler.Pass)
-  deriving Applicative                  via (ReaderT ArityEnv Compiler.Pass)
-  deriving Monad                        via (ReaderT ArityEnv Compiler.Pass)
-  deriving MonadFail                    via (ReaderT ArityEnv Compiler.Pass)
-  deriving (MonadError Compiler.Error)  via (ReaderT ArityEnv Compiler.Pass)
-  deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
-
--- | Run a computation within an arity environment
-runArityFn :: ArityFn a -> Compiler.Pass a
-runArityFn (ArityFn m) = runReaderT m M.empty
-
--- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
-createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
-createArityEnv = foldl (\acc def -> acc <> insertArities def) M.empty
- where
-  -- | Add a group of DCons to the arity environment
-  insertArities :: (I.TConId, TypeDef Poly.Type) -> ArityEnv
-  insertArities (_, TypeDef { variants = vars }) = foldl
-    (\acc var -> acc <> insertArity var)
-    M.empty
-    vars
-   where
-    -- | Add single DCon to the arity environment
-    insertArity :: (I.DConId, TypeVariant Poly.Type) -> ArityEnv
-    insertArity (dconid, variant) =
-      M.insert dconid (variantFields variant) M.empty
-
-{- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish two tasks:
-
-  1) Add top-level constructor functions for each non-nullary 'DCon' to progamDefs
-  2) Turn non-nullary data constuctors into calls to top level constructor funcs
--}
-dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
-dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
-  runArityFn $ do
-    defs' <- local (createArityEnv tDefs <>)
-                   (mapM (\(v, e) -> (v, ) <$> dataToApp e) defs)
-    return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
-
-{- | Replace data constructor application with function application
-
-  Turn I.App instances of the form (I.Data _ _) into (I.Var _ _)
--}
-dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
-dataToApp a@(I.Data dconid t) = do
-  Just arity <- asks (M.lookup dconid)
-  case arity of
-    0 -> return a -- leave nullary data constructors alone
-    _ -> return $ I.Var (I.VarId $ fromString $ "__" ++ ident dconid) t
-dataToApp (I.App left right t) =
-  I.App <$> dataToApp left <*> dataToApp right <*> pure t
-dataToApp (I.Let args body t) =
-  I.Let <$> mapM recurse args <*> dataToApp body <*> pure t
-  where recurse = \(b, e) -> (,) b <$> dataToApp e
-dataToApp (I.Lambda b e t) = I.Lambda b <$> dataToApp e <*> pure t
-dataToApp (I.Match scrut arms t) =
-  I.Match <$> dataToApp scrut <*> mapM recurse arms <*> pure t
-  where recurse = \(alt, e) -> (,) alt <$> dataToApp e
-dataToApp (I.Prim p es t) = I.Prim p <$> mapM dataToApp es <*> pure t
-dataToApp a               = pure a
-
-{- | Worked example of ADT definition and corresponding constructor functions
+Worked example of ADT definition and corresponding constructor functions
 
 type Shape 
   Square Int 
@@ -124,6 +31,83 @@ type Shape
                 t = Int -> Shape, because at this point in the inner App, Rect is partially applied with only 1 arg.
 
 -}
+module IR.DConToFunc
+  ( dConToFunc
+  ) where
+
+import qualified Common.Compiler               as Compiler
+
+import           Common.Compiler                ( MonadError )
+import           Common.Identifiers             ( fromString
+                                                , ident
+                                                , Identifier
+                                                )
+import           Control.Comonad                ( Comonad(extract) )
+import           Control.Monad.Reader
+import           Data.Generics.Aliases          ( mkM ) 
+import           Data.Generics.Schemes          ( everywhereM )
+import           Data.Bifunctor                 ( first
+                                                , second )
+import qualified Data.Map                      as M
+import           Data.Maybe                     ( mapMaybe )
+import qualified IR.IR                         as I
+import qualified IR.Types.Poly                 as Poly
+import           IR.Types.TypeSystem            ( TypeDef(..)
+                                                , TypeVariant
+                                                  ( VariantNamed
+                                                  , VariantUnnamed
+                                                  )
+                                                , arrow
+                                                , dearrow
+                                                , variantFields
+                                                )
+
+-- | Environment storing arity of each 'DCon' 
+type ArityEnv = M.Map I.DConId Int
+
+-- | Arity Reader Monad
+newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
+  deriving Functor                      via (ReaderT ArityEnv Compiler.Pass)
+  deriving Applicative                  via (ReaderT ArityEnv Compiler.Pass)
+  deriving Monad                        via (ReaderT ArityEnv Compiler.Pass)
+  deriving MonadFail                    via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadError Compiler.Error)  via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
+
+-- | Run a computation within an arity environment
+runArityFn :: ArityFn a -> Compiler.Pass a
+runArityFn (ArityFn m) = runReaderT m M.empty
+
+-- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
+createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
+createArityEnv defs = M.fromList $ concatMap arities defs
+ where
+  arities :: (I.TConId, TypeDef Poly.Type) -> [(I.DConId, Int)]
+  arities (_, TypeDef { variants = vars }) = map (second variantFields) vars
+
+{- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish two tasks:
+
+  1) Add top-level constructor functions for each non-nullary 'DCon' to progamDefs
+  2) Turn non-nullary data constuctors into calls to top level constructor funcs
+-}
+dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
+dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
+  runArityFn $ do
+    defs' <- local (createArityEnv tDefs <>)
+                   (everywhereM (mkM dataToApp) defs)
+    return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
+
+{- | Replace data constructor application with function application
+
+  Turn I.App instances of the form (I.Data _ _) into (I.Var _ _)
+-}
+dataToApp :: I.Expr Poly.Type -> ArityFn (I.Expr Poly.Type)
+dataToApp a@(I.Data dconid t) = do
+  Just arity <- asks (M.lookup dconid)
+  case arity of
+    0 -> return a -- leave nullary data constructors alone
+    _ -> return $ I.Var (I.VarId $ nameFunc dconid) t
+dataToApp a               = pure a
 
 -- | Create a group of top level constructor functions for each type constructor
 createFuncs :: (I.TConId, TypeDef Poly.Type) -> [(I.VarId, I.Expr Poly.Type)]
@@ -141,10 +125,10 @@ createFuncs (tconid, TypeDef { variants = vars }) =
     -> Maybe (I.VarId, I.Expr Poly.Type)
   -- case of nullary dcon; guarantees params to be non-empty in the next pattern
   createFunc _    (_                     , VariantNamed []    ) = Nothing
-  createFunc tcon (dconid@(I.DConId dcon), VariantNamed params) = Just
+  createFunc tcon (dconid, VariantNamed params) = Just
     (I.VarId func_name, lambda)
    where
-    func_name = fromString $ "__" ++ ident dcon -- distinguish name from fully applied dcon in IR
+    func_name = nameFunc dconid -- distinguish name from fully applied dcon in IR
     lambda    = I.makeLambdaChain names body
     names     = first Just <$> params
     body      = I.makeAppChain (tail args) initApp initTyp
@@ -154,13 +138,19 @@ createFuncs (tconid, TypeDef { variants = vars }) =
       initApp =
         I.App (I.Data dconid dconTyp) arg0 (arrow (extract arg0) tconTyp) -- arg0 -> TConId
       args@(arg0 : _) = uncurry I.Var <$> params -- guaranteed to be non-empty
-      Just initTyp    = peel dconTyp
+      Just initTyp    = snd <$> dearrow dconTyp
       tconTyp         = Poly.TCon tcon []
       dconTyp         = foldl1 arrow $ (snd <$> params) ++ [tconTyp]
   createFunc tcon (dcon, VariantUnnamed params) = createFunc
     tcon
-    (dcon, VariantNamed mangledNames)
+    (dcon, VariantNamed argNames)
    where
-    mangledNames = zipWith mangle params [0 ..]
-    mangle :: t -> Int -> (I.VarId, t)
-    mangle t i = (I.VarId $ fromString ("__arg" ++ show i), t)
+    argNames = zipWith (\t i -> (I.VarId $ nameArg i, t)) params [0 ..]
+
+-- | Create a name for the constructor function
+nameFunc :: I.DConId -> Identifier
+nameFunc dconid = fromString $ "__" ++ ident dconid
+
+-- | Create a name for a constructor function argument
+nameArg :: Int -> Identifier 
+nameArg i = fromString ("__arg" ++ show i)
