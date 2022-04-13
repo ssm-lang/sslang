@@ -16,7 +16,6 @@ module IR.IR
   , makeLambdaChain
   , zipApp
   , unzipApp
-  , makeAppChain
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -213,12 +212,6 @@ collectLambda :: Expr t -> ([Binder], Expr t)
 collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
-
--- | Create an app chain given a list of arguments, a return type and a function name.
-makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> Expr t
-makeAppChain args f =
-  foldl (\acc arg -> App acc arg (arrow (extract acc) (extract arg))) f args
-
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
 makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t

@@ -59,13 +59,14 @@ import           Common.Compiler                ( MonadError )
 import           Common.Identifiers             ( fromString
                                                 , ident
                                                 , Identifier
+                                                , fromId
                                                 )
-import           Control.Comonad                ( Comonad(extract) )
 import           Control.Monad.Reader
 import           Data.Generics.Aliases          ( mkM ) 
 import           Data.Generics.Schemes          ( everywhereM )
 import           Data.Bifunctor                 ( first
                                                 , second )
+import           Data.List                      (inits)
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified IR.IR                         as I
@@ -76,7 +77,6 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
                                                   , VariantUnnamed
                                                   )
                                                 , arrow
-                                                , dearrow
                                                 , variantFields
                                                 )
 
@@ -146,19 +146,19 @@ createFuncs (tconid, TypeDef { variants = vars }) =
   createFunc tcon (dconid, VariantNamed params) = Just
     (I.VarId func_name, lambda)
    where
-    func_name = nameFunc dconid -- distinguish name from fully applied dcon in IR
+    func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
     lambda    = I.makeLambdaChain names body
     names     = first Just <$> params
-    body      = I.makeAppChain (tail args) initApp initTyp
+    body      = I.zipApp dcon args
      where
-       -- create the inner-most App node first
-       -- initApp always has the form App DConId arg0 : arg0 -> TConId
-      initApp =
-        I.App (I.Data dconid dconTyp) arg0 (arrow (extract arg0) tconTyp) -- arg0 -> TConId
-      args@(arg0 : _) = uncurry I.Var <$> params -- guaranteed to be non-empty
-      Just initTyp    = snd <$> dearrow dconTyp
+      dcon = I.Var (fromId dconid) (head arrowTypes)
+      args = zip (reverse $ uncurry I.Var <$> params) (tconTyp:tail arrowTypes)
       tconTyp         = Poly.TCon tcon []
-      dconTyp         = foldl1 arrow $ (snd <$> params) ++ [tconTyp]
+      arrowTypes = reverse $ foldl1 arrow . (++[tconTyp]) <$> tail (inits (snd <$> params))
+      {- | An example to tconTyp is 'Rect'
+        An example of arrowTypes is
+        [(Int -> Int -> Rect), (Int -> Rect)]
+      -}
   createFunc tcon (dcon, VariantUnnamed params) = createFunc
     tcon
     (dcon, VariantNamed argNames)
