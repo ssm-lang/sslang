@@ -8,13 +8,14 @@ module IR.IR
   , Primitive(..)
   , Expr(..)
   , Alt(..)
-  , collectApp
   , VarId(..)
   , TConId(..)
   , DConId(..)
   , wellFormed
   , collectLambda
   , makeLambdaChain
+  , zipApp
+  , unzipApp
   , makeAppChain
   ) where
 import           Common.Identifiers             ( Binder
@@ -26,14 +27,13 @@ import           Common.Pretty
 import           IR.Types.TypeSystem            ( TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
-                                                , dearrow)
+                                                )
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
-
 
 {- | Top-level compilation unit.
 
@@ -89,9 +89,8 @@ data PrimOp
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
   = New
-  {- ^ @New e t@ allocates a schedule variable initialized to @e@, and
-  returns a reference to it. If reuse token @t@ is non-null,
-  this will use token @t@ instead of allocating new memory.
+  {- ^ @New e@ allocates a schedule variable initialized to @e@, and
+  returns a reference to it.
   -}
   | Dup
   {- ^ @Dup r@ duplicates the reference @r@ (i.e., increments its
@@ -100,10 +99,6 @@ data Primitive
   | Drop
   {- ^ @Drop r@ brings reference @r@ out of scope, and frees it if it
   is the last remaining reference to the scheduled variable.
-  -}
-  | Reuse
-  {- ^ @Reuse r@ is like @Drop r@, except it returns a reuse token
-  that should be passed to @New@ for reuse.
   -}
   | Deref
   {- ^ @Deref r@ dereferences reference @r@ to obtain its value. -}
@@ -182,11 +177,36 @@ data Alt
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
--- | Collect a curried application into the function applied to a list of args.
-collectApp :: Expr t -> (Expr t, [Expr t])
-collectApp (App lhs rhs _) =
-  let (fn, args) = collectApp lhs in (fn, args ++ [rhs])
-collectApp e = (e, [])
+{- | Collect a curried application into the function and argument list.
+
+The type accompanying each argument represents type produced by the
+application, and is extracted from the 'App' node that this function unwraps.
+
+For example, the term @f a b@ (where @a: A@ and @b: B@) would be represented by
+the following AST:
+@@
+(App (App (Var f (A -> B -> C)) (Var a A) (B -> C)) (Var b B) C)
+@@
+
+which, when unzipped, gives:
+
+@@
+(Var f (A -> B -> C)) [(Var a A, B -> C), (Var b B, C)]
+@@
+
+'unzipApp' is the inverse of 'zipApp'.
+-}
+unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
+unzipApp (App lhs rhs t) =
+  let (fn, args) = unzipApp lhs in (fn, args ++ [(rhs, t)])
+unzipApp e = (e, [])
+
+{- | Apply a function to zero or more arguments.
+
+'zipApp' is the inverse of 'unzipApp'.
+-}
+zipApp :: Expr t -> [(Expr t, t)] -> Expr t
+zipApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
 collectLambda :: Expr t -> ([Binder], Expr t)
@@ -194,15 +214,11 @@ collectLambda (Lambda a b _) =
   let (as, body) = collectLambda b in (a : as, body)
 collectLambda e = ([], e)
 
--- | Create an App chain given an initial App expr and a list of subsequent argument-type pairs
-makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> t -> Expr t
-makeAppChain [] accum@(App a b t) _ = case snd <$> dearrow t of
- Just typ -> App a b typ
- Nothing -> accum
-makeAppChain args accum appTyp =
-  foldl (\acc arg -> case snd <$> dearrow appTyp of 
-                      Just typ ->  App acc arg typ 
-                      Nothing -> App acc arg appTyp) accum args
+-- | Create an app chain given a list of arguments, a return type and a function name.
+makeAppChain :: TypeSystem t => [Expr t] -> Expr t -> Expr t
+makeAppChain args f =
+  foldl (\acc arg -> App acc arg (arrow (extract acc) (extract arg))) f args
+
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
 makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
@@ -280,7 +296,6 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim New                 [_]       = True
   wfPrim Dup                 [_]       = True
   wfPrim Drop                [_]       = True
-  wfPrim Reuse               [_]       = True
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
@@ -330,7 +345,6 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Prim New   [r] t) = typeAnn t $ pretty "new" <+> pretty r
   pretty (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> pretty r
   pretty (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> pretty r
-  pretty (Prim Reuse [r] t) = typeAnn t $ pretty "__reuse" <+> pretty r
   pretty (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> pretty r
   pretty (Prim Assign [l, r] t) =
     typeAnn t $ parens $ pretty l <+> pretty "<-" <+> braces (pretty r)

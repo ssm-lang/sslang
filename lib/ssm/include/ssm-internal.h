@@ -123,6 +123,10 @@ void ssm_tick(void);
  */
 #define ssm_adt_size(vc) (sizeof(struct ssm_adt1) + sizeof(ssm_value_t) * ((vc) - 1))
 
+
+#define ssm_closure_size(vc)                                                   \
+  (sizeof(struct ssm_closure1) + (sizeof(ssm_value_t) * ((vc) - 1)))
+
 /**
  * @addtogroup mem
  * @{
@@ -139,6 +143,7 @@ enum ssm_kind {
   SSM_ADT_K = 0,  /**< ADT object, e.g., #ssm_adt1 */
   SSM_TIME_K,     /**< 64-bit timestamps, #ssm_time_t */
   SSM_SV_K,       /**< Scheduled variables, #ssm_sv_t */
+  SSM_CLOSURE_K,  /**< Closure object, #ssm_closure1 */
 };
 
 /** @brief Initializes the underlying allocator system.
@@ -154,15 +159,35 @@ enum ssm_kind {
  *  alloc_mem_handler. These handlers may also assume they will not be invoked
  *  to request memory ranges of less than #SSM_MEM_POOL_MAX bytes.
  *
+ *  If the allocator is compiled with valgrind support (i.e., without defining
+ *  @a NVALGRIND), it will perform a leak-check summary, to checkpoint how much
+ *  memory has already been allocated.
+ *
  *  @platformonly
  *
- *  @param alloc_page_handler   allocates pages.
- *  @param alloc_mem_handler    allocates arbitrarily large.
- *  @param free_mem_handler     frees pages allocated with @a alloc_mem_handler.
+ *  @param alloc_page_handler allocates pages.
+ *  @param alloc_mem_handler  allocates arbitrarily large.
+ *  @param free_mem_handler   frees memory allocated with @a alloc_mem_handler.
  */
 void ssm_mem_init(void *(*alloc_page_handler)(void),
                   void *(*alloc_mem_handler)(size_t),
                   void (*free_mem_handler)(void *, size_t));
+
+/** @brief Tears down the underlying allocator system.
+ *
+ *  If the allocator is compiled with valgrind support (i.e., without defining
+ *  @a NVALGRIND), it will perform a full leak-check summary, to report how much
+ *  memory has been leaked since ssm_mem_init().
+ *
+ *  @TODO this doesn't actually call @a free_page_handler yet. It still needs to
+ *        be implemented, perhaps with the help of a superblock header to keep
+ *        track of all pages allocated for each mempool
+ *
+ *  @platformonly
+ *
+ *  @param free_page_handler  frees pages allocated with @a alloc_page_handler.
+ */
+void ssm_mem_destroy(void (*free_page_handler)(void *));
 
 #ifndef SSM_MEM_POOL_MIN
 /** @brief Block size of the smallest memory pool.
@@ -231,5 +256,9 @@ void ssm_mem_init(void *(*alloc_page_handler)(void),
 #endif
 
 /** @} */
+
+#ifndef NVALGRIND
+#include <valgrind/memcheck.h>
+#endif
 
 #endif /* _SSM_SCHED_H */

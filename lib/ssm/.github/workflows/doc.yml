@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-      - dev
     paths:
       - '.github/**'
       - 'src/**'
@@ -13,7 +12,6 @@ on:
   push:
     branches:
       - main
-      - dev
     paths:
       - '.github/**'
       - 'src/**'
@@ -40,7 +38,7 @@ jobs:
         make docs
 
     - name: Deploy documentation
-      if: ${{ github.ref == 'refs/heads/dev' }} # FIXME: change to main
+      if: ${{ github.ref == 'refs/heads/main' }}
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
