@@ -25,7 +25,7 @@ The difference is that `Rect` cannot be partially-applied, whereas `__Rect` can.
 Representing constructor functions in the IR
 
 Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
-The function body is a lambda expression representing a "call" to the fully applied data constructor.
+The function body is a lambda expression representing a call to the fully applied data constructor.
 
 Let's turn the top-level func for Square into IR: 
 
@@ -56,17 +56,17 @@ module IR.DConToFunc
 import qualified Common.Compiler               as Compiler
 
 import           Common.Compiler                ( MonadError )
-import           Common.Identifiers             ( fromString
+import           Common.Identifiers             ( fromId
+                                                , fromString
                                                 , ident
-                                                , Identifier
-                                                , fromId
                                                 )
 import           Control.Monad.Reader
-import           Data.Generics.Aliases          ( mkM ) 
-import           Data.Generics.Schemes          ( everywhereM )
 import           Data.Bifunctor                 ( first
-                                                , second )
-import           Data.List                      (inits)
+                                                , second
+                                                )
+import           Data.Generics.Aliases          ( mkM )
+import           Data.Generics.Schemes          ( everywhereM )
+import           Data.List                      ( inits )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified IR.IR                         as I
@@ -93,8 +93,8 @@ newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
   deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
 
 -- | Run a computation within an arity environment
-runArityFn :: ArityFn a -> Compiler.Pass a
-runArityFn (ArityFn m) = runReaderT m M.empty
+runArityFn :: ArityFn a -> ArityEnv -> Compiler.Pass a
+runArityFn (ArityFn m) = runReaderT m
 
 -- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
 createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
@@ -110,10 +110,14 @@ createArityEnv defs = M.fromList $ concatMap arities defs
 -}
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
-  runArityFn $ do
-    defs' <- local (createArityEnv tDefs <>)
-                   (everywhereM (mkM dataToApp) defs)
+  runArityFn p' (createArityEnv tDefs)
+ where
+  p' = do
+    defs' <- everywhereM (mkM dataToApp) defs
     return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
+   where
+    createFuncs (tconid, TypeDef { variants = vars }) =
+      createFunc tconid `mapMaybe` vars
 
 {- | Replace data constructor application with function application
 
@@ -124,51 +128,45 @@ dataToApp a@(I.Data dconid t) = do
   Just arity <- asks (M.lookup dconid)
   case arity of
     0 -> return a -- leave nullary data constructors alone
-    _ -> return $ I.Var (I.VarId $ nameFunc dconid) t
-dataToApp a               = pure a
+    _ -> return $ I.Var (nameFunc dconid) t
+dataToApp a = pure a
 
--- | Create a group of top level constructor functions for each type constructor
-createFuncs :: (I.TConId, TypeDef Poly.Type) -> [(I.VarId, I.Expr Poly.Type)]
-createFuncs (tconid, TypeDef { variants = vars }) =
-  createFunc tconid `mapMaybe` vars
- where
-  {- | Create a top level function for each data constructor
+{- | Create a top level function for each data constructor
 
-    Returns Nothing for nullary data constructors, 
-    which don't need top-level constructor functions.
-  -}
-  createFunc
-    :: I.TConId
-    -> (I.DConId, TypeVariant Poly.Type)
-    -> Maybe (I.VarId, I.Expr Poly.Type)
+  Returns Nothing for nullary data constructors, 
+  which don't need top-level constructor functions.
+-}
+createFunc
+  :: I.TConId
+  -> (I.DConId, TypeVariant Poly.Type)
+  -> Maybe (I.VarId, I.Expr Poly.Type)
   -- case of nullary dcon; guarantees params to be non-empty in the next pattern
-  createFunc _    (_                     , VariantNamed []    ) = Nothing
-  createFunc tcon (dconid, VariantNamed params) = Just
-    (I.VarId func_name, lambda)
-   where
-    func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
-    lambda    = I.makeLambdaChain names body
-    names     = first Just <$> params
-    body      = I.zipApp dcon args
-     where
-      dcon = I.Var (fromId dconid) (head arrowTypes)
-      args = zip (reverse $ uncurry I.Var <$> params) (tconTyp:tail arrowTypes)
-      tconTyp         = Poly.TCon tcon []
-      arrowTypes = reverse $ foldl1 arrow . (++[tconTyp]) <$> tail (inits (snd <$> params))
-      {- | An example to tconTyp is 'Rect'
-        An example of arrowTypes is
-        [(Int -> Int -> Rect), (Int -> Rect)]
-      -}
-  createFunc tcon (dcon, VariantUnnamed params) = createFunc
-    tcon
-    (dcon, VariantNamed argNames)
-   where
-    argNames = zipWith (\t i -> (I.VarId $ nameArg i, t)) params [0 ..]
+createFunc _    (_     , VariantNamed []    ) = Nothing
+createFunc tcon (dconid, VariantNamed params) = Just (func_name, lambda)
+ where
+  func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
+  lambda    = I.makeLambdaChain (first Just <$> params) body
+  body      = I.zipApp dcon args
+  dcon      = I.Data (fromId dconid) t
+  args      = zip (reverse $ uncurry I.Var <$> params) (tconTyp : ts)
+  tconTyp   = Poly.TCon tcon []
+  (t : ts) =
+    reverse $ foldl1 arrow . (++ [tconTyp]) <$> tail (inits (snd <$> params))
+  {- ^ Turns a list of types into arrow types representing nested lambdas
+        [Int, Int, Shape] becomes
+        [Int -> Int -> Shape, Int -> Shape, Shape]
+        (t:ts) is permitted because params is always non-empty
+        tail is permitted because inits on a non-empty list always returns a list of at least two elements.
+  -}
+createFunc tcon (dcon, VariantUnnamed params) = createFunc
+  tcon
+  (dcon, VariantNamed argNames)
+  where argNames = zipWith (\t i -> (nameArg i, t)) params [0 ..]
 
 -- | Create a name for the constructor function
-nameFunc :: I.DConId -> Identifier
+nameFunc :: I.DConId -> I.VarId
 nameFunc dconid = fromString $ "__" ++ ident dconid
 
 -- | Create a name for a constructor function argument
-nameArg :: Int -> Identifier 
+nameArg :: Int -> I.VarId
 nameArg i = fromString ("__arg" ++ show i)

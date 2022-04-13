@@ -25,14 +25,20 @@ main ( cout : & Int ) -> () =
   let b = Square 16                // in a later pass, this call to constructor func should be optimized out
 
   // unapplied
-  //let c = Square                 // throws errors because closures aren't in codegen yet
-  //let d = Rect                   // throws errors because closures aren't in codegen yet
+  let c = Square                 
+  let d = Rect                   
 
   // partially applied
-  //let e = Rect 2                 // throws errors because closures aren't in codegen yet
+  let e = Rect 2                 
 
   // nullary dcon (should not get changed to func app!)
   let f = Leaf
 
   after 10 , (cout : & Int) <- perimeter b + 2
   wait (cout : & Int)
+  //after 1, (cout : & Int) <- perimeter c 2         // throws type error 
+  //wait (cout : & Int)
+  //after 2, (cout : & Int) <- perimeter d 5 9       // throws type error 
+  //wait (cout : & Int)
+  //after 3, (cout : & Int) <- perimeter e 5         // throws type error 
+  //wait (cout : & Int)
