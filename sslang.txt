@@ -2097,6 +2097,88 @@ instance IR.HM.HasFreeTVars t => IR.HM.HasFreeTVars (IR.Types.TypeSystem.Builtin
 instance IR.HM.HasFreeTVars a => IR.HM.HasFreeTVars [a]
 
 
+-- | Turns non-nullary data constructors into calls to constructor
+--   functions.
+--   
+--   Worked example of ADT definition and corresponding constructor
+--   functions:
+--   
+--   <pre>
+--   type Shape 
+--     Square Int 
+--     Rect Int Int
+--   </pre>
+--   
+--   Let's turn data constructor <tt>Square</tt> into constructor function
+--   <tt>__Square</tt>:
+--   
+--   <pre>
+--   __Square arg0 : Int -&gt; Shape =  Square arg0
+--   </pre>
+--   
+--   The difference is that <tt>Square</tt> cannot be partially-applied,
+--   whereas <tt>__Square</tt> can.
+--   
+--   Next, <tt>Rect</tt> turns into this:
+--   
+--   <pre>
+--   __Rect arg0 arg1 : Int -&gt; Int -&gt; Shape =  Rect arg0 arg1
+--   </pre>
+--   
+--   The difference is that <tt>Rect</tt> cannot be partially-applied,
+--   whereas <tt>__Rect</tt> can.
+--   
+--   Representing constructor functions in the IR:
+--   
+--   Every top-level function has the form (I.VarId, I.Expr Poly.Type) =
+--   (functionName, functionBody) The function body is a lambda expression
+--   representing a call to the fully applied data constructor.
+--   
+--   Let's turn the top-level func for <tt>Square</tt> into IR:
+--   
+--   <pre>
+--   (__Square, body) 
+--   body = fun arg0 { App L R t } : Int -&gt; Shape
+--    where L = Square : Int -&gt; Shape
+--          R = arg0 : type Int
+--          t = Shape, because the type of a fully applied data constructor
+--              is its type constructor@
+--   </pre>
+--   
+--   Next <tt>Rect</tt> turns into this:
+--   
+--   <pre>
+--   (Rect, body)
+--   body = fun arg0 { fun arg1 { App L R t } : Int -&gt; Shape } : Int -&gt; Int -&gt; Shape
+--    where L = App L2 R2 t
+--          R = arg1 : Int
+--          t = Shape, because the type of a fully applied data constructor 
+--              is its type constructor
+--           where L2 = Rect : Int -&gt; Int -&gt; Shape
+--                 R  = arg0 : Int
+--                 t = Int -&gt; Shape, because at this point in the inner App, 
+--                     Rect is partially applied with only 1 arg.
+--   </pre>
+module IR.DConToFunc
+
+-- | <a>dConToFunc</a> modifies programDefs and traverses the IR to
+--   accomplish two tasks:
+--   
+--   <ol>
+--   <li>Add top-level constructor functions for each non-nullary
+--   <tt>DCon</tt> to progamDefs</li>
+--   <li>Turn non-nullary data constuctors into calls to top level
+--   constructor funcs</li>
+--   </ol>
+dConToFunc :: Program Type -> Pass (Program Type)
+instance Control.Monad.Reader.Class.MonadReader IR.DConToFunc.ArityEnv IR.DConToFunc.ArityFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.DConToFunc.ArityFn
+instance Control.Monad.Fail.MonadFail IR.DConToFunc.ArityFn
+instance GHC.Base.Monad IR.DConToFunc.ArityFn
+instance GHC.Base.Applicative IR.DConToFunc.ArityFn
+instance GHC.Base.Functor IR.DConToFunc.ArityFn
+
+
 -- | Intermediate representation (IR) stage of the compiler pipeline.
 --   
 --   The IR stage is organized into 4 distinct substages: <a>lower</a>,
