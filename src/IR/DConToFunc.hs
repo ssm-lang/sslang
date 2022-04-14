@@ -3,51 +3,54 @@
 
 {- | Turns non-nullary data constructors into calls to constructor functions.
 
-Worked example of ADT definition and corresponding constructor functions
+Worked example of ADT definition and corresponding constructor functions:
 
-type Shape 
-  Square Int 
-  Rect Int Int
+> type Shape 
+>   Square Int 
+>   Rect Int Int
 
-Let's turn data constructor 'Square' into constructor function '__Square':
+Let's turn data constructor `Square` into constructor function `__Square`:
 
-__Square arg0 : Int -> Shape =  Square arg0
+> __Square arg0 : Int -> Shape =  Square arg0
 
 The difference is that `Square` cannot be partially-applied, whereas `__Square` can.
 
-Next, Rect turns into this:
+Next, `Rect` turns into this:
 
-__Rect arg0 arg1 : Int -> Int -> Shape =  Rect arg0 arg1
+> __Rect arg0 arg1 : Int -> Int -> Shape =  Rect arg0 arg1
 
 The difference is that `Rect` cannot be partially-applied, whereas `__Rect` can.
 
 
-Representing constructor functions in the IR
+Representing constructor functions in the IR:
 
 Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
 The function body is a lambda expression representing a call to the fully applied data constructor.
 
-Let's turn the top-level func for Square into IR: 
+Let's turn the top-level func for `Square` into IR: 
 
+@
 (__Square, body) 
-
 body = fun arg0 { App L R t } : Int -> Shape
  where L = Square : Int -> Shape
        R = arg0 : type Int
-       t = Shape, because the type of a fully applied data constructor is its type constructor
+       t = Shape, because the type of a fully applied data constructor
+           is its type constructor@
+@
+Next `Rect` turns into this:
 
-Next Rect turns into this:
-
-(Rect, body*) *Notice the body of the lambda contains another lambda (curried arguments),
-               and the application expression contains another application (curried arguments). 
-
+@
+(Rect, body)
 body = fun arg0 { fun arg1 { App L R t } : Int -> Shape } : Int -> Int -> Shape
  where L = App L2 R2 t
        R = arg1 : Int
-       t = Shape, because the type of a fully applied data constructor is its type constructor
+       t = Shape, because the type of a fully applied data constructor 
+           is its type constructor
         where L2 = Rect : Int -> Int -> Shape
               R  = arg0 : Int
-              t = Int -> Shape, because at this point in the inner App, Rect is partially applied with only 1 arg.
+              t = Int -> Shape, because at this point in the inner App, 
+                  Rect is partially applied with only 1 arg.
+@
 -}
 module IR.DConToFunc
   ( dConToFunc
@@ -93,8 +96,8 @@ newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
   deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
 
 -- | Run a computation within an arity environment
-runArityFn :: ArityFn a -> ArityEnv -> Compiler.Pass a
-runArityFn (ArityFn m) = runReaderT m
+runArityFn :: ArityEnv -> ArityFn a -> Compiler.Pass a
+runArityFn env (ArityFn m) = runReaderT m env
 
 -- | Create a map of (DConId, Arity) key-value pairs from a list of type defintions
 createArityEnv :: [(I.TConId, TypeDef Poly.Type)] -> ArityEnv
@@ -105,19 +108,17 @@ createArityEnv defs = M.fromList $ concatMap arities defs
 
 {- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish two tasks:
 
-  1) Add top-level constructor functions for each non-nullary 'DCon' to progamDefs
-  2) Turn non-nullary data constuctors into calls to top level constructor funcs
+  (1) Add top-level constructor functions for each non-nullary 'DCon' to progamDefs
+  2. Turn non-nullary data constuctors into calls to top level constructor funcs
 -}
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
-  runArityFn p' (createArityEnv tDefs)
- where
-  p' = do
+  runArityFn (createArityEnv tDefs) $ do
     defs' <- everywhereM (mkM dataToApp) defs
     return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
-   where
-    createFuncs (tconid, TypeDef { variants = vars }) =
-      createFunc tconid `mapMaybe` vars
+ where
+  createFuncs (tconid, TypeDef { variants = vars }) =
+    createFunc tconid `mapMaybe` vars
 
 {- | Replace data constructor application with function application
 
@@ -152,11 +153,11 @@ createFunc tcon (dconid, VariantNamed params) = Just (func_name, lambda)
   tconTyp   = Poly.TCon tcon []
   (t : ts) =
     reverse $ foldl1 arrow . (++ [tconTyp]) <$> tail (inits (snd <$> params))
-  {- ^ Turns a list of types into arrow types representing nested lambdas
-        [Int, Int, Shape] becomes
-        [Int -> Int -> Shape, Int -> Shape, Shape]
-        (t:ts) is permitted because params is always non-empty
-        tail is permitted because inits on a non-empty list always returns a list of at least two elements.
+  {- Turns a list of types into arrow types representing nested lambdas
+     @[Int, Int, Shape]@ becomes
+     @[Int -> Int -> Shape, Int -> Shape, Shape]@
+     @(t:ts)@ is permitted because params is always non-empty
+     @tail@ is permitted because inits on a non-empty list always returns a list of at least two elements.
   -}
 createFunc tcon (dcon, VariantUnnamed params) = createFunc
   tcon
