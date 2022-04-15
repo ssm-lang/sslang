@@ -158,12 +158,12 @@ data ScannerContext
   deriving (Show)
 
 -- | The 'Int' in 'ScannerContext' is the margin.
-ctxtMargin :: ScannerContext -> Int
-ctxtMargin (ExplicitBlock m _        ) = m
-ctxtMargin (EndingExplicitBlock m _ _) = m
-ctxtMargin (PendingBlock m _         ) = m
-ctxtMargin (PendingBlockNL m _       ) = m
-ctxtMargin (ImplicitBlock m _        ) = m
+ctxMargin :: ScannerContext -> Int
+ctxMargin (ExplicitBlock m _        ) = m
+ctxMargin (EndingExplicitBlock m _ _) = m
+ctxMargin (PendingBlock m _         ) = m
+ctxMargin (PendingBlockNL m _       ) = m
+ctxMargin (ImplicitBlock m _        ) = m
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
 data AlexUserState = AlexUserState { usContext :: [ScannerContext] }
@@ -174,9 +174,9 @@ alexInitUserState = AlexUserState { usContext = [ImplicitBlock 1 TDBar] }
 
 -- | Enter a new context by pushing it onto stack.
 alexPushContext :: ScannerContext -> Alex ()
-alexPushContext ctxt = do
+alexPushContext ctx = do
   st <- alexGetUserState
-  alexSetUserState $ st { usContext = ctxt : usContext st }
+  alexSetUserState $ st { usContext = ctx : usContext st }
 
 -- | Read head of context stack.
 alexPeekContext :: Alex ScannerContext
@@ -223,8 +223,8 @@ gotoStartLine _ _ = do
 -- | Do block.
 doBlock :: AlexAction Token
 doBlock i len = do
-  ctxt <- alexPeekContext
-  case ctxt of
+  ctx <- alexPeekContext
+  case ctx of
     -- If we were planning on starting a new block in the next line, but we
     -- find a @do@ before then, then that block will be started immediately.
     -- We need to scan to the next token, where the block will be started.
@@ -237,15 +237,15 @@ doBlock i len = do
 lBrace :: AlexAction Token
 lBrace i@(AlexPn _ _ tCol, _, _, _) len = do
   alexSetStartCode 0
-  ctxt <- alexPeekContext
-  case ctxt of
+  ctx <- alexPeekContext
+  case ctx of
     -- If about to start a block and we encounter explicit @{@, then that block
     -- has been started explicitly, so we forget about the 'PendingBlock' state.
     PendingBlock _ _   -> alexPopContext
     PendingBlockNL _ _ -> alexPopContext
     _ -> return ()
 
-  let col = ctxtMargin ctxt
+  let col = ctxMargin ctx
   when (tCol <= col) $ do
     syntaxErr $ "Cannot start block at lower indentation than before"
 
@@ -258,10 +258,10 @@ firstBlockToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
   alexSetStartCode 0
 
   -- Check the top of the context stack to obtain saved separator token.
-  ctxt <- alexPeekContext
-  (col, sepToken) <- case ctxt of
+  ctx <- alexPeekContext
+  (col, sepToken) <- case ctx of
     PendingBlock m s -> alexPopContext >> return (m, s)
-    _ -> internalErr $ "unexpected context in firstBlockToken: " ++ show ctxt
+    _ -> internalErr $ "unexpected context in firstBlockToken: " ++ show ctx
 
   when (tCol <= col) $ do
     syntaxErr $ "Cannot start block at lower indentation than before"
@@ -280,8 +280,8 @@ firstLineToken (_,_,_,"") _ = do
 firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
   -- We have encountered the first token in a line.
   alexSetStartCode 0
-  ctxt <- alexPeekContext
-  case ctxt of
+  ctx <- alexPeekContext
+  case ctx of
     ImplicitBlock col sepToken
       | tCol > col  -> do
         -- Continued line; continue to scan as normal
@@ -319,7 +319,7 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       | otherwise ->
           syntaxErr $ "Cannot start block at lower indentation than before"
 
-    _ -> internalErr $ "unexpected ctxt during firstLineToken: " ++ show ctxt
+    _ -> internalErr $ "unexpected ctx during firstLineToken: " ++ show ctx
 
 -- | Left delimiting token, along with its (closing) right delimiter.
 lDelimeter :: TokenType -> TokenType -> AlexAction Token
@@ -333,14 +333,14 @@ lDelimeter ttype closer i len = do
 -- | Right delimiter, e.g., ), }, ]
 rDelimeter :: TokenType -> AlexAction Token
 rDelimeter ttype i len = do
-  marg <- ctxtMargin <$> alexPeekContext
+  marg <- ctxMargin <$> alexPeekContext
   alexPushContext $ EndingExplicitBlock marg ttype (alexInputSpan i len)
   closeBrace i len
 
 -- | Keyword starts a new block immediately.
 layout :: TokenType -> TokenType -> AlexAction Token
 layout ttype sepToken i len = do
-  marg <- ctxtMargin <$> alexPeekContext
+  marg <- ctxMargin <$> alexPeekContext
   -- Push 'PendingBlock' onto stack so we remember what 'sepToken' is
   alexPushContext $ PendingBlock marg sepToken
   -- Set 'startBlock' code so that scanner takes us to the next token, at which
@@ -354,7 +354,7 @@ layoutNL :: TokenType -> TokenType -> AlexAction Token
 layoutNL ttype sepToken i len = do
   -- Push PendingBlockNL' onto stack so we remember 'sepToken', and to start
   -- new block at next line
-  marg <- ctxtMargin <$> alexPeekContext
+  marg <- ctxMargin <$> alexPeekContext
   alexPushContext $ PendingBlockNL marg sepToken
   -- Emit token and continue scanning
   return $ Token (alexInputSpan i len, ttype)
@@ -378,12 +378,12 @@ closeBrace (pn, _, _, _) _ = do
   alexPopContext
   (closer, cspan) <- case closing of
     EndingExplicitBlock _ cl sp -> return (cl, sp)
-    _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show closing
+    _ -> internalErr $ "unexpected ctx during closeBrace: " ++ show closing
 
   -- We check whatever context comes next.
-  ctxt <- alexPeekContext
+  ctx <- alexPeekContext
   alexPopContext
-  case ctxt of
+  case ctx of
     -- If we are inside of another block, we close it by emitting an TRbrace,
     -- and loop back around to this subroutine. We also push the closing
     -- context back onto the stack for the next iter.
@@ -403,10 +403,10 @@ closeBrace (pn, _, _, _) _ = do
 
     -- If somehow pending block, then user wrote something like @do )@ or
     -- @if x )@, both of which are syntax errors.
-    PendingBlock _  _ -> syntaxErr $ "closeBrace :" ++ show ctxt
-    PendingBlockNL _ _ -> syntaxErr $ "closeBrace :" ++ show ctxt
+    PendingBlock _  _ -> syntaxErr $ "closeBrace :" ++ show ctx
+    PendingBlockNL _ _ -> syntaxErr $ "closeBrace :" ++ show ctx
 
-    _ -> internalErr $ "unexpected ctxt during closeBrace: " ++ show ctxt
+    _ -> internalErr $ "unexpected ctx during closeBrace: " ++ show ctx
 
 
 -- | Called when Alex reaches EOF.
@@ -416,8 +416,8 @@ alexEOF = Alex $ \s@AlexState{ alex_pos = pos, alex_ust = st } ->
     -- Last block---emit 'TEOF'
     [ImplicitBlock _ _] -> Right (s, Token (alexEmptySpan pos, TEOF))
     -- Close all unclosed implicit blocks
-    ImplicitBlock _ _ : ctxts@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
-      where s' = s { alex_ust = st { usContext = ctxts } }
+    ImplicitBlock _ _ : ctxs@_ -> Right (s', Token (alexEmptySpan pos, TRbrace))
+      where s' = s { alex_ust = st { usContext = ctxs } }
     ctx -> Left $ "encountered EOF inside of non-implicit context: " ++ show ctx
 
 -- | Used to integrate with Happy parser.
