@@ -56,15 +56,15 @@ tokens :-
     ()                  { closeBrace }
   }
 
-  <startLine> {
+  <lineStart> {
     -- Ignore consecutive newlines.
     @newline            ;
 
     -- First non-whitespace character of line.
-    ()                  { firstLineToken }
+    ()                  { lineFirstToken }
   }
 
-  <startBlock> {
+  <blockStart> {
     -- If we're about to start a block, newlines don't matter.
     @newline            ;
 
@@ -72,11 +72,11 @@ tokens :-
     \{                  { lBrace }
 
     -- Implicitly start a block at first non-whitespace character of block.
-    ()                  { firstBlockToken }
+    ()                  { blockFirstToken }
   }
 
   <0> {
-    -- Use startLine to move scanner to first non-whitespace token of line.
+    -- Use lineStart to move scanner to first non-whitespace token of line.
     @newline            { gotoStartLine }
 
     -- Forcibly starts an implicit block.
@@ -194,15 +194,28 @@ alexPopContext = do
     _:cs -> alexSetUserState $ st { usContext = cs }
     _    -> internalErr "popped at empty state"
 
+-- | Obtain current alexPosition from input.
+alexPosition :: AlexInput -> AlexPosn
+alexPosition (pn, _, _, _) = pn
+
+-- | Obtain current alexColumn from position.
+alexColumn :: AlexPosn -> Int
+alexColumn (AlexPn _ _ c) = c
+
 -- | Obtain 'Span' from 'AlexInput'.
 alexInputSpan :: AlexInput -> Int -> Span
 alexInputSpan (AlexPn a l c, _, _, _) len =
   Span {tokPos = a, tokLen = len, tokLine = l, tokCol = c}
 
--- | Obtain 'Span' from 'AlexInput'.
+-- | Construct empty 'Span' for current position, from 'AlexInput'.
 alexEmptySpan :: AlexPosn -> Span
 alexEmptySpan (AlexPn a l c) =
   Span {tokPos = a, tokLen = 0, tokLine = l, tokCol = c}
+
+-- | Predicate to measure whether there is more input.
+alexNoMoreInput :: AlexInput -> Bool
+alexNoMoreInput (_, _, _, "") = True
+alexNoMoreInput _             = False
 
 -- | String processing helper that drops both ends of a string. Note: strict.
 dropEnds :: Int -> Int -> String -> String
@@ -215,9 +228,9 @@ gotoStartLine _ _ = do
   -- We've arrived at the start of a new line, but we don't yet know:
   -- (1) what the first token is, or
   -- (2) what its indentation is.
-  -- We set the start code to 'startLine' and let the scanner take us there,
-  -- at which point it will call 'firstLineToken'.
-  alexSetStartCode startLine
+  -- We set the start code to 'lineStart' and let the scanner take us there,
+  -- at which point it will call 'lineFirstToken'.
+  alexSetStartCode lineStart
   alexMonadScan
 
 -- | Do block.
@@ -228,14 +241,14 @@ doBlock i len = do
     -- If we were planning on starting a new block in the next line, but we
     -- find a @do@ before then, then that block will be started immediately.
     -- We need to scan to the next token, where the block will be started.
-    PendingBlockNL _ _ -> alexSetStartCode startBlock >> alexMonadScan
+    PendingBlockNL _ _ -> alexSetStartCode blockStart >> alexMonadScan
 
     -- Otherwise, @do@ just starts an explicit do-block.
     _ -> layout TDo TSemicolon i len
 
 -- | Left brace token.
 lBrace :: AlexAction Token
-lBrace i@(AlexPn _ _ tCol, _, _, _) len = do
+lBrace i len = do
   alexSetStartCode 0
   ctx <- alexPeekContext
   case ctx of
@@ -245,7 +258,8 @@ lBrace i@(AlexPn _ _ tCol, _, _, _) len = do
     PendingBlockNL _ _ -> alexPopContext
     _ -> return ()
 
-  let col = ctxMargin ctx
+  let tCol = alexColumn $ alexPosition i
+      col  = ctxMargin ctx
   when (tCol <= col) $ do
     syntaxErr $ "Cannot start block at lower indentation than before"
 
@@ -253,33 +267,43 @@ lBrace i@(AlexPn _ _ tCol, _, _, _) len = do
   lDelimeter TLbrace TRbrace i len
 
 -- | First token in a block (epsilon action).
-firstBlockToken :: AlexAction Token
-firstBlockToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
+blockFirstToken :: AlexAction Token
+blockFirstToken i _ = do
   alexSetStartCode 0
 
   -- Check the top of the context stack to obtain saved separator token.
   ctx <- alexPeekContext
   (col, sepToken) <- case ctx of
     PendingBlock m s -> alexPopContext >> return (m, s)
-    _ -> internalErr $ "unexpected context in firstBlockToken: " ++ show ctx
+    _ -> internalErr $ "unexpected context in blockFirstToken: " ++ show ctx
 
+  let tCol = alexColumn $ alexPosition i
   when (tCol <= col) $ do
     syntaxErr $ "Cannot start block at lower indentation than before"
 
   -- About to start a block; remember current indentation level and sepToken.
   alexPushContext $ ImplicitBlock tCol sepToken
   -- Emit TLbrace to start block.
-  return $ Token (alexEmptySpan pn, TLbrace)
+  return $ Token (alexEmptySpan $ alexPosition i, TLbrace)
 
 -- | First token in a line.
-firstLineToken :: AlexAction Token
-firstLineToken (_,_,_,"") _ = do
-  -- EOF case; turn off 'startLine' and let scanner proceed to 'alexEOF'.
-  alexSetStartCode 0
-  alexMonadScan
-firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
+lineFirstToken :: AlexAction Token
+lineFirstToken i len
+  -- EOF case: turn off 'lineStart' and let scanner proceed to 'alexEOF'.
+  | alexNoMoreInput i = alexSetStartCode 0 >> alexMonadScan
+
+  -- Regular case
+  | otherwise         = lineFirstToken' i len
+
+-- | First token in a line that isn't the last line.
+lineFirstToken' :: AlexAction Token
+lineFirstToken' i _ = do
+  let pn = alexPosition i
+      tCol = alexColumn pn
+
   -- We have encountered the first token in a line.
   alexSetStartCode 0
+
   ctx <- alexPeekContext
   case ctx of
     ImplicitBlock col sepToken
@@ -291,9 +315,9 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
         return $ Token (alexEmptySpan pn, sepToken)
       | otherwise   -> do
         -- Block ended; pop context and insert 'TRbrace', but return to
-        -- 'startLine' to check for anything else to do; if more blocks are
+        -- 'lineStart' to check for anything else to do; if more blocks are
         -- ending, those will need to be closed too
-        alexSetStartCode startLine
+        alexSetStartCode lineStart
         alexPopContext
         return $ Token (alexEmptySpan pn, TRbrace)
 
@@ -306,7 +330,7 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       -- non-braces, new lines must be greater than where freeform mode was
       -- started.
       | tCol > col -> alexMonadScan
-      | otherwise  -> syntaxErr "error message TODO firstLineToken"
+      | otherwise  -> syntaxErr "error message TODO lineFirstToken"
 
     PendingBlockNL col sepToken 
       | tCol > col -> do
@@ -319,12 +343,12 @@ firstLineToken (pn@(AlexPn _ _ tCol), _, _, _) _ = do
       | otherwise ->
           syntaxErr $ "Cannot start block at lower indentation than before"
 
-    _ -> internalErr $ "unexpected ctx during firstLineToken: " ++ show ctx
+    _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
 -- | Left delimiting token, along with its (closing) right delimiter.
 lDelimeter :: TokenType -> TokenType -> AlexAction Token
 lDelimeter ttype closer i len = do
-  -- Push 'ExplicitBlock' to remember the column where this block was started,
+  -- Push 'ExplicitBlock' to remember the alexColumn where this block was started,
   -- and what closing token to look for.
   let sp = alexInputSpan i len
   alexPushContext $ ExplicitBlock (tokCol sp) closer
@@ -343,9 +367,9 @@ layout ttype sepToken i len = do
   marg <- ctxMargin <$> alexPeekContext
   -- Push 'PendingBlock' onto stack so we remember what 'sepToken' is
   alexPushContext $ PendingBlock marg sepToken
-  -- Set 'startBlock' code so that scanner takes us to the next token, at which
-  -- point 'firstBlockToken' is invoked.
-  alexSetStartCode startBlock
+  -- Set 'blockStart' code so that scanner takes us to the next token, at which
+  -- point 'blockFirstToken' is invoked.
+  alexSetStartCode blockStart
   -- Emit given token.
   return $ Token (alexInputSpan i len, ttype)
 
@@ -370,7 +394,7 @@ strTok f i@(_,_,_,s) len = do
 
 -- | "Subroutine" to insert closing braces (epsilon action).
 closeBrace :: AlexAction Token
-closeBrace (pn, _, _, _) _ = do
+closeBrace i _ = do
   alexSetStartCode 0
   -- When this subroutine starts, we expect the 'EndingExplicitBlock' context we
   -- pushed to always be at the top of the stack; we use this to maintain state.
@@ -390,7 +414,7 @@ closeBrace (pn, _, _, _) _ = do
     ImplicitBlock _ _ -> do
       alexSetStartCode closeBraces
       alexPushContext closing
-      return $ Token (alexEmptySpan pn, TRbrace)
+      return $ Token (alexEmptySpan $ alexPosition i, TRbrace)
 
     -- If we find the ExplicitBlock block we're supposed to close, then we're done.
     -- Reset the alex start code to the default (0), and emit closing delimiter.
