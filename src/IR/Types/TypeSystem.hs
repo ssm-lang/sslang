@@ -20,8 +20,8 @@ Types.Flat: concrete only
 module IR.Types.TypeSystem where
 
 import           Common.Identifiers             ( DConId
+                                                , TVarId(..)
                                                 , VarId
-                                                , TVarId (..)
                                                 )
 import           Common.Pretty
 
@@ -153,5 +153,5 @@ instance Functor TypeVariant where
 
 -- | The number of fields in a 'TypeVariant'.
 variantFields :: TypeVariant t -> Int
-variantFields (VariantNamed fields ) = length fields
-variantFields (VariantUnnamed fields ) = length fields
+variantFields (VariantNamed   fields) = length fields
+variantFields (VariantUnnamed fields) = length fields
