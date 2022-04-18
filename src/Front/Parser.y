@@ -262,8 +262,7 @@ Note that do-blocks appear here as an alternative to parenthesizing expressions,
 which the scanner can exploit to insert implicit braces and semicolons.
 -}
 exprBlk                               --> Expr
-  : 'do' '{' expr '}'                   { $3 }
-  | 'loop' '{' expr '}'                 { Loop $3 }
+  : 'loop' '{' expr '}'                 { Loop $3 }
   | 'wait' '{' exprPar '}'              { Wait $3 }
   | 'par' '{' exprPar '}'               { Par $3 }
   | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
