@@ -981,21 +981,27 @@ whitespace := horizontal whitespace + newlines
 
 rules:
 
-next token is layout token l (e.g., 'loop'):
-  scan to next non-whitespace token t and consume it
+next token is newline:
+  scan to next non-whitespace token t but don't consume it
 
-  t is '{':
-    push B with '{'
-    emit l '{'
+  current state is B:
+    ignore -- explicit newlines don't mean anything in explicit blocks
 
-  t is anything else:
+  current state is I with separator s:
+    if indentation of t > current block indentation:
+      ignore -- this is a line continuation
+
+    if indentation of t < current block indentation:
+      emit '}'
+      pop B from state stack and keep checking
+
+    if indentation of t = current block indentation:
+      emit s
+
+  current state is N with separator s:
     assert indentation of t > current block indentation
-    push I with separator of l and indentation of t
-    emit l '{' t
-
-next token is layoutNL token l (e.g., 'if'):
-  push N with separator of l
-  emit l
+    push I with separator s and indentation of t
+    emit '{'
 
 next token d is '[' or '(':
   push B with d
@@ -1026,26 +1032,22 @@ next token d is '}', ']', or ')':
   otherwise: (it was N)
     syntax error: expected expression
 
-next token is newline:
-  scan to next non-whitespace token t but don't consume it
+next token is layout token l (e.g., 'loop'):
+  scan to next non-whitespace token t and consume it
 
-  current state is B:
-    ignore -- explicit newlines don't mean anything in explicit blocks
+  t is '{':
+    push B with '{'
+    emit l '{'
 
-  current state is I with separator s:
-    if indentation of t > current block indentation:
-      ignore -- this is a line continuation
-
-    if indentation of t < current block indentation:
-      emit '}'
-
-    if indentation of t = current block indentation:
-      emit s
-
-  current state is N with separator s:
+  t is anything else:
     assert indentation of t > current block indentation
-    push I with separator s and indentation of t
-    emit '{'
+    push I with separator of l and indentation of t
+    emit l '{' t
+
+next token is layoutNL token l (e.g., 'if'):
+  push N with separator of l
+  emit l
+
 
 next token t is anything else:
   emit t
