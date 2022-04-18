@@ -138,11 +138,11 @@ spec = do
                 wait (cout : & Int)
               f x = x
             |]
-          , [here|
-              /*{*/main/*s*/(/*p*/cout/*l*/:/*i*/&/*c*/Int/*e*/)/*d*/->/* */()/*!*/=/*}*/
-                after 10 , (cout : & Int) <- 96
-                wait (cout : & Int)
-            |]
+          -- , [here|
+          --     /*{*/main/*s*/(/*p*/cout/*l*/:/*i*/&/*c*/Int/*e*/)/*d*/->/* */()/*!*/=/*}*/
+          --       after 10 , (cout : & Int) <- 96
+          --       wait (cout : & Int)
+          --   |]
           , [here|
               main ( cout : & Int ) -> () =
               /* using comments to */  after 10 , (cout : & Int) <- 96
