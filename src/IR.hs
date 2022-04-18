@@ -21,7 +21,7 @@ import qualified IR.HM                         as HM
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-
+import IR.Pretty(indentPretty)
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
@@ -115,8 +115,9 @@ class2Poly _ = instProgram
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
   irLifted <- liftProgramLambdas ir
+  pret <-indentPretty irLifted
   when (mode opt == DumpIRLifted) $ dump irLifted
-  when (mode opt == DumpIRFinal) $ dump irLifted
+  when (mode opt == DumpIRFinal) $  (throwError . Dump . show) pret
   return irLifted
 
 -- | IR compiler stage.
