@@ -15,6 +15,7 @@ module IR.IR
   , wellFormed
   , collectLambda
   , makeLambdaChain
+  , indentPretty
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -366,3 +367,43 @@ instance Pretty PrimOp where
   pretty PrimGe     = pretty ">="
   pretty PrimLt     = pretty "<"
   pretty PrimLe     = pretty "<="
+
+
+  
+-- | whitespace typeclass
+class (Pretty a) => WS a where
+  ws :: Int -> Int -> a -> Doc ann 
+
+  -- pretty (Let as b t) = typeAnn t $ parens letexpr
+  --  where
+  --   letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> pretty b
+  --   def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
+  --   def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
+
+    -- pretty (Lambda a b t) =
+    -- typeAnn t $ pretty "fun" <+> pretty a <+> braces (pretty b)
+
+instance Pretty t => WS (Expr t) where
+  ws _ _ (Var  v t  ) = typeAnn t $ pretty v
+  ws d i (Lambda a b _) = pretty "fun" <+> pretty a <> line <> braces (ws d i b)
+  ws d i (Let as b _) = x
+   where
+     letexpr2 = pretty "let" <+> block dbar (map def as) <> semi <> line <> ws d i b
+     letexpr = pretty "let" <+> block dbar (map def as) <> semi <> line <> ws d i b
+     def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
+     def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
+     x = case as of 
+        [(Nothing, e)]  -> pretty e <> line <> ws d i b
+        _ -> letexpr
+    --  def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
+  ws d i a@(Prim After _ _) = pretty a <> line
+  ws _ _ a = pretty a
+
+indentPretty :: (Pretty t) => Program t -> Doc ann
+indentPretty Program { programDefs = ds } = vsep $ map inPretty ds
+ where
+   inPretty ::(Pretty t) => (VarId, Expr t) -> Doc ann 
+   inPretty (v, e) = pretty v <+> ws 0 0 e
+   
+
+
