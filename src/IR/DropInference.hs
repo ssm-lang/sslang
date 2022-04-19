@@ -16,6 +16,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Maybe                     ( fromJust
                                                 , isNothing
+                                                , fromMaybe
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
@@ -99,9 +100,9 @@ insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- | Inserting dup/drops into function application with arg of varid
 insertDropExpr (I.App fun arg@(I.Var var vt) typ) = do
-  retVar <- getFresh "_app"
-  fun'   <- insertDropExpr fun
-  arg'   <- insertDropExpr arg
+  retVar  <- getFresh "_app"
+  fun'    <- insertDropExpr fun
+  arg'    <- insertDropExpr arg
   let varDup   = makeDup $ I.Var var vt
       varDrop  = makeDrop $ I.Var var vt
       dupExpr  = seqExprs [varDup] (I.App fun' arg' typ)
@@ -171,8 +172,9 @@ insertDropAlt
 insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do
   retVar      <- getFresh "_alt_default"
   exprReturn' <- insertDropExpr exprReturn
-  let varDrop  = makeDrop $ I.Var (fromJust var) (I.extract exprMatch)
-      exprBins = (Just retVar, exprReturn') : [varDrop]
+  let varDup   = makeDup exprMatch
+      varDrop  = makeDrop exprMatch
+      exprBins = varDup : (Just retVar, exprReturn') : [varDrop]
       retExpr  = I.Var retVar (I.extract exprReturn')
       retExpr' = seqExprs exprBins retExpr
   return (I.AltDefault var, retExpr')
@@ -181,9 +183,10 @@ insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do
 -- | TODO: type is currently wrong and is only a placeholder
 insertDropAlt (I.AltData dcon vars, exprReturn) _ = do
   retVar      <- getFresh "_alt_data"
+  tmpVar      <- getFresh "_alt_underscore"
   exprReturn' <- insertDropExpr exprReturn
   let retTyp = I.extract exprReturn'
-      makeFun f = \v -> f $ I.Var (fromJust v) retTyp
+      makeFun f = \v -> f $ I.Var (fromMaybe tmpVar v) retTyp
       dupBins  = map (makeFun makeDup) vars
       dropBins = map (makeFun makeDrop) vars
       exprBins = dupBins ++ (Just retVar, exprReturn') : dropBins

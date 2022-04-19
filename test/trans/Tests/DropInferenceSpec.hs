@@ -18,7 +18,7 @@ import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.SubstMagic                  ( substMagic )
 import           IR.Types.Annotated            as I
 import           IR.Types.Poly                 as Poly
-import Control.Concurrent (yield)
+import           Control.Concurrent             ( yield )
 
 
 parseDrop :: String -> Pass (I.Program I.Type)
@@ -35,6 +35,7 @@ spec = do
         top = 
             let a: Int = 5
                 b: Int = 10
+                _: Int = 15
             a + b
         |]
             >>= IR.ann2Class def
@@ -45,11 +46,14 @@ spec = do
         top =
             let a: Int = 5
                 b: Int = 10
+                anon3_let_underscore: Int = 15
             let _ = dup a
             let _ = dup b
+            let _ = dup anon3_let_underscore
             let anon0_let = a + b
             let _ = drop a
             let _ = drop b
+            let _ = drop anon3_let_underscore
             anon0_let
         |]
             >>= IR.ann2Class def
@@ -136,7 +140,8 @@ spec = do
     undropped `shouldPassAs` dropped
 
   it "drop inference in pattern matching" $ do
-    let undropped = parseDrop [here|
+    let undropped =
+          parseDrop [here|
         type MyBool 
           MyFalse Int Int
           MyTrue Int
@@ -145,6 +150,7 @@ spec = do
         top = match x
                 MyTrue fst = fst
                 MyFalse fst snd = snd
+                _ = 69
         |]
             >>= IR.ann2Class def
             >>= IR.class2Poly def
@@ -165,10 +171,15 @@ spec = do
                 MyFalse fst snd = 
                   let _ = dup fst
                   let _ = dup snd
-                  let anon1_alt_data = snd
+                  let anon2_alt_data = snd
                   let _ = drop fst
                   let _ = drop snd
-                  anon1_alt_data
+                  anon2_alt_data
+                _ = 
+                  let _ = dup x
+                  let anon4_alt_default = 69
+                  let _ = drop x
+                  anon4_alt_default
         |]
             >>= IR.ann2Class def
             >>= IR.class2Poly def
