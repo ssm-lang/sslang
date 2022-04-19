@@ -62,6 +62,18 @@ Multi-line comments start with \lit*{/*} and end at a matching
 \lit*{*/}.  Multi-line comments nest and may also include
 single-line comments.
 
+To avoid confusion with comments, user-defined operators
+should not contain \lit*{//} or \lit*{/*} as substrings.
+Furthermore, comments must be separated from operator symbols
+by at least one character:
+
+\begin{lstlisting}
+&// invalid comment
+&/* invalid comment */
+& // valid comment
+& /* valid comment */
+\end{lstlisting}
+
 \subsection{Layout}
 
 For brevity, sslang allows the programmer to selectively omit braces \texttt{\{} and \texttt{\}} as well as certain separator tokens, and instead convey the same information using \emph{layout} (indentation). Layout-sensitive and layout-insensitive syntax are both supported and mutually compatible, so the meaning of a layout-sensitive program can always specified by adding braces and tokens to produce some equivalent layout-insensitive program. This section describes the procedure by which those tokens are inserted.
