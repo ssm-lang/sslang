@@ -20,6 +20,7 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 import           IR.Types.TypeSystem            ( Builtin(..)
+                                                , IsUnit(isUnit)
                                                 , TypeSystem(..)
                                                 )
 import           Prettyprinter
@@ -38,8 +39,8 @@ data Scheme = Forall [TVarId] Type
 
 instance Show Scheme where
   show (Forall [] t) = "Forall . " ++ show t
-  show (Forall args t)
-    = "Forall " ++ unwords (map show args) ++ " . " ++ show t
+  show (Forall args t) =
+    "Forall " ++ unwords (map show args) ++ " . " ++ show t
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin
@@ -50,3 +51,7 @@ instance Pretty Type where
   pretty (TBuiltin b  ) = pretty b
   pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
   pretty (TVar tvar   ) = pretty tvar
+
+instance IsUnit Type where
+  isUnit (TBuiltin Unit) = True
+  isUnit _               = False

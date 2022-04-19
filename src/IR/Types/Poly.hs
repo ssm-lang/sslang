@@ -39,6 +39,7 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 import           IR.Types.TypeSystem            ( Builtin(..)
+                                                , IsUnit(isUnit)
                                                 , TypeSystem(..)
                                                 )
 
@@ -59,3 +60,7 @@ instance Pretty Type where
   pretty (TBuiltin b  ) = pretty b
   pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
   pretty (TVar tvar   ) = pretty tvar
+
+instance IsUnit Type where
+  isUnit (TBuiltin Unit) = True
+  isUnit _               = False

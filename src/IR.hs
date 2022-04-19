@@ -115,7 +115,7 @@ poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
   irLifted <- liftProgramLambdas ir
   when (mode opt == DumpIRLifted) $ dump irLifted
-  when (mode opt == DumpIRFinal) $  (throwError . Dump . show) (I.indentPretty irLifted)
+  when (mode opt == DumpIRFinal) $  (throwError . Dump . show) (I.indentPretty True irLifted)
   return irLifted
 
 -- | IR compiler stage.

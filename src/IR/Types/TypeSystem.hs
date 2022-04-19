@@ -59,6 +59,10 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
   pretty (Integral s  ) = pretty $ "Int" ++ show s
 
+-- | helper typeclass for pritty printing
+class Pretty t => IsUnit t where
+  isUnit ::  t -> Bool 
+
 {- | A type system must allow us to construct and access underlying builtins.
 
 Instances should satisfy the following law:
