@@ -40,8 +40,14 @@ $digit   = 0-9
 $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z] [a-zA-Z0-9_']*
-$symbol = [\!\#\$\%\&\*\+\-\.\/\<\=\>\?\@\\\^\|\~]
-@operator = $symbol ( $symbol | [\_\:\"\'] )*
+
+$symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolLeading      = [$symbolBase\*]
+$symbolAfterSlash   = [$symbolBase\_\:\"\']
+$symbolAny          = [$symbolBase\_\:\"\'\*]
+
+@operator = \/ | ( $symbolLeading | \/ $symbolAfterSlash ) ( $symbolAny | \/ $symbolAfterSlash )* \/?
+
 @commentL = \/\*
 @commentR = \*\/
 
