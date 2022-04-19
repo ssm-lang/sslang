@@ -11,14 +11,15 @@ import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
 
+import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
+import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
-import qualified IR.TypeChecker                as TC
-import qualified IR.HM                         as HM
 
 import           IR.ClassInstantiation          ( instProgram )
+import           IR.DConToFunc                  ( dConToFunc )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.DropInference               ( insertDropsProgram )
@@ -112,7 +113,8 @@ class2Poly _ = instProgram
 -- | IR compiler sub-stage, performing source-to-source translations.
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
-  irLifted <- liftProgramLambdas ir
+  dConsGone <- dConToFunc ir
+  irLifted  <- liftProgramLambdas dConsGone
   when (mode opt == DumpIRLifted) $ dump irLifted
   when (mode opt == DumpIRFinal) $ dump irLifted
   return irLifted
