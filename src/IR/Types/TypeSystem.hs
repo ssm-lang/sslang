@@ -57,7 +57,7 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Ref t       ) = parens $ pretty "&" <> pretty t
   pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
-  pretty (Integral s  ) = pretty $ "Int" ++ show s
+  pretty (Integral s  ) = pretty $ "Int" -- ++ show s
 
 -- | helper typeclass for pritty printing
 class Pretty t => IsUnit t where

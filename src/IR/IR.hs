@@ -433,7 +433,7 @@ indentPretty f Program { programDefs = ds } = vsep $ map topLevel ds
  where
   topLevel :: (TypeSystem t, IsUnit t) => (VarId, Expr t) -> Doc ann
   topLevel (v, l@(Lambda _ _ ty)) =
-    pretty v <+> pretty "=" <+> typSig <> line <> indent
+    pretty v <+> typSig <+> pretty "=" <+>line <> indent
       1
       (ws body PInfo { ann = f, tab = 0, depth = 0 })
    where
