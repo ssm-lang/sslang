@@ -343,7 +343,11 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Prim Deref [r] _) = pretty "deref" <+> pretty r
   pretty (Prim Assign [l, r] _) =
     parens $ pretty l <+> pretty "<-" <+> braces (pretty r)
-
+  pretty (Prim After [d, l, r] _) = ae
+   where
+    ae =
+      pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
+        (pretty r)
   pretty (Prim Par    es  _) = pretty "par" <+> block dbar (map pretty es)
   pretty (Prim Wait   es  _) = pretty "wait" <+> block dbar (map pretty es)
   pretty (Prim Loop   [b] _) = pretty "loop" <+> braces (pretty b)
