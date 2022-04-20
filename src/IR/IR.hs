@@ -27,6 +27,7 @@ import           IR.Types.TypeSystem            ( IsUnit(isUnit)
                                                 , TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
+                                                , collectArrow
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -301,38 +302,38 @@ instance Pretty t => Pretty (Program t) where
   -- TODO: how to represent entry point?
 
 instance Pretty t => Pretty (Expr t) where
-  pretty (Var  v t  ) = pretty v
-  pretty (Data d t  ) = pretty d
-  pretty (Lit  l t  ) = pretty l
-  pretty (App l  r t) = pretty l <+> pretty r
-  pretty (Let as b t) = parens letexpr
+  pretty (Var  v _  ) = pretty v
+  pretty (Data d _  ) = pretty d
+  pretty (Lit  l _  ) = pretty l
+  pretty (App l  r _) = pretty l <+> pretty r
+  pretty (Let as b _) = parens letexpr
    where
     letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> pretty b
     def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
     def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
-  pretty (Lambda a b  t) = pretty "fun" <+> pretty a <+> braces (pretty b)
-  pretty (Match  s as t) = pretty "match" <+> pretty s <+> arms
+  pretty (Lambda a b  _) = pretty "fun" <+> pretty a <+> braces (pretty b)
+  pretty (Match  s as _) = pretty "match" <+> pretty s <+> arms
    where
     -- Where to add binder?
     arms = block bar (map arm as)
     arm (a, e) = pretty a <+> drarrow <+> braces (pretty e)
-  pretty (Prim New   [r] t) = pretty "new" <+> pretty r
-  pretty (Prim Dup   [r] t) = pretty "__dup" <+> pretty r
-  pretty (Prim Drop  [r] t) = pretty "__drop" <+> pretty r
-  pretty (Prim Reuse [r] t) = pretty "__reuse" <+> pretty r
-  pretty (Prim Deref [r] t) = pretty "deref" <+> pretty r
-  pretty (Prim Assign [l, r] t) =
+  pretty (Prim New   [r] _) = pretty "new" <+> pretty r
+  pretty (Prim Dup   [r] _) = pretty "__dup" <+> pretty r
+  pretty (Prim Drop  [r] _) = pretty "__drop" <+> pretty r
+  pretty (Prim Reuse [r] _) = pretty "__reuse" <+> pretty r
+  pretty (Prim Deref [r] _) = pretty "deref" <+> pretty r
+  pretty (Prim Assign [l, r] _) =
     parens $ pretty l <+> pretty "<-" <+> braces (pretty r)
-  pretty (Prim After [d, l, r] t) = ae
+  pretty (Prim After [d, l, r] _) = ae
    where
     ae =
       pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
         (pretty r)
-  pretty (Prim Par    es  t) = pretty "par" <+> block dbar (map pretty es)
-  pretty (Prim Wait   es  t) = pretty "wait" <+> block dbar (map pretty es)
-  pretty (Prim Loop   [b] t) = pretty "loop" <+> braces (pretty b)
-  pretty (Prim Break  []  t) = pretty "break"
-  pretty (Prim Return [e] t) = pretty "return" <+> braces (pretty e)
+  pretty (Prim Par    es  _) = pretty "par" <+> block dbar (map pretty es)
+  pretty (Prim Wait   es  _) = pretty "wait" <+> block dbar (map pretty es)
+  pretty (Prim Loop   [b] _) = pretty "loop" <+> braces (pretty b)
+  pretty (Prim Break  []  _) = pretty "break"
+  pretty (Prim Return [e] _) = pretty "return" <+> braces (pretty e)
   pretty (Prim (PrimOp po) [l, r] t) =
     parens $ pretty l <+> pretty po <+> pretty r <> pretty t
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
@@ -366,39 +367,52 @@ instance Pretty PrimOp where
   pretty PrimLe     = pretty "<="
 
 
+-- | Record type to hold pretty printer state
+data PrettyInfo = PInfo
+  { ann   :: Bool
+  -- , topLv :: Bool
+  , tab   :: Int
+  , depth :: Int
+  }
 
--- | whitespace typeclass
+-- | Whitespace typeclass
 class (Pretty a) => WS a where
-  ws :: Bool -> Int -> a -> Doc ann
+  ws :: PrettyInfo -> a -> Doc ann
 
+-- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
-  ws f _ (Var v t) = typ f t $ pretty v
-  ws f i (Lambda a b t) =
-    typ f t $ pretty "fun" <+> pretty a <> line <> braces (ws f i b)
-  ws f i (Let as b t) = typ f t x
+  ws PInfo { ann = an, tab = tb } (Var v t) = indent tb $ typ an t $ pretty v
+  ws i@PInfo { ann = an, tab = tb } (Let [(Nothing, e)] b t) = indent tb $ typ an t $ pretty e <> line <> ws i b
+  ws i@PInfo { ann = an, tab = tb }(Let as b t) = indent tb $ typ an t letexpr
    where
     letexpr =
-      pretty "let" <+> block dbar (map def as) <> semi <> line <> ws f i b
+      pretty "let" <+> block dbar (map def as) <> semi <> line <> ws i b
     def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
     def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
-    x = case as of
-      [(Nothing, e)] -> pretty e <> line <> ws f i b
-      _              -> letexpr
-    --  def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
-  ws f _ a@(Prim After _ t) = typ f t $ pretty a <> line
-  ws f _ a                  = typ f (extract a) $ pretty a
+  ws PInfo { ann = an, tab = tb } a@(Prim After _ t) = indent tb $ typ an t $ pretty a <> line
+  ws PInfo { ann = an, tab = tb } a                  = indent tb $ typ an (extract a) $ pretty a
 
+-- | pretty print type annotations unless unit or flag set to false
 typ :: (IsUnit t) => Bool -> t -> Doc ann -> Doc ann
-typ f e d | -- = --if not f then d else typeAnn e d
-            not f     = d -- false means NO annotations
-          | isUnit e  = d -- true means all annotations except unit
+typ f e d | not f     = d
+          | isUnit e  = d
           | otherwise = typeAnn e d
 
-indentPretty :: (IsUnit t) => Bool -> Program t -> Doc ann
-indentPretty f Program { programDefs = ds } = vsep $ map inPretty ds
+indentPretty :: (TypeSystem t, IsUnit t) => Bool -> Program t -> Doc ann
+indentPretty f Program { programDefs = ds } = vsep $ map topLevel ds
  where
-  inPretty :: (IsUnit t) => (VarId, Expr t) -> Doc ann
-  inPretty (v, e) = pretty v <+> ws f 0 e
-
-
-
+  topLevel :: (TypeSystem t, IsUnit t) => (VarId, Expr t) -> Doc ann
+  topLevel (v, l@(Lambda _ _ ty)) =
+    pretty v
+      <+> pretty "="
+      <+> typSig
+      <>  line
+      <>  indent 1 (ws PInfo { ann = f, tab = 0, depth = 0 } body)
+   where
+    (argIds, body ) = collectLambda l
+    (argTys, retTy) = collectArrow ty
+    args =
+      zipWith (\arg t -> pretty arg <+> pretty ":" <+> pretty t) argIds argTys
+    typSig = foldl1 (\acc x -> acc <+> pretty "->" <+> x) $ args ++ [pretty retTy]
+  topLevel (v, e) =
+    pretty v <+> pretty "=" <+> ws PInfo { ann = f, tab = 0, depth = 0 } e
