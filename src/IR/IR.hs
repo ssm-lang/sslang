@@ -396,20 +396,31 @@ data PrettyInfo = PInfo
 
 -- | Whitespace typeclass
 class (Pretty a) => WS a where
-  ws :: PrettyInfo -> a -> Doc ann
+  ws :: a -> PrettyInfo -> Doc ann
 
 -- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
-  ws PInfo { ann = an, tab = tb } (Var v t) = indent tb $ typ an t $ pretty v
-  ws i@PInfo { ann = an, tab = tb } (Let [(Nothing, e)] b t) = indent tb $ typ an t $ pretty e <> line <> ws i b
-  ws i@PInfo { ann = an, tab = tb }(Let as b t) = indent tb $ typ an t letexpr
+  ws (Prim Wait es t) PInfo { ann = an, tab = tb } =
+    indent tb $ typ an t $ pretty "wait" <+> vsep (map pretty es)
+  ws (Var v t) PInfo { ann = an, tab = tb } = indent tb $ typ an t $ pretty v
+  ws (Lambda a b t) i@PInfo { ann = an, tab = tb } =
+    indent tb $ typ an t $ pretty "fun" <+> pretty a <+> ws b i
+  ws (Let [(Nothing, e)] b t) i@PInfo { ann = an, tab = tb } =
+    indent tb $ typ an t $ ws e i <> line <> ws b i
+  ws (Let as b t) i@PInfo { ann = an, tab = tb } = indent tb $ typ an t letexpr
    where
     letexpr =
-      pretty "let" <+> block dbar (map def as) <> semi <> line <> ws i b
-    def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
-    def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
-  ws PInfo { ann = an, tab = tb } a@(Prim After _ t) = indent tb $ typ an t $ pretty a <> line
-  ws PInfo { ann = an, tab = tb } a                  = indent tb $ typ an (extract a) $ pretty a
+      pretty "let" <+> vsep (map def as) <> semi <> line <> ws b i
+    def (Just v , e) = pretty v <+> equals <+> ws e i
+    def (Nothing, e) = pretty '_' <+> equals <+> ws e i
+  ws (Prim After [d, l, r] t) i@PInfo { ann = an, tab = tb } = indent tb
+    $ typ an t ae
+   where
+    ae = pretty "after" <+> ws d i <> comma <+> ws l i <+> larrow <+> ws r i
+  ws (Prim Assign [l, r] t) i@PInfo { ann = an, tab = tb } =
+    indent tb $ typ an t $ parens $ ws l i <+> pretty "<-" <+> ws r i
+  -- everything else
+  ws a PInfo { ann = an, tab = tb } = indent tb $ typ an (extract a) $ pretty a
 
 -- | pretty print type annotations unless unit or flag set to false
 typ :: (IsUnit t) => Bool -> t -> Doc ann -> Doc ann
@@ -422,16 +433,15 @@ indentPretty f Program { programDefs = ds } = vsep $ map topLevel ds
  where
   topLevel :: (TypeSystem t, IsUnit t) => (VarId, Expr t) -> Doc ann
   topLevel (v, l@(Lambda _ _ ty)) =
-    pretty v
-      <+> pretty "="
-      <+> typSig
-      <>  line
-      <>  indent 1 (ws PInfo { ann = f, tab = 0, depth = 0 } body)
+    pretty v <+> pretty "=" <+> typSig <> line <> indent
+      1
+      (ws body PInfo { ann = f, tab = 0, depth = 0 })
    where
     (argIds, body ) = collectLambda l
     (argTys, retTy) = collectArrow ty
     args =
       zipWith (\arg t -> pretty arg <+> pretty ":" <+> pretty t) argIds argTys
-    typSig = foldl1 (\acc x -> acc <+> pretty "->" <+> x) $ args ++ [pretty retTy]
+    typSig =
+      foldl1 (\acc x -> acc <+> pretty "->" <+> x) $ args ++ [pretty retTy]
   topLevel (v, e) =
-    pretty v <+> pretty "=" <+> ws PInfo { ann = f, tab = 0, depth = 0 } e
+    pretty v <+> pretty "=" <+> ws e PInfo { ann = f, tab = 0, depth = 0 }
