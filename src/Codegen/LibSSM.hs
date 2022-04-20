@@ -4,10 +4,11 @@
 -- | Bindings to the ssm-runtime library.
 module Codegen.LibSSM where
 
-import           Common.Identifiers             ( Identifiable(..)
+import           Common.Identifiers             ( DConId
+                                                , Identifiable(..)
                                                 , Identifier(..)
                                                 , VarId(..)
-                                                , fromId, DConId
+                                                , fromId
                                                 )
 import           Data.String                    ( IsString(..) )
 import           Language.C.Quote               ( Id(Id)
@@ -15,6 +16,7 @@ import           Language.C.Quote               ( Id(Id)
                                                 )
 import           Language.C.Quote.GCC           ( cexp
                                                 , cty
+                                                , cinit
                                                 )
 import qualified Language.C.Syntax             as C
 
@@ -112,6 +114,10 @@ on_heap v = [cexp|ssm_on_heap($exp:v)|]
 dup :: C.Exp -> C.Exp
 dup v = [cexp|ssm_dup($exp:v)|]
 
+-- | @ssm_dups@, increment the reference count on a vector of values.
+dups :: C.Exp -> C.Exp -> C.Exp
+dups c v = [cexp|ssm_dups($exp:c, $exp:v)|]
+
 -- | @ssm_drop@, drop the reference count of a value and free if necessary.
 drop :: C.Exp -> C.Exp
 drop v = [cexp|ssm_drop($exp:v)|]
@@ -191,6 +197,10 @@ enter size step parent prio dep =
 leave :: C.Exp -> C.Exp -> C.Exp
 leave act size = [cexp|ssm_leave($exp:act, $exp:size)|]
 
+-- | @ssm_has_children@, returns non-zero if @act@ has at least one child.
+has_children :: C.Exp -> C.Exp
+has_children act = [cexp|ssm_has_children($exp:act)|]
+
 -- | @ssm_activate@, schedule an activation record on the ready queue.
 activate :: C.Exp -> C.Exp
 activate act = [cexp|ssm_activate($exp:act)|]
@@ -234,7 +244,7 @@ desensitize :: C.Exp -> C.Exp
 desensitize trig = [cexp|ssm_desensitize($exp:trig)|]
 
 -- | @ssm_new_adt@, allocate a new ADT object on the heap.
-new_adt :: Int -> DConId  -> C.Exp
+new_adt :: Int -> DConId -> C.Exp
 new_adt val_count tag = [cexp|ssm_new_adt($uint:val_count, $id:tag)|]
 
 -- | @ssm_adt_field@, access the @i@th field of an ADT object. Assignable.
@@ -248,6 +258,58 @@ adt_tag v = [cexp|ssm_tag($exp:v)|]
 -- | Extract the tag of a heap-allocated ADT value.
 adt_heap_tag :: C.Exp -> C.Exp
 adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
+
+-- | @ssm_closure1_t@, the (template) type of a closure with a single argument.
+closure1_t :: C.Type
+closure1_t = [cty|struct ssm_closure1|]
+
+-- | Inintializer for a "static" closure that contains no arguments.
+--
+-- FIXME: An ugly hack that shouldn't exist because John didn't have the
+-- foresight to provide an interface to define static closures.
+static_closure :: C.Exp -> Int -> C.Initializer
+static_closure f argc =
+  [cinit|{
+    .mm = {
+      .ref_count = 1,
+      .kind = 3, // Ugly awful hack
+      .val_count = 0,
+      .tag = $int:argc,
+    },
+    .f = $exp:f,
+    .argv = {{0}}, // https://stackoverflow.com/q/13746033/10497710
+  }|]
+
+-- | Promote a static object to an @ssm_value_t@ (warning: hacky!).
+static_value :: CIdent -> C.Exp
+static_value name = [cexp|($ty:value_t) { .heap_ptr = &$id:name.mm }|]
+
+-- | @ssm_new_closure@, allocate a new closure object on the heap.
+new_closure :: CIdent -> Int -> C.Exp
+new_closure f n = [cexp|ssm_new_closure(&$id:f, $int:n)|]
+
+-- | @ssm_closure_push@, add a new argument to a closure.
+closure_push :: C.Exp -> C.Exp -> C.Exp
+closure_push f a = [cexp|ssm_closure_push($exp:f, $exp:a)|]
+
+-- | @ssm_closure_pop@, remove an argument from a closure.
+closure_pop :: C.Exp -> C.Exp
+closure_pop f = [cexp|ssm_closure_pop($exp:f)|]
+
+-- | @ssm_closure_apply@, apply a closure to an argument.
+closure_apply :: C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
+closure_apply f a act prio depth ret =
+  [cexp|ssm_closure_apply($exp:f, $exp:a, $exp:act, $exp:prio, $exp:depth, $exp:ret)|]
+
+-- | @ssm_closure_apply@, apply a closure to an argument, consuming the closure.
+closure_apply_final
+  :: C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
+closure_apply_final f a act prio depth ret =
+  [cexp|ssm_closure_apply_final($exp:f, $exp:a, $exp:act, $exp:prio, $exp:depth, $exp:ret)|]
+
+-- | @ssm_closure_free@, free a closure (without performing reference counting).
+closure_free :: C.Exp -> C.Exp
+closure_free f = [cexp|ssm_closure_free($exp:f)|]
 
 -- | Name of the pseudonymous macro from the Linux kernel.
 container_of :: CIdent
@@ -278,13 +340,17 @@ to_act :: C.Exp -> VarId -> C.Exp
 to_act act name =
   [cexp|$id:container_of($exp:act, $id:(act_typename name), $id:act_member)|]
 
--- | Obtain the name of the step function of a routine.
-step_ :: VarId -> CIdent
-step_ name = "step_" <> fromId name
-
 -- | Obtain the name for the enter function of a routine.
 enter_ :: VarId -> CIdent
-enter_ name = "enter_" <> fromId name
+enter_ name = "__enter_" <> fromId name
+
+-- | Obtain the name for the static closure of a routine.
+closure_ :: VarId -> CIdent
+closure_ name = "__closure_" <> fromId name
+
+-- | Obtain the name of the step function of a routine.
+step_ :: VarId -> CIdent
+step_ name = "__step_" <> fromId name
 
 -- | Obtain the name of each trigger for a routine.
 trig_ :: Int -> CIdent
@@ -302,6 +368,10 @@ label_ i = "__label_" <> fromString (show i)
 arg_ :: Int -> CIdent
 arg_ i = "__arg_" <> fromString (show i)
 
+-- | Obtain the name of an argument variable.
+argv :: CIdent
+argv = "__argv"
+
 -- | Name of return argument.
 ret_val :: CIdent
 ret_val = "__return_val"
@@ -314,6 +384,7 @@ actg = "actg"
 acts :: CIdent
 acts = "acts"
 
+-- | Access activation record member.
 acts_ :: CIdent -> C.Exp
 acts_ i = [cexp|$id:acts->$id:i|]
 
@@ -329,253 +400,8 @@ enter_priority = "priority"
 enter_depth :: CIdent
 enter_depth = "depth"
 
+-- | Label to jump to terminate execution.
 leave_label :: CIdent
 leave_label = "__leave_step"
 
 {---- Naming conventions }}} ----}
-
-  {-
-{----- libssm Types -----}
--- | Name of the program counter field in an 'act_t'.
-pc :: CIdent
-pc = "pc"
-
--- | Name of the caller field in an 'act_t'.
-caller :: CIdent
-caller = "caller"
-
--- | Name of the depth field in an 'act_t'.
-depth :: CIdent
-depth = "depth"
-
--- | Name of the priority field in an 'act_t'.
-priority :: CIdent
-priority = "priority"
-
--- | The type of the scheduled variable base class.
-sv_t :: C.Type
-sv_t = [cty|struct sv|]
-
--- | The word size as type uint32_t
-word_t :: C.Type
-word_t = [cty|typename uint32_t|]
-
--- | The conventional name of the payload field in a type-specialized SV.
-value :: CIdent
-value = "value"
-
-{- libssm Symbols -}
-
--- | Name of the pseudonymous macro from the Linux kernel.
-container_of :: CIdent
-container_of = "container_of"
-
--- | Name of top level program initialization function
-initialize_program :: CIdent
-initialize_program = "ssm_program_initialize"
-
--- | Name of the top level static input switch initialization function
-initialize_static_input_device :: CIdent
-initialize_static_input_device = "initialize_static_input_switch"
-
--- | Name of the top level static output initialization function
-initialize_static_output_device :: CIdent
-initialize_static_output_device = "bind_static_output_device"
-
--- | Name of top level return step-function
-top_return :: CIdent
-top_return = "top_return"
-
--- | Name of top level parent activation record
-top_parent :: CIdent
-top_parent = "ssm_top_parent"
-
--- | Name of routine that forks procedures
-activate :: CIdent
-activate = "ssm_activate"
-
--- | Name of routine that initialized an activation record
-enter :: CIdent
-enter = "ssm_enter"
-
--- | Name of routine that deallocates an activation record
-leave :: CIdent
-leave = "ssm_leave"
-
--- | Name of routine that checks if a reference has been written to
-event_on :: CIdent
-event_on = "ssm_event_on"
-
--- | Name of routine that sensitizes a procedure
-sensitize :: CIdent
-sensitize = "ssm_sensitize"
-
--- | Name of routine that desensitizes a procedure
-desensitize :: CIdent
-desensitize = "ssm_desensitize"
-
--- | Name of routine that dequeues an event from the event queue
-unsched_event :: CIdent
-unsched_event = "ssm_unschedule"
-
--- | Name of routine that returns the current value of now.
-now :: CIdent
-now = "ssm_now"
-
--- | Name of routine that returns the current value of now.
-never :: CIdent
-never = "SSM_NEVER"
-
--- | Priority of the root SSM routine.
-root_priority :: CIdent
-root_priority = "SSM_ROOT_PRIORITY"
-
--- | Depth of the root SSM routine.
-root_depth :: CIdent
-root_depth = "SSM_ROOT_DEPTH"
-
--- | Name of macro that throws an error.
-throw :: CIdent
-throw = "SSM_THROW"
-
--- | Exhausted priority
-exhausted_priority :: CIdent
-exhausted_priority = "SSM_EXHAUSTED_PRIORITY"
-
--- | Insert debug trace
-debug_trace :: CIdent
-debug_trace = "SSM_DEBUG_TRACE"
-
--- | Used for inserting
-debug_microtick :: CIdent
-debug_microtick = "SSM_DEBUG_MICROTICK"
-
-{---- Activation record identifiers ----}
-
--- | Obtain the name of the activation record struct for a routine.
-act_ :: VarId -> CIdent
-act_ routineName = "act_" <> fromId routineName <> "_t"
-
--- | Obtain the name of the step function of a routine.
-step_ :: VarId -> CIdent
-step_ routineName = "step_" <> fromId routineName
-
--- | Obtain the name for the enter function of a routine.
-enter_ :: VarId -> CIdent
-enter_ routineName = "enter_" <> fromId routineName
-
--- | Obtain the name of each trigger for a routine.
-trig_ :: Int -> CIdent
-trig_ i = "__trig_" <> fromString (show i)
-
--- | Obtain the name of a temporary variable.
-tmp_ :: Int -> CIdent
-tmp_ i = "__tmp_" <> fromString (show i)
-
--- | Obtain the name of an argument variable.
-arg_ :: Int -> CIdent
-arg_ i = "__arg_" <> fromString (show i)
-
--- | Label in the step function where cleanup is performed before leaving.
-leave_cleanup :: CIdent
-leave_cleanup = "__leave_cleanup"
-
--- | Identifier for specialized (outer) struct act.
-acts :: CIdent
-acts = "acts"
-
--- | Identifier for generic (inner) struct act.
-actg :: CIdent
-actg = "actg"
-
--- | Identifier for act member in act struct.
-act_member :: CIdent
-act_member = "act"
-
--- | Name of return argument.
-ret_val :: CIdent
-ret_val = "__return_val"
-
-{---- Type identifiers ----}
-
--- | Name of the scheduled variable type for an SSM Type.
-sv_ :: Identifiable a => a -> CIdent
-sv_ ty = "ssm_" <> fromId ty <> "_t"
-
--- | Name of the initialize method for an SSM Type.
-initialize_ :: Identifiable a => a -> CIdent
-initialize_ ty = "ssm_initialize_" <> fromId ty
-
--- | Name of the assign method for an SSM Type.
-assign_ :: Identifiable a => a -> CIdent
-assign_ ty = "ssm_assign_" <> fromId ty
-
--- | Name of the later method for an SSM Type.
-later_ :: Identifiable a => a -> CIdent
-later_ ty = "ssm_later_" <> fromId ty
-
--- | Name of the generic ssm_sv_t embedded inside of a scheduled variable type.
-sv :: CIdent
-sv = "sv"
-
--- | Name of C integer type.
-int_ :: Int -> CIdent
-int_ s = "i" <> fromString (show s)
-
-{----- Memory management -----}
-
--- | Allocate memory.
-mem_alloc :: CIdent
-mem_alloc = "malloc"
-
--- | Free memory.
-mem_free :: CIdent
-mem_free = "free"
-
--- | Call to allocate memory for an ADT
-ssm_new :: CIdent
-ssm_new = "ssm_new"
-
-{----- Algebraic Data Types -----}
-
--- | Type of a generic ssm value (either pointer or integer)
-ssm_value_t :: C.Type
-ssm_value_t = [cty|typename ssm_value_t|]
-
--- | Name of an ssm values's pointer field
-heap_ptr :: CIdent
-heap_ptr = "heap_ptr"
-
--- | Name of an ssm values's integer field
-packed_val :: CIdent
-packed_val = "packed_val"
-
--- | Type of a generic ADT on the heap
-ssm_object :: C.Type
-ssm_object = [cty|struct ssm_object_t|]
-
--- | Type of an ADT's memory management header
-ssm_mm_md :: C.Type
-ssm_mm_md = [cty|struct ssm_mm|]
-
--- | Name of an ADT's memory management header
-mm :: CIdent
-mm = "mm"
-
--- | Name of an ADT's payload
-payload :: CIdent
-payload = "payload"
-
--- | Construct an ssm_value_t from an ssm_object*
-ssm_from_obj :: C.Exp -> C.Exp
-ssm_from_obj o = [cexp|($ty:ssm_value_t) { .$id:packed_val = &($exp:o)->$id:mm }|]
-
--- | Construct an ssm_value_t from an integer
-ssm_from_int :: C.Exp -> C.Exp
-ssm_from_int v = [cexp|($ty:ssm_value_t) { .$id:packed_val = $exp:v }|]
-
--- | Convert an ssm_value_t to an ssm_object*
--- This kind of conversion is needed to access fields in an ADT
-ssm_to_obj :: C.Exp -> C.Exp
-ssm_to_obj v = [cexp| ($id:container_of(($exp:v).$id:heap_ptr, ssm_object, $id:mm )) |]
--}

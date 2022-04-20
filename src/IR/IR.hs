@@ -8,7 +8,6 @@ module IR.IR
   , Primitive(..)
   , Expr(..)
   , Alt(..)
-  , collectApp
   , VarId(..)
   , TConId(..)
   , DConId(..)
@@ -16,6 +15,8 @@ module IR.IR
   , collectLambda
   , makeLambdaChain
   , indentPretty
+  , zipApp
+  , unzipApp
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -90,9 +91,8 @@ data PrimOp
 -- | Primitive functions for side-effects and imperative control flow.
 data Primitive
   = New
-  {- ^ @New e t@ allocates a schedule variable initialized to @e@, and
-  returns a reference to it. If reuse token @t@ is non-null,
-  this will use token @t@ instead of allocating new memory.
+  {- ^ @New e@ allocates a schedule variable initialized to @e@, and
+  returns a reference to it.
   -}
   | Dup
   {- ^ @Dup r@ duplicates the reference @r@ (i.e., increments its
@@ -101,10 +101,6 @@ data Primitive
   | Drop
   {- ^ @Drop r@ brings reference @r@ out of scope, and frees it if it
   is the last remaining reference to the scheduled variable.
-  -}
-  | Reuse
-  {- ^ @Reuse r@ is like @Drop r@, except it returns a reuse token
-  that should be passed to @New@ for reuse.
   -}
   | Deref
   {- ^ @Deref r@ dereferences reference @r@ to obtain its value. -}
@@ -183,11 +179,36 @@ data Alt
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
--- | Collect a curried application into the function applied to a list of args.
-collectApp :: Expr t -> (Expr t, [Expr t])
-collectApp (App lhs rhs _) =
-  let (fn, args) = collectApp lhs in (fn, args ++ [rhs])
-collectApp e = (e, [])
+{- | Collect a curried application into the function and argument list.
+
+The type accompanying each argument represents type produced by the
+application, and is extracted from the 'App' node that this function unwraps.
+
+For example, the term @f a b@ (where @a: A@ and @b: B@) would be represented by
+the following AST:
+@@
+(App (App (Var f (A -> B -> C)) (Var a A) (B -> C)) (Var b B) C)
+@@
+
+which, when unzipped, gives:
+
+@@
+(Var f (A -> B -> C)) [(Var a A, B -> C), (Var b B, C)]
+@@
+
+'unzipApp' is the inverse of 'zipApp'.
+-}
+unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
+unzipApp (App lhs rhs t) =
+  let (fn, args) = unzipApp lhs in (fn, args ++ [(rhs, t)])
+unzipApp e = (e, [])
+
+{- | Apply a function to zero or more arguments.
+
+'zipApp' is the inverse of 'unzipApp'.
+-}
+zipApp :: Expr t -> [(Expr t, t)] -> Expr t
+zipApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
 collectLambda :: Expr t -> ([Binder], Expr t)
@@ -271,7 +292,6 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim New                 [_]       = True
   wfPrim Dup                 [_]       = True
   wfPrim Drop                [_]       = True
-  wfPrim Reuse               [_]       = True
   wfPrim Deref               [_]       = True
   wfPrim Assign              [_, _]    = True
   wfPrim After               [_, _, _] = True
@@ -320,15 +340,10 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Prim New   [r] _) = pretty "new" <+> pretty r
   pretty (Prim Dup   [r] _) = pretty "__dup" <+> pretty r
   pretty (Prim Drop  [r] _) = pretty "__drop" <+> pretty r
-  pretty (Prim Reuse [r] _) = pretty "__reuse" <+> pretty r
   pretty (Prim Deref [r] _) = pretty "deref" <+> pretty r
   pretty (Prim Assign [l, r] _) =
     parens $ pretty l <+> pretty "<-" <+> braces (pretty r)
-  pretty (Prim After [d, l, r] _) = ae
-   where
-    ae =
-      pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
-        (pretty r)
+
   pretty (Prim Par    es  _) = pretty "par" <+> block dbar (map pretty es)
   pretty (Prim Wait   es  _) = pretty "wait" <+> block dbar (map pretty es)
   pretty (Prim Loop   [b] _) = pretty "loop" <+> braces (pretty b)

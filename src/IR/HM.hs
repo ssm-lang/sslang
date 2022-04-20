@@ -107,12 +107,24 @@ runInferFn (InferFn m) = evalStateT
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   typeDefs' <- recordADTs $ I.typeDefs p
+  recordFDefs $ I.programDefs p
   defs'     <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
                      , I.programEntry = I.programEntry p
                      , I.typeDefs     = typeDefs'
                      }
 
+-- | 'recordFDefs' saves information about all the declared functions for future use
+recordFDefs
+  :: [(I.VarId, I.Expr Ann.Type)]
+  -> InferFn ()
+recordFDefs fdefs = do
+  mapM_ recordFDef fdefs
+  where
+    recordFDef :: (I.VarId, I.Expr Ann.Type) -> InferFn ()
+    recordFDef (fname, _) = do
+      t <- fresh
+      insertVar fname $ Classes.Forall [] t
 
 {- | 'recordADTs' saves information about ADTs in the Inference State for future use
 
@@ -128,10 +140,10 @@ recordADTs defs = do
   let defs' = second (fmap collapseAnnT) <$> defs
   mapM_ insertArg $ concat $ variants . snd <$> defs'
   return defs'
- where
-  recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-  recordADT (tcon, TypeDef { variants = vars, targs = tvs }) =
-    mapM_ (insertDCon tcon tvs) vars
+  where
+    recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
+    recordADT (tcon, TypeDef { variants = vars, targs = tvs }) =
+      mapM_ (insertDCon tcon tvs) vars
 
 -- | 'buildDConType' recursively builds the type for a data constructor
 buildDConType :: I.TConId -> [TVarId] -> TypeVariant Ann.Type -> Classes.Type
@@ -159,15 +171,35 @@ insertArg (dcon, VariantUnnamed ts) =
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs
   :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
-inferProgramDefs []            = return []
-inferProgramDefs ((v, e) : xs) = do
+inferProgramDefs fdefs = initAllTypeVars fdefs >>= getAllTypes
+
+-- | 'initAllTypeVars' initialize all the funcitons' type at once
+initAllTypeVars :: [(I.VarId, I.Expr Ann.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
+initAllTypeVars [] = return []
+initAllTypeVars ((v, e) : xs) = do
   e' <- initTypeVars e
+  record <- lookupVar v
+  case record of
+    Nothing ->
+      throwError
+        $  Compiler.TypeError
+        $  fromString
+        $  "Unbound variable: "
+        ++ show e
+    Just s -> do
+      t'  <- instantiate s
+      insertEquation (t', extract e')
   unifyAll
-  e'' <- getType e'
-  s   <- generalize $ extract e''
-  insertVar v s
-  xs' <- inferProgramDefs xs
-  return $ (v, e'') : xs'
+  xs' <- initAllTypeVars xs
+  return $ (v, e') : xs'
+
+-- | 'getAllTypes' replace all the type variables in the initial funciton types
+getAllTypes :: [(I.VarId, I.Expr Classes.Type)] -> InferFn [(I.VarId, I.Expr Classes.Type)]
+getAllTypes []          = return []
+getAllTypes ((v, e):xs) = do
+  e' <- getType e
+  xs' <- getAllTypes xs
+  return $ (v, e'):xs'
 
 -- | Class of things that may contain free type variables.
 class HasFreeTVars a where
@@ -355,16 +387,16 @@ initTypeVars (I.Let vs b annT) = do
       insertBinder binder s
       return (binder, e'')
 initTypeVars e@(I.Data d _) = do
-  tcon <- lookupDCon d
-  case tcon of
+  s <- lookupDCon d
+  case s of
     Nothing ->
       throwError
         $  Compiler.TypeError
         $  fromString
         $  "Unable to type ADT expression: "
         ++ show e
-    Just s -> do
-      t' <- instantiate s
+    Just s' -> do
+      t' <- instantiate s'
       return $ I.Data d t'
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
@@ -456,19 +488,20 @@ initTypeVars (I.Prim I.Par es annT) = do
   return $ I.Prim I.Par es' t
 initTypeVars (I.Match cond arms annT) = do
   let annT' = collapseAnnT annT
-  cond' <- initTypeVars cond
-  arms' <- mapM checkArm arms
-  let arms'' = zip (fst <$> arms) arms'
-  return (I.Match cond' arms'' annT')
+  cond'       <- initTypeVars cond
+  es@(he:tes) <- mapM checkArm arms
+  t           <- typeCheck annT' (extract he)
+  -- make sure all the expressions on the rhs have the same type
+  zipWithM_ (\e1 e2 -> insertEquation (extract e1, extract e2)) es tes
+  let arms' = zip (fst <$> arms) es
+  return (I.Match cond' arms' t)
  where
   checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
   checkArm (I.AltData dcon args, rhs) = withNewScope do
     Just ts <- lookupFieldTypes dcon
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
-  checkArm (_, rhs) = initTypeVars rhs
-
-
+  checkArm (_, rhs) = withNewScope $ initTypeVars rhs
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError

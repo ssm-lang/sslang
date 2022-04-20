@@ -2,21 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-{-  | Translate SSM program to C compilation unit.
+{- | Translate SSM program to C compilation unit.
 
 What is expected of the IR:
 
 Well-formed: All primitive functions are applied to the right number of
 arguments.
 
-Fully-applied: All applications are fully-applied; the only time a term of
-type @a -> b@ appears anywhere is on the left-hand side of an application.
+Pure par expression: All par-expressions' operands are applications that have no
+side effects.
 
-Defunctionalized: No lambdas/closures; the only kinds of terms with an arrow
-type are variables.
+Defunctionalized: No lambdas; the only terms with an arrow type are variables
+or applications.
 
 Name mangled: All variable identifiers are unique.
- -}
+-}
 module Codegen.Codegen where
 
 import           Codegen.LibSSM
@@ -38,7 +38,9 @@ import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 )
 import           Control.Comonad                ( Comonad(..) )
-import           Control.Monad                  ( unless )
+import           Control.Monad                  ( foldM
+                                                , unless
+                                                )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -48,7 +50,10 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( mapMaybe )
+import           Data.Maybe                     ( isJust
+                                                , mapMaybe
+                                                )
+import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
 
 -- | Possible, but temporarily punted for the sake of expediency.
@@ -70,7 +75,7 @@ data GenFnState = GenFnState
   , fnParams   :: [(I.Binder, I.Type)]  -- ^ Function parameters
   , fnRetTy    :: I.Type                -- ^ Function return type
   , fnBody     :: I.Expr I.Type         -- ^ Function body
-  , fnLocs     :: M.Map I.VarId I.Type  -- ^ Function local variables
+  , fnLocals   :: M.Map I.VarId I.Type  -- ^ Function local variables
   , fnVars     :: M.Map I.VarId C.Exp   -- ^ How to resolve variables
   , fnMaxWaits :: Int                   -- ^ Number of triggers needed
   , fnCases    :: Int                   -- ^ Yield point counter
@@ -90,6 +95,7 @@ newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
   deriving MonadFail via StateT GenFnState Compiler.Pass
   deriving (MonadError Compiler.Error) via StateT GenFnState Compiler.Pass
   deriving (MonadState GenFnState) via StateT GenFnState Compiler.Pass
+  deriving (Compiler.MonadWriter [Compiler.Warning]) via StateT GenFnState Compiler.Pass
 
 -- | Run a 'GenFn' computation on a procedure.
 runGenFn
@@ -98,24 +104,31 @@ runGenFn
   -> I.Type               -- ^ Name and type of return parameter of procedure
   -> I.Expr I.Type        -- ^ Body of procedure
   -> TypegenInfo          -- ^ Type information
+  -> [(I.VarId, I.Type)]  -- ^ Other global identifiers
   -> GenFn a              -- ^ Translation monad to run
   -> Compiler.Pass a      -- ^ Pass on errors to caller
-runGenFn name params ret body typeInfo (GenFn tra) =
+runGenFn name params ret body typeInfo globals (GenFn tra) =
   evalStateT tra $ GenFnState
     { fnName     = name
     , fnParams   = params
     , fnRetTy    = ret
     , fnBody     = body
-    , fnLocs     = M.empty
-    , fnVars     = M.fromList $ mapMaybe (resolveParam . fst) params
+    , fnLocals   = M.empty
+    , fnVars     = M.fromList
+                   $  mapMaybe (fmap resolveParam . fst) params
+                   ++ map genGlobal globals
     , fnTypeInfo = typeInfo
     , fnMaxWaits = 0
     , fnCases    = 0
     , fnFresh    = 0
     }
  where
-  resolveParam (Just v) = Just (v, acts_ $ fromId v)
-  resolveParam _        = Nothing
+  resolveParam :: I.VarId -> (I.VarId, C.Exp)
+  resolveParam v = (v, acts_ $ fromId v)
+
+  genGlobal :: (I.VarId, I.Type) -> (I.VarId, C.Exp)
+  genGlobal (v, t) | isJust $ dearrow t = (v, static_value $ closure_ v)
+                   | otherwise          = todo
 
 -- | Lookup some information associated with a type constructor.
 getsTCon :: (TConInfo -> a) -> I.TConId -> GenFn a
@@ -152,13 +165,13 @@ addBinding Nothing _ = return ()
 -- | Register a new local variable, to be declared in activation record.
 addLocal :: I.VarId -> I.Type -> GenFn I.VarId
 addLocal v t = do
-  fnl <- gets fnLocs
+  fnl <- gets fnLocals
   v'  <- if v `M.member` fnl
     then do
       ctr <- getFresh
       return $ v <> fromString (show ctr)
     else return v
-  modify $ \st -> st { fnLocs = M.insert v' t fnl }
+  modify $ \st -> st { fnLocals = M.insert v' t fnl }
   return v'
 
 -- | Bind a variable to a C expression only while computing the given monad.
@@ -215,12 +228,40 @@ undef = [cexp|0xdeadbeef|]
 {-------- Compilation --------}
 
 -- | Generate a C compilation from an SSM program.
+--
+-- Each top-level function in a program is turned into three components:
+--
+-- 1. a struct (the activation record);
+-- 2. an initialization function (the enter function); and
+-- 3. a step function, which corresponds to the actual procedure body.
+--
+-- Items 2 and 3 include both declarations and definitions.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
-  -- p@I.Program
-  (adts, adtsInfo) <- genTypes typedefs
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop adtsInfo) defs
-  return $ includes ++ adts ++ cdecls ++ cdefs -- ++ genInitProgram p
+  (tdefs , tinfo) <- genTypes typedefs
+  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
+  return $ includes ++ tdefs ++ cdecls ++ cdefs -- ++ genInitProgram p
+ where
+  genTop
+    :: TypegenInfo
+    -> (I.VarId, I.Expr I.Type)
+    -> Compiler.Pass ([C.Definition], [C.Definition])
+  genTop tinfo (name, l@(I.Lambda _ _ ty)) =
+    runGenFn (fromId name) (zip argIds argTys) retTy body tinfo tops $ do
+      (stepDecl   , stepDefn   ) <- genStep
+      (enterDecl  , enterDefn  ) <- genEnter
+      (closureDecl, closureDefn) <- genStaticClosure
+      structDefn                 <- genStruct
+      return
+        ( [structDefn, enterDecl, closureDecl, stepDecl]
+        , [enterDefn, closureDefn, stepDefn]
+        )
+   where
+    tops            = map (second extract) defs
+    (argIds, body ) = I.collectLambda l
+    (argTys, retTy) = I.collectArrow ty
+  genTop _ (_, I.Lit _ _) = todo
+  genTop _ (_, _        ) = nope
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -232,40 +273,18 @@ typedef char unit;
 -- | Setup the entry point of the program.
 genInitProgram :: I.Program I.Type -> [C.Definition]
 genInitProgram I.Program { I.programEntry = entry } = [cunit|
-    int $id:initialize_program(void) {
+    int $id:initialize_program($ty:value_t *argv, $ty:value_t *ret) {
        $exp:(activate enter_entry);
       return 0;
     }
   |]
  where
   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
-                                          $exp:root_priority,
-                                          $exp:root_depth)|]
+                                         $exp:root_priority,
+                                         $exp:root_depth,
+                                         argv,
+                                         ret)|]
 
--- | Generate C declarations and definitions for a top-level SSM function.
---
--- Each top-level function in a program is turned into three components:
---
--- 1. a struct (the activation record);
--- 2. an initialization function (the enter function); and
--- 3. a step function, which corresponds to the actual procedure body.
---
--- Items 2 and 3 include both declarations and definitions.
-genTop
-  :: TypegenInfo
-  -> (I.VarId, I.Expr I.Type)
-  -> Compiler.Pass ([C.Definition], [C.Definition])
-genTop info (name, l@(I.Lambda _ _ ty)) =
-  runGenFn (fromId name) (zip argIds argTys) retTy body info $ do
-    (stepDecl , stepDefn ) <- genStep
-    (enterDecl, enterDefn) <- genEnter
-    structDefn             <- genStruct
-    return ([structDefn, enterDecl, stepDecl], [enterDefn, stepDefn])
- where
-  (argIds, body ) = I.collectLambda l
-  (argTys, retTy) = I.collectArrow ty
-genTop _ (_, I.Lit _ _) = todo
-genTop _ (_, _        ) = nope
 
 -- | Generate struct definition for an SSM procedure.
 --
@@ -275,7 +294,7 @@ genStruct = do
   name   <- gets fnName
   params <- gets fnParams
   -- retTy  <- gets fnRetTy
-  locs   <- M.toList <$> gets fnLocs
+  locs   <- M.toList <$> gets fnLocals
   trigs  <- gets fnMaxWaits
 
   return [cedecl|
@@ -301,27 +320,27 @@ genEnter :: GenFn (C.Definition, C.Definition)
 genEnter = do
   actName <- gets fnName
   params  <- gets fnParams
-  -- retTy   <- gets fnRetTy
   trigs   <- gets fnMaxWaits
   let act = act_ actName
-      declParam (n, t) = [cparam|$ty:t $id:n|]
-      initParam (n, _) = [[cstm|$id:acts->$id:n = $id:n;|]]
-      initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
-
       enterParams =
         [ [cparam|$ty:act_t *$id:enter_caller|]
-          , [cparam|$ty:priority_t $id:enter_priority|]
-          , [cparam|$ty:depth_t $id:enter_depth|]
-          ]
-          ++ map declParam (genParams params)
-          ++ [[cparam|$ty:value_t *$id:ret_val|]]
-
+        , [cparam|$ty:priority_t $id:enter_priority|]
+        , [cparam|$ty:depth_t $id:enter_depth|]
+        , [cparam|$ty:value_t *$id:argv|]
+        , [cparam|$ty:value_t *$id:ret_val|]
+        ]
       alloc_act = enter [cexp|sizeof($ty:act)|]
                         [cexp|$id:(step_ actName)|]
                         [cexp|$id:enter_caller|]
                         [cexp|$id:enter_priority|]
                         [cexp|$id:enter_depth|]
       get_acts = to_act (cexpr actg) actName
+
+      initParam :: (CIdent, b) -> Int -> C.Stm
+      initParam (n, _) i = [cstm|$id:acts->$id:n = $id:argv[$int:i];|]
+
+      initTrig :: (CIdent, b) -> C.Stm
+      initTrig (trigId, _) = [cstm|$id:acts->$id:trigId.act = $id:actg;|]
   return
     ( [cedecl|$ty:act_t *$id:(enter_ actName)($params:enterParams);|]
     , [cedecl|
@@ -330,7 +349,7 @@ genEnter = do
           $ty:act *$id:acts = $exp:get_acts;
 
           /* Assign parameters */
-          $stms:(concatMap initParam $ genParams params)
+          $stms:(zipWith initParam (genParams params) [0..])
 
           /* Set return value */
           $id:acts->$id:ret_val = $id:ret_val;
@@ -341,6 +360,18 @@ genEnter = do
           return $id:actg;
         }
       |]
+    )
+
+-- | Generate static closure for top-level function
+genStaticClosure :: GenFn (C.Definition, C.Definition)
+genStaticClosure = do
+  actName <- gets fnName
+  argc    <- length <$> gets fnParams
+  let closure_name = closure_ actName
+      enter_f      = [cexp|$id:(enter_ actName)|]
+  return
+    ( [cedecl|extern $ty:closure1_t $id:closure_name;|]
+    , [cedecl|$ty:closure1_t $id:closure_name = $init:(static_closure enter_f argc);|]
     )
 
 -- | Generate the step function for an SSM procedure.
@@ -370,7 +401,7 @@ genStep = do
           default:
             break;
           }
-        *$id:acts->$id:ret_val = $exp:ret_expr;  
+        *$id:acts->$id:ret_val = $exp:ret_expr;
         $id:leave_label:
           $exp:do_leave;
         }
@@ -440,10 +471,6 @@ genYield = do
 -- yields, even if this is not usually necessary. We leave it to later compiler
 -- passes to optimize this.
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
-genExpr (I.Var n (I.TBuiltin (I.Arrow _ _))) =
-  -- NOTE: Any identifiers of I.Arrow type must refer to a (global) function, so
-  -- we just return a handle to its enter function.
-  return ([cexp|$id:(enter_ n)|], [])
 genExpr (I.Var n _) = do
   Just v <- M.lookup n <$> gets fnVars
   return (v, [])
@@ -464,24 +491,32 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
-genExpr a@(I.App _ _ ty) = do
-  let (fn, args) = I.collectApp a
-  (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
+genExpr e@(I.App _ _ ty) = do
+  let (fn, args) = second (map fst) $ I.unzipApp e
+  -- args must be non-empty because a is an App
   case fn of
     (I.Var _ _) -> do
-      tmp   <- genTmp ty
-      yield <- genYield
-      let enterArgs =
-            [ [cexp|$id:actg|]
-              , [cexp|$id:actg->$id:act_priority|]
-              , [cexp|$id:actg->$id:act_depth|]
-              ]
-              ++ argVals
-              ++ [[cexp|&$exp:tmp|]]
-          call = [citems|$exp:(activate $ fnEnter `ccall` enterArgs);|]
-      return (tmp, concat evalStms ++ call ++ yield)
+      (fnExp, fnStms) <- genExpr fn
+      foldM apply (fnExp, fnStms) args
+     where
+      apply (f, stms) a = do
+        (aVal, aStms) <- genExpr a  -- first evaluate argument
+        ret           <- genTmp ty  -- allocate return value address
+        yield         <- genYield   -- application might necessitate yield
+        let current = [cexp|$id:actg|]
+            prio    = [cexp|$exp:current->$id:act_priority|]
+            depth   = [cexp|$exp:current->$id:act_depth|]
+            retp    = [cexp|&$exp:ret|]
+            appStms = [citems|
+              $exp:(closure_apply f aVal current prio depth retp);
+              if ($exp:(has_children current)) {
+                $items:yield;
+              }
+            |]
+        return (ret, stms ++ aStms ++ appStms)
     (I.Data dcon dty) -> do
-      onHeap <- getsDCon dconOnHeap dcon
+      (argVals, evalStms) <- unzip <$> mapM genExpr args
+      onHeap              <- getsDCon dconOnHeap dcon
       unless onHeap $ do
         fail $ "Cannot handle packed fields yet, for: " ++ show dcon
       construct <- getsDCon dconConstruct dcon
@@ -585,9 +620,6 @@ genPrim I.Dup [e] _ = do
 genPrim I.Drop [e] _ = do
   (val, stms) <- genExpr e
   return (unit, stms ++ [citems|$exp:(drop val);|])
-genPrim I.Reuse [_] _ = do
-  -- TODO: delet this
-  todo
 genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   tmp         <- genTmp ty
@@ -615,39 +647,38 @@ genPrim I.After [time, lhs, rhs] _ = do
         |]
   return (unit, laterBlock)
 genPrim I.Par procs _ = do
-  yield <- genYield
-  let
-    numChildren = length procs
-    parArgs     = genParArgs
-      numChildren
-      ([cexp|$id:actg->$id:act_priority|], [cexp|$id:actg->$id:act_depth|])
-    checkNewDepth = [citems|
-                        if ($id:actg->$id:act_depth < $exp:(depthSub numChildren))
-                          $exp:(throw EXHAUSTED_PRIORITY);
-                      |]
+  let numChildren = length procs
+      parArgs     = genParArgs
+        numChildren
+        ([cexp|$id:actg->$id:act_priority|], [cexp|$id:actg->$id:act_depth|])
 
-    genActivate
-      :: ((C.Exp, C.Exp), I.Expr I.Type)
-      -> GenFn (C.Exp, [C.BlockItem], C.BlockItem)
-    genActivate ((prioArg, depthArg), a@(I.App _ _ ty)) = do
-      let (fn, args) = I.collectApp a
-      (fnEnter : argVals, evalStms) <- unzip <$> mapM genExpr (fn : args)
-      tmp                           <- genTmp ty
-      let enterArgs =
-            [[cexp|$id:actg|], prioArg, depthArg]
-              ++ argVals
-              ++ [[cexp|&$exp:tmp|]]
-      return
-        ( tmp
-        , concat evalStms
-        , [citem|$exp:(activate $ fnEnter `ccall` enterArgs);|]
-        )
-    -- For now, we only support forking expressions that have a top-level
-    -- application (i.e., no thunks), whose left operand is a var.
-    genActivate _ = nope
+      checkNewDepth = [citems|
+          if ($id:actg->$id:act_depth < $exp:(depthSub numChildren))
+            $exp:(throw EXHAUSTED_PRIORITY);
+        |]
 
-  (_rets, evals, activates) <- unzip3 <$> mapM genActivate (zip parArgs procs)
-  return (todo, checkNewDepth ++ concat evals ++ activates ++ yield)
+      -- Par expressions must all be parallel applications that don't
+      -- yield/block
+      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
+      apply (a@(I.App fn arg ty), (prio, depth)) = do
+        (fnExp , fnStms ) <- genExpr fn
+        (argExp, argStms) <- genExpr arg
+        unless (null $ fnStms ++ argStms) $ do
+          -- FIXME:
+          fail $ "Cannot compile par with non-pure application: " ++ show a
+        ret <- genTmp ty
+        let current = [cexp|$id:actg|]
+            retp = [cexp|&$exp:ret|]
+            appStms = [citems|
+              $exp:(closure_apply fnExp argExp current prio depth retp);
+            |]
+        return (ret, appStms)
+      apply (e, _) = do
+        fail $ "Cannot compile par with non-application expression: " ++ show e
+
+  (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
+  yield              <- genYield
+  return (todo, checkNewDepth ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
