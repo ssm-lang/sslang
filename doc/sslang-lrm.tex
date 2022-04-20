@@ -5,6 +5,7 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{syntax}
+\usepackage{algorithm2e}
 \renewcommand{\grammarlabel}[2]{\textit{#1}\hfill#2}
 \renewcommand{\syntleft}{\itshape\normalsize}
 \renewcommand{\syntright}{\normalfont\normalsize}
@@ -76,15 +77,32 @@ by at least one character:
 
 \subsection{Layout}
 
-For brevity, sslang allows the programmer to selectively omit braces \texttt{\{} and \texttt{\}} as well as certain separator tokens, and instead convey the same information using \emph{layout} (indentation). Layout-sensitive and layout-insensitive syntax are both supported and mutually compatible, so the meaning of a layout-sensitive program can always specified by adding braces and tokens to produce some equivalent layout-insensitive program. This section describes the procedure by which those tokens are inserted.
+Sslang's syntax contains \emph{blocks} surrounded by brace tokens \texttt{\{} and \texttt{\}}.
+Blocks consist of other syntactic items separated by some \emph{separator} token.
 
-Sslang's syntax contains \emph{blocks} surrounded by brace tokens \texttt{\{} and \texttt{\}}. Blocks consist of other syntactic items separated by some \emph{separator} token.
+For brevity, sslang allows the programmer to selectively omit braces \texttt{\{} and \texttt{\}}
+as well as certain separator tokens, and instead convey the same information
+using \emph{layout} (indentation).
+
+Layout-sensitive and layout-insensitive syntax are both supported and
+mutually compatible, so the meaning of a layout-sensitive program can always
+be specified by adding braces and tokens to produce some equivalent
+layout-insensitive program.
+This section describes the procedure by which those tokens are inserted.
 
 \subsubsection{Implicit Blocks}
 
-Items in sslang's syntax that are surrounded by braces are called \emph{blocks}, and the enclosed items of a block are delimited by some \emph{separator} token (e.g., \texttt{;}). We call blocks whose tokens are inserted by the scanner \emph{implicit} blocks.
+Items in sslang's syntax that are surrounded by braces are called \emph{blocks},
+and the enclosed items of a block are delimited by some \emph{separator} token (e.g., \texttt{;}).
+We call blocks whose tokens are inserted by the scanner \emph{implicit} blocks.
 
-In an implicit block, items all share the same indentation; visually, they are vertically aligned. The scanner treats lines with greater indentation (that are not part of an inner block) as part of the previous item; these are called \emph{line continuations}. When the scanner comes across lines with less indentation, an implicit block is ended.
+In an implicit block, items all share the same indentation; visually, they are
+vertically aligned.
+The scanner treats lines with greater indentation
+(that are not part of an inner block) as part of the previous item;
+these are called \emph{line continuations}.
+When the scanner comes across lines with less indentation,
+an implicit block is ended.
 
 For instance, a user may write:
 
@@ -106,7 +124,9 @@ loop
 ; h x
 \end{lstlisting}
 
-Implicit blocks are started after \emph{layout} keywords, which come in two flavors: \emph{layout-next-token} keywords, which start blocks at the next token, and \emph{layout-next-line} keywords, which start blocks on the following line.
+Implicit blocks are started after \emph{layout} keywords, which come in two flavors:
+\emph{layout-next-token} keywords, which start blocks at the next token, and
+\emph{layout-next-line} keywords, which start blocks on the following line.
 
 An example of a layout-next-line keyword is \texttt{if}:
 
@@ -125,41 +145,11 @@ if f x
   }
 \end{lstlisting}
 
-A special layout-next-token that behaves slightly differently than those above is \texttt{do} (whose separator is \texttt{;}). If the scanner comes across \texttt{do} token when it would have otherwise started a block on the next line, the scanner instead \emph{replaces} the \texttt{do} with a \texttt{\{}, and immediately starts an implicit block at the next token.
-
-This allows the programmer to write:
-
-\begin{lstlisting}
-if f x do g x
-\end{lstlisting}
-
-Which will be expanded to:
-
-\begin{lstlisting}
-if f x { g x }
-\end{lstlisting}
-
-In any other case, \texttt{do} behaves like a regular layout-next-token, and is used to start implicit blocks. For instance:
-
-\begin{lstlisting}
-f x do g y
-       g x
-\end{lstlisting}
-
-Is expanded to:
-
-\begin{lstlisting}
-f x do { g y
-       ; g x
-       }
-\end{lstlisting}
-
 Sslang recognizes the following layout-next-token keywords:
 
 \begin{itemize}
   \item \texttt{loop} with \texttt{;} separating sequenced expressions
   \item \texttt{=} with \texttt{;} separating sequenced expressions
-  \item \texttt{<-} with \texttt{;} separating sequenced expression
   \item \texttt{else} with \texttt{;} separating sequenced expression
   \item \texttt{wait} with \texttt{||} separating sensitized scheduled variables
   \item \texttt{par} with \texttt{||} separating parallel expressions
@@ -176,7 +166,10 @@ And the following layout-next-line keywords:
 
 \subsubsection{Explicit Blocks}
 
-Programmers may also choose to write braces and separators anyway, where allowed by the syntax; these blocks are called \emph{explicit} blocks. Writing explicit blocks effectively turns off the scanner's token insertion for that block (though inner implicit blocks may still be created).
+Programmers may also choose to write braces and separators anyway,
+where allowed by the syntax; these blocks are called \emph{explicit} blocks.
+Writing explicit blocks effectively turns off the scanner's token insertion for
+that block (though inner implicit blocks may still be created).
 
 For instance, if the user writes:
 
@@ -188,7 +181,7 @@ loop {
 }
 \end{lstlisting}
 
-The scanner transforms this into the following token stream:
+The scanner only encloses tokens in the implicit block introduced by \texttt{wait}:
 
 \begin{lstlisting}
 loop {
@@ -199,7 +192,8 @@ loop {
 }
 \end{lstlisting}
 
-Inside of an explicit block, the scanner does not insert separators and ignores indentation (unless an inner block is started). So the following is legal:
+Inside of an explicit block, the scanner does not insert separators and ignores indentation (unless an inner block is started).
+So the following is legal:
 
 \begin{lstlisting}
 loop
@@ -223,9 +217,15 @@ loop {
 h z
 \end{lstlisting}
 
-\subsubsection{Delimited Expressions}
+\subsubsection{Matching Delimiters}
 
-In addition to the braces \texttt{\{\}}, which delimit blocks, sslang also includes other matched delimiters: \texttt{[]} and \texttt{()}. To ensure that any program with matched delimiters remains correctly matched after token insertion, the scanner also keeps track of these delimiter pairs. In particular, if it comes across an explicit closing delimiter, it closes all implicit blocks opened since the corresponding opening delimiter, even if indentation would not have otherwise caused it to do so.
+In addition to the braces \texttt{\{\}}, which surround blocks,
+sslang also includes other matched delimiters: \texttt{[]} and \texttt{()}.
+To ensure that any program with matched delimiters remains correctly matched
+after token insertion, the scanner also keeps track of these delimiter pairs.
+In particular, if it comes across an explicit closing delimiter, it closes all
+implicit blocks opened since the corresponding opening delimiter, even if
+indentation would not have otherwise caused it to do so.
 
 For instance, the following:
 
@@ -268,133 +268,10 @@ loop
 
 which the parser shall deem a syntax error.
 
-\begin{lstlisting}
-TODO: turn this into \algorithm or at least something that doesn't look like some text adventure game
+\subsubsection{Layout Algorithm}
 
-What kind of token?
-
-> newline
-
-  About to start new block?
-
-  > yes
-
-    What is the indentation level of the next non-whitespace token?
-
-    > equal to or less than previous block
-
-      Error: block indentation level must be greater than before.
-
-    > greater than previous block
-
-      What is the next non-whitespace token?
-
-      > '{'
-
-        Scan past that next '{', and start explicit block there.
-
-      > anything else
-
-        Insert '{' before next token to start implicit block there.
-
-  > no
-
-    What kind of context are we in?
-
-    > Implicit block
-
-      What is the indentation level?
-
-      > less than implicit block
-
-        Insert '}' to end implicit block.
-
-      > same as implicit block
-
-        Insert separator, continue implicit block.
-
-      > greater than implicit block
-
-        Continue (treated as continuation).
-
-
-    > Explicit block (started by '{')
-
-      Continue (user is responsible for managing explicit blocks).
-
-    > Delimited (started by '[' or '(')
-
-      What is the indentation level?
-
-      > equal to or less than block
-
-        Error: continuation level must be greater than before.
-
-      > greater than block
-
-        Continue (treated as continuation).
-
-> 'do'
-
-  About to start a new block on next line?
-
-  > yes
-
-    Give up on starting that new block; instead, replace with '{' and start implicit block at next token.
-
-  > no
-
-    Emit 'do', and try to start a new block with ';' on next token.
-
-> layout token (e.g., 'loop', '=', 'wait')
-
-  Emit token, and try to start a new block with appropriate separator on next token.
-
-> layoutNL token (e.g., 'if', 'while')
-
-  Emit token, and try to start a new block at the next line of the current block.
-
-> '{'
-
-  About to start new block?
-
-  > yes
-
-    Emit '{' to start explicit block at this column.
-
-  > no
-
-    Emit '{' to start explicit block at this column (probably an error, but let that be handled by parser (?)).
-
-> '[' or '('
-
-  About to start new block?
-
-  > yes
-
-    Insert '{' to start implicit block at this column, before emitting this token to start its explicit block.
-
-  > no
-
-    Emit this token to start its explicit block.
-
-> '}' ']' or ')'
-
-  Can the most recent explicit block/delimited expression (if any) be closed by this token?
-
-  > yes
-
-    Insert enough '}' tokens to close all implicit blocks, before emitting this token to close most recent explicit block.
-
-  > no
-
-    Error: mismatched right delimiter.
-
-> anything else
-
-  Emit token.
-
-\end{lstlisting}
+\begin{algorithm}[H]
+\end{algorithm}
 
 \subsection{User-defined operators}
 
@@ -971,6 +848,12 @@ newlines in B are ignored
 newlines in N ...
 
 newlines in I ...
+
+
+loop   x
+       y
+  z
+
 
 
 ---
