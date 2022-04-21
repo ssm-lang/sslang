@@ -122,8 +122,11 @@ poly2Poly opt ir = do
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)
 run opt prg =
-  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= dropInf >>= poly2Poly opt 
-  -- >>= dropInf
+  lower opt prg
+    >>= ann2Class opt
+    >>= class2Poly opt
+    >>= dropInf
+    >>= poly2Poly opt
 
 -- | Helper function to set ti type to HM-only
 setHM :: Options -> Options

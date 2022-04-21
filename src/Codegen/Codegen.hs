@@ -55,13 +55,15 @@ import           Data.Maybe                     ( isJust
                                                 )
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
+import           GHC.Stack                      ( HasCallStack )
+
 
 -- | Possible, but temporarily punted for the sake of expediency.
-todo :: a
+todo :: HasCallStack => a
 todo = error "Not yet implemented"
 
 -- | Impossible without a discussion about implementation strategy.
-nope :: a
+nope :: HasCallStack => a
 nope = error "Not yet supported"
 
 {- | State maintained while compiling a top-level SSM function.
@@ -678,7 +680,7 @@ genPrim I.Par procs _ = do
 
   (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
   yield              <- genYield
-  return (todo, checkNewDepth ++ activates ++ yield)
+  return (unit, checkNewDepth ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals

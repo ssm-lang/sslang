@@ -14,9 +14,9 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
-import           Data.Maybe                     ( fromJust
-                                                , isNothing
-                                                , fromMaybe
+import           Data.Maybe                     ( isNothing
+                                                , catMaybes
+                                                , fromJust
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
@@ -98,24 +98,11 @@ insertDropTop (var, expr) = do
 -- | Entry-point to inserting into expressions.
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
--- | Inserting dup/drops into function application with arg of varid
-insertDropExpr (I.App fun arg@(I.Var var vt) typ) = do
-  retVar  <- getFresh "_app"
-  fun'    <- insertDropExpr fun
-  arg'    <- insertDropExpr arg
-  let varDup   = makeDup $ I.Var var vt
-      varDrop  = makeDrop $ I.Var var vt
-      dupExpr  = seqExprs [varDup] (I.App fun' arg' typ)
-      dropExpr = (Just retVar, dupExpr) : [varDrop]
-      retExpr  = I.Var retVar typ
-      retExpr' = seqExprs dropExpr retExpr
-  return retExpr'
-
--- | Inserting dup/drops into function application with arg of non-varid
+-- | Inserting dup/drops into function application with arg
 insertDropExpr (I.App fun arg typ) = do
-  fun' <- insertDropExpr fun
+  -- fun' <- insertDropExpr fun
   arg' <- insertDropExpr arg
-  return $ I.App fun' arg' typ
+  return $ I.App fun arg' typ
 
 -- | Inserting drops into let bindings
 insertDropExpr (I.Let bins expr typ) = do
@@ -134,6 +121,7 @@ insertDropExpr (I.Let bins expr typ) = do
   return $ I.Let bins' retExpr' typ
 
 -- | Inserting drops into lambda functions
+
 insertDropExpr (I.Lambda var expr typ) = do
   retVar <- getFresh "_lambda"
   expr'  <- insertDropExpr expr
@@ -183,12 +171,11 @@ insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do
 -- | TODO: type is currently wrong and is only a placeholder
 insertDropAlt (I.AltData dcon vars, exprReturn) _ = do
   retVar      <- getFresh "_alt_data"
-  tmpVar      <- getFresh "_alt_underscore"
   exprReturn' <- insertDropExpr exprReturn
   let retTyp = I.extract exprReturn'
-      makeFun f = \v -> f $ I.Var (fromMaybe tmpVar v) retTyp
-      dupBins  = map (makeFun makeDup) vars
-      dropBins = map (makeFun makeDrop) vars
+      makeFun f = \v -> f $ I.Var v retTyp
+      dupBins  = map (makeFun makeDup) $ catMaybes vars
+      dropBins = map (makeFun makeDrop) $ catMaybes vars
       exprBins = dupBins ++ (Just retVar, exprReturn') : dropBins
       retExpr  = I.Var retVar retTyp
       retExpr' = seqExprs exprBins retExpr

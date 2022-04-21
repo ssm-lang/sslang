@@ -21,28 +21,28 @@ import           IR.Types.Poly                 as Poly
 import           Control.Concurrent             ( yield )
 
 
-parseDrop :: String -> Pass (I.Program I.Type)
-parseDrop s = substMagic (Proxy :: Proxy I.Type) <$> do
+parseFront :: String -> Pass (I.Program I.Type)
+parseFront s = substMagic (Proxy :: Proxy I.Type) <$> do
   Front.run def s >>= IR.lower def
-  -- >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
 
+parseDrop :: String -> Pass (IR.IR.Program Poly.Type)
+parseDrop s =
+  parseFront s >>= IR.ann2Class def >>= IR.class2Poly def >>= insertDropsProgram
+
+parseNoDrop :: String -> Pass (IR.IR.Program Poly.Type)
+parseNoDrop s = parseFront s >>= IR.ann2Class def >>= IR.class2Poly def
 
 spec :: Spec
 spec = do
   it "drop inference in simple let binding" $ do
-    let undropped =
-          parseDrop [here|
+    let undropped = parseDrop [here|
         top = 
             let a: Int = 5
                 b: Int = 10
                 _: Int = 15
             a + b
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
-            >>= insertDropsProgram
-    let dropped =
-          parseDrop [here|
+    let dropped = parseNoDrop [here|
         top =
             let a: Int = 5
                 b: Int = 10
@@ -56,24 +56,17 @@ spec = do
             let _ = drop anon3_let_underscore
             anon0_let
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped
 
   it "drop inference in nested let binding" $ do
-    let undropped =
-          parseDrop [here|
+    let undropped = parseDrop [here|
         top = 
             let a = 5
                 b = let c = a + 3
                     c + 5
             a + b
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
-            >>= insertDropsProgram
-    let dropped =
-          parseDrop [here|
+    let dropped = parseNoDrop [here|
         top =
             let a = 5
                 b = let c = a + 3
@@ -88,60 +81,40 @@ spec = do
             let _ = drop b
             anon1_let
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped
 
   it "drop inference in lambda" $ do
-    let undropped =
-          parseDrop [here|
+    let undropped = parseDrop [here|
         add_fun a : Int -> Int = a + 2  
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
-            >>= insertDropsProgram
-    let dropped =
-          parseDrop [here|
+    let dropped = parseNoDrop [here|
         add_fun a : Int -> Int = 
           let _ = dup a
           let anon0_lambda = a + 2
           let _ = drop a
           anon0_lambda
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped
 
   it "drop inference in function application" $ do
-    let undropped =
-          parseDrop [here|
+    let undropped = parseDrop [here|
         x : Int = 5
         id_fun a : Int -> Int = a
-        top = id_fun x
+        top = id_fun x + 1
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
-            >>= insertDropsProgram
-    let dropped =
-          parseDrop [here|
+    let dropped = parseNoDrop [here|
         x : Int = 5
         id_fun a : Int -> Int = 
           let _ = dup a
           let anon0_lambda = a
           let _ = drop a
           anon0_lambda
-        top = let anon1_app = let _ = dup x
-                              id_fun x
-              let _ = drop x
-              anon1_app
+        top = id_fun x + 1
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped
 
   it "drop inference in pattern matching" $ do
-    let undropped =
-          parseDrop [here|
+    let undropped = parseDrop [here|
         type MyBool 
           MyFalse Int Int
           MyTrue Int
@@ -152,11 +125,7 @@ spec = do
                 MyFalse fst snd = snd
                 _ = 69
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
-            >>= insertDropsProgram
-    let dropped =
-          parseDrop [here|
+    let dropped = parseNoDrop [here|
         type MyBool 
           MyFalse Int Int
           MyTrue Int
@@ -181,7 +150,5 @@ spec = do
                   let _ = drop x
                   anon4_alt_default
         |]
-            >>= IR.ann2Class def
-            >>= IR.class2Poly def
     undropped `shouldPassAs` dropped
     -- print $ runPass undropped
