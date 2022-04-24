@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-      - dev
     paths:
       - '.github/**'
       - 'src/**'
@@ -14,7 +13,6 @@ on:
   push:
     branches:
       - main
-      - dev
     paths:
       - '.github/**'
       - 'src/**'
@@ -23,18 +21,28 @@ on:
 
 jobs:
   run-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cc: [gcc, clang]
     name: "Run test suite"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
 
     - name: Checkout repo
       uses: actions/checkout@v2
 
-    - name: Install dependencies
+    - name: Install Ubuntu dependencies
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential gcc valgrind
+        sudo apt-get install -y build-essential gcc valgrind clang
+
+    # Shouldn't need to install dependencies for macos image; make and gcc
+    # (symlinked to clang) should already be installed, while valgrind is not
+    # supported. Also Note that (macos-latest, gcc), (macos-latest, clang) are
+    # essentially the same test because of symlink.
 
     # Performed as separate step to more easily detect library build error
     - name: Build library
@@ -43,4 +51,4 @@ jobs:
 
     - name: Run tests
       run: |
-        ./runtests.sh
+        CC=${{ matrix.cc }} ./runtests.sh

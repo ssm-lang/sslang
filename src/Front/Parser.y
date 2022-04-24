@@ -70,6 +70,7 @@ import Data.Bifunctor (first)
 -- | Root node of sslang program parser.
 program                               --> Program
   : topDefs                             { Program $1 }
+  | '||' topDefs                        { Program $2 }
   | {- empty -}                         { Program [] }
 
 {- | Top-level definitions.

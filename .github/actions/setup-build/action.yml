@@ -23,6 +23,13 @@ runs:
           ${{ inputs.os }}-stack-${{ inputs.resolver }}-
           ${{ inputs.os }}-stack-
 
+    - name: Install Ubuntu dependencies
+      if: ${{ inputs.os == 'ubuntu-latest' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc valgrind clang
+
     - name: Install Haskell Stack
       uses: haskell/actions/setup@v1
       with:

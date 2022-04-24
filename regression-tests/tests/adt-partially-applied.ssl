@@ -1,0 +1,49 @@
+type Nullary
+  False
+  Leaf
+
+type Shape 
+  Rect Int Int
+  Square Int    
+
+// to check IR output, go to regression-tests directory, then do
+// stack exec -- sslc --dump-ir-final tests/adt-partially-applied.ssl 
+
+square_con sideLen : Int -> Shape = Square sideLen
+
+perimeter (shp : Shape) -> Int = 
+  match shp
+   Square a = a+a+a+a
+   Rect a b  = a+b+a+b
+
+main ( cout : & Int ) -> () =
+
+  // what a call to a constructor func should like
+  let a = square_con 16
+
+  // fully applied
+  let b = Square 16                // in a later pass, this call to constructor func should be optimized out
+
+  // unapplied
+  let c = Square                 
+  let d = Rect                  
+
+  // partially applied
+  let e = Rect 18 
+
+  // finish applying
+  let f = e 15                
+
+  // nullary dcon (should not get changed to func app!)
+  let g = Leaf
+
+  after 10 , (cout : & Int) <- perimeter b + 2
+  wait (cout : & Int)
+  after 1, (cout : & Int) <- perimeter f         
+  wait (cout : & Int)
+  after 1, (cout : & Int) <- perimeter (c 16) + 2
+  wait (cout : & Int)
+  after 2, (cout : & Int) <- perimeter (d 19 14)        
+  wait (cout : & Int)
+  after 3, (cout : & Int) <- perimeter (e 15)
+  wait (cout : & Int)

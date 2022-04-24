@@ -20,6 +20,10 @@
 
 LIB_NAME := ssm
 
+MAKE_CC ?= cc
+MAKE_LD ?= $(MAKE_CC)
+MAKE_AR ?= ar
+
 BUILD_DIR := build
 SRC_DIR := src
 INC_DIR := include
@@ -53,15 +57,26 @@ TEST_TGT := $(patsubst %.o, %, $(TEST_OBJ))
 
 COV_TGT := $(BUILD_DIR)/coverage.xml
 
-CC = cc
+CC = $(MAKE_CC)
 CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic -std=c99
+
+# Check whether valgrind is available.
+ifeq ($(shell command -v valgrind),)
+# If not, we probably shouldn't try to include <valgrind/valgrind.h>,
+# which we use to instrument our memory allocator.
+# 
+# NOTE: this is just a heuristic that may not be very reliable.
+# We should probably implement better dependency management.
+CFLAGS += -DNVALGRIND
+endif
+
 TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage
 
-LD = cc
+LD = $(MAKE_LD)
 LDFLAGS = -L$(BUILD_DIR)
 TEST_LDFLAGS = $(LDFLAGS) --coverage
 
-AR = ar
+AR = $(MAKE_AR)
 ARFLAGS = -cr
 
 PHONY += lib exes tests cov docs

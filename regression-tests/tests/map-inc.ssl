@@ -1,0 +1,40 @@
+type List
+  Cons Int List
+  Nil
+
+print_list2 (out: &Int) (l: List) -> () =
+  match l
+    Cons i l0 =
+      after 1, out <- i
+      wait out
+      after 1, out <- 32
+      wait out
+      print_list2 out l0
+    Nil = ()
+
+print_list (out: &Int) (l: List) -> () =
+    after 1, out <- 91
+    wait out
+    after 1, out <- 32
+    wait out
+
+    print_list2 out l
+
+    after 1, out <- 93
+    wait out
+    after 1, out <- 10
+    wait out
+
+map_inc (l: List) -> List =
+  match l
+    Cons i l0 = Cons (i + 1) (map_inc l0)
+    Nil = Nil
+
+main (out: &Int) -> () =
+  let l1 = (Cons 104 (Cons 101 (Cons 108 (Cons 108 (Cons 111 Nil)))))
+  print_list out l1
+  let l2 = map_inc l1
+  let l3 = map_inc (map_inc (map_inc l2))
+  print_list out l1
+  print_list out l2
+  print_list out l3
