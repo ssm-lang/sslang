@@ -18,11 +18,11 @@ import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
 
+import           Control.Monad                  ( when )
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -115,7 +115,8 @@ poly2Poly opt ir = do
   dConsGone <- dConToFunc ir
   irLifted  <- liftProgramLambdas dConsGone
   when (mode opt == DumpIRLifted) $ dump irLifted
-  when (mode opt == DumpIRFinal) $  (throwError . Dump . show) (I.indentPretty False irLifted)
+  when (mode opt == DumpIRFinal)
+    $ (throwError . Dump . show) (I.indentPretty (I.PF False False) irLifted)
   return irLifted
 
 -- | IR compiler stage.

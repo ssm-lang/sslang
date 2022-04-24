@@ -15,11 +15,13 @@ module IR.IR
   , collectLambda
   , makeLambdaChain
   , indentPretty
+  , PrettyFlags(PF)
   , zipApp
   , unzipApp
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
+                                                , Identifiable(ident)
                                                 , TConId(..)
                                                 , VarId(..)
                                                 )
@@ -36,6 +38,7 @@ import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
+import           Data.Maybe                     ( mapMaybe )
 
 {- | Top-level compilation unit.
 
@@ -387,9 +390,13 @@ instance Pretty PrimOp where
 
 
 -- | Record type to hold pretty printer state
+data PrettyFlags = PF
+  { ann    :: Bool
+  , _funcs :: Bool
+  }
+
 data PrettyInfo = PInfo
-  { ann   :: Bool
-  -- , topLv :: Bool
+  { flags :: PrettyFlags
   , tab   :: Int
   , depth :: Int
   }
@@ -400,27 +407,29 @@ class (Pretty a) => WS a where
 
 -- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
-  ws (Prim Wait es t) PInfo { ann = an, tab = tb } =
+  ws (Prim Wait es t) PInfo { flags = PF { ann = an }, tab = tb } =
     indent tb $ typ an t $ pretty "wait" <+> vsep (map pretty es)
-  ws (Var v t) PInfo { ann = an, tab = tb } = indent tb $ typ an t $ pretty v
-  ws (Lambda a b t) i@PInfo { ann = an, tab = tb } =
+  ws (Var v t) PInfo { flags = PF { ann = an }, tab = tb } =
+    indent tb $ typ an t $ pretty v
+  ws (Lambda a b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
     indent tb $ typ an t $ pretty "fun" <+> pretty a <+> ws b i
-  ws (Let [(Nothing, e)] b t) i@PInfo { ann = an, tab = tb } =
+  ws (Let [(Nothing, e)] b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
     indent tb $ typ an t $ ws e i <> line <> ws b i
-  ws (Let as b t) i@PInfo { ann = an, tab = tb } = indent tb $ typ an t letexpr
+  ws (Let as b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
+    indent tb $ typ an t letexpr
    where
-    letexpr =
-      pretty "let" <+> vsep (map def as) <> semi <> line <> ws b i
+    letexpr = pretty "let" <+> vsep (map def as) <> semi <> line <> ws b i
     def (Just v , e) = pretty v <+> equals <+> ws e i
     def (Nothing, e) = pretty '_' <+> equals <+> ws e i
-  ws (Prim After [d, l, r] t) i@PInfo { ann = an, tab = tb } = indent tb
-    $ typ an t ae
+  ws (Prim After [d, l, r] t) i@PInfo { flags = PF { ann = an }, tab = tb } =
+    indent tb $ typ an t ae
    where
     ae = pretty "after" <+> ws d i <> comma <+> ws l i <+> larrow <+> ws r i
-  ws (Prim Assign [l, r] t) i@PInfo { ann = an, tab = tb } =
+  ws (Prim Assign [l, r] t) i@PInfo { flags = PF { ann = an }, tab = tb } =
     indent tb $ typ an t $ parens $ ws l i <+> pretty "<-" <+> ws r i
   -- everything else
-  ws a PInfo { ann = an, tab = tb } = indent tb $ typ an (extract a) $ pretty a
+  ws a PInfo { flags = PF { ann = an }, tab = tb } =
+    indent tb $ typ an (extract a) $ pretty a
 
 -- | pretty print type annotations unless unit or flag set to false
 typ :: (IsUnit t) => Bool -> t -> Doc ann -> Doc ann
@@ -428,20 +437,28 @@ typ f e d | not f     = d
           | isUnit e  = d
           | otherwise = typeAnn e d
 
-indentPretty :: (TypeSystem t, IsUnit t) => Bool -> Program t -> Doc ann
-indentPretty f Program { programDefs = ds } = vsep $ map topLevel ds
+indentPretty :: (TypeSystem t, IsUnit t) => PrettyFlags -> Program t -> Doc ann
+indentPretty flgs Program { programDefs = ds } =
+  vsep $ map (<> line) $ mapMaybe (`topLevel` flgs) ds
  where
-  topLevel :: (TypeSystem t, IsUnit t) => (VarId, Expr t) -> Doc ann
-  topLevel (v, l@(Lambda _ _ ty)) =
-    pretty v <+> typSig <+> pretty "=" <+>line <> indent
+  topLevel
+    :: (TypeSystem t, IsUnit t)
+    => (VarId, Expr t)
+    -> PrettyFlags
+    -> Maybe (Doc ann)
+  topLevel (v, l@(Lambda _ _ ty)) flgz@PF { _funcs = False } = case ident v of
+    '_' : '_' : _ -> Nothing
+    _ -> Just $ pretty v <+> typSig <+> pretty "=" <+> line <> indent
       1
-      (ws body PInfo { ann = f, tab = 0, depth = 0 })
+      (ws body PInfo { flags = flgz, tab = 0, depth = 0 })
    where
     (argIds, body ) = collectLambda l
     (argTys, retTy) = collectArrow ty
-    args =
-      zipWith (\arg t -> pretty arg <+> pretty ":" <+> pretty t) argIds argTys
-    typSig =
-      foldl1 (\acc x -> acc <+> pretty "->" <+> x) $ args ++ [pretty retTy]
-  topLevel (v, e) =
-    pretty v <+> pretty "=" <+> ws e PInfo { ann = f, tab = 0, depth = 0 }
+    args            = zipWith
+      (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
+      argIds
+      argTys
+    typSig = hsep args <+> (pretty "->" <+> pretty retTy)
+  topLevel (v, e) flgz = Just $ pretty v <+> pretty "=" <+> ws
+    e
+    PInfo { flags = flgz, tab = 0, depth = 0 }
