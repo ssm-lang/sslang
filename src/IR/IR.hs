@@ -405,6 +405,12 @@ data PrettyInfo = PInfo
 class (Pretty a) => WS a where
   ws :: a -> PrettyInfo -> Doc ann
 
+instance WS Alt where
+  ws (AltData a b        ) _ = pretty a <+> hsep (map pretty b)
+  ws (AltLit     a       ) _ = pretty a
+  ws (AltDefault (Just v)) _ = pretty v
+  ws (AltDefault Nothing ) _ = pretty '_'
+
 -- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
   ws (Prim Wait es t) PInfo { flags = PF { ann = an }, tab = tb } =
@@ -426,7 +432,14 @@ instance IsUnit t => WS (Expr t) where
    where
     ae = pretty "after" <+> ws d i <> comma <+> ws l i <+> larrow <+> ws r i
   ws (Prim Assign [l, r] t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ parens $ ws l i <+> pretty "<-" <+> ws r i
+    indent tb $ typ an t $ parens $ ws l i <+> larrow <+> ws r i
+  ws (Match  s as t) i@PInfo { flags = PF { ann = an }, tab = tb } =
+    indent tb $ typ an t $ pretty "match" <+> pretty s <> line <> arms
+   where
+    -- Where to add binder?
+    arms = vsep (map (arm i) as)
+    arm :: IsUnit t => PrettyInfo -> (Alt,Expr t) -> Doc ann
+    arm inf (a, e) = ws a inf <+> pretty "=" <+> align (ws e inf)
   -- everything else
   ws a PInfo { flags = PF { ann = an }, tab = tb } =
     indent tb $ typ an (extract a) $ pretty a
@@ -458,7 +471,7 @@ indentPretty flgs Program { programDefs = ds } =
       (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
       argIds
       argTys
-    typSig = hsep args <+> (pretty "->" <+> pretty retTy)
+    typSig = hsep args <+> (rarrow <+> pretty retTy)
   topLevel (v, e) flgz = Just $ pretty v <+> pretty "=" <+> ws
     e
     PInfo { flags = flgz, tab = 0, depth = 0 }
