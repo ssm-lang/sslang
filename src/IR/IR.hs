@@ -19,18 +19,19 @@ module IR.IR
   , zipApp
   , unzipApp
   ) where
+import qualified Data.Map                      as M
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
                                                 , Identifiable(ident)
                                                 , TConId(..)
-                                                , VarId(..)
+                                                , VarId(..), fromString
                                                 )
 import           Common.Pretty
 import           IR.Types.TypeSystem            ( IsUnit(isUnit)
                                                 , TypeDef(..)
                                                 , TypeSystem
                                                 , arrow
-                                                , collectArrow
+                                                , collectArrow, TypeVariant (VariantNamed, VariantUnnamed)
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -351,13 +352,12 @@ instance Pretty t => Pretty (Expr t) where
     ae =
       pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
         (pretty r)
-  pretty (Prim Par    es  _) = pretty "par" <+> block dbar (map pretty es)
-  pretty (Prim Wait   es  _) = pretty "wait" <+> block dbar (map pretty es)
-  pretty (Prim Loop   [b] _) = pretty "loop" <+> braces (pretty b)
-  pretty (Prim Break  []  _) = pretty "break"
+  pretty (Prim Par es _) = pretty "par" <+> block dbar (map pretty es)
+  pretty (Prim Wait es _) = pretty "wait" <+> block dbar (map pretty es)
+  pretty (Prim Loop [b] _) = pretty "loop" <+> braces (pretty b)
+  pretty (Prim Break [] _) = pretty "break"
   pretty (Prim Return [e] _) = pretty "return" <+> braces (pretty e)
-  pretty (Prim (PrimOp po) [l, r] t) =
-    parens $ pretty l <+> pretty po <+> pretty r <> pretty t
+  pretty (Prim (PrimOp po) [l, r] _) = pretty l <+> pretty po <+> pretty r
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
 instance Pretty Alt where
@@ -397,7 +397,7 @@ data PrettyFlags = PF
 
 data PrettyInfo = PInfo
   { flags :: PrettyFlags
-  , tab   :: Int
+--  , tab   :: Int
   , depth :: Int
   }
 
@@ -411,38 +411,47 @@ instance WS Alt where
   ws (AltDefault (Just v)) _ = pretty v
   ws (AltDefault Nothing ) _ = pretty '_'
 
+-- unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
+-- | Helper to unwrap 'Arrow' in any 'TypeSystem'.
+-- dearrow :: TypeSystem t => t -> Maybe (t, t)
+
 -- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
-  ws (Prim Wait es t) PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ pretty "wait" <+> vsep (map pretty es)
-  ws (Var v t) PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ pretty v
-  ws (Lambda a b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ pretty "fun" <+> pretty a <+> ws b i
-  ws (Let [(Nothing, e)] b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ ws e i <> line <> ws b i
-  ws (Let as b t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t letexpr
+  ws a@(App _ _ t) i@PInfo { flags = PF { ann = an } } =
+    typ an t $ pretty nm <+> hsep (helper <$> args)
    where
-    letexpr = pretty "let" <+> vsep (map def as) <> semi <> line <> ws b i
+    (nm, args) = unzipApp a
+    helper :: IsUnit t => (Expr t, t) -> Doc ann
+    helper (v@(Var _ t1), _) = typ an t1 $ ws v i
+    helper (l@(Lit _ t1), _) = typ an t1 $ ws l i
+    helper (e           , _) = typ an (extract e) (parens (ws e i))
+
+  ws (Prim Wait es t) PInfo { flags = PF { ann = an } } =
+    typ an t $ pretty "wait" <+> vsep (map pretty es)
+  ws (Var v t) PInfo { flags = PF { ann = an } } = typ an t $ pretty v
+  ws (Lambda a b t) i@PInfo { flags = PF { ann = an } } =
+    typ an t $ pretty "fun" <+> pretty a <+> ws b i
+  ws (Let [(Nothing, e)] b t) i@PInfo { flags = PF { ann = an } } =
+    typ an t $ ws e i <> line <> ws b i
+  ws (Let as b t) i@PInfo { flags = PF { ann = an } } = typ an t letexpr
+   where
+    letexpr = pretty "let" <+> vsep (map def as) <> line <> ws b i
     def (Just v , e) = pretty v <+> equals <+> ws e i
     def (Nothing, e) = pretty '_' <+> equals <+> ws e i
-  ws (Prim After [d, l, r] t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t ae
+  ws (Prim After [d, l, r] t) i@PInfo { flags = PF { ann = an } } = typ an t ae
    where
     ae = pretty "after" <+> ws d i <> comma <+> ws l i <+> larrow <+> ws r i
-  ws (Prim Assign [l, r] t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ parens $ ws l i <+> larrow <+> ws r i
-  ws (Match  s as t) i@PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an t $ pretty "match" <+> pretty s <> line <> arms
+  ws (Prim Assign [l, r] t) i@PInfo { flags = PF { ann = an } } =
+    typ an t $ parens $ ws l i <+> larrow <+> ws r i
+  ws (Match s as t) i@PInfo { flags = PF { ann = an } } =
+    typ an t $ pretty "match" <+> pretty s <> line <> arms
    where
     -- Where to add binder?
-    arms = vsep (map (arm i) as)
-    arm :: IsUnit t => PrettyInfo -> (Alt,Expr t) -> Doc ann
+    arms = vsep (map (indent 1 . arm i) as)
+    arm :: IsUnit t => PrettyInfo -> (Alt, Expr t) -> Doc ann
     arm inf (a, e) = ws a inf <+> pretty "=" <+> align (ws e inf)
   -- everything else
-  ws a PInfo { flags = PF { ann = an }, tab = tb } =
-    indent tb $ typ an (extract a) $ pretty a
+  ws a PInfo { flags = PF { ann = an } } = typ an (extract a) $ pretty a
 
 -- | pretty print type annotations unless unit or flag set to false
 typ :: (IsUnit t) => Bool -> t -> Doc ann -> Doc ann
@@ -451,9 +460,19 @@ typ f e d | not f     = d
           | otherwise = typeAnn e d
 
 indentPretty :: (TypeSystem t, IsUnit t) => PrettyFlags -> Program t -> Doc ann
-indentPretty flgs Program { programDefs = ds } =
-  vsep $ map (<> line) $ mapMaybe (`topLevel` flgs) ds
+indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
+  r <> line <> line <>  vsep (map (<> line) $ mapMaybe (`topLevel` flgs) ds)
  where
+  (l,r) = foldl prettyDef (M.empty, pretty "") tys
+  prettyDef :: (IsUnit t) => (M.Map VarId DConId, Doc ann) -> (TConId, TypeDef t) -> (M.Map VarId DConId, Doc ann)
+  prettyDef (accMap, accDoc) (tcon,TypeDef {variants = vars}) = (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
+   where
+     vars' = pretty tcon <+> line <> indent 1 (vsep $ map blah vars )
+     dcons = fst <$> vars
+     __dcons = VarId . fromString . (\x -> '_':'_':x) <$> (ident <$> dcons)
+     blah :: (IsUnit t) => (DConId,TypeVariant t) -> Doc ann
+     blah (dcon, VariantNamed args) = pretty dcon <+> hsep (pretty . snd <$> args)
+     blah (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
   topLevel
     :: (TypeSystem t, IsUnit t)
     => (VarId, Expr t)
@@ -463,7 +482,7 @@ indentPretty flgs Program { programDefs = ds } =
     '_' : '_' : _ -> Nothing
     _ -> Just $ pretty v <+> typSig <+> pretty "=" <+> line <> indent
       1
-      (ws body PInfo { flags = flgz, tab = 0, depth = 0 })
+      (ws body PInfo { flags = flgz, depth = 0 })
    where
     (argIds, body ) = collectLambda l
     (argTys, retTy) = collectArrow ty
@@ -472,6 +491,5 @@ indentPretty flgs Program { programDefs = ds } =
       argIds
       argTys
     typSig = hsep args <+> (rarrow <+> pretty retTy)
-  topLevel (v, e) flgz = Just $ pretty v <+> pretty "=" <+> ws
-    e
-    PInfo { flags = flgz, tab = 0, depth = 0 }
+  topLevel (v, e) flgz =
+    Just $ pretty v <+> pretty "=" <+> ws e PInfo { flags = flgz, depth = 0 }
