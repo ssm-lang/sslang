@@ -398,6 +398,7 @@ data PrettyFlags = PF
 data PrettyInfo = PInfo
   { flags :: PrettyFlags
 --  , tab   :: Int
+    , __DCons :: M.Map VarId DConId
   , depth :: Int
   }
 
@@ -418,26 +419,34 @@ instance WS Alt where
 -- | Pretty print each node of AST with appropriate whitespace
 instance IsUnit t => WS (Expr t) where
   ws a@(App _ _ t) i@PInfo { flags = PF { ann = an } } =
-    typ an t $ pretty nm <+> hsep (helper <$> args)
+    typ an t $ ws nm i <+> hsep (helper <$> args)
    where
     (nm, args) = unzipApp a
     helper :: IsUnit t => (Expr t, t) -> Doc ann
     helper (v@(Var _ t1), _) = typ an t1 $ ws v i
     helper (l@(Lit _ t1), _) = typ an t1 $ ws l i
     helper (e           , _) = typ an (extract e) (parens (ws e i))
-
   ws (Prim Wait es t) PInfo { flags = PF { ann = an } } =
     typ an t $ pretty "wait" <+> vsep (map pretty es)
-  ws (Var v t) PInfo { flags = PF { ann = an } } = typ an t $ pretty v
+
+  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = False }, __DCons = dMap } = 
+    case M.lookup v dMap of
+      Nothing -> typ an t $ pretty v
+      Just dcon -> typ an t $ pretty dcon
+  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = True }} = typ an t $ pretty v
+  
   ws (Lambda a b t) i@PInfo { flags = PF { ann = an } } =
     typ an t $ pretty "fun" <+> pretty a <+> ws b i
+
   ws (Let [(Nothing, e)] b t) i@PInfo { flags = PF { ann = an } } =
     typ an t $ ws e i <> line <> ws b i
+
   ws (Let as b t) i@PInfo { flags = PF { ann = an } } = typ an t letexpr
    where
     letexpr = pretty "let" <+> vsep (map def as) <> line <> ws b i
-    def (Just v , e) = pretty v <+> equals <+> ws e i
-    def (Nothing, e) = pretty '_' <+> equals <+> ws e i
+    def (Just v , e) = pretty v <+> equals <+> align (ws e i)
+    def (Nothing, e) = pretty '_' <+> equals <+> align (ws e i)
+
   ws (Prim After [d, l, r] t) i@PInfo { flags = PF { ann = an } } = typ an t ae
    where
     ae = pretty "after" <+> ws d i <> comma <+> ws l i <+> larrow <+> ws r i
@@ -447,9 +456,9 @@ instance IsUnit t => WS (Expr t) where
     typ an t $ pretty "match" <+> pretty s <> line <> arms
    where
     -- Where to add binder?
-    arms = vsep (map (indent 1 . arm i) as)
+    arms = vsep (map (indent 6 . arm i) as)
     arm :: IsUnit t => PrettyInfo -> (Alt, Expr t) -> Doc ann
-    arm inf (a, e) = ws a inf <+> pretty "=" <+> align (ws e inf)
+    arm inf (a, e) = ws a inf <+> equals <+> align (ws e inf)
   -- everything else
   ws a PInfo { flags = PF { ann = an } } = typ an (extract a) $ pretty a
 
@@ -461,13 +470,13 @@ typ f e d | not f     = d
 
 indentPretty :: (TypeSystem t, IsUnit t) => PrettyFlags -> Program t -> Doc ann
 indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
-  r <> line <> line <>  vsep (map (<> line) $ mapMaybe (`topLevel` flgs) ds)
+  tys' <> line <> line <>  vsep (map (<> line) $ mapMaybe (`topLevel` flgs) ds)
  where
-  (l,r) = foldl prettyDef (M.empty, pretty "") tys
+  (__dconMap,tys') = foldl prettyDef (M.empty, pretty "") tys
   prettyDef :: (IsUnit t) => (M.Map VarId DConId, Doc ann) -> (TConId, TypeDef t) -> (M.Map VarId DConId, Doc ann)
   prettyDef (accMap, accDoc) (tcon,TypeDef {variants = vars}) = (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
    where
-     vars' = pretty tcon <+> line <> indent 1 (vsep $ map blah vars )
+     vars' = pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map blah vars )
      dcons = fst <$> vars
      __dcons = VarId . fromString . (\x -> '_':'_':x) <$> (ident <$> dcons)
      blah :: (IsUnit t) => (DConId,TypeVariant t) -> Doc ann
@@ -482,7 +491,7 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
     '_' : '_' : _ -> Nothing
     _ -> Just $ pretty v <+> typSig <+> pretty "=" <+> line <> indent
       1
-      (ws body PInfo { flags = flgz, depth = 0 })
+      (ws body PInfo { flags = flgz, __DCons = __dconMap, depth = 0 })
    where
     (argIds, body ) = collectLambda l
     (argTys, retTy) = collectArrow ty
@@ -492,4 +501,4 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
       argTys
     typSig = hsep args <+> (rarrow <+> pretty retTy)
   topLevel (v, e) flgz =
-    Just $ pretty v <+> pretty "=" <+> ws e PInfo { flags = flgz, depth = 0 }
+    Just $ pretty v <+> pretty "=" <+> ws e PInfo { flags = flgz, __DCons = __dconMap, depth = 0 }
