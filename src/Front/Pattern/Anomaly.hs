@@ -276,9 +276,7 @@ wellFormed pv pm
       LT -> throwMalformedError
       EQ -> return ()
       GT -> wellFormedPat (PV.hd pv) pm
-  |
-  -- | otherwise = throwMalformedError
-    otherwise = error $ "pm\n" ++ show pm ++ "\npv\n" ++ show pv
+  | otherwise = throwMalformedError
 
 wellFormedPat :: A.Pat -> PM.PatMat -> AnomalyFn ()
 wellFormedPat p pm = case p of
