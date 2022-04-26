@@ -284,10 +284,10 @@ genInitProgram entry = [cunit|
     void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
     void $id:stdin_handler_kill(void);
 
+    $ty:value_t stdout_ret, entry_ret;
     void $id:program_init(void) {
       $ty:value_t ssm_stdin = $exp:std_sv;
       $ty:value_t ssm_stdout = $exp:std_sv;
-      $ty:value_t stdout_ret, entry_ret;
 
       $ty:value_t std_argv[2] = { ssm_stdin, ssm_stdout };
 
