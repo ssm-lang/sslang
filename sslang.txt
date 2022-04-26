@@ -1543,6 +1543,9 @@ PrimBitOr :: PrimOp
 -- | equality, i.e., x == y
 PrimEq :: PrimOp
 
+-- | equality, i.e., x != y
+PrimNeq :: PrimOp
+
 -- | greater than, i.e., x &gt; y
 PrimGt :: PrimOp
 
@@ -1809,6 +1812,9 @@ inferExpr :: Expr Type -> InferFn (Expr Type)
 -- | Infer the type of a Primitive expression.
 inferPrim :: Expr Type -> InferFn (Expr Type)
 
+-- | Check type of a binary integer operation.
+inferPrimBinop :: PrimOp -> Expr Type -> Expr Type -> InferFn (Expr Type)
+
 -- | Helper function to support local modificaton of type context.
 withNewScope :: InferFn a -> InferFn a
 
@@ -2050,6 +2056,9 @@ collapseAnnT :: Type -> Type
 --   recursively, assign a fresh <tt>TVar</tt> to each unknown type, and
 --   build type equations that will be solved later.
 initTypeVars :: Expr Type -> InferFn (Expr Type)
+
+-- | Infer the type of a binary integer operation.
+inferPrimBinop :: PrimOp -> Expr Type -> Expr Type -> Type -> InferFn (Expr Type)
 
 -- | <tt>typeCheck annT expectedT</tt> checks whether the type annotation
 --   <tt>annT</tt> is compatible with the expected type <tt>expectedT</tt>.
