@@ -760,6 +760,10 @@ genPrimOp I.PrimEq [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal == $exp:rhsVal|], stms)
+genPrimOp I.PrimNeq [lhs, rhs] _ = do
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal != $exp:rhsVal|], stms)
 genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
