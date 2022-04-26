@@ -162,8 +162,8 @@ lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
 lowerExpr (A.IfElse c t e) k = I.Match cond [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
-  tArm = (I.AltLit (I.LitBool True), lowerExpr t id)
-  eArm = (I.AltDefault Nothing, lowerExpr e id)
+  tArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
+  eArm = (I.AltDefault Nothing, lowerExpr t id)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
