@@ -36,8 +36,8 @@
 </span><span id="line-32"></span><span>  </span><span class="hs-special">}</span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="hs-comment">-- | Insert Monad</span><span>
-</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="InsertFn"><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-var">InsertFn</span></a></span></span><span> </span><span id="local-6989586621679421109"><span class="annot"><a href="#local-6989586621679421109"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="InsertFn"><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-var">InsertFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421109"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679421104"><span id="local-6989586621679421106"><span class="annot"><span class="annottext">a -&gt; InsertFn b -&gt; InsertFn a
+</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="InsertFn"><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-var">InsertFn</span></a></span></span><span> </span><span id="local-6989586621679426560"><span class="annot"><a href="#local-6989586621679426560"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="InsertFn"><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-var">InsertFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426560"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679426555"><span id="local-6989586621679426557"><span class="annot"><span class="annottext">a -&gt; InsertFn b -&gt; InsertFn a
 (a -&gt; b) -&gt; InsertFn a -&gt; InsertFn b
 (forall a b. (a -&gt; b) -&gt; InsertFn a -&gt; InsertFn b)
 -&gt; (forall a b. a -&gt; InsertFn b -&gt; InsertFn a) -&gt; Functor InsertFn
@@ -51,7 +51,7 @@ $c&lt;$ :: forall a b. a -&gt; InsertFn b -&gt; InsertFn a
 fmap :: (a -&gt; b) -&gt; InsertFn a -&gt; InsertFn b
 $cfmap :: forall a b. (a -&gt; b) -&gt; InsertFn a -&gt; InsertFn b
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span>                      </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679421092"><span id="local-6989586621679421094"><span id="local-6989586621679421096"><span id="local-6989586621679421098"><span id="local-6989586621679421100"><span class="annot"><span class="annottext">Functor InsertFn
+</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679426543"><span id="local-6989586621679426545"><span id="local-6989586621679426547"><span id="local-6989586621679426549"><span id="local-6989586621679426551"><span class="annot"><span class="annottext">Functor InsertFn
 a -&gt; InsertFn a
 Functor InsertFn
 -&gt; (forall a. a -&gt; InsertFn a)
@@ -92,7 +92,7 @@ pure :: a -&gt; InsertFn a
 $cpure :: forall a. a -&gt; InsertFn a
 $cp1Applicative :: Functor InsertFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span>                  </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679421084"><span id="local-6989586621679421086"><span id="local-6989586621679421088"><span class="annot"><span class="annottext">Applicative InsertFn
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679426535"><span id="local-6989586621679426537"><span id="local-6989586621679426539"><span class="annot"><span class="annottext">Applicative InsertFn
 a -&gt; InsertFn a
 Applicative InsertFn
 -&gt; (forall a b. InsertFn a -&gt; (a -&gt; InsertFn b) -&gt; InsertFn b)
@@ -118,7 +118,7 @@ $c&gt;&gt; :: forall a b. InsertFn a -&gt; InsertFn b -&gt; InsertFn b
 $c&gt;&gt;= :: forall a b. InsertFn a -&gt; (a -&gt; InsertFn b) -&gt; InsertFn b
 $cp1Monad :: Applicative InsertFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span>                        </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679421080"><span class="annot"><span class="annottext">Monad InsertFn
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679426531"><span class="annot"><span class="annottext">Monad InsertFn
 Monad InsertFn
 -&gt; (forall a. String -&gt; InsertFn a) -&gt; MonadFail InsertFn
 String -&gt; InsertFn a
@@ -129,18 +129,18 @@ fail :: String -&gt; InsertFn a
 $cfail :: forall a. String -&gt; InsertFn a
 $cp1MonadFail :: Monad InsertFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadFail</span></span></span><span>                    </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679421074"><span id="local-6989586621679421076"><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span></span></span><span class="hs-special">)</span><span>  </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679421066"><span id="local-6989586621679421068"><span id="local-6989586621679421070"><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span></span></span></span><span class="hs-special">)</span><span>     </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679426525"><span id="local-6989586621679426527"><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span></span></span><span class="hs-special">)</span><span>  </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679426517"><span id="local-6989586621679426519"><span id="local-6989586621679426521"><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span></span></span></span><span class="hs-special">)</span><span>     </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-42"></span><span>
 </span><span id="line-43"></span><span class="hs-comment">-- | Run a InsertFn computation.</span><span>
-</span><span id="line-44"></span><span id="local-6989586621679421161"><span class="annot"><a href="IR.DropInference.html#runInsertFn"><span class="hs-identifier hs-type">runInsertFn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421161"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421161"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679426612"><span class="annot"><a href="IR.DropInference.html#runInsertFn"><span class="hs-identifier hs-type">runInsertFn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426612"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426612"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-45"></span><span id="runInsertFn"><span class="annot"><span class="annottext">runInsertFn :: InsertFn a -&gt; Pass a
-</span><a href="IR.DropInference.html#runInsertFn"><span class="hs-identifier hs-var hs-var">runInsertFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span id="local-6989586621679421063"><span class="annot"><span class="annottext">StateT InsertState Pass a
-</span><a href="#local-6989586621679421063"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT InsertState Pass a -&gt; InsertState -&gt; Pass a
+</span><a href="IR.DropInference.html#runInsertFn"><span class="hs-identifier hs-var hs-var">runInsertFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span id="local-6989586621679426514"><span class="annot"><span class="annottext">StateT InsertState Pass a
+</span><a href="#local-6989586621679426514"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT InsertState Pass a -&gt; InsertState -&gt; Pass a
 forall (m :: * -&gt; *) s a. Monad m =&gt; StateT s m a -&gt; s -&gt; m a
 </span><span class="hs-identifier hs-var">evalStateT</span></span><span>
 </span><span id="line-46"></span><span>  </span><span class="annot"><span class="annottext">StateT InsertState Pass a
-</span><a href="#local-6989586621679421063"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><a href="#local-6989586621679426514"><span class="hs-identifier hs-var">m</span></a></span><span>
 </span><span id="line-47"></span><span>  </span><span class="annot"><span class="annottext">InsertState :: Set VarId
 -&gt; Set VarId -&gt; [(VarId, Expr Type)] -&gt; Int -&gt; InsertState
 </span><a href="IR.DropInference.html#InsertState"><span class="hs-identifier hs-type">InsertState</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">globScope :: Set VarId
@@ -164,10 +164,10 @@ forall a. Set a
 </span><span id="line-56"></span><span class="hs-comment">-- | Get a fresh variable name</span><span>
 </span><span id="line-57"></span><span class="annot"><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-type">getFresh</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span>
 </span><span id="line-58"></span><span id="getFresh"><span class="annot"><span class="annottext">getFresh :: String -&gt; InsertFn VarId
-</span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var hs-var">getFresh</span></a></span></span><span> </span><span id="local-6989586621679421060"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679421060"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-59"></span><span>  </span><span id="local-6989586621679421059"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679421059"><span class="hs-identifier hs-var">curCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(InsertState -&gt; Int) -&gt; InsertFn Int
+</span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var hs-var">getFresh</span></a></span></span><span> </span><span id="local-6989586621679426511"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679426511"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679426510"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679426510"><span class="hs-identifier hs-var">curCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(InsertState -&gt; Int) -&gt; InsertFn Int
 forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
 </span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">InsertState -&gt; Int
 </span><a href="IR.DropInference.html#anonCount"><span class="hs-identifier hs-var hs-var">anonCount</span></a></span><span>
@@ -176,12 +176,12 @@ forall s (m :: * -&gt; *). MonadState s m =&gt; (s -&gt; s) -&gt; m ()
 </span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="annot"><span class="annottext">((InsertState -&gt; InsertState) -&gt; InsertFn ())
 -&gt; (InsertState -&gt; InsertState) -&gt; InsertFn ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679421058"><span class="annot"><span class="annottext">InsertState
-</span><a href="#local-6989586621679421058"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InsertState
-</span><a href="#local-6989586621679421058"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">anonCount :: Int
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679426509"><span class="annot"><span class="annottext">InsertState
+</span><a href="#local-6989586621679426509"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InsertState
+</span><a href="#local-6989586621679426509"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">anonCount :: Int
 </span><a href="IR.DropInference.html#anonCount"><span class="hs-identifier hs-var">anonCount</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">InsertState -&gt; Int
 </span><a href="IR.DropInference.html#anonCount"><span class="hs-identifier hs-var hs-var">anonCount</span></a></span><span> </span><span class="annot"><span class="annottext">InsertState
-</span><a href="#local-6989586621679421058"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679426509"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-special">}</span><span>
@@ -199,22 +199,22 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679421059"><span class="hs-identifier hs-var">curCount</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="#local-6989586621679426510"><span class="hs-identifier hs-var">curCount</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679421060"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><a href="#local-6989586621679426511"><span class="hs-identifier hs-var">str</span></a></span><span>
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="hs-comment">-- | Make a drop primitive with unit type</span><span>
-</span><span id="line-64"></span><span id="local-6989586621679421055"><span class="annot"><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-type">makeDrop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679421055"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-64"></span><span id="local-6989586621679426506"><span class="annot"><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-type">makeDrop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679426506"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-65"></span><span id="makeDrop"><span class="annot"><span class="annottext">makeDrop :: Expr Type -&gt; (Maybe a, Expr Type)
-</span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var hs-var">makeDrop</span></a></span></span><span> </span><span id="local-6989586621679421053"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421053"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a
+</span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var hs-var">makeDrop</span></a></span></span><span> </span><span id="local-6989586621679426504"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426504"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Drop"><span class="hs-identifier hs-var">I.Drop</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421053"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426504"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Type
 </span><a href="IR.Types.Poly.html#TBuiltin"><span class="hs-identifier hs-var">Poly.TBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin Type
@@ -222,42 +222,42 @@ forall t. Builtin t
 </span><a href="IR.Types.TypeSystem.html#Unit"><span class="hs-identifier hs-var">Poly.Unit</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-66"></span><span>
 </span><span id="line-67"></span><span class="hs-comment">-- | Make a dup primitive with unit type</span><span>
-</span><span id="line-68"></span><span id="local-6989586621679421136"><span class="annot"><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-type">makeDup</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679421136"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-68"></span><span id="local-6989586621679426587"><span class="annot"><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-type">makeDup</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679426587"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-69"></span><span id="makeDup"><span class="annot"><span class="annottext">makeDup :: Expr Type -&gt; (Maybe a, Expr Type)
-</span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var hs-var">makeDup</span></a></span></span><span> </span><span id="local-6989586621679421047"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421047"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a
+</span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var hs-var">makeDup</span></a></span></span><span> </span><span id="local-6989586621679426498"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426498"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Dup"><span class="hs-identifier hs-var">I.Dup</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421047"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426498"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
 </span><span class="hs-identifier hs-var">I.extract</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421047"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426498"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-70"></span><span>
 </span><span id="line-71"></span><span class="hs-comment">-- | Given @a@ and @b@, construct @a ; b@ (i.e., @let _ = a ; b@). </span><span>
-</span><span id="line-72"></span><span id="local-6989586621679421163"><span class="annot"><a href="IR.DropInference.html#seqExpr"><span class="hs-identifier hs-type">seqExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421163"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421163"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421163"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-72"></span><span id="local-6989586621679426614"><span class="annot"><a href="IR.DropInference.html#seqExpr"><span class="hs-identifier hs-type">seqExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426614"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426614"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426614"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-73"></span><span id="seqExpr"><span class="annot"><span class="annottext">seqExpr :: (Maybe VarId, Expr a) -&gt; Expr a -&gt; Expr a
-</span><a href="IR.DropInference.html#seqExpr"><span class="hs-identifier hs-var hs-var">seqExpr</span></a></span></span><span> </span><span id="local-6989586621679421043"><span class="annot"><span class="annottext">(Maybe VarId, Expr a)
-</span><a href="#local-6989586621679421043"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679421042"><span class="annot"><span class="annottext">Expr a
-</span><a href="#local-6989586621679421042"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)] -&gt; Expr a -&gt; a -&gt; Expr a
+</span><a href="IR.DropInference.html#seqExpr"><span class="hs-identifier hs-var hs-var">seqExpr</span></a></span></span><span> </span><span id="local-6989586621679426494"><span class="annot"><span class="annottext">(Maybe VarId, Expr a)
+</span><a href="#local-6989586621679426494"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679426493"><span class="annot"><span class="annottext">Expr a
+</span><a href="#local-6989586621679426493"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)] -&gt; Expr a -&gt; a -&gt; Expr a
 forall t. [(Maybe VarId, Expr t)] -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Let"><span class="hs-identifier hs-var">I.Let</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Maybe VarId, Expr a)
-</span><a href="#local-6989586621679421043"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Expr a
-</span><a href="#local-6989586621679421042"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr a -&gt; a
+</span><a href="#local-6989586621679426494"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Expr a
+</span><a href="#local-6989586621679426493"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr a -&gt; a
 forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
 </span><span class="hs-identifier hs-var">I.extract</span></span><span> </span><span class="annot"><span class="annottext">Expr a
-</span><a href="#local-6989586621679421042"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426493"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-74"></span><span>
 </span><span id="line-75"></span><span class="hs-comment">-- | Given @[a1 .. an]@ and @b@, construct @a1 ; .. ; an ; b@. </span><span>
-</span><span id="line-76"></span><span id="local-6989586621679421134"><span class="annot"><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-type">seqExprs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421134"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421134"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679421134"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-76"></span><span id="local-6989586621679426585"><span class="annot"><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-type">seqExprs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426585"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426585"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679426585"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-77"></span><span id="seqExprs"><span class="annot"><span class="annottext">seqExprs :: [(Maybe VarId, Expr a)] -&gt; Expr a -&gt; Expr a
-</span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var hs-var">seqExprs</span></a></span></span><span> </span><span id="local-6989586621679421039"><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)]
-</span><a href="#local-6989586621679421039"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span id="local-6989586621679421038"><span class="annot"><span class="annottext">Expr a
-</span><a href="#local-6989586621679421038"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr a) -&gt; Expr a -&gt; Expr a)
+</span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var hs-var">seqExprs</span></a></span></span><span> </span><span id="local-6989586621679426490"><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)]
+</span><a href="#local-6989586621679426490"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span id="local-6989586621679426489"><span class="annot"><span class="annottext">Expr a
+</span><a href="#local-6989586621679426489"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr a) -&gt; Expr a -&gt; Expr a)
 -&gt; Expr a -&gt; [(Maybe VarId, Expr a)] -&gt; Expr a
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
@@ -265,87 +265,87 @@ Foldable t =&gt;
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr a) -&gt; Expr a -&gt; Expr a
 forall a. (Maybe VarId, Expr a) -&gt; Expr a -&gt; Expr a
 </span><a href="IR.DropInference.html#seqExpr"><span class="hs-identifier hs-var">seqExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr a
-</span><a href="#local-6989586621679421038"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)]
-</span><a href="#local-6989586621679421039"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><a href="#local-6989586621679426489"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr a)]
+</span><a href="#local-6989586621679426490"><span class="hs-keyword hs-var">as</span></a></span><span>
 </span><span id="line-78"></span><span>
 </span><span id="line-79"></span><span>
 </span><span id="line-80"></span><span class="hs-comment">-- | Entry-point to insert dup/drops.</span><span>
 </span><span id="line-81"></span><span class="annot"><a href="IR.DropInference.html#insertDropsProgram"><span class="hs-identifier hs-type">insertDropsProgram</span></a></span><span>
 </span><span id="line-82"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-83"></span><span id="insertDropsProgram"><span class="annot"><span class="annottext">insertDropsProgram :: Program Type -&gt; Pass (Program Type)
-</span><a href="IR.DropInference.html#insertDropsProgram"><span class="hs-identifier hs-var hs-var">insertDropsProgram</span></a></span></span><span> </span><span id="local-6989586621679421036"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679421036"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">InsertFn (Program Type) -&gt; Pass (Program Type)
+</span><a href="IR.DropInference.html#insertDropsProgram"><span class="hs-identifier hs-var hs-var">insertDropsProgram</span></a></span></span><span> </span><span id="local-6989586621679426487"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679426487"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">InsertFn (Program Type) -&gt; Pass (Program Type)
 forall a. InsertFn a -&gt; Pass a
 </span><a href="IR.DropInference.html#runInsertFn"><span class="hs-identifier hs-var">runInsertFn</span></a></span><span> </span><span class="annot"><span class="annottext">(InsertFn (Program Type) -&gt; Pass (Program Type))
 -&gt; InsertFn (Program Type) -&gt; Pass (Program Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-84"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679421035"><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
-</span><a href="#local-6989586621679421035"><span class="hs-identifier hs-var hs-var">programDefs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(VarId, Expr Type)]
+</span><span id="line-84"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426486"><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
+</span><a href="#local-6989586621679426486"><span class="hs-identifier hs-var hs-var">programDefs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(VarId, Expr Type)]
 forall t. Program t -&gt; [(VarId, Expr t)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679421036"><span class="hs-identifier hs-var">program</span></a></span><span>
-</span><span id="line-85"></span><span>  </span><span id="local-6989586621679421033"><span class="annot"><span class="annottext">[(VarId, Expr Type)]
-</span><a href="#local-6989586621679421033"><span class="hs-identifier hs-var">defs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarId, Expr Type) -&gt; InsertFn (VarId, Expr Type))
+</span><a href="#local-6989586621679426487"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><span id="line-85"></span><span>  </span><span id="local-6989586621679426484"><span class="annot"><span class="annottext">[(VarId, Expr Type)]
+</span><a href="#local-6989586621679426484"><span class="hs-identifier hs-var">defs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarId, Expr Type) -&gt; InsertFn (VarId, Expr Type))
 -&gt; [(VarId, Expr Type)] -&gt; InsertFn [(VarId, Expr Type)]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">(VarId, Expr Type) -&gt; InsertFn (VarId, Expr Type)
 </span><a href="IR.DropInference.html#insertDropTop"><span class="hs-identifier hs-var">insertDropTop</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Type)]
-</span><a href="#local-6989586621679421035"><span class="hs-identifier hs-var">programDefs</span></a></span><span>
+</span><a href="#local-6989586621679426486"><span class="hs-identifier hs-var">programDefs</span></a></span><span>
 </span><span id="line-86"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; InsertFn (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; InsertFn (Program Type))
 -&gt; Program Type -&gt; InsertFn (Program Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679421036"><span class="hs-identifier hs-var">program</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
+</span><a href="#local-6989586621679426487"><span class="hs-identifier hs-var">program</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Type)]
-</span><a href="#local-6989586621679421033"><span class="hs-identifier hs-var">defs</span></a></span><span>
+</span><a href="#local-6989586621679426484"><span class="hs-identifier hs-var">defs</span></a></span><span>
 </span><span id="line-87"></span><span>                   </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">programEntry :: VarId
 </span><a href="IR.IR.html#programEntry"><span class="hs-identifier hs-var">I.programEntry</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; VarId
 forall t. Program t -&gt; VarId
 </span><a href="IR.IR.html#programEntry"><span class="hs-identifier hs-var hs-var">I.programEntry</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679421036"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679426487"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-88"></span><span>                   </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">typeDefs :: [(TConId, TypeDef Type)]
 </span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var">I.typeDefs</span></a></span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(TConId, TypeDef Type)]
 forall t. Program t -&gt; [(TConId, TypeDef t)]
 </span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var hs-var">I.typeDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679421036"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679426487"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-89"></span><span>                   </span><span class="hs-special">}</span><span>
 </span><span id="line-90"></span><span>
 </span><span id="line-91"></span><span class="hs-comment">-- | Entry point for top-level expressions.</span><span>
 </span><span id="line-92"></span><span class="annot"><a href="IR.DropInference.html#insertDropTop"><span class="hs-identifier hs-type">insertDropTop</span></a></span><span>
 </span><span id="line-93"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-94"></span><span id="insertDropTop"><span class="annot"><span class="annottext">insertDropTop :: (VarId, Expr Type) -&gt; InsertFn (VarId, Expr Type)
-</span><a href="IR.DropInference.html#insertDropTop"><span class="hs-identifier hs-var hs-var">insertDropTop</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679421028"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421028"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679421027"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421027"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-95"></span><span>  </span><span id="local-6989586621679421026"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421026"><span class="hs-identifier hs-var">insertedExpr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><a href="IR.DropInference.html#insertDropTop"><span class="hs-identifier hs-var hs-var">insertDropTop</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679426479"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426479"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426478"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426478"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621679426477"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426477"><span class="hs-identifier hs-var">insertedExpr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421027"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679426478"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-96"></span><span>  </span><span class="annot"><span class="annottext">(VarId, Expr Type) -&gt; InsertFn (VarId, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421028"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421026"><span class="hs-identifier hs-var">insertedExpr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426479"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426477"><span class="hs-identifier hs-var">insertedExpr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-97"></span><span>
 </span><span id="line-98"></span><span class="hs-comment">-- | Entry-point to inserting into expressions.</span><span>
 </span><span id="line-99"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-type">insertDropExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DropInference.html#InsertFn"><span class="hs-identifier hs-type">InsertFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Poly.html#Type"><span class="hs-identifier hs-type">Poly.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-100"></span><span>
 </span><span id="line-101"></span><span class="hs-comment">-- | Inserting dup/drops into function application with arg</span><span>
 </span><span id="line-102"></span><span id="insertDropExpr"><span class="annot"><span class="annottext">insertDropExpr :: Expr Type -&gt; InsertFn (Expr Type)
-</span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var hs-var">insertDropExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#App"><span class="hs-identifier hs-type">I.App</span></a></span><span> </span><span id="local-6989586621679421023"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421023"><span class="hs-identifier hs-var">fun</span></a></span></span><span> </span><span id="local-6989586621679421022"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421022"><span class="hs-identifier hs-var">arg</span></a></span></span><span> </span><span id="local-6989586621679421021"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679421021"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var hs-var">insertDropExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#App"><span class="hs-identifier hs-type">I.App</span></a></span><span> </span><span id="local-6989586621679426474"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426474"><span class="hs-identifier hs-var">fun</span></a></span></span><span> </span><span id="local-6989586621679426473"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426473"><span class="hs-identifier hs-var">arg</span></a></span></span><span> </span><span id="local-6989586621679426472"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426472"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-103"></span><span>  </span><span class="hs-comment">-- fun' &lt;- insertDropExpr fun</span><span>
-</span><span id="line-104"></span><span>  </span><span id="local-6989586621679421020"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421020"><span class="hs-identifier hs-var">arg'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679426471"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426471"><span class="hs-identifier hs-var">arg'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421022"><span class="hs-identifier hs-var">arg</span></a></span><span>
+</span><a href="#local-6989586621679426473"><span class="hs-identifier hs-var">arg</span></a></span><span>
 </span><span id="line-105"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
@@ -354,63 +354,63 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type -&gt; Type -&gt; Expr Type
 forall t. Expr t -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#App"><span class="hs-identifier hs-var">I.App</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421023"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421020"><span class="hs-identifier hs-var">arg'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679421021"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679426474"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426471"><span class="hs-identifier hs-var">arg'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426472"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-106"></span><span>
 </span><span id="line-107"></span><span class="hs-comment">-- | Inserting drops into let bindings</span><span>
-</span><span id="line-108"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Let"><span class="hs-identifier hs-type">I.Let</span></a></span><span> </span><span id="local-6989586621679421019"><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421019"><span class="hs-identifier hs-var">bins</span></a></span></span><span> </span><span id="local-6989586621679421018"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421018"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679421017"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679421017"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-109"></span><span>  </span><span id="local-6989586621679421016"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421016"><span class="hs-identifier hs-var">retVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
+</span><span id="line-108"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Let"><span class="hs-identifier hs-type">I.Let</span></a></span><span> </span><span id="local-6989586621679426470"><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426470"><span class="hs-identifier hs-var">bins</span></a></span></span><span> </span><span id="local-6989586621679426469"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426469"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679426468"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426468"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621679426467"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426467"><span class="hs-identifier hs-var">retVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
 </span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_let&quot;</span></span><span>
-</span><span id="line-110"></span><span>  </span><span id="local-6989586621679421015"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421015"><span class="hs-identifier hs-var">expr'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-110"></span><span>  </span><span id="local-6989586621679426466"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426466"><span class="hs-identifier hs-var">expr'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421018"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-111"></span><span>  </span><span id="local-6989586621679421014"><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421014"><span class="hs-identifier hs-var">bins'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426469"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621679426465"><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426465"><span class="hs-identifier hs-var">bins'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 -&gt; ((Maybe VarId, Expr Type) -&gt; InsertFn (Maybe VarId, Expr Type))
 -&gt; InsertFn [(Maybe VarId, Expr Type)]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421019"><span class="hs-identifier hs-var">bins</span></a></span><span> </span><span class="annot"><span class="annottext">(((Maybe VarId, Expr Type) -&gt; InsertFn (Maybe VarId, Expr Type))
+</span><a href="#local-6989586621679426470"><span class="hs-identifier hs-var">bins</span></a></span><span> </span><span class="annot"><span class="annottext">(((Maybe VarId, Expr Type) -&gt; InsertFn (Maybe VarId, Expr Type))
  -&gt; InsertFn [(Maybe VarId, Expr Type)])
 -&gt; ((Maybe VarId, Expr Type) -&gt; InsertFn (Maybe VarId, Expr Type))
 -&gt; InsertFn [(Maybe VarId, Expr Type)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679421013"><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679421013"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679421012"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421012"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-112"></span><span>    </span><span id="local-6989586621679421011"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421011"><span class="hs-identifier hs-var">temp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679426464"><span class="annot"><span class="annottext">Maybe VarId
+</span><a href="#local-6989586621679426464"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426463"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426463"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-112"></span><span>    </span><span id="local-6989586621679426462"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426462"><span class="hs-identifier hs-var">temp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
 </span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_let_underscore&quot;</span></span><span>
-</span><span id="line-113"></span><span>    </span><span id="local-6989586621679421010"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421010"><span class="hs-identifier hs-var">d'</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-113"></span><span>    </span><span id="local-6989586621679426461"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426461"><span class="hs-identifier hs-var">d'</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421012"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="#local-6989586621679426463"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-114"></span><span>    </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type) -&gt; InsertFn (Maybe VarId, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Maybe VarId -&gt; Bool
 forall a. Maybe a -&gt; Bool
 </span><span class="hs-identifier hs-var">isNothing</span></span><span> </span><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679421013"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
+</span><a href="#local-6989586621679426464"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421011"><span class="hs-identifier hs-var">temp</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679421013"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421010"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-115"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679421009"><span class="annot"><span class="annottext">makeFun :: (Expr t -&gt; t) -&gt; (Maybe VarId, w t) -&gt; t
-</span><a href="#local-6989586621679421009"><span class="hs-identifier hs-var hs-var">makeFun</span></a></span></span><span> </span><span id="local-6989586621679421008"><span class="annot"><span class="annottext">Expr t -&gt; t
-</span><a href="#local-6989586621679421008"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679421007"><span class="annot"><span class="annottext">(Maybe VarId, w t)
-</span><a href="#local-6989586621679421007"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; t
-</span><a href="#local-6989586621679421008"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr t -&gt; t) -&gt; Expr t -&gt; t
+</span><a href="#local-6989586621679426462"><span class="hs-identifier hs-var">temp</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe VarId
+</span><a href="#local-6989586621679426464"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426461"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426460"><span class="annot"><span class="annottext">makeFun :: (Expr t -&gt; t) -&gt; (Maybe VarId, w t) -&gt; t
+</span><a href="#local-6989586621679426460"><span class="hs-identifier hs-var hs-var">makeFun</span></a></span></span><span> </span><span id="local-6989586621679426459"><span class="annot"><span class="annottext">Expr t -&gt; t
+</span><a href="#local-6989586621679426459"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679426458"><span class="annot"><span class="annottext">(Maybe VarId, w t)
+</span><a href="#local-6989586621679426458"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; t
+</span><a href="#local-6989586621679426459"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr t -&gt; t) -&gt; Expr t -&gt; t
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Expr t
 forall t. VarId -&gt; t -&gt; Expr t
@@ -421,16 +421,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, w t) -&gt; Maybe VarId
 forall a b. (a, b) -&gt; a
 </span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, w t)
-</span><a href="#local-6989586621679421007"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">w t -&gt; t
+</span><a href="#local-6989586621679426458"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">w t -&gt; t
 forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
 </span><span class="hs-identifier hs-var">I.extract</span></span><span> </span><span class="annot"><span class="annottext">(w t -&gt; t) -&gt; w t -&gt; t
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, w t) -&gt; w t
 forall a b. (a, b) -&gt; b
 </span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, w t)
-</span><a href="#local-6989586621679421007"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-116"></span><span>      </span><span id="local-6989586621679421005"><span class="annot"><span class="annottext">dupBins :: [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679421005"><span class="hs-identifier hs-var hs-var">dupBins</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr Type) -&gt; (Maybe a, Expr Type))
+</span><a href="#local-6989586621679426458"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-116"></span><span>      </span><span id="local-6989586621679426456"><span class="annot"><span class="annottext">dupBins :: [(Maybe a, Expr Type)]
+</span><a href="#local-6989586621679426456"><span class="hs-identifier hs-var hs-var">dupBins</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr Type) -&gt; (Maybe a, Expr Type))
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe a, Expr Type)]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr Type -&gt; (Maybe a, Expr Type))
@@ -438,12 +438,12 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 forall (w :: * -&gt; *) t t.
 Comonad w =&gt;
 (Expr t -&gt; t) -&gt; (Maybe VarId, w t) -&gt; t
-</span><a href="#local-6989586621679421009"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426460"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421014"><span class="hs-identifier hs-var">bins'</span></a></span><span>
-</span><span id="line-117"></span><span>      </span><span id="local-6989586621679421004"><span class="annot"><span class="annottext">dropBins :: [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679421004"><span class="hs-identifier hs-var hs-var">dropBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr Type) -&gt; (Maybe a, Expr Type))
+</span><a href="#local-6989586621679426465"><span class="hs-identifier hs-var">bins'</span></a></span><span>
+</span><span id="line-117"></span><span>      </span><span id="local-6989586621679426455"><span class="annot"><span class="annottext">dropBins :: [(Maybe a, Expr Type)]
+</span><a href="#local-6989586621679426455"><span class="hs-identifier hs-var hs-var">dropBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Maybe VarId, Expr Type) -&gt; (Maybe a, Expr Type))
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe a, Expr Type)]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr Type -&gt; (Maybe a, Expr Type))
@@ -451,38 +451,38 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 forall (w :: * -&gt; *) t t.
 Comonad w =&gt;
 (Expr t -&gt; t) -&gt; (Maybe VarId, w t) -&gt; t
-</span><a href="#local-6989586621679421009"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426460"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421014"><span class="hs-identifier hs-var">bins'</span></a></span><span>
-</span><span id="line-118"></span><span>      </span><span id="local-6989586621679421003"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421003"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426465"><span class="hs-identifier hs-var">bins'</span></a></span><span>
+</span><span id="line-118"></span><span>      </span><span id="local-6989586621679426454"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426454"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 forall a. [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679421005"><span class="hs-identifier hs-var">dupBins</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426456"><span class="hs-identifier hs-var">dupBins</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421016"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421015"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426467"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426466"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 forall a. [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679421004"><span class="hs-identifier hs-var">dropBins</span></a></span><span>
-</span><span id="line-119"></span><span>      </span><span id="local-6989586621679421002"><span class="annot"><span class="annottext">retExpr :: Expr Type
-</span><a href="#local-6989586621679421002"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426455"><span class="hs-identifier hs-var">dropBins</span></a></span><span>
+</span><span id="line-119"></span><span>      </span><span id="local-6989586621679426453"><span class="annot"><span class="annottext">retExpr :: Expr Type
+</span><a href="#local-6989586621679426453"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679421016"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679421017"><span class="hs-identifier hs-var">typ</span></a></span><span>
-</span><span id="line-120"></span><span>      </span><span id="local-6989586621679421001"><span class="annot"><span class="annottext">retExpr' :: Expr Type
-</span><a href="#local-6989586621679421001"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679426467"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426468"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><span id="line-120"></span><span>      </span><span id="local-6989586621679426452"><span class="annot"><span class="annottext">retExpr' :: Expr Type
+</span><a href="#local-6989586621679426452"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
 forall a. [(Maybe VarId, Expr a)] -&gt; Expr a -&gt; Expr a
 </span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var">seqExprs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421003"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421002"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
+</span><a href="#local-6989586621679426454"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426453"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
 </span><span id="line-121"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
@@ -491,80 +491,80 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Type -&gt; Expr Type
 forall t. [(Maybe VarId, Expr t)] -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Let"><span class="hs-identifier hs-var">I.Let</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679421014"><span class="hs-identifier hs-var">bins'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679421001"><span class="hs-identifier hs-var">retExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679421017"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679426465"><span class="hs-identifier hs-var">bins'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426452"><span class="hs-identifier hs-var">retExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426468"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-122"></span><span>
 </span><span id="line-123"></span><span class="hs-comment">-- | Inserting drops into lambda functions</span><span>
 </span><span id="line-124"></span><span>
-</span><span id="line-125"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Lambda"><span class="hs-identifier hs-type">I.Lambda</span></a></span><span> </span><span id="local-6989586621679420999"><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679420999"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679420998"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420998"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679420997"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420997"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-126"></span><span>  </span><span id="local-6989586621679420996"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420996"><span class="hs-identifier hs-var">retVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
+</span><span id="line-125"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Lambda"><span class="hs-identifier hs-type">I.Lambda</span></a></span><span> </span><span id="local-6989586621679426450"><span class="annot"><span class="annottext">Maybe VarId
+</span><a href="#local-6989586621679426450"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679426449"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426449"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679426448"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426448"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-126"></span><span>  </span><span id="local-6989586621679426447"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426447"><span class="hs-identifier hs-var">retVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
 </span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_lambda&quot;</span></span><span>
-</span><span id="line-127"></span><span>  </span><span id="local-6989586621679420995"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420995"><span class="hs-identifier hs-var">expr'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-127"></span><span>  </span><span id="local-6989586621679426446"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426446"><span class="hs-identifier hs-var">expr'</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420998"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-128"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679420994"><span class="annot"><span class="annottext">typArg :: Type -&gt; Type
-</span><a href="#local-6989586621679420994"><span class="hs-identifier hs-var hs-var">typArg</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Poly.html#TBuiltin"><span class="hs-identifier hs-type">Poly.TBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.TypeSystem.html#Arrow"><span class="hs-identifier hs-type">Poly.Arrow</span></a></span><span> </span><span id="local-6989586621679420992"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420992"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426449"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-128"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426445"><span class="annot"><span class="annottext">typArg :: Type -&gt; Type
+</span><a href="#local-6989586621679426445"><span class="hs-identifier hs-var hs-var">typArg</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Poly.html#TBuiltin"><span class="hs-identifier hs-type">Poly.TBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.TypeSystem.html#Arrow"><span class="hs-identifier hs-type">Poly.Arrow</span></a></span><span> </span><span id="local-6989586621679426443"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426443"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420992"><span class="hs-identifier hs-var">l</span></a></span><span>
-</span><span id="line-129"></span><span>      </span><span class="annot"><a href="#local-6989586621679420994"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span id="local-6989586621679420991"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420991"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420991"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-130"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679420990"><span class="annot"><span class="annottext">varExpr :: Expr Type
-</span><a href="#local-6989586621679420990"><span class="hs-identifier hs-var hs-var">varExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426443"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-129"></span><span>      </span><span class="annot"><a href="#local-6989586621679426445"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span id="local-6989586621679426442"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426442"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426442"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-130"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426441"><span class="annot"><span class="annottext">varExpr :: Expr Type
+</span><a href="#local-6989586621679426441"><span class="hs-identifier hs-var hs-var">varExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe VarId -&gt; VarId
 forall a. HasCallStack =&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromJust</span></span><span> </span><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679420999"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
-</span><a href="#local-6989586621679420994"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420997"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-131"></span><span>      </span><span id="local-6989586621679420989"><span class="annot"><span class="annottext">varDup :: (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420989"><span class="hs-identifier hs-var hs-var">varDup</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426450"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679426445"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426448"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>      </span><span id="local-6989586621679426440"><span class="annot"><span class="annottext">varDup :: (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426440"><span class="hs-identifier hs-var hs-var">varDup</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420990"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
-</span><span id="line-132"></span><span>      </span><span id="local-6989586621679420988"><span class="annot"><span class="annottext">varDrop :: (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420988"><span class="hs-identifier hs-var hs-var">varDrop</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426441"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
+</span><span id="line-132"></span><span>      </span><span id="local-6989586621679426439"><span class="annot"><span class="annottext">varDrop :: (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426439"><span class="hs-identifier hs-var hs-var">varDrop</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420990"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
-</span><span id="line-133"></span><span>      </span><span id="local-6989586621679420987"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420987"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426441"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
+</span><span id="line-133"></span><span>      </span><span id="local-6989586621679426438"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426438"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 forall a. (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420989"><span class="hs-identifier hs-var">varDup</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426440"><span class="hs-identifier hs-var">varDup</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420996"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420995"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426447"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426446"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 forall a. (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420988"><span class="hs-identifier hs-var">varDrop</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-134"></span><span>      </span><span id="local-6989586621679420986"><span class="annot"><span class="annottext">retExpr :: Expr Type
-</span><a href="#local-6989586621679420986"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426439"><span class="hs-identifier hs-var">varDrop</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-134"></span><span>      </span><span id="local-6989586621679426437"><span class="annot"><span class="annottext">retExpr :: Expr Type
+</span><a href="#local-6989586621679426437"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420996"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
-</span><a href="#local-6989586621679420994"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420997"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-135"></span><span>      </span><span id="local-6989586621679420985"><span class="annot"><span class="annottext">retExpr' :: Expr Type
-</span><a href="#local-6989586621679420985"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679426447"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679426445"><span class="hs-identifier hs-var">typArg</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426448"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>      </span><span id="local-6989586621679426436"><span class="annot"><span class="annottext">retExpr' :: Expr Type
+</span><a href="#local-6989586621679426436"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
 forall a. [(Maybe VarId, Expr a)] -&gt; Expr a -&gt; Expr a
 </span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var">seqExprs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420987"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420986"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
+</span><a href="#local-6989586621679426438"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426437"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
 </span><span id="line-136"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
@@ -573,36 +573,36 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Maybe VarId -&gt; Expr Type -&gt; Type -&gt; Expr Type
 forall t. Maybe VarId -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Lambda"><span class="hs-identifier hs-var">I.Lambda</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679420999"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420985"><span class="hs-identifier hs-var">retExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420997"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679426450"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426436"><span class="hs-identifier hs-var">retExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426448"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-137"></span><span>
 </span><span id="line-138"></span><span class="hs-comment">-- | Inserting drops into pattern-matching</span><span>
-</span><span id="line-139"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679420983"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420983"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679420982"><span class="annot"><span class="annottext">[(Alt, Expr Type)]
-</span><a href="#local-6989586621679420982"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679420981"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420981"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-140"></span><span>  </span><span id="local-6989586621679420980"><span class="annot"><span class="annottext">[(Alt, Expr Type)]
-</span><a href="#local-6989586621679420980"><span class="hs-identifier hs-var">alts'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Alt, Expr Type)]
+</span><span id="line-139"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679426434"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426434"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679426433"><span class="annot"><span class="annottext">[(Alt, Expr Type)]
+</span><a href="#local-6989586621679426433"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679426432"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426432"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-140"></span><span>  </span><span id="local-6989586621679426431"><span class="annot"><span class="annottext">[(Alt, Expr Type)]
+</span><a href="#local-6989586621679426431"><span class="hs-identifier hs-var">alts'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Alt, Expr Type)]
 -&gt; ((Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type))
 -&gt; InsertFn [(Alt, Expr Type)]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[(Alt, Expr Type)]
-</span><a href="#local-6989586621679420982"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">(((Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type))
+</span><a href="#local-6989586621679426433"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">(((Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type))
  -&gt; InsertFn [(Alt, Expr Type)])
 -&gt; ((Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type))
 -&gt; InsertFn [(Alt, Expr Type)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679420979"><span class="annot"><span class="annottext">Alt
-</span><a href="#local-6989586621679420979"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679420978"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420978"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679426430"><span class="annot"><span class="annottext">Alt
+</span><a href="#local-6989586621679426430"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426429"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426429"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-141"></span><span>    </span><span class="annot"><span class="annottext">(Alt, Expr Type) -&gt; Expr Type -&gt; InsertFn (Alt, Expr Type)
 </span><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var">insertDropAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Alt
-</span><a href="#local-6989586621679420979"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420978"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420983"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679426430"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426429"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426434"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-142"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
@@ -611,24 +611,24 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; [(Alt, Expr Type)] -&gt; Type -&gt; Expr Type
 forall t. Expr t -&gt; [(Alt, Expr t)] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Match"><span class="hs-identifier hs-var">I.Match</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420983"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">[(Alt, Expr Type)]
-</span><a href="#local-6989586621679420980"><span class="hs-identifier hs-var">alts'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420981"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679426434"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">[(Alt, Expr Type)]
+</span><a href="#local-6989586621679426431"><span class="hs-identifier hs-var">alts'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426432"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-143"></span><span>
 </span><span id="line-144"></span><span class="hs-comment">-- | Inserting dup/drops into primitive's arguments</span><span>
-</span><span id="line-145"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Prim"><span class="hs-identifier hs-type">I.Prim</span></a></span><span> </span><span id="local-6989586621679420976"><span class="annot"><span class="annottext">Primitive
-</span><a href="#local-6989586621679420976"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679420975"><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679420975"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span id="local-6989586621679420974"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420974"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-146"></span><span>  </span><span id="local-6989586621679420973"><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679420973"><span class="hs-identifier hs-var">es'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
+</span><span id="line-145"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Prim"><span class="hs-identifier hs-type">I.Prim</span></a></span><span> </span><span id="local-6989586621679426427"><span class="annot"><span class="annottext">Primitive
+</span><a href="#local-6989586621679426427"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679426426"><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679426426"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span id="local-6989586621679426425"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426425"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-146"></span><span>  </span><span id="local-6989586621679426424"><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679426424"><span class="hs-identifier hs-var">es'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
 -&gt; [Expr Type] -&gt; InsertFn [Expr Type]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679420975"><span class="hs-identifier hs-var">es</span></a></span><span>
+</span><a href="#local-6989586621679426426"><span class="hs-identifier hs-var">es</span></a></span><span>
 </span><span id="line-147"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; InsertFn (Expr Type))
@@ -637,16 +637,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
-</span><a href="#local-6989586621679420976"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679420973"><span class="hs-identifier hs-var">es'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420974"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679426427"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679426424"><span class="hs-identifier hs-var">es'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426425"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-148"></span><span>
 </span><span id="line-149"></span><span class="hs-comment">-- | placeholder for other exprs</span><span>
-</span><span id="line-150"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span id="local-6989586621679420972"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420972"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-150"></span><span class="annot"><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span id="local-6989586621679426423"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426423"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420972"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679426423"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-151"></span><span>
 </span><span id="line-152"></span><span>
 </span><span id="line-153"></span><span class="hs-comment">-- | Entry-point to inserting into pattern-matching arms.</span><span>
@@ -657,104 +657,104 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span id="line-158"></span><span>
 </span><span id="line-159"></span><span class="hs-comment">-- | Inserting dup/drops into AltDefault arms</span><span>
 </span><span id="line-160"></span><span id="insertDropAlt"><span class="annot"><span class="annottext">insertDropAlt :: (Alt, Expr Type) -&gt; Expr Type -&gt; InsertFn (Alt, Expr Type)
-</span><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var hs-var">insertDropAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltDefault"><span class="hs-identifier hs-type">I.AltDefault</span></a></span><span> </span><span id="local-6989586621679420970"><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679420970"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679420969"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420969"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679420968"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420968"><span class="hs-identifier hs-var">exprMatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-161"></span><span>  </span><span id="local-6989586621679420967"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420967"><span class="hs-identifier hs-var">retVar</span></a></span></span><span>      </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
+</span><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var hs-var">insertDropAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltDefault"><span class="hs-identifier hs-type">I.AltDefault</span></a></span><span> </span><span id="local-6989586621679426421"><span class="annot"><span class="annottext">Maybe VarId
+</span><a href="#local-6989586621679426421"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426420"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426420"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679426419"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426419"><span class="hs-identifier hs-var">exprMatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-161"></span><span>  </span><span id="local-6989586621679426418"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426418"><span class="hs-identifier hs-var">retVar</span></a></span></span><span>      </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
 </span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_alt_default&quot;</span></span><span>
-</span><span id="line-162"></span><span>  </span><span id="local-6989586621679420966"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420966"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-162"></span><span>  </span><span id="local-6989586621679426417"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426417"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420969"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
-</span><span id="line-163"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679420965"><span class="annot"><span class="annottext">varDup :: (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420965"><span class="hs-identifier hs-var hs-var">varDup</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426420"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426416"><span class="annot"><span class="annottext">varDup :: (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426416"><span class="hs-identifier hs-var hs-var">varDup</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420968"><span class="hs-identifier hs-var">exprMatch</span></a></span><span>
-</span><span id="line-164"></span><span>      </span><span id="local-6989586621679420964"><span class="annot"><span class="annottext">varDrop :: (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420964"><span class="hs-identifier hs-var hs-var">varDrop</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426419"><span class="hs-identifier hs-var">exprMatch</span></a></span><span>
+</span><span id="line-164"></span><span>      </span><span id="local-6989586621679426415"><span class="annot"><span class="annottext">varDrop :: (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426415"><span class="hs-identifier hs-var hs-var">varDrop</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420968"><span class="hs-identifier hs-var">exprMatch</span></a></span><span>
-</span><span id="line-165"></span><span>      </span><span id="local-6989586621679420963"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420963"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426419"><span class="hs-identifier hs-var">exprMatch</span></a></span><span>
+</span><span id="line-165"></span><span>      </span><span id="local-6989586621679426414"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426414"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 forall a. (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420965"><span class="hs-identifier hs-var">varDup</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426416"><span class="hs-identifier hs-var">varDup</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420967"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420966"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426418"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426417"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 forall a. (Maybe a, Expr Type)
-</span><a href="#local-6989586621679420964"><span class="hs-identifier hs-var">varDrop</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-166"></span><span>      </span><span id="local-6989586621679420962"><span class="annot"><span class="annottext">retExpr :: Expr Type
-</span><a href="#local-6989586621679420962"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426415"><span class="hs-identifier hs-var">varDrop</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-166"></span><span>      </span><span id="local-6989586621679426413"><span class="annot"><span class="annottext">retExpr :: Expr Type
+</span><a href="#local-6989586621679426413"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420967"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; Type
+</span><a href="#local-6989586621679426418"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
 </span><span class="hs-identifier hs-var">I.extract</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420966"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-167"></span><span>      </span><span id="local-6989586621679420961"><span class="annot"><span class="annottext">retExpr' :: Expr Type
-</span><a href="#local-6989586621679420961"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679426417"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-167"></span><span>      </span><span id="local-6989586621679426412"><span class="annot"><span class="annottext">retExpr' :: Expr Type
+</span><a href="#local-6989586621679426412"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
 forall a. [(Maybe VarId, Expr a)] -&gt; Expr a -&gt; Expr a
 </span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var">seqExprs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420963"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420962"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
+</span><a href="#local-6989586621679426414"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426413"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
 </span><span id="line-168"></span><span>  </span><span class="annot"><span class="annottext">(Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe VarId -&gt; Alt
 </span><a href="IR.IR.html#AltDefault"><span class="hs-identifier hs-var">I.AltDefault</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe VarId
-</span><a href="#local-6989586621679420970"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420961"><span class="hs-identifier hs-var">retExpr'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426421"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426412"><span class="hs-identifier hs-var">retExpr'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-169"></span><span>
 </span><span id="line-170"></span><span class="hs-comment">-- | Inserting dup/drops into AltData arms</span><span>
 </span><span id="line-171"></span><span class="hs-comment">-- | TODO: type is currently wrong and is only a placeholder</span><span>
-</span><span id="line-172"></span><span class="annot"><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var">insertDropAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltData"><span class="hs-identifier hs-type">I.AltData</span></a></span><span> </span><span id="local-6989586621679420959"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679420959"><span class="hs-identifier hs-var">dcon</span></a></span></span><span> </span><span id="local-6989586621679420958"><span class="annot"><span class="annottext">[Maybe VarId]
-</span><a href="#local-6989586621679420958"><span class="hs-identifier hs-var">vars</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679420957"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420957"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><span id="line-172"></span><span class="annot"><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var">insertDropAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltData"><span class="hs-identifier hs-type">I.AltData</span></a></span><span> </span><span id="local-6989586621679426410"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679426410"><span class="hs-identifier hs-var">dcon</span></a></span></span><span> </span><span id="local-6989586621679426409"><span class="annot"><span class="annottext">[Maybe VarId]
+</span><a href="#local-6989586621679426409"><span class="hs-identifier hs-var">vars</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426408"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426408"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-173"></span><span>  </span><span id="local-6989586621679420956"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420956"><span class="hs-identifier hs-var">retVar</span></a></span></span><span>      </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
+</span><span id="line-173"></span><span>  </span><span id="local-6989586621679426407"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426407"><span class="hs-identifier hs-var">retVar</span></a></span></span><span>      </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; InsertFn VarId
 </span><a href="IR.DropInference.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_alt_data&quot;</span></span><span>
-</span><span id="line-174"></span><span>  </span><span id="local-6989586621679420955"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420955"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-174"></span><span>  </span><span id="local-6989586621679426406"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426406"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420957"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
-</span><span id="line-175"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679420954"><span class="annot"><span class="annottext">retTyp :: Type
-</span><a href="#local-6989586621679420954"><span class="hs-identifier hs-var hs-var">retTyp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
+</span><a href="#local-6989586621679426408"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
+</span><span id="line-175"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679426405"><span class="annot"><span class="annottext">retTyp :: Type
+</span><a href="#local-6989586621679426405"><span class="hs-identifier hs-var hs-var">retTyp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
 </span><span class="hs-identifier hs-var">I.extract</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420955"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span>
-</span><span id="line-176"></span><span>      </span><span id="local-6989586621679420953"><span class="annot"><span class="annottext">makeFun :: (Expr Type -&gt; t) -&gt; VarId -&gt; t
-</span><a href="#local-6989586621679420953"><span class="hs-identifier hs-var hs-var">makeFun</span></a></span></span><span> </span><span id="local-6989586621679420952"><span class="annot"><span class="annottext">Expr Type -&gt; t
-</span><a href="#local-6989586621679420952"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679420951"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420951"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; t
-</span><a href="#local-6989586621679420952"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; t) -&gt; Expr Type -&gt; t
+</span><a href="#local-6989586621679426406"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span>
+</span><span id="line-176"></span><span>      </span><span id="local-6989586621679426404"><span class="annot"><span class="annottext">makeFun :: (Expr Type -&gt; t) -&gt; VarId -&gt; t
+</span><a href="#local-6989586621679426404"><span class="hs-identifier hs-var hs-var">makeFun</span></a></span></span><span> </span><span id="local-6989586621679426403"><span class="annot"><span class="annottext">Expr Type -&gt; t
+</span><a href="#local-6989586621679426403"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679426402"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679426402"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; t
+</span><a href="#local-6989586621679426403"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; t) -&gt; Expr Type -&gt; t
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420951"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420954"><span class="hs-identifier hs-var">retTyp</span></a></span><span>
-</span><span id="line-177"></span><span>      </span><span id="local-6989586621679420950"><span class="annot"><span class="annottext">dupBins :: [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679420950"><span class="hs-identifier hs-var hs-var">dupBins</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; (Maybe a, Expr Type))
+</span><a href="#local-6989586621679426402"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426405"><span class="hs-identifier hs-var">retTyp</span></a></span><span>
+</span><span id="line-177"></span><span>      </span><span id="local-6989586621679426401"><span class="annot"><span class="annottext">dupBins :: [(Maybe a, Expr Type)]
+</span><a href="#local-6989586621679426401"><span class="hs-identifier hs-var hs-var">dupBins</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; (Maybe a, Expr Type))
 -&gt; [VarId] -&gt; [(Maybe a, Expr Type)]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr Type -&gt; (Maybe a, Expr Type))
 -&gt; VarId -&gt; (Maybe a, Expr Type)
 forall t. (Expr Type -&gt; t) -&gt; VarId -&gt; t
-</span><a href="#local-6989586621679420953"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426404"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([VarId] -&gt; [(Maybe a, Expr Type)])
 -&gt; [VarId] -&gt; [(Maybe a, Expr Type)]
@@ -762,15 +762,15 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId] -&gt; [VarId]
 forall a. [Maybe a] -&gt; [a]
 </span><span class="hs-identifier hs-var">catMaybes</span></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId]
-</span><a href="#local-6989586621679420958"><span class="hs-identifier hs-var">vars</span></a></span><span>
-</span><span id="line-178"></span><span>      </span><span id="local-6989586621679420949"><span class="annot"><span class="annottext">dropBins :: [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679420949"><span class="hs-identifier hs-var hs-var">dropBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; (Maybe a, Expr Type))
+</span><a href="#local-6989586621679426409"><span class="hs-identifier hs-var">vars</span></a></span><span>
+</span><span id="line-178"></span><span>      </span><span id="local-6989586621679426400"><span class="annot"><span class="annottext">dropBins :: [(Maybe a, Expr Type)]
+</span><a href="#local-6989586621679426400"><span class="hs-identifier hs-var hs-var">dropBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; (Maybe a, Expr Type))
 -&gt; [VarId] -&gt; [(Maybe a, Expr Type)]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr Type -&gt; (Maybe a, Expr Type))
 -&gt; VarId -&gt; (Maybe a, Expr Type)
 forall t. (Expr Type -&gt; t) -&gt; VarId -&gt; t
-</span><a href="#local-6989586621679420953"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
+</span><a href="#local-6989586621679426404"><span class="hs-identifier hs-var">makeFun</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; (Maybe a, Expr Type)
 forall a. Expr Type -&gt; (Maybe a, Expr Type)
 </span><a href="IR.DropInference.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([VarId] -&gt; [(Maybe a, Expr Type)])
 -&gt; [VarId] -&gt; [(Maybe a, Expr Type)]
@@ -778,56 +778,56 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId] -&gt; [VarId]
 forall a. [Maybe a] -&gt; [a]
 </span><span class="hs-identifier hs-var">catMaybes</span></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId]
-</span><a href="#local-6989586621679420958"><span class="hs-identifier hs-var">vars</span></a></span><span>
-</span><span id="line-179"></span><span>      </span><span id="local-6989586621679420948"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420948"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426409"><span class="hs-identifier hs-var">vars</span></a></span><span>
+</span><span id="line-179"></span><span>      </span><span id="local-6989586621679426399"><span class="annot"><span class="annottext">exprBins :: [(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426399"><span class="hs-identifier hs-var hs-var">exprBins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 forall a. [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679420950"><span class="hs-identifier hs-var">dupBins</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
+</span><a href="#local-6989586621679426401"><span class="hs-identifier hs-var">dupBins</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Maybe VarId
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420956"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420955"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
+</span><a href="#local-6989586621679426407"><span class="hs-identifier hs-var">retVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426406"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe VarId, Expr Type)
 -&gt; [(Maybe VarId, Expr Type)] -&gt; [(Maybe VarId, Expr Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
 forall a. [(Maybe a, Expr Type)]
-</span><a href="#local-6989586621679420949"><span class="hs-identifier hs-var">dropBins</span></a></span><span>
-</span><span id="line-180"></span><span>      </span><span id="local-6989586621679420947"><span class="annot"><span class="annottext">retExpr :: Expr Type
-</span><a href="#local-6989586621679420947"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679426400"><span class="hs-identifier hs-var">dropBins</span></a></span><span>
+</span><span id="line-180"></span><span>      </span><span id="local-6989586621679426398"><span class="annot"><span class="annottext">retExpr :: Expr Type
+</span><a href="#local-6989586621679426398"><span class="hs-identifier hs-var hs-var">retExpr</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679420956"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679420954"><span class="hs-identifier hs-var">retTyp</span></a></span><span>
-</span><span id="line-181"></span><span>      </span><span id="local-6989586621679420946"><span class="annot"><span class="annottext">retExpr' :: Expr Type
-</span><a href="#local-6989586621679420946"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679426407"><span class="hs-identifier hs-var">retVar</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679426405"><span class="hs-identifier hs-var">retTyp</span></a></span><span>
+</span><span id="line-181"></span><span>      </span><span id="local-6989586621679426397"><span class="annot"><span class="annottext">retExpr' :: Expr Type
+</span><a href="#local-6989586621679426397"><span class="hs-identifier hs-var hs-var">retExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)] -&gt; Expr Type -&gt; Expr Type
 forall a. [(Maybe VarId, Expr a)] -&gt; Expr a -&gt; Expr a
 </span><a href="IR.DropInference.html#seqExprs"><span class="hs-identifier hs-var">seqExprs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe VarId, Expr Type)]
-</span><a href="#local-6989586621679420948"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420947"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
+</span><a href="#local-6989586621679426399"><span class="hs-identifier hs-var">exprBins</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426398"><span class="hs-identifier hs-var">retExpr</span></a></span><span>
 </span><span id="line-182"></span><span>  </span><span class="annot"><span class="annottext">(Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId -&gt; [Maybe VarId] -&gt; Alt
 </span><a href="IR.IR.html#AltData"><span class="hs-identifier hs-var">I.AltData</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679420959"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId]
-</span><a href="#local-6989586621679420958"><span class="hs-identifier hs-var">vars</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420946"><span class="hs-identifier hs-var">retExpr'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426410"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe VarId]
+</span><a href="#local-6989586621679426409"><span class="hs-identifier hs-var">vars</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426397"><span class="hs-identifier hs-var">retExpr'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-183"></span><span>
 </span><span id="line-184"></span><span class="hs-comment">-- | Inserting dup/drops into other pattern match arms</span><span>
-</span><span id="line-185"></span><span class="annot"><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var">insertDropAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-type">I.AltLit</span></a></span><span> </span><span id="local-6989586621679420944"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679420944"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679420943"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420943"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><span id="line-185"></span><span class="annot"><a href="IR.DropInference.html#insertDropAlt"><span class="hs-identifier hs-var">insertDropAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-type">I.AltLit</span></a></span><span> </span><span id="local-6989586621679426395"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679426395"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679426394"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426394"><span class="hs-identifier hs-var">exprReturn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-186"></span><span>  </span><span id="local-6989586621679420942"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420942"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621679426393"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426393"><span class="hs-identifier hs-var">exprReturn'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; InsertFn (Expr Type)
 </span><a href="IR.DropInference.html#insertDropExpr"><span class="hs-identifier hs-var">insertDropExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420943"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
+</span><a href="#local-6989586621679426394"><span class="hs-identifier hs-var">exprReturn</span></a></span><span>
 </span><span id="line-187"></span><span>  </span><span class="annot"><span class="annottext">(Alt, Expr Type) -&gt; InsertFn (Alt, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Alt
 </span><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-var">I.AltLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679420944"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679420942"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679426395"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679426393"><span class="hs-identifier hs-var">exprReturn'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-188"></span></pre></body></html>

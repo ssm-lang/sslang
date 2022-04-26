@@ -867,6 +867,110 @@ data Fixity
 Infixl :: Int -> Identifier -> Fixity
 Infixr :: Int -> Identifier -> Fixity
 
+module Front.Pattern.Vector
+data PatVec
+PatVec :: Int -> [Pat] -> PatVec
+[ncol] :: PatVec -> Int
+[toList] :: PatVec -> [Pat]
+fromList :: [Pat] -> PatVec
+singleton :: Pat -> PatVec
+extend :: PatVec -> PatVec -> PatVec
+append :: Pat -> PatVec -> PatVec
+hd :: PatVec -> Pat
+tl :: PatVec -> PatVec
+specialize :: PatVec -> PatVec
+specializeWild :: Int -> PatVec -> PatVec
+instance GHC.Show.Show Front.Pattern.Vector.PatVec
+instance GHC.Classes.Eq Front.Pattern.Vector.PatVec
+
+module Front.Pattern.Matrix
+data PatMat
+PatMat :: Int -> Int -> [PatVec] -> PatMat
+[nrow] :: PatMat -> Int
+[ncol] :: PatMat -> Int
+[toList] :: PatMat -> [PatVec]
+singleCol :: [Pat] -> PatMat
+singleRow :: [Pat] -> PatMat
+fromPatVec :: PatVec -> PatMat
+emptyWithCols :: Int -> PatMat
+hd :: PatMat -> PatVec
+tl :: PatMat -> PatMat
+extend :: PatMat -> PatMat -> PatMat
+prepend :: PatVec -> PatMat -> PatMat
+specializeLit :: Literal -> PatMat -> PatMat
+specializeTup :: Int -> PatMat -> PatMat
+specializeCons :: Int -> Identifier -> PatMat -> PatMat
+defaultize :: PatMat -> PatMat
+instance GHC.Show.Show Front.Pattern.Matrix.PatMat
+instance GHC.Classes.Eq Front.Pattern.Matrix.PatMat
+
+module Front.Pattern.Anomaly
+data CInfo
+CInfo :: Identifier -> Identifier -> Int -> CInfo
+[cName] :: CInfo -> Identifier
+[cType] :: CInfo -> Identifier
+[cArity] :: CInfo -> Int
+data TInfo
+TInfo :: Identifier -> Set Identifier -> TInfo
+[tName] :: TInfo -> Identifier
+[tCSet] :: TInfo -> Set Identifier
+data AnomalyCtx
+AnomalyCtx :: Map Identifier TInfo -> Map Identifier CInfo -> AnomalyCtx
+[typeMap] :: AnomalyCtx -> Map Identifier TInfo
+[consMap] :: AnomalyCtx -> Map Identifier CInfo
+newtype AnomalyFn a
+AnomalyFn :: ReaderT AnomalyCtx Pass a -> AnomalyFn a
+buildCtx :: [TypeDef] -> AnomalyCtx
+
+-- | Run a AnomalyFn computation.
+runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
+checkProgram :: Program -> Pass ()
+checkDefs :: [Definition] -> AnomalyFn ()
+checkDef :: Definition -> AnomalyFn ()
+checkExprs :: [Expr] -> AnomalyFn ()
+checkExpr :: Expr -> AnomalyFn ()
+checkOpRegion :: OpRegion -> AnomalyFn ()
+checkPats :: [Pat] -> AnomalyFn ()
+checkExhaustive :: PatMat -> AnomalyFn ()
+useful :: PatVec -> PatMat -> AnomalyFn Bool
+usefulWildLit :: LitType -> PatVec -> PatMat -> AnomalyFn Bool
+samplePat :: PatMat -> Maybe Pat
+hasCompleteCons :: Set Identifier -> PatMat -> Bool
+hasCompleteLit :: LitType -> PatMat -> Bool
+wellFormed :: PatVec -> PatMat -> AnomalyFn ()
+wellFormedPat :: Pat -> PatMat -> AnomalyFn ()
+wellFormedCons :: TInfo -> PatMat -> AnomalyFn ()
+wellFormedTup :: Int -> PatMat -> AnomalyFn ()
+wellFormedLit :: Literal -> PatMat -> AnomalyFn ()
+wellFormedWild :: PatMat -> AnomalyFn ()
+data LitType
+LitIntT :: LitType
+LitStringT :: LitType
+LitRatT :: LitType
+LitCharT :: LitType
+LitEventT :: LitType
+litToType :: Literal -> LitType
+askCInfo :: Identifier -> AnomalyFn CInfo
+askTInfo :: Identifier -> AnomalyFn TInfo
+
+-- | Report <a>Identifier</a> for error reporting.
+showId :: Identifier -> ErrorMsg
+showSet :: Set Identifier -> ErrorMsg
+throwMalformedError :: AnomalyFn a
+instance GHC.Show.Show Front.Pattern.Anomaly.CInfo
+instance GHC.Classes.Eq Front.Pattern.Anomaly.CInfo
+instance GHC.Show.Show Front.Pattern.Anomaly.TInfo
+instance GHC.Classes.Eq Front.Pattern.Anomaly.TInfo
+instance Control.Monad.Reader.Class.MonadReader Front.Pattern.Anomaly.AnomalyCtx Front.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Writer.Class.MonadWriter [Common.Compiler.Warning] Front.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Front.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Fail.MonadFail Front.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Monad Front.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Applicative Front.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Functor Front.Pattern.Anomaly.AnomalyFn
+instance GHC.Show.Show Front.Pattern.Anomaly.LitType
+instance GHC.Classes.Eq Front.Pattern.Anomaly.LitType
+
 
 -- | Check scoping rules and naming conventions for identifiers.
 --   
