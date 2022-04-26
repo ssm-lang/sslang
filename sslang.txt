@@ -1179,6 +1179,9 @@ syntaxErr :: String -> Alex a
 
 -- | Internal compiler error for unreachable code.
 internalErr :: String -> Alex a
+
+-- | Convert Alex's String-encoded errors to Sslang <a>Error</a>.
+liftErr :: String -> Error
 instance GHC.Show.Show Front.Scanner.AlexPosn
 instance GHC.Classes.Eq Front.Scanner.AlexPosn
 instance GHC.Show.Show Front.Scanner.ScannerContext

@@ -75,11 +75,11 @@ a 'VarId' out of identifier @i@).
 </span><span id="line-75"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Language.C.Quote</span></span><span>               </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">ToIdent</span></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span> </span><span class="hs-special">)</span><span>
 </span><span id="line-76"></span><span>
 </span><span id="line-77"></span><span class="hs-comment">-- | A type that may be used as a Sslang identifier.</span><span>
-</span><span id="line-78"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679406859"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679406859"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="Identifiable"><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-var">Identifiable</span></a></span></span><span> </span><span id="local-6989586621679406859"><span class="annot"><a href="#local-6989586621679406859"><span class="hs-identifier hs-type">i</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-79"></span><span>  </span><span id="ident"><span class="annot"><a href="Common.Identifiers.html#ident"><span class="hs-identifier hs-type">ident</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679406859"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- ^ Obtain its underlying 'String' representation.</span><span>
+</span><span id="line-78"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679406512"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679406512"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="Identifiable"><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-var">Identifiable</span></a></span></span><span> </span><span id="local-6989586621679406512"><span class="annot"><a href="#local-6989586621679406512"><span class="hs-identifier hs-type">i</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-79"></span><span>  </span><span id="ident"><span class="annot"><a href="Common.Identifiers.html#ident"><span class="hs-identifier hs-type">ident</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679406512"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- ^ Obtain its underlying 'String' representation.</span><span>
 </span><span id="line-80"></span><span>
 </span><span id="line-81"></span><span class="hs-comment">-- | Explicitly convert between two types of identifiers.</span><span>
-</span><span id="line-82"></span><span id="local-6989586621679406635"><span id="local-6989586621679406636"><span class="annot"><a href="Common.Identifiers.html#fromId"><span class="hs-identifier hs-type">fromId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406636"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406635"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406636"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406635"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-82"></span><span id="local-6989586621679406288"><span id="local-6989586621679406289"><span class="annot"><a href="Common.Identifiers.html#fromId"><span class="hs-identifier hs-type">fromId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406289"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406288"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406289"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406288"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
 </span><span id="line-83"></span><span id="fromId"><span class="annot"><span class="annottext">fromId :: a -&gt; b
 </span><a href="Common.Identifiers.html#fromId"><span class="hs-identifier hs-var hs-var">fromId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; b
 forall a. IsString a =&gt; String -&gt; a
@@ -97,7 +97,7 @@ Also used as the base type for other identifiers (e.g., 'TConId', 'VarId'),
 which derive their typeclass instances from this.
 -}</span><span>
 </span><span id="line-92"></span><span class="hs-keyword">newtype</span><span> </span><span id="Identifier"><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-var">Identifier</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Identifier"><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-var">Identifier</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679406629"><span id="local-6989586621679406631"><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679406282"><span id="local-6989586621679406284"><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
 (Identifier -&gt; Identifier -&gt; Bool)
 -&gt; (Identifier -&gt; Identifier -&gt; Bool) -&gt; Eq Identifier
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -105,7 +105,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: Identifier -&gt; Identifier -&gt; Bool
 == :: Identifier -&gt; Identifier -&gt; Bool
 $c== :: Identifier -&gt; Identifier -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679406613"><span id="local-6989586621679406615"><span id="local-6989586621679406617"><span id="local-6989586621679406619"><span id="local-6989586621679406621"><span id="local-6989586621679406623"><span id="local-6989586621679406625"><span class="annot"><span class="annottext">Eq Identifier
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679406266"><span id="local-6989586621679406268"><span id="local-6989586621679406270"><span id="local-6989586621679406272"><span id="local-6989586621679406274"><span id="local-6989586621679406276"><span id="local-6989586621679406278"><span class="annot"><span class="annottext">Eq Identifier
 Eq Identifier
 -&gt; (Identifier -&gt; Identifier -&gt; Ordering)
 -&gt; (Identifier -&gt; Identifier -&gt; Bool)
@@ -143,7 +143,7 @@ $c&lt; :: Identifier -&gt; Identifier -&gt; Bool
 compare :: Identifier -&gt; Identifier -&gt; Ordering
 $ccompare :: Identifier -&gt; Identifier -&gt; Ordering
 $cp1Ord :: Eq Identifier
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="%24cIdentifier"><span id="%24tIdentifier"><span id="local-6989586621679406583"><span id="local-6989586621679406585"><span id="local-6989586621679406587"><span id="local-6989586621679406589"><span id="local-6989586621679406591"><span id="local-6989586621679406593"><span id="local-6989586621679406595"><span id="local-6989586621679406597"><span id="local-6989586621679406599"><span id="local-6989586621679406601"><span id="local-6989586621679406603"><span id="local-6989586621679406605"><span id="local-6989586621679406607"><span id="local-6989586621679406609"><span class="annot"><span class="annottext">Typeable Identifier
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="%24cIdentifier"><span id="%24tIdentifier"><span id="local-6989586621679406236"><span id="local-6989586621679406238"><span id="local-6989586621679406240"><span id="local-6989586621679406242"><span id="local-6989586621679406244"><span id="local-6989586621679406246"><span id="local-6989586621679406248"><span id="local-6989586621679406250"><span id="local-6989586621679406252"><span id="local-6989586621679406254"><span id="local-6989586621679406256"><span id="local-6989586621679406258"><span id="local-6989586621679406260"><span id="local-6989586621679406262"><span class="annot"><span class="annottext">Typeable Identifier
 DataType
 Constr
 Typeable Identifier
@@ -304,51 +304,51 @@ $cp1Data :: Typeable Identifier
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-94"></span><span>
 </span><span id="line-95"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-96"></span><span>  </span><span id="local-6989586621679406577"><span class="annot"><span class="annottext">fromString :: String -&gt; Identifier
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679406230"><span class="annot"><span class="annottext">fromString :: String -&gt; Identifier
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Identifier
 </span><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-var">Identifier</span></a></span><span>
 </span><span id="line-97"></span><span>
 </span><span id="line-98"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-99"></span><span>  </span><span id="local-6989586621679406572"><span class="annot"><span class="annottext">ident :: Identifier -&gt; String
-</span><a href="#local-6989586621679406572"><span class="hs-identifier hs-var hs-var hs-var hs-var">ident</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406571"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406571"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406571"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679406225"><span class="annot"><span class="annottext">ident :: Identifier -&gt; String
+</span><a href="#local-6989586621679406225"><span class="hs-identifier hs-var hs-var hs-var hs-var">ident</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406224"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406224"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406224"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-100"></span><span>
-</span><span id="line-101"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406566"><span id="local-6989586621679406569"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-102"></span><span>  </span><span id="local-6989586621679406564"><span class="annot"><span class="annottext">show :: Identifier -&gt; String
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406562"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406562"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406562"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-101"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406219"><span id="local-6989586621679406222"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621679406217"><span class="annot"><span class="annottext">show :: Identifier -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406215"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406215"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406215"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-103"></span><span>
 </span><span id="line-104"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ToIdent</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-105"></span><span>  </span><span id="local-6989586621679406559"><span class="annot"><span class="annottext">toIdent :: Identifier -&gt; SrcLoc -&gt; Id
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toIdent</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406557"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406557"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; SrcLoc -&gt; Id
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679406212"><span class="annot"><span class="annottext">toIdent :: Identifier -&gt; SrcLoc -&gt; Id
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toIdent</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406210"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406210"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; SrcLoc -&gt; Id
 </span><span class="hs-identifier hs-var">Id</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406557"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679406210"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-106"></span><span>
-</span><span id="line-107"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406551"><span id="local-6989586621679406553"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-108"></span><span>  </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406549"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406549"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679406548"><span class="annot"><span class="annottext">&lt;&gt; :: Identifier -&gt; Identifier -&gt; Identifier
-</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406547"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406547"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Identifier
+</span><span id="line-107"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406204"><span id="local-6989586621679406206"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>  </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406202"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406202"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679406201"><span class="annot"><span class="annottext">&lt;&gt; :: Identifier -&gt; Identifier -&gt; Identifier
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span id="local-6989586621679406200"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679406200"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Identifier
 </span><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-var">Identifier</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Identifier) -&gt; String -&gt; Identifier
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406549"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679406202"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406547"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621679406200"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-109"></span><span>
-</span><span id="line-110"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406541"><span id="local-6989586621679406543"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-111"></span><span>  </span><span id="local-6989586621679406539"><span class="annot"><span class="annottext">mempty :: Identifier
+</span><span id="line-110"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406194"><span id="local-6989586621679406196"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621679406192"><span class="annot"><span class="annottext">mempty :: Identifier
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Identifier
 </span><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-var">Identifier</span></a></span><span> </span><span class="annot"><span class="annottext">String
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-comment">-- &quot;&quot;</span><span>
 </span><span id="line-112"></span><span>
-</span><span id="line-113"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406536"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-114"></span><span>  </span><span id="local-6989586621679406534"><span class="annot"><span class="annottext">pretty :: Identifier -&gt; Doc ann
+</span><span id="line-113"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406189"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-114"></span><span>  </span><span id="local-6989586621679406187"><span class="annot"><span class="annottext">pretty :: Identifier -&gt; Doc ann
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Doc ann)
@@ -360,7 +360,7 @@ forall i. Identifiable i =&gt; i -&gt; String
 </span><span id="line-115"></span><span>
 </span><span id="line-116"></span><span class="hs-comment">-- | Identifier for type constructors, e.g., @Option@.</span><span>
 </span><span id="line-117"></span><span class="hs-keyword">newtype</span><span> </span><span id="TConId"><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-var">TConId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TConId"><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-var">TConId</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-118"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406528"><span id="local-6989586621679406530"><span class="annot"><span class="annottext">TConId -&gt; TConId -&gt; Bool
+</span><span id="line-118"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406181"><span id="local-6989586621679406183"><span class="annot"><span class="annottext">TConId -&gt; TConId -&gt; Bool
 (TConId -&gt; TConId -&gt; Bool)
 -&gt; (TConId -&gt; TConId -&gt; Bool) -&gt; Eq TConId
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -369,7 +369,7 @@ $c/= :: TConId -&gt; TConId -&gt; Bool
 == :: TConId -&gt; TConId -&gt; Bool
 $c== :: TConId -&gt; TConId -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-119"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406522"><span id="local-6989586621679406524"><span id="local-6989586621679406526"><span class="annot"><span class="annottext">Int -&gt; TConId -&gt; ShowS
+</span><span id="line-119"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406175"><span id="local-6989586621679406177"><span id="local-6989586621679406179"><span class="annot"><span class="annottext">Int -&gt; TConId -&gt; ShowS
 [TConId] -&gt; ShowS
 TConId -&gt; String
 (Int -&gt; TConId -&gt; ShowS)
@@ -383,7 +383,7 @@ $cshow :: TConId -&gt; String
 showsPrec :: Int -&gt; TConId -&gt; ShowS
 $cshowsPrec :: Int -&gt; TConId -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
-</span><span id="line-120"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406507"><span id="local-6989586621679406509"><span id="local-6989586621679406511"><span id="local-6989586621679406513"><span id="local-6989586621679406515"><span id="local-6989586621679406517"><span id="local-6989586621679406519"><span class="annot"><span class="annottext">Eq TConId
+</span><span id="line-120"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406160"><span id="local-6989586621679406162"><span id="local-6989586621679406164"><span id="local-6989586621679406166"><span id="local-6989586621679406168"><span id="local-6989586621679406170"><span id="local-6989586621679406172"><span class="annot"><span class="annottext">Eq TConId
 Eq TConId
 -&gt; (TConId -&gt; TConId -&gt; Ordering)
 -&gt; (TConId -&gt; TConId -&gt; Bool)
@@ -423,7 +423,7 @@ $ccompare :: TConId -&gt; TConId -&gt; Ordering
 $cp1Ord :: Eq TConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-121"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-122"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTConId"><span id="%24tTConId"><span id="local-6989586621679406478"><span id="local-6989586621679406480"><span id="local-6989586621679406482"><span id="local-6989586621679406484"><span id="local-6989586621679406486"><span id="local-6989586621679406488"><span id="local-6989586621679406490"><span id="local-6989586621679406492"><span id="local-6989586621679406494"><span id="local-6989586621679406496"><span id="local-6989586621679406498"><span id="local-6989586621679406500"><span id="local-6989586621679406502"><span id="local-6989586621679406504"><span class="annot"><span class="annottext">Typeable TConId
+</span><span id="line-122"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTConId"><span id="%24tTConId"><span id="local-6989586621679406131"><span id="local-6989586621679406133"><span id="local-6989586621679406135"><span id="local-6989586621679406137"><span id="local-6989586621679406139"><span id="local-6989586621679406141"><span id="local-6989586621679406143"><span id="local-6989586621679406145"><span id="local-6989586621679406147"><span id="local-6989586621679406149"><span id="local-6989586621679406151"><span id="local-6989586621679406153"><span id="local-6989586621679406155"><span id="local-6989586621679406157"><span class="annot"><span class="annottext">Typeable TConId
 DataType
 Constr
 Typeable TConId
@@ -574,19 +574,19 @@ $cgfoldl :: forall (c :: * -&gt; *).
 -&gt; (forall g. g -&gt; c g) -&gt; TConId -&gt; c TConId
 $cp1Data :: Typeable TConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-123"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406474"><span class="annot"><span class="annottext">TConId -&gt; SrcLoc -&gt; Id
+</span><span id="line-123"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406127"><span class="annot"><span class="annottext">TConId -&gt; SrcLoc -&gt; Id
 (TConId -&gt; SrcLoc -&gt; Id) -&gt; ToIdent TConId
 forall a. (a -&gt; SrcLoc -&gt; Id) -&gt; ToIdent a
 toIdent :: TConId -&gt; SrcLoc -&gt; Id
 $ctoIdent :: TConId -&gt; SrcLoc -&gt; Id
-</span><a href="#local-6989586621679406474"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-124"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406472"><span class="annot"><span class="annottext">String -&gt; TConId
+</span><a href="#local-6989586621679406127"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-124"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406125"><span class="annot"><span class="annottext">String -&gt; TConId
 (String -&gt; TConId) -&gt; IsString TConId
 forall a. (String -&gt; a) -&gt; IsString a
 fromString :: String -&gt; TConId
 $cfromString :: String -&gt; TConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">IsString</span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-125"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406468"><span class="annot"><span class="annottext">Ord TConId
+</span><span id="line-125"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406121"><span class="annot"><span class="annottext">Ord TConId
 IsString TConId
 IsString TConId
 -&gt; Ord TConId -&gt; (TConId -&gt; String) -&gt; Identifiable TConId
@@ -596,8 +596,8 @@ ident :: TConId -&gt; String
 $cident :: TConId -&gt; String
 $cp2Identifiable :: Ord TConId
 $cp1Identifiable :: IsString TConId
-</span><a href="#local-6989586621679406468"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-126"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406462"><span id="local-6989586621679406464"><span id="local-6989586621679406466"><span class="annot"><span class="annottext">b -&gt; TConId -&gt; TConId
+</span><a href="#local-6989586621679406121"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-126"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406115"><span id="local-6989586621679406117"><span id="local-6989586621679406119"><span class="annot"><span class="annottext">b -&gt; TConId -&gt; TConId
 NonEmpty TConId -&gt; TConId
 TConId -&gt; TConId -&gt; TConId
 (TConId -&gt; TConId -&gt; TConId)
@@ -617,7 +617,7 @@ $csconcat :: NonEmpty TConId -&gt; TConId
 &lt;&gt; :: TConId -&gt; TConId -&gt; TConId
 $c&lt;&gt; :: TConId -&gt; TConId -&gt; TConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-127"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406455"><span id="local-6989586621679406457"><span id="local-6989586621679406459"><span class="annot"><span class="annottext">Semigroup TConId
+</span><span id="line-127"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406108"><span id="local-6989586621679406110"><span id="local-6989586621679406112"><span class="annot"><span class="annottext">Semigroup TConId
 TConId
 Semigroup TConId
 -&gt; TConId
@@ -636,7 +636,7 @@ mempty :: TConId
 $cmempty :: TConId
 $cp1Monoid :: Semigroup TConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-128"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406451"><span id="local-6989586621679406453"><span class="annot"><span class="annottext">[TConId] -&gt; Doc ann
+</span><span id="line-128"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406104"><span id="local-6989586621679406106"><span class="annot"><span class="annottext">[TConId] -&gt; Doc ann
 TConId -&gt; Doc ann
 (forall ann. TConId -&gt; Doc ann)
 -&gt; (forall ann. [TConId] -&gt; Doc ann) -&gt; Pretty TConId
@@ -649,11 +649,11 @@ prettyList :: [TConId] -&gt; Doc ann
 $cprettyList :: forall ann. [TConId] -&gt; Doc ann
 pretty :: TConId -&gt; Doc ann
 $cpretty :: forall ann. TConId -&gt; Doc ann
-</span><a href="#local-6989586621679406451"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><a href="#local-6989586621679406104"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-129"></span><span>
 </span><span id="line-130"></span><span class="hs-comment">-- | ToIdentifier for type variable, e.g., @a@.</span><span>
 </span><span id="line-131"></span><span class="hs-keyword">newtype</span><span> </span><span id="TVarId"><span class="annot"><a href="Common.Identifiers.html#TVarId"><span class="hs-identifier hs-var">TVarId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TVarId"><span class="annot"><a href="Common.Identifiers.html#TVarId"><span class="hs-identifier hs-var">TVarId</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-132"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406446"><span id="local-6989586621679406448"><span class="annot"><span class="annottext">TVarId -&gt; TVarId -&gt; Bool
+</span><span id="line-132"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406099"><span id="local-6989586621679406101"><span class="annot"><span class="annottext">TVarId -&gt; TVarId -&gt; Bool
 (TVarId -&gt; TVarId -&gt; Bool)
 -&gt; (TVarId -&gt; TVarId -&gt; Bool) -&gt; Eq TVarId
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -662,7 +662,7 @@ $c/= :: TVarId -&gt; TVarId -&gt; Bool
 == :: TVarId -&gt; TVarId -&gt; Bool
 $c== :: TVarId -&gt; TVarId -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-133"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406440"><span id="local-6989586621679406442"><span id="local-6989586621679406444"><span class="annot"><span class="annottext">Int -&gt; TVarId -&gt; ShowS
+</span><span id="line-133"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406093"><span id="local-6989586621679406095"><span id="local-6989586621679406097"><span class="annot"><span class="annottext">Int -&gt; TVarId -&gt; ShowS
 [TVarId] -&gt; ShowS
 TVarId -&gt; String
 (Int -&gt; TVarId -&gt; ShowS)
@@ -676,7 +676,7 @@ $cshow :: TVarId -&gt; String
 showsPrec :: Int -&gt; TVarId -&gt; ShowS
 $cshowsPrec :: Int -&gt; TVarId -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
-</span><span id="line-134"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406425"><span id="local-6989586621679406427"><span id="local-6989586621679406429"><span id="local-6989586621679406431"><span id="local-6989586621679406433"><span id="local-6989586621679406435"><span id="local-6989586621679406437"><span class="annot"><span class="annottext">Eq TVarId
+</span><span id="line-134"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406078"><span id="local-6989586621679406080"><span id="local-6989586621679406082"><span id="local-6989586621679406084"><span id="local-6989586621679406086"><span id="local-6989586621679406088"><span id="local-6989586621679406090"><span class="annot"><span class="annottext">Eq TVarId
 Eq TVarId
 -&gt; (TVarId -&gt; TVarId -&gt; Ordering)
 -&gt; (TVarId -&gt; TVarId -&gt; Bool)
@@ -716,7 +716,7 @@ $ccompare :: TVarId -&gt; TVarId -&gt; Ordering
 $cp1Ord :: Eq TVarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-135"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-136"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTVarId"><span id="%24tTVarId"><span id="local-6989586621679406396"><span id="local-6989586621679406398"><span id="local-6989586621679406400"><span id="local-6989586621679406402"><span id="local-6989586621679406404"><span id="local-6989586621679406406"><span id="local-6989586621679406408"><span id="local-6989586621679406410"><span id="local-6989586621679406412"><span id="local-6989586621679406414"><span id="local-6989586621679406416"><span id="local-6989586621679406418"><span id="local-6989586621679406420"><span id="local-6989586621679406422"><span class="annot"><span class="annottext">Typeable TVarId
+</span><span id="line-136"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTVarId"><span id="%24tTVarId"><span id="local-6989586621679406049"><span id="local-6989586621679406051"><span id="local-6989586621679406053"><span id="local-6989586621679406055"><span id="local-6989586621679406057"><span id="local-6989586621679406059"><span id="local-6989586621679406061"><span id="local-6989586621679406063"><span id="local-6989586621679406065"><span id="local-6989586621679406067"><span id="local-6989586621679406069"><span id="local-6989586621679406071"><span id="local-6989586621679406073"><span id="local-6989586621679406075"><span class="annot"><span class="annottext">Typeable TVarId
 DataType
 Constr
 Typeable TVarId
@@ -867,19 +867,19 @@ $cgfoldl :: forall (c :: * -&gt; *).
 -&gt; (forall g. g -&gt; c g) -&gt; TVarId -&gt; c TVarId
 $cp1Data :: Typeable TVarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-137"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406392"><span class="annot"><span class="annottext">TVarId -&gt; SrcLoc -&gt; Id
+</span><span id="line-137"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406045"><span class="annot"><span class="annottext">TVarId -&gt; SrcLoc -&gt; Id
 (TVarId -&gt; SrcLoc -&gt; Id) -&gt; ToIdent TVarId
 forall a. (a -&gt; SrcLoc -&gt; Id) -&gt; ToIdent a
 toIdent :: TVarId -&gt; SrcLoc -&gt; Id
 $ctoIdent :: TVarId -&gt; SrcLoc -&gt; Id
-</span><a href="#local-6989586621679406392"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-138"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406390"><span class="annot"><span class="annottext">String -&gt; TVarId
+</span><a href="#local-6989586621679406045"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406043"><span class="annot"><span class="annottext">String -&gt; TVarId
 (String -&gt; TVarId) -&gt; IsString TVarId
 forall a. (String -&gt; a) -&gt; IsString a
 fromString :: String -&gt; TVarId
 $cfromString :: String -&gt; TVarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">IsString</span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-139"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406386"><span class="annot"><span class="annottext">Ord TVarId
+</span><span id="line-139"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406039"><span class="annot"><span class="annottext">Ord TVarId
 IsString TVarId
 IsString TVarId
 -&gt; Ord TVarId -&gt; (TVarId -&gt; String) -&gt; Identifiable TVarId
@@ -889,8 +889,8 @@ ident :: TVarId -&gt; String
 $cident :: TVarId -&gt; String
 $cp2Identifiable :: Ord TVarId
 $cp1Identifiable :: IsString TVarId
-</span><a href="#local-6989586621679406386"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-140"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406380"><span id="local-6989586621679406382"><span id="local-6989586621679406384"><span class="annot"><span class="annottext">b -&gt; TVarId -&gt; TVarId
+</span><a href="#local-6989586621679406039"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-140"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406033"><span id="local-6989586621679406035"><span id="local-6989586621679406037"><span class="annot"><span class="annottext">b -&gt; TVarId -&gt; TVarId
 NonEmpty TVarId -&gt; TVarId
 TVarId -&gt; TVarId -&gt; TVarId
 (TVarId -&gt; TVarId -&gt; TVarId)
@@ -910,7 +910,7 @@ $csconcat :: NonEmpty TVarId -&gt; TVarId
 &lt;&gt; :: TVarId -&gt; TVarId -&gt; TVarId
 $c&lt;&gt; :: TVarId -&gt; TVarId -&gt; TVarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-141"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406373"><span id="local-6989586621679406375"><span id="local-6989586621679406377"><span class="annot"><span class="annottext">Semigroup TVarId
+</span><span id="line-141"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406026"><span id="local-6989586621679406028"><span id="local-6989586621679406030"><span class="annot"><span class="annottext">Semigroup TVarId
 TVarId
 Semigroup TVarId
 -&gt; TVarId
@@ -929,7 +929,7 @@ mempty :: TVarId
 $cmempty :: TVarId
 $cp1Monoid :: Semigroup TVarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-142"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406369"><span id="local-6989586621679406371"><span class="annot"><span class="annottext">[TVarId] -&gt; Doc ann
+</span><span id="line-142"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406022"><span id="local-6989586621679406024"><span class="annot"><span class="annottext">[TVarId] -&gt; Doc ann
 TVarId -&gt; Doc ann
 (forall ann. TVarId -&gt; Doc ann)
 -&gt; (forall ann. [TVarId] -&gt; Doc ann) -&gt; Pretty TVarId
@@ -942,11 +942,11 @@ prettyList :: [TVarId] -&gt; Doc ann
 $cprettyList :: forall ann. [TVarId] -&gt; Doc ann
 pretty :: TVarId -&gt; Doc ann
 $cpretty :: forall ann. TVarId -&gt; Doc ann
-</span><a href="#local-6989586621679406369"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><a href="#local-6989586621679406022"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-143"></span><span>
 </span><span id="line-144"></span><span class="hs-comment">-- | Identifier for data constructors, e.g., @None@.</span><span>
 </span><span id="line-145"></span><span class="hs-keyword">newtype</span><span> </span><span id="DConId"><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-var">DConId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DConId"><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-var">DConId</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-146"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406364"><span id="local-6989586621679406366"><span class="annot"><span class="annottext">DConId -&gt; DConId -&gt; Bool
+</span><span id="line-146"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406017"><span id="local-6989586621679406019"><span class="annot"><span class="annottext">DConId -&gt; DConId -&gt; Bool
 (DConId -&gt; DConId -&gt; Bool)
 -&gt; (DConId -&gt; DConId -&gt; Bool) -&gt; Eq DConId
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -955,7 +955,7 @@ $c/= :: DConId -&gt; DConId -&gt; Bool
 == :: DConId -&gt; DConId -&gt; Bool
 $c== :: DConId -&gt; DConId -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-147"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406358"><span id="local-6989586621679406360"><span id="local-6989586621679406362"><span class="annot"><span class="annottext">Int -&gt; DConId -&gt; ShowS
+</span><span id="line-147"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406011"><span id="local-6989586621679406013"><span id="local-6989586621679406015"><span class="annot"><span class="annottext">Int -&gt; DConId -&gt; ShowS
 [DConId] -&gt; ShowS
 DConId -&gt; String
 (Int -&gt; DConId -&gt; ShowS)
@@ -969,7 +969,7 @@ $cshow :: DConId -&gt; String
 showsPrec :: Int -&gt; DConId -&gt; ShowS
 $cshowsPrec :: Int -&gt; DConId -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
-</span><span id="line-148"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406343"><span id="local-6989586621679406345"><span id="local-6989586621679406347"><span id="local-6989586621679406349"><span id="local-6989586621679406351"><span id="local-6989586621679406353"><span id="local-6989586621679406355"><span class="annot"><span class="annottext">Eq DConId
+</span><span id="line-148"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405996"><span id="local-6989586621679405998"><span id="local-6989586621679406000"><span id="local-6989586621679406002"><span id="local-6989586621679406004"><span id="local-6989586621679406006"><span id="local-6989586621679406008"><span class="annot"><span class="annottext">Eq DConId
 Eq DConId
 -&gt; (DConId -&gt; DConId -&gt; Ordering)
 -&gt; (DConId -&gt; DConId -&gt; Bool)
@@ -1009,7 +1009,7 @@ $ccompare :: DConId -&gt; DConId -&gt; Ordering
 $cp1Ord :: Eq DConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-149"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-150"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cDConId"><span id="%24tDConId"><span id="local-6989586621679406314"><span id="local-6989586621679406316"><span id="local-6989586621679406318"><span id="local-6989586621679406320"><span id="local-6989586621679406322"><span id="local-6989586621679406324"><span id="local-6989586621679406326"><span id="local-6989586621679406328"><span id="local-6989586621679406330"><span id="local-6989586621679406332"><span id="local-6989586621679406334"><span id="local-6989586621679406336"><span id="local-6989586621679406338"><span id="local-6989586621679406340"><span class="annot"><span class="annottext">Typeable DConId
+</span><span id="line-150"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cDConId"><span id="%24tDConId"><span id="local-6989586621679405967"><span id="local-6989586621679405969"><span id="local-6989586621679405971"><span id="local-6989586621679405973"><span id="local-6989586621679405975"><span id="local-6989586621679405977"><span id="local-6989586621679405979"><span id="local-6989586621679405981"><span id="local-6989586621679405983"><span id="local-6989586621679405985"><span id="local-6989586621679405987"><span id="local-6989586621679405989"><span id="local-6989586621679405991"><span id="local-6989586621679405993"><span class="annot"><span class="annottext">Typeable DConId
 DataType
 Constr
 Typeable DConId
@@ -1160,19 +1160,19 @@ $cgfoldl :: forall (c :: * -&gt; *).
 -&gt; (forall g. g -&gt; c g) -&gt; DConId -&gt; c DConId
 $cp1Data :: Typeable DConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-151"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406310"><span class="annot"><span class="annottext">DConId -&gt; SrcLoc -&gt; Id
+</span><span id="line-151"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405963"><span class="annot"><span class="annottext">DConId -&gt; SrcLoc -&gt; Id
 (DConId -&gt; SrcLoc -&gt; Id) -&gt; ToIdent DConId
 forall a. (a -&gt; SrcLoc -&gt; Id) -&gt; ToIdent a
 toIdent :: DConId -&gt; SrcLoc -&gt; Id
 $ctoIdent :: DConId -&gt; SrcLoc -&gt; Id
-</span><a href="#local-6989586621679406310"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-152"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406308"><span class="annot"><span class="annottext">String -&gt; DConId
+</span><a href="#local-6989586621679405963"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405961"><span class="annot"><span class="annottext">String -&gt; DConId
 (String -&gt; DConId) -&gt; IsString DConId
 forall a. (String -&gt; a) -&gt; IsString a
 fromString :: String -&gt; DConId
 $cfromString :: String -&gt; DConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">IsString</span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-153"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406304"><span class="annot"><span class="annottext">Ord DConId
+</span><span id="line-153"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405957"><span class="annot"><span class="annottext">Ord DConId
 IsString DConId
 IsString DConId
 -&gt; Ord DConId -&gt; (DConId -&gt; String) -&gt; Identifiable DConId
@@ -1182,8 +1182,8 @@ ident :: DConId -&gt; String
 $cident :: DConId -&gt; String
 $cp2Identifiable :: Ord DConId
 $cp1Identifiable :: IsString DConId
-</span><a href="#local-6989586621679406304"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-154"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406298"><span id="local-6989586621679406300"><span id="local-6989586621679406302"><span class="annot"><span class="annottext">b -&gt; DConId -&gt; DConId
+</span><a href="#local-6989586621679405957"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-154"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405951"><span id="local-6989586621679405953"><span id="local-6989586621679405955"><span class="annot"><span class="annottext">b -&gt; DConId -&gt; DConId
 NonEmpty DConId -&gt; DConId
 DConId -&gt; DConId -&gt; DConId
 (DConId -&gt; DConId -&gt; DConId)
@@ -1203,7 +1203,7 @@ $csconcat :: NonEmpty DConId -&gt; DConId
 &lt;&gt; :: DConId -&gt; DConId -&gt; DConId
 $c&lt;&gt; :: DConId -&gt; DConId -&gt; DConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-155"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406291"><span id="local-6989586621679406293"><span id="local-6989586621679406295"><span class="annot"><span class="annottext">Semigroup DConId
+</span><span id="line-155"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405944"><span id="local-6989586621679405946"><span id="local-6989586621679405948"><span class="annot"><span class="annottext">Semigroup DConId
 DConId
 Semigroup DConId
 -&gt; DConId
@@ -1222,7 +1222,7 @@ mempty :: DConId
 $cmempty :: DConId
 $cp1Monoid :: Semigroup DConId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-156"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406287"><span id="local-6989586621679406289"><span class="annot"><span class="annottext">[DConId] -&gt; Doc ann
+</span><span id="line-156"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405940"><span id="local-6989586621679405942"><span class="annot"><span class="annottext">[DConId] -&gt; Doc ann
 DConId -&gt; Doc ann
 (forall ann. DConId -&gt; Doc ann)
 -&gt; (forall ann. [DConId] -&gt; Doc ann) -&gt; Pretty DConId
@@ -1235,11 +1235,11 @@ prettyList :: [DConId] -&gt; Doc ann
 $cprettyList :: forall ann. [DConId] -&gt; Doc ann
 pretty :: DConId -&gt; Doc ann
 $cpretty :: forall ann. DConId -&gt; Doc ann
-</span><a href="#local-6989586621679406287"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><a href="#local-6989586621679405940"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-157"></span><span>
 </span><span id="line-158"></span><span class="hs-comment">-- | Identifier for data variables, e.g., @x@.</span><span>
 </span><span id="line-159"></span><span class="hs-keyword">newtype</span><span> </span><span id="VarId"><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-var">VarId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="VarId"><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-var">VarId</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-160"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406282"><span id="local-6989586621679406284"><span class="annot"><span class="annottext">VarId -&gt; VarId -&gt; Bool
+</span><span id="line-160"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405935"><span id="local-6989586621679405937"><span class="annot"><span class="annottext">VarId -&gt; VarId -&gt; Bool
 (VarId -&gt; VarId -&gt; Bool) -&gt; (VarId -&gt; VarId -&gt; Bool) -&gt; Eq VarId
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: VarId -&gt; VarId -&gt; Bool
@@ -1247,7 +1247,7 @@ $c/= :: VarId -&gt; VarId -&gt; Bool
 == :: VarId -&gt; VarId -&gt; Bool
 $c== :: VarId -&gt; VarId -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-161"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406276"><span id="local-6989586621679406278"><span id="local-6989586621679406280"><span class="annot"><span class="annottext">Int -&gt; VarId -&gt; ShowS
+</span><span id="line-161"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405929"><span id="local-6989586621679405931"><span id="local-6989586621679405933"><span class="annot"><span class="annottext">Int -&gt; VarId -&gt; ShowS
 [VarId] -&gt; ShowS
 VarId -&gt; String
 (Int -&gt; VarId -&gt; ShowS)
@@ -1261,7 +1261,7 @@ $cshow :: VarId -&gt; String
 showsPrec :: Int -&gt; VarId -&gt; ShowS
 $cshowsPrec :: Int -&gt; VarId -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
-</span><span id="line-162"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406261"><span id="local-6989586621679406263"><span id="local-6989586621679406265"><span id="local-6989586621679406267"><span id="local-6989586621679406269"><span id="local-6989586621679406271"><span id="local-6989586621679406273"><span class="annot"><span class="annottext">Eq VarId
+</span><span id="line-162"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405914"><span id="local-6989586621679405916"><span id="local-6989586621679405918"><span id="local-6989586621679405920"><span id="local-6989586621679405922"><span id="local-6989586621679405924"><span id="local-6989586621679405926"><span class="annot"><span class="annottext">Eq VarId
 Eq VarId
 -&gt; (VarId -&gt; VarId -&gt; Ordering)
 -&gt; (VarId -&gt; VarId -&gt; Bool)
@@ -1301,7 +1301,7 @@ $ccompare :: VarId -&gt; VarId -&gt; Ordering
 $cp1Ord :: Eq VarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-163"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-164"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cVarId"><span id="%24tVarId"><span id="local-6989586621679406232"><span id="local-6989586621679406234"><span id="local-6989586621679406236"><span id="local-6989586621679406238"><span id="local-6989586621679406240"><span id="local-6989586621679406242"><span id="local-6989586621679406244"><span id="local-6989586621679406246"><span id="local-6989586621679406248"><span id="local-6989586621679406250"><span id="local-6989586621679406252"><span id="local-6989586621679406254"><span id="local-6989586621679406256"><span id="local-6989586621679406258"><span class="annot"><span class="annottext">Typeable VarId
+</span><span id="line-164"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cVarId"><span id="%24tVarId"><span id="local-6989586621679405885"><span id="local-6989586621679405887"><span id="local-6989586621679405889"><span id="local-6989586621679405891"><span id="local-6989586621679405893"><span id="local-6989586621679405895"><span id="local-6989586621679405897"><span id="local-6989586621679405899"><span id="local-6989586621679405901"><span id="local-6989586621679405903"><span id="local-6989586621679405905"><span id="local-6989586621679405907"><span id="local-6989586621679405909"><span id="local-6989586621679405911"><span class="annot"><span class="annottext">Typeable VarId
 DataType
 Constr
 Typeable VarId
@@ -1450,19 +1450,19 @@ $cgfoldl :: forall (c :: * -&gt; *).
 -&gt; (forall g. g -&gt; c g) -&gt; VarId -&gt; c VarId
 $cp1Data :: Typeable VarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-165"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406228"><span class="annot"><span class="annottext">VarId -&gt; SrcLoc -&gt; Id
+</span><span id="line-165"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405881"><span class="annot"><span class="annottext">VarId -&gt; SrcLoc -&gt; Id
 (VarId -&gt; SrcLoc -&gt; Id) -&gt; ToIdent VarId
 forall a. (a -&gt; SrcLoc -&gt; Id) -&gt; ToIdent a
 toIdent :: VarId -&gt; SrcLoc -&gt; Id
 $ctoIdent :: VarId -&gt; SrcLoc -&gt; Id
-</span><a href="#local-6989586621679406228"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-166"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406226"><span class="annot"><span class="annottext">String -&gt; VarId
+</span><a href="#local-6989586621679405881"><span class="hs-identifier hs-var hs-var hs-var hs-var">ToIdent</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-166"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405879"><span class="annot"><span class="annottext">String -&gt; VarId
 (String -&gt; VarId) -&gt; IsString VarId
 forall a. (String -&gt; a) -&gt; IsString a
 fromString :: String -&gt; VarId
 $cfromString :: String -&gt; VarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">IsString</span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-167"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406222"><span class="annot"><span class="annottext">Ord VarId
+</span><span id="line-167"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405875"><span class="annot"><span class="annottext">Ord VarId
 IsString VarId
 IsString VarId
 -&gt; Ord VarId -&gt; (VarId -&gt; String) -&gt; Identifiable VarId
@@ -1472,8 +1472,8 @@ ident :: VarId -&gt; String
 $cident :: VarId -&gt; String
 $cp2Identifiable :: Ord VarId
 $cp1Identifiable :: IsString VarId
-</span><a href="#local-6989586621679406222"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-168"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406216"><span id="local-6989586621679406218"><span id="local-6989586621679406220"><span class="annot"><span class="annottext">b -&gt; VarId -&gt; VarId
+</span><a href="#local-6989586621679405875"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Identifiable</span></a></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-168"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405869"><span id="local-6989586621679405871"><span id="local-6989586621679405873"><span class="annot"><span class="annottext">b -&gt; VarId -&gt; VarId
 NonEmpty VarId -&gt; VarId
 VarId -&gt; VarId -&gt; VarId
 (VarId -&gt; VarId -&gt; VarId)
@@ -1493,7 +1493,7 @@ $csconcat :: NonEmpty VarId -&gt; VarId
 &lt;&gt; :: VarId -&gt; VarId -&gt; VarId
 $c&lt;&gt; :: VarId -&gt; VarId -&gt; VarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-169"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406209"><span id="local-6989586621679406211"><span id="local-6989586621679406213"><span class="annot"><span class="annottext">Semigroup VarId
+</span><span id="line-169"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405862"><span id="local-6989586621679405864"><span id="local-6989586621679405866"><span class="annot"><span class="annottext">Semigroup VarId
 VarId
 Semigroup VarId
 -&gt; VarId
@@ -1512,7 +1512,7 @@ mempty :: VarId
 $cmempty :: VarId
 $cp1Monoid :: Semigroup VarId
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-170"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406205"><span id="local-6989586621679406207"><span class="annot"><span class="annottext">[VarId] -&gt; Doc ann
+</span><span id="line-170"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405858"><span id="local-6989586621679405860"><span class="annot"><span class="annottext">[VarId] -&gt; Doc ann
 VarId -&gt; Doc ann
 (forall ann. VarId -&gt; Doc ann)
 -&gt; (forall ann. [VarId] -&gt; Doc ann) -&gt; Pretty VarId
@@ -1525,11 +1525,11 @@ prettyList :: [VarId] -&gt; Doc ann
 $cprettyList :: forall ann. [VarId] -&gt; Doc ann
 pretty :: VarId -&gt; Doc ann
 $cpretty :: forall ann. VarId -&gt; Doc ann
-</span><a href="#local-6989586621679406205"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><a href="#local-6989586621679405858"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Pretty</span></a></span></span></span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-171"></span><span>
 </span><span id="line-172"></span><span class="hs-comment">-- | de Bruijn index for type variables, e.g., @'0@</span><span>
 </span><span id="line-173"></span><span class="hs-keyword">newtype</span><span> </span><span id="TVarIdx"><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-var">TVarIdx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TVarIdx"><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-var">TVarIdx</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-174"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406200"><span id="local-6989586621679406202"><span class="annot"><span class="annottext">TVarIdx -&gt; TVarIdx -&gt; Bool
+</span><span id="line-174"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405853"><span id="local-6989586621679405855"><span class="annot"><span class="annottext">TVarIdx -&gt; TVarIdx -&gt; Bool
 (TVarIdx -&gt; TVarIdx -&gt; Bool)
 -&gt; (TVarIdx -&gt; TVarIdx -&gt; Bool) -&gt; Eq TVarIdx
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -1538,7 +1538,7 @@ $c/= :: TVarIdx -&gt; TVarIdx -&gt; Bool
 == :: TVarIdx -&gt; TVarIdx -&gt; Bool
 $c== :: TVarIdx -&gt; TVarIdx -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-175"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679406185"><span id="local-6989586621679406187"><span id="local-6989586621679406189"><span id="local-6989586621679406191"><span id="local-6989586621679406193"><span id="local-6989586621679406195"><span id="local-6989586621679406197"><span class="annot"><span class="annottext">Eq TVarIdx
+</span><span id="line-175"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679405838"><span id="local-6989586621679405840"><span id="local-6989586621679405842"><span id="local-6989586621679405844"><span id="local-6989586621679405846"><span id="local-6989586621679405848"><span id="local-6989586621679405850"><span class="annot"><span class="annottext">Eq TVarIdx
 Eq TVarIdx
 -&gt; (TVarIdx -&gt; TVarIdx -&gt; Ordering)
 -&gt; (TVarIdx -&gt; TVarIdx -&gt; Bool)
@@ -1578,7 +1578,7 @@ $ccompare :: TVarIdx -&gt; TVarIdx -&gt; Ordering
 $cp1Ord :: Eq TVarIdx
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-176"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-177"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTVarIdx"><span id="%24tTVarIdx"><span id="local-6989586621679406156"><span id="local-6989586621679406158"><span id="local-6989586621679406160"><span id="local-6989586621679406162"><span id="local-6989586621679406164"><span id="local-6989586621679406166"><span id="local-6989586621679406168"><span id="local-6989586621679406170"><span id="local-6989586621679406172"><span id="local-6989586621679406174"><span id="local-6989586621679406176"><span id="local-6989586621679406178"><span id="local-6989586621679406180"><span id="local-6989586621679406182"><span class="annot"><span class="annottext">Typeable TVarIdx
+</span><span id="line-177"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cTVarIdx"><span id="%24tTVarIdx"><span id="local-6989586621679405809"><span id="local-6989586621679405811"><span id="local-6989586621679405813"><span id="local-6989586621679405815"><span id="local-6989586621679405817"><span id="local-6989586621679405819"><span id="local-6989586621679405821"><span id="local-6989586621679405823"><span id="local-6989586621679405825"><span id="local-6989586621679405827"><span id="local-6989586621679405829"><span id="local-6989586621679405831"><span id="local-6989586621679405833"><span id="local-6989586621679405835"><span class="annot"><span class="annottext">Typeable TVarIdx
 DataType
 Constr
 Typeable TVarIdx
@@ -1736,20 +1736,20 @@ $cgfoldl :: forall (c :: * -&gt; *).
 $cp1Data :: Typeable TVarIdx
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-178"></span><span>
-</span><span id="line-179"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406149"><span id="local-6989586621679406152"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-180"></span><span>  </span><span id="local-6989586621679406148"><span class="annot"><span class="annottext">show :: TVarIdx -&gt; String
-</span><a href="#local-6989586621679406148"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span><span> </span><span id="local-6989586621679406147"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406147"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><span id="line-179"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679405802"><span id="local-6989586621679405805"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-180"></span><span>  </span><span id="local-6989586621679405801"><span class="annot"><span class="annottext">show :: TVarIdx -&gt; String
+</span><a href="#local-6989586621679405801"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span><span> </span><span id="local-6989586621679405800"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679405800"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;'&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406147"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679405800"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-181"></span><span>
-</span><span id="line-182"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679406144"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-183"></span><span>  </span><span id="local-6989586621679406143"><span class="annot"><span class="annottext">pretty :: TVarIdx -&gt; Doc ann
-</span><a href="#local-6989586621679406143"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
+</span><span id="line-182"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679405797"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarIdx"><span class="hs-identifier hs-type">TVarIdx</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-183"></span><span>  </span><span id="local-6989586621679405796"><span class="annot"><span class="annottext">pretty :: TVarIdx -&gt; Doc ann
+</span><a href="#local-6989586621679405796"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Doc ann) -&gt; (TVarIdx -&gt; String) -&gt; TVarIdx -&gt; Doc ann
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
@@ -1761,42 +1761,42 @@ forall a. Show a =&gt; a -&gt; String
 </span><span id="line-186"></span><span class="hs-keyword">type</span><span> </span><span id="Binder"><span class="annot"><a href="Common.Identifiers.html#Binder"><span class="hs-identifier hs-var">Binder</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">VarId</span></a></span><span>
 </span><span id="line-187"></span><span>
 </span><span id="line-188"></span><span class="hs-comment">-- | Whether an identifier refers to a type or data constructor.</span><span>
-</span><span id="line-189"></span><span id="local-6989586621679406683"><span class="annot"><a href="Common.Identifiers.html#isCons"><span class="hs-identifier hs-type">isCons</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406683"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406683"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-189"></span><span id="local-6989586621679406336"><span class="annot"><a href="Common.Identifiers.html#isCons"><span class="hs-identifier hs-type">isCons</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406336"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406336"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
 </span><span id="line-190"></span><span id="isCons"><span class="annot"><span class="annottext">isCons :: a -&gt; Bool
-</span><a href="Common.Identifiers.html#isCons"><span class="hs-identifier hs-var hs-var">isCons</span></a></span></span><span> </span><span id="local-6989586621679406142"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679406142"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">String -&gt; Bool
+</span><a href="Common.Identifiers.html#isCons"><span class="hs-identifier hs-var hs-var">isCons</span></a></span></span><span> </span><span id="local-6989586621679405795"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679405795"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">String -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406140"><span class="hs-identifier hs-var">s</span></a></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679405793"><span class="hs-identifier hs-var">s</span></a></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-191"></span><span>         </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
 </span><span class="hs-identifier hs-var">isUpper</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Char
 forall a. [a] -&gt; a
 </span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406140"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679405793"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Char
 forall a. [a] -&gt; a
 </span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406140"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679405793"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">':'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Char
 forall a. [a] -&gt; a
 </span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679406140"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679405793"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">':'</span></span><span>
-</span><span id="line-192"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679406140"><span class="annot"><span class="annottext">s :: String
-</span><a href="#local-6989586621679406140"><span class="hs-identifier hs-var hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+</span><span id="line-192"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679405793"><span class="annot"><span class="annottext">s :: String
+</span><a href="#local-6989586621679405793"><span class="hs-identifier hs-var hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; String
 forall i. Identifiable i =&gt; i -&gt; String
 </span><a href="Common.Identifiers.html#ident"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679406142"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679405795"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-193"></span><span>
 </span><span id="line-194"></span><span class="hs-comment">-- | Whether an identifier refers to a type or data variable.</span><span>
-</span><span id="line-195"></span><span id="local-6989586621679406135"><span class="annot"><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-type">isVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406135"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406135"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-195"></span><span id="local-6989586621679405788"><span class="annot"><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-type">isVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679405788"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679405788"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
 </span><span id="line-196"></span><span id="isVar"><span class="annot"><span class="annottext">isVar :: a -&gt; Bool
 </span><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-var hs-var">isVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (a -&gt; Bool) -&gt; a -&gt; Bool
@@ -1817,11 +1817,11 @@ mangle. For instance, to mangle all 'VarId' nodes:
 &gt; mangleVarId :: Data a =&gt; a -&gt; a
 &gt; mangleVarId = mangle (Proxy :: VarId)
 -}</span><span>
-</span><span id="line-210"></span><span id="local-6989586621679406651"><span id="local-6989586621679406652"><span class="annot"><a href="Common.Identifiers.html#mangle"><span class="hs-identifier hs-type">mangle</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406652"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406652"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406651"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679406652"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406651"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406651"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-210"></span><span id="local-6989586621679406304"><span id="local-6989586621679406305"><span class="annot"><a href="Common.Identifiers.html#mangle"><span class="hs-identifier hs-type">mangle</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406305"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406305"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406304"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679406305"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406304"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406304"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
 </span><span id="line-211"></span><span id="mangle"><span class="annot"><span class="annottext">mangle :: Proxy i -&gt; a -&gt; a
-</span><a href="Common.Identifiers.html#mangle"><span class="hs-identifier hs-var hs-var">mangle</span></a></span></span><span> </span><span id="local-6989586621679406133"><span class="annot"><span class="annottext">Proxy i
-</span><a href="#local-6989586621679406133"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679406132"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679406132"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GenericM (StateT (Int, Map i i) Identity)
+</span><a href="Common.Identifiers.html#mangle"><span class="hs-identifier hs-var hs-var">mangle</span></a></span></span><span> </span><span id="local-6989586621679405786"><span class="annot"><span class="annottext">Proxy i
+</span><a href="#local-6989586621679405786"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679405785"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679405785"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GenericM (StateT (Int, Map i i) Identity)
 -&gt; a -&gt; StateT (Int, Map i i) Identity a
 forall (m :: * -&gt; *). Monad m =&gt; GenericM m -&gt; GenericM m
 </span><span class="hs-identifier hs-var">everywhereM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i -&gt; StateT (Int, Map i i) Identity i)
@@ -1839,45 +1839,45 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall i.
 (Identifiable i, Data i) =&gt;
 Proxy i -&gt; i -&gt; State (Int, Map i i) i
-</span><a href="#local-6989586621679406131"><span class="hs-identifier hs-var">mang</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy i
-</span><a href="#local-6989586621679406133"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679406132"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">StateT (Int, Map i i) Identity a -&gt; (Int, Map i i) -&gt; a
+</span><a href="#local-6989586621679405784"><span class="hs-identifier hs-var">mang</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy i
+</span><a href="#local-6989586621679405786"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679405785"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">StateT (Int, Map i i) Identity a -&gt; (Int, Map i i) -&gt; a
 forall s a. State s a -&gt; s -&gt; a
 </span><span class="hs-operator hs-var">`evalState`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map i i
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">M.empty</span></span><span class="hs-special">)</span><span>
 </span><span id="line-212"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-213"></span><span>  </span><span id="local-6989586621679406670"><span class="annot"><a href="#local-6989586621679406131"><span class="hs-identifier hs-type">mang</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679406670"><span class="hs-identifier hs-type">i</span></a></span></span><span>
-</span><span id="line-214"></span><span>  </span><span id="local-6989586621679406131"><span class="annot"><span class="annottext">mang :: Proxy i -&gt; i -&gt; State (Int, Map i i) i
-</span><a href="#local-6989586621679406131"><span class="hs-identifier hs-var hs-var">mang</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy i
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679406129"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406129"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-215"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679406128"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406128"><span class="hs-identifier hs-var">ctr</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679406127"><span class="annot"><span class="annottext">Map i i
-</span><a href="#local-6989586621679406127"><span class="hs-identifier hs-var">idMap</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StateT (Int, Map i i) Identity (Int, Map i i)
+</span><span id="line-213"></span><span>  </span><span id="local-6989586621679406323"><span class="annot"><a href="#local-6989586621679405784"><span class="hs-identifier hs-type">mang</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#Identifiable"><span class="hs-identifier hs-type">Identifiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679406323"><span class="hs-identifier hs-type">i</span></a></span></span><span>
+</span><span id="line-214"></span><span>  </span><span id="local-6989586621679405784"><span class="annot"><span class="annottext">mang :: Proxy i -&gt; i -&gt; State (Int, Map i i) i
+</span><a href="#local-6989586621679405784"><span class="hs-identifier hs-var hs-var">mang</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy i
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679405782"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679405782"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-215"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679405781"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679405781"><span class="hs-identifier hs-var">ctr</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679405780"><span class="annot"><span class="annottext">Map i i
+</span><a href="#local-6989586621679405780"><span class="hs-identifier hs-var">idMap</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StateT (Int, Map i i) Identity (Int, Map i i)
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">get</span></span><span>
 </span><span id="line-216"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">i -&gt; Map i i -&gt; Maybe i
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">M.lookup</span></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406129"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Map i i
-</span><a href="#local-6989586621679406127"><span class="hs-identifier hs-var">idMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-217"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679406124"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406124"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">i -&gt; State (Int, Map i i) i
+</span><a href="#local-6989586621679405782"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Map i i
+</span><a href="#local-6989586621679405780"><span class="hs-identifier hs-var">idMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-217"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679405777"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679405777"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">i -&gt; State (Int, Map i i) i
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406124"><span class="hs-identifier hs-var">i'</span></a></span><span>
+</span><a href="#local-6989586621679405777"><span class="hs-identifier hs-var">i'</span></a></span><span>
 </span><span id="line-218"></span><span>      </span><span class="annot"><span class="annottext">Maybe i
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-219"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679406123"><span class="annot"><span class="annottext">ctr' :: Int
-</span><a href="#local-6989586621679406123"><span class="hs-identifier hs-var hs-var">ctr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406128"><span class="hs-identifier hs-var">ctr</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><span id="line-219"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679405776"><span class="annot"><span class="annottext">ctr' :: Int
+</span><a href="#local-6989586621679405776"><span class="hs-identifier hs-var hs-var">ctr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679405781"><span class="hs-identifier hs-var">ctr</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-220"></span><span>            </span><span id="local-6989586621679406121"><span class="annot"><span class="annottext">i' :: i
-</span><a href="#local-6989586621679406121"><span class="hs-identifier hs-var hs-var">i'</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; i
+</span><span id="line-220"></span><span>            </span><span id="local-6989586621679405774"><span class="annot"><span class="annottext">i' :: i
+</span><a href="#local-6989586621679405774"><span class="hs-identifier hs-var hs-var">i'</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; i
 forall a. IsString a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">fromString</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; i) -&gt; String -&gt; i
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -1887,23 +1887,23 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406123"><span class="hs-identifier hs-var">ctr'</span></a></span><span>
+</span><a href="#local-6989586621679405776"><span class="hs-identifier hs-var">ctr'</span></a></span><span>
 </span><span id="line-221"></span><span>        </span><span class="annot"><span class="annottext">(Int, Map i i) -&gt; StateT (Int, Map i i) Identity ()
 forall s (m :: * -&gt; *). MonadState s m =&gt; s -&gt; m ()
 </span><span class="hs-identifier hs-var">put</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679406123"><span class="hs-identifier hs-var">ctr'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">i -&gt; i -&gt; Map i i -&gt; Map i i
+</span><a href="#local-6989586621679405776"><span class="hs-identifier hs-var">ctr'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">i -&gt; i -&gt; Map i i -&gt; Map i i
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">M.insert</span></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406129"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406121"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Map i i
-</span><a href="#local-6989586621679406127"><span class="hs-identifier hs-var">idMap</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679405782"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679405774"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Map i i
+</span><a href="#local-6989586621679405780"><span class="hs-identifier hs-var">idMap</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-222"></span><span>        </span><span class="annot"><span class="annottext">i -&gt; State (Int, Map i i) i
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679406121"><span class="hs-identifier hs-var">i'</span></a></span><span>
+</span><a href="#local-6989586621679405774"><span class="hs-identifier hs-var">i'</span></a></span><span>
 </span><span id="line-223"></span><span>
 </span><span id="line-224"></span><span class="hs-comment">-- | Mangle all type and data variable identifiers.</span><span>
-</span><span id="line-225"></span><span id="local-6989586621679406118"><span class="annot"><a href="Common.Identifiers.html#mangleVars"><span class="hs-identifier hs-type">mangleVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679406118"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406118"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679406118"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-225"></span><span id="local-6989586621679405771"><span class="annot"><a href="Common.Identifiers.html#mangleVars"><span class="hs-identifier hs-type">mangleVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679405771"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679405771"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679405771"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-226"></span><span id="mangleVars"><span class="annot"><span class="annottext">mangleVars :: a -&gt; a
 </span><a href="Common.Identifiers.html#mangleVars"><span class="hs-identifier hs-var hs-var">mangleVars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy VarId -&gt; a -&gt; a
 forall i a. (Identifiable i, Data i, Data a) =&gt; Proxy i -&gt; a -&gt; a
