@@ -91,9 +91,9 @@ tests:
     - test/lib
     - test/trans
 
-  # Tests related to pattern matching
-  match:
+  # Tests related to patterns
+  pattern:
     <<: *test-suite
     source-dirs:
     - test/lib
-    - test/match
+    - test/pattern
