@@ -32,13 +32,13 @@ spec = do
           ]
     scanTokenTypes input `shouldProduce` output
 
-  it "supports do blocks with implicit braces" $ do
+  it "supports layout blocks with implicit braces" $ do
     let input = [here|
-          do a
-             b
+          loop a
+               b
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TId "a"
           , TSemicolon
@@ -47,16 +47,16 @@ spec = do
           ]
     scanTokenTypes input `shouldProduce` output
 
-  it "supports do blocks with implicit braces, followed by continuation" $ do
+  it "supports layout blocks with implicit braces, followed by continuation" $ do
     let input = [here|
-          do a
-               b
-             c
+          loop a
+                b
+               c
            d
                e
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TId "a"
           , TId "b"
@@ -68,15 +68,15 @@ spec = do
           ]
     scanTokenTypes input `shouldProduce` output
 
-  it "supports do blocks with explicit braces" $ do
+  it "supports layout blocks with explicit braces" $ do
     let input = [here|
-          do {
+          loop {
               g
           x
             }
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TId "g"
           , TId "x"
@@ -84,15 +84,15 @@ spec = do
           ]
     scanTokenTypes input `shouldProduce` output
 
-  it "supports do blocks with explicit braces and semicolons" $ do
+  it "supports layout blocks with explicit braces and semicolons" $ do
     let input = [here|
-          do {
+          loop {
             g;
               x
           }
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TId "g"
           , TSemicolon

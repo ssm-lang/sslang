@@ -12,10 +12,10 @@ spec :: Spec
 spec = do
   it "scans basic let definition" $ do
     let input = [here|
-          do let variable = definition
+          loop let variable = definition
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -31,13 +31,13 @@ spec = do
 
   it "scans sequenced let definitions" $ do
     let input = [here|
-          do
+          loop
             let a = a_def
             let b = b_def
             c
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -92,7 +92,7 @@ spec = do
 
   it "scans grouped let-bindings" $ do
     let input = [here|
-          do
+          loop
            let a = a_block
                b = b_block_1
                    b_block_2
@@ -100,7 +100,7 @@ spec = do
            outside_let
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -127,7 +127,7 @@ spec = do
 
   it "supports explicit braces around definition" $ do
     let input = [here|
-          do
+          loop
            let a = { a_block_1_1
                        a_block_1_2;
                      a_block_2_1
@@ -135,7 +135,7 @@ spec = do
            outside_let
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -157,12 +157,12 @@ spec = do
 
   it "supports explicit braces around bind group" $ do
     let input = [here|
-          do
+          loop
            let { a = b
              ||  b = a }
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -190,14 +190,14 @@ spec = do
 
   it "supports parenthesized definition in block" $ do
     let input = [here|
-          do
+          loop
            let a = (a
                     b c)
                     d
                    e
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -220,13 +220,13 @@ spec = do
 
   it "supports nested let-block" $ do
     let input = [here|
-          do
+          loop
             let a = let b = c
                         c = b
             d
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
@@ -257,12 +257,12 @@ spec = do
 
   it "supports let-bound function definitions" $ do
     let input = [here|
-          do
+          loop
             let f = let g x = 1
                     g
         |]
         output =
-          [ TDo
+          [ TLoop
           , TLbrace
           , TLet
           , TLbrace
