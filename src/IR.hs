@@ -11,17 +11,18 @@ import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
 
+import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
+import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
-import qualified IR.TypeChecker                as TC
-import qualified IR.HM                         as HM
 
 import           IR.ClassInstantiation          ( instProgram )
+import           IR.DConToFunc                  ( dConToFunc )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-
+import           IR.DropInference               ( insertDropsProgram )
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
@@ -43,7 +44,11 @@ data TIType
  deriving (Eq, Show)
 
 -- | Compiler options for the IR compiler stage.
-data Options = Options { mode :: Mode, tiType :: TIType } deriving (Eq, Show)
+data Options = Options
+  { mode   :: Mode
+  , tiType :: TIType
+  }
+  deriving (Eq, Show)
 
 instance Default Options where
   def = Options { mode = Continue, tiType = Both }
@@ -67,14 +72,8 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option ""
-           ["only-hm"]
-           (NoArg $ setHM)
-           "Only run HM type inference"
-  , Option ""
-           ["only-tc"]
-           (NoArg $ setTC)
-           "Only run type checker"
+  , Option "" ["only-hm"] (NoArg $ setHM) "Only run HM type inference"
+  , Option "" ["only-tc"] (NoArg $ setTC) "Only run type checker"
   ]
   where setMode m o = o { mode = m }
 
@@ -100,8 +99,8 @@ ann2Class opt ir = do
     case tiType opt of
       HMOnly -> irHMInferred
       TCOnly -> irTCInferred
-      _ -> case (runPass irHMInferred, runPass irTCInferred) of
-        (Left e , Left _) -> throwError e
+      _      -> case (runPass irHMInferred, runPass irTCInferred) of
+        (Left  e, Left _) -> throwError e
         (Right _, _     ) -> irHMInferred
         _                 -> irTCInferred
   when (mode opt == DumpIRTyped) $ dump irInferred
@@ -114,7 +113,8 @@ class2Poly _ = instProgram
 -- | IR compiler sub-stage, performing source-to-source translations.
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
-  irLifted <- liftProgramLambdas ir
+  dConsGone <- dConToFunc ir
+  irLifted  <- liftProgramLambdas dConsGone
   when (mode opt == DumpIRLifted) $ dump irLifted
   when (mode opt == DumpIRFinal) $ dump irLifted
   return irLifted
@@ -122,7 +122,11 @@ poly2Poly opt ir = do
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)
 run opt prg =
-  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Poly opt
+  lower opt prg
+    >>= ann2Class opt
+    >>= class2Poly opt
+    >>= dropInf
+    >>= poly2Poly opt
 
 -- | Helper function to set ti type to HM-only
 setHM :: Options -> Options
@@ -131,3 +135,7 @@ setHM o = o { tiType = HMOnly }
 -- | Helper function to set ti type to TC-only
 setTC :: Options -> Options
 setTC o = o { tiType = TCOnly }
+
+-- | Drop inference stage.
+dropInf :: I.Program Poly.Type -> Pass (I.Program Poly.Type)
+dropInf = insertDropsProgram

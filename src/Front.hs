@@ -14,6 +14,7 @@ import qualified Front.Ast                     as A
 
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
+import qualified Front.Pattern.Anomaly         as Anomaly
 import           Front.Scanner                  ( scanTokens )
 import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( prettyTokens )
@@ -85,6 +86,7 @@ parseAst opt src = do
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
   scopeProgram ast
+  Anomaly.checkProgram ast
 
 -- | Front end compiler stage.
 run :: Options -> String -> Pass A.Program
