@@ -315,9 +315,28 @@ closure_free f = [cexp|ssm_closure_free($exp:f)|]
 container_of :: CIdent
 container_of = "container_of"
 
--- | Name of top level program initialization function
-initialize_program :: CIdent
-initialize_program = "ssm_program_initialize"
+-- | Name of program initialization hook, called to set up program with runtime.
+program_init :: CIdent
+program_init = "ssm_program_init"
+
+-- | Name of program destruction hook, called before gracefully exiting program.
+program_exit :: CIdent
+program_exit = "ssm_program_exit"
+
+-- | Name of stdout handler enter function, used to bind stdout for POSIX platforms.
+-- NOTE: this is a hack
+stdout_handler_enter :: CIdent
+stdout_handler_enter = "__enter_stdout_handler"
+
+-- | Name of stdin handler spawner, used to bind stdin for POSIX platforms.
+-- NOTE: this is a hack
+stdin_handler_spawn :: CIdent
+stdin_handler_spawn = "__spawn_stdin_handler"
+
+-- | Name of stdin handler killer, used to destroy handler thread on POSIX.
+-- NOTE: this is a hack
+stdin_handler_kill :: CIdent
+stdin_handler_kill = "__kill_stdin_handler"
 
 {---- from ssm.h }}} ----}
 

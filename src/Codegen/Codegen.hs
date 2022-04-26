@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- | Translate SSM program to C compilation unit.
 
@@ -237,10 +238,11 @@ undef = [cexp|0xdeadbeef|]
 --
 -- Items 2 and 3 include both declarations and definitions.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
-  (tdefs , tinfo) <- genTypes typedefs
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
-  return $ includes ++ tdefs ++ cdecls ++ cdefs -- ++ genInitProgram p
+genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs, I.programEntry = entry }
+  = do
+    (tdefs , tinfo) <- genTypes typedefs
+    (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
+    return $ includes ++ tdefs ++ cdecls ++ cdefs ++ genInitProgram entry
  where
   genTop
     :: TypegenInfo
@@ -271,19 +273,51 @@ typedef char unit;
 |]
 
 -- | Setup the entry point of the program.
-genInitProgram :: I.Program I.Type -> [C.Definition]
-genInitProgram I.Program { I.programEntry = entry } = [cunit|
-    int $id:initialize_program($ty:value_t *argv, $ty:value_t *ret) {
-       $exp:(activate enter_entry);
-      return 0;
+genInitProgram :: I.VarId -> [C.Definition]
+genInitProgram entry = [cunit|
+    $ty:act_t *$id:stdout_handler_enter($ty:act_t *parent,
+                                        $ty:priority_t priority,
+                                        $ty:depth_t depth,
+                                        $ty:value_t *argv,
+                                        $ty:value_t *ret);
+
+    void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
+    void $id:stdin_handler_kill(void);
+
+    void $id:program_init(void) {
+      $ty:value_t ssm_stdin = $exp:std_sv;
+      $ty:value_t ssm_stdout = $exp:std_sv;
+      $ty:value_t stdout_ret, entry_ret;
+
+      $ty:value_t std_argv[2] = { ssm_stdin, ssm_stdout };
+
+      $exp:(activate enter_stdout);
+      $exp:(activate enter_entry);
+
+      $id:stdin_handler_spawn($exp:(to_sv $ cexpr "ssm_stdin"));
+    }
+
+    void $id:program_exit(void) {
+      $id:stdin_handler_kill();
     }
   |]
  where
+  std_sv                    = new_sv $ marshal [cexp|0|]
+
+  parArgs                   = genParArgs 2 (root_priority, root_depth)
+  (stdoutPrio, stdoutDepth) = head parArgs
+  (entryPrio , entryDepth ) = parArgs !! 1
+  enter_stdout = [cexp|$id:stdout_handler_enter(&$exp:top_parent,
+                                                $exp:stdoutPrio,
+                                                $exp:stdoutDepth,
+                                                &ssm_stdout,
+                                                &stdout_ret)|]
+
   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
-                                         $exp:root_priority,
-                                         $exp:root_depth,
-                                         argv,
-                                         ret)|]
+                                         $exp:entryPrio,
+                                         $exp:entryDepth,
+                                         std_argv,
+                                         &entry_ret)|]
 
 
 -- | Generate struct definition for an SSM procedure.
