@@ -18,7 +18,7 @@ keep=
 mkdir -p out
 
 # Set time limit
-ulimit -t 30
+ulimit -t 5
 
 Usage() {
     echo "Usage: runtests.sh [options] [files]"
