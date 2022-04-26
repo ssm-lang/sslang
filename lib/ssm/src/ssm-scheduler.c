@@ -263,6 +263,8 @@ void act_queue_consistency_check(void) {
 
 ssm_time_t ssm_now(void) { return now; }
 
+size_t ssm_active_processes(void) { return act_queue_len; }
+
 ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
                      ssm_priority_t priority, ssm_depth_t depth) {
   ssm_act_t *act = ssm_mem_alloc(size);
@@ -451,4 +453,23 @@ void ssm_tick(void) {
 
     to_run->step(to_run);
   }
+}
+
+struct ssm_input ssm_input_rb[SSM_INPUT_RB_SIZE];
+
+size_t ssm_input_consume(size_t r, size_t w) {
+  if (!ssm_input_read_ready(r, w))
+    return r;
+
+  ssm_time_t packet_time = ssm_input_get(r)->time.ssm_time;
+
+  if (ssm_next_event_time() < packet_time)
+    return r;
+
+  do {
+    ssm_sv_later_unsafe(ssm_input_get(r)->sv, packet_time,
+                        ssm_input_get(r)->payload);
+  } while (ssm_input_read_ready(++r, w) &&
+           packet_time == ssm_input_get(r)->time.ssm_time);
+  return r;
 }

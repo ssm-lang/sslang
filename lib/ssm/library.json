@@ -17,6 +17,10 @@
     ],
     "license":"BSD-3-Clause",
     "frameworks":"*",
-    "platform":"*"
+    "platform":"*",
+    "build": {
+        "srcDir": ".",
+        "extraScript": "library_platform.py"
+    }
 }
     
