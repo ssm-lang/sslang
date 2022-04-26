@@ -14,6 +14,7 @@ module IR.IR
   , wellFormed
   , collectLambda
   , makeLambdaChain
+  , extract
   , zipApp
   , unzipApp
   ) where
@@ -140,7 +141,7 @@ data Expr t
   = Var VarId t
   {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
   | Data DConId t
-  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
+  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
   | Lit Literal t
   {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
   | App (Expr t) (Expr t) t
@@ -172,7 +173,7 @@ data Alt
   = AltData DConId [Binder]
   -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
   | AltLit Literal
-  -- ^ @AltLit l e@ matches against literal @d@, producing expression @e@.
+  -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)

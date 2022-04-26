@@ -22,7 +22,7 @@ import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-
+import           IR.DropInference               ( insertDropsProgram )
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
@@ -122,7 +122,11 @@ poly2Poly opt ir = do
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)
 run opt prg =
-  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Poly opt
+  lower opt prg
+    >>= ann2Class opt
+    >>= class2Poly opt
+    >>= dropInf
+    >>= poly2Poly opt
 
 -- | Helper function to set ti type to HM-only
 setHM :: Options -> Options
@@ -131,3 +135,7 @@ setHM o = o { tiType = HMOnly }
 -- | Helper function to set ti type to TC-only
 setTC :: Options -> Options
 setTC o = o { tiType = TCOnly }
+
+-- | Drop inference stage.
+dropInf :: I.Program Poly.Type -> Pass (I.Program Poly.Type)
+dropInf = insertDropsProgram
