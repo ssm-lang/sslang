@@ -68,7 +68,7 @@ CC = $(MAKE_CC)
 CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic -DSSM_TIMER64_PRESENT
 
 # Check whether valgrind is available.
-ifeq ($(shell command -v valgrind),)
+ifeq ($(shell which valgrind),)
 $(info # Valgrind is not available; compiling without it.)
 else
 # If available, we try to #include <valgrind/valgrind.h>, which we use to
