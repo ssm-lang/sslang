@@ -1,0 +1,147 @@
+type Bool
+    True
+    False
+
+btos b : Bool -> Int =
+    match b
+          False = 70
+          True = 84
+
+type Number
+    Zero
+    One
+    Two
+    Three
+    Four
+    Five
+    Six
+    Seven
+    Eight
+    Nine
+    Digits List
+
+type List
+    Cons Number List
+    Nil
+
+eqZero n : Number -> Bool =
+    match n
+          Zero = True
+          _ = False
+
+eqOne n : Number -> Bool =
+    match n
+          One = True
+          _ = False
+
+eqTwo n : Number -> Bool =
+    match n
+          Two = True
+          _ = False
+
+eqThree n : Number -> Bool =
+    match n
+          Three = True
+          _ = False
+
+eqFour n : Number -> Bool =
+    match n
+          Four = True
+          _ = False
+
+eqFive n : Number -> Bool =
+    match n
+          Five = True
+          _ = False
+
+eqSix n : Number -> Bool =
+    match n
+          Six = True
+          _ = False
+
+eqSeven n : Number -> Bool =
+    match n
+          Seven = True
+          _ = False    
+
+eqEight n : Number -> Bool =
+    match n
+          Eight = True
+          _ = False
+
+eqNine n : Number -> Bool =
+    match n
+          Nine = True
+          _ = False   
+
+eqDigit (n : Number) (n2 : Number) -> Bool =
+    match n
+          Zero = eqZero n2
+          One = eqOne n2
+          Two = eqTwo n2
+          Three = eqThree n2
+          Four = eqFour n2
+          Five = eqFive n2
+          Six = eqSix n2
+          Seven = eqSeven n2
+          Eight = eqEight n2
+          Nine = eqNine n2
+          _ = False
+
+eqDigits (n : Number) (n2 : Number) -> Bool =
+    match n
+          Digits lst = match lst
+                             Nil = match n2
+                                         Digits lst2 = match lst2
+                                                             Nil = True
+                                                             _ = False
+                                         _ = False
+                             Cons num tl = match n2
+                                                 Digits lst2 = match lst2
+                                                                     Cons num2 tl2 = match (eqDigit num num2)
+                                                                                           True = match (eqDigits (Digits tl) (Digits tl2))
+                                                                                                        True = True
+                                                                                                        _ = False
+                                                                                           _ = False
+                                                                     _ = False          
+                                                 _ = False
+                             _ = False
+          _ = False
+
+                                          
+
+clear (cout : & Int) -> () =
+    after 500 , (cout : & Int) <- 7    // clear with "\033[2J" (see -main.c for details)
+    wait (cout : & Int)
+    after 5 , (cout : & Int) <- 13     // carriage return
+    wait (cout : & Int)
+
+print (cout : & Int) (c : Int) -> () =
+    after 10 , (cout : & Int) <- c  
+    wait (cout : & Int)
+
+//let num = 0
+// 45 47 92 124
+// -  /   \  |
+// \ | / - \ | / - \
+// match x / 50
+// 124 / 10 = 12
+// 12 / 10 = 1
+// 1 / 4 = 0 I need to make an ADT that holds a carry!!!!!!!
+
+main ( cout : & Int ) (num : & Int) -> () =
+    let x = Digits (Cons One (Cons Two (Cons Four Nil)))
+    let y = Digits (Cons Five (Cons Five (Cons Zero Nil)))
+    print cout (btos (eqDigits  x x))
+    print cout (btos (eqDigits  x y))
+
+        
+
+        
+
+
+
+
+
+
+        
