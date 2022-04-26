@@ -36,6 +36,15 @@
  */
 ssm_time_t ssm_next_event_time(void);
 
+/** @ingroup act
+ *  @brief Whether there are still active processes in the activation queue.
+ *
+ *  @platformonly
+ *
+ *  @returns true if there is at least one active process, false otherwise.
+ */
+bool ssm_active(void);
+
 /** @ingroup time
  *  @brief Reset the scheduler.
  *
@@ -116,8 +125,6 @@ void ssm_unschedule(ssm_sv_t *var);
  *  @throws SSM_INTERNAL_ERROR  there are stale events in the queue before #now.
  */
 void ssm_tick(void);
-
-size_t ssm_active_processes(void);
 
 /** @ingroup adt
  *  @brief Compute the size of a heap-allocated ADT.

@@ -16,9 +16,7 @@ static void step_stdout_handler(ssm_act_t *act) {
     return;
   case 1:;
     char c = ssm_unmarshal(ssm_deref(cont->ssm_stdout));
-    if (c == 0) break;
     putchar(c);
-    fsync(1);
     return;
   }
   ssm_leave(&cont->act, sizeof(stdout_handler_act_t));

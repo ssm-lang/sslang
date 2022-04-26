@@ -263,7 +263,7 @@ void act_queue_consistency_check(void) {
 
 ssm_time_t ssm_now(void) { return now; }
 
-size_t ssm_active_processes(void) { return act_queue_len; }
+bool ssm_active(void) { return act_queue_len > 0; }
 
 ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
                      ssm_priority_t priority, ssm_depth_t depth) {
