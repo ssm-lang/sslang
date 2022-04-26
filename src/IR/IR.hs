@@ -19,19 +19,24 @@ module IR.IR
   , zipApp
   , unzipApp
   ) where
-import qualified Data.Map                      as M
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
                                                 , Identifiable(ident)
                                                 , TConId(..)
-                                                , VarId(..), fromString
+                                                , VarId(..)
+                                                , fromString
                                                 )
 import           Common.Pretty
+import qualified Data.Map                      as M
 import           IR.Types.TypeSystem            ( IsUnit(isUnit)
                                                 , TypeDef(..)
                                                 , TypeSystem
+                                                , TypeVariant
+                                                  ( VariantNamed
+                                                  , VariantUnnamed
+                                                  )
                                                 , arrow
-                                                , collectArrow, TypeVariant (VariantNamed, VariantUnnamed)
+                                                , collectArrow
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -396,10 +401,8 @@ data PrettyFlags = PF
   }
 
 data PrettyInfo = PInfo
-  { flags :: PrettyFlags
---  , tab   :: Int
-    , __DCons :: M.Map VarId DConId
-  , depth :: Int
+  { flags   :: PrettyFlags
+  , __DCons :: M.Map VarId DConId
   }
 
 -- | Whitespace typeclass
@@ -429,12 +432,13 @@ instance IsUnit t => WS (Expr t) where
   ws (Prim Wait es t) PInfo { flags = PF { ann = an } } =
     typ an t $ pretty "wait" <+> vsep (map pretty es)
 
-  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = False }, __DCons = dMap } = 
-    case M.lookup v dMap of
-      Nothing -> typ an t $ pretty v
+  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = False }, __DCons = dMap }
+    = case M.lookup v dMap of
+      Nothing   -> typ an t $ pretty v
       Just dcon -> typ an t $ pretty dcon
-  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = True }} = typ an t $ pretty v
-  
+  ws (Var v t) PInfo { flags = PF { ann = an, _funcs = True } } =
+    typ an t $ pretty v
+
   ws (Lambda a b t) i@PInfo { flags = PF { ann = an } } =
     typ an t $ pretty "fun" <+> pretty a <+> ws b i
 
@@ -470,18 +474,25 @@ typ f e d | not f     = d
 
 indentPretty :: (TypeSystem t, IsUnit t) => PrettyFlags -> Program t -> Doc ann
 indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
-  tys' <> line <> line <>  vsep (map (<> line) $ mapMaybe (`topLevel` flgs) ds)
+  tys' <> line <> line <> vsep (map (<> line) $ mapMaybe (`topLevel` flgs) ds)
  where
-  (__dconMap,tys') = foldl prettyDef (M.empty, pretty "") tys
-  prettyDef :: (IsUnit t) => (M.Map VarId DConId, Doc ann) -> (TConId, TypeDef t) -> (M.Map VarId DConId, Doc ann)
-  prettyDef (accMap, accDoc) (tcon,TypeDef {variants = vars}) = (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
+  (__dconMap, tys') = foldl prettyDef (M.empty, pretty "") tys
+  prettyDef
+    :: (IsUnit t)
+    => (M.Map VarId DConId, Doc ann)
+    -> (TConId, TypeDef t)
+    -> (M.Map VarId DConId, Doc ann)
+  prettyDef (accMap, accDoc) (tcon, TypeDef { variants = vars }) =
+    (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
    where
-     vars' = pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map blah vars )
-     dcons = fst <$> vars
-     __dcons = VarId . fromString . (\x -> '_':'_':x) <$> (ident <$> dcons)
-     blah :: (IsUnit t) => (DConId,TypeVariant t) -> Doc ann
-     blah (dcon, VariantNamed args) = pretty dcon <+> hsep (pretty . snd <$> args)
-     blah (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
+    vars' =
+      pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map blah vars)
+    dcons   = fst <$> vars
+    __dcons = VarId . fromString . (\x -> '_' : '_' : x) <$> (ident <$> dcons)
+    blah :: (IsUnit t) => (DConId, TypeVariant t) -> Doc ann
+    blah (dcon, VariantNamed args) =
+      pretty dcon <+> hsep (pretty . snd <$> args)
+    blah (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
   topLevel
     :: (TypeSystem t, IsUnit t)
     => (VarId, Expr t)
@@ -491,7 +502,7 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
     '_' : '_' : _ -> Nothing
     _ -> Just $ pretty v <+> typSig <+> pretty "=" <+> line <> indent
       1
-      (ws body PInfo { flags = flgz, __DCons = __dconMap, depth = 0 })
+      (ws body PInfo { flags = flgz, __DCons = __dconMap })
    where
     (argIds, body ) = collectLambda l
     (argTys, retTy) = collectArrow ty
@@ -500,5 +511,6 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
       argIds
       argTys
     typSig = hsep args <+> (rarrow <+> pretty retTy)
-  topLevel (v, e) flgz =
-    Just $ pretty v <+> pretty "=" <+> ws e PInfo { flags = flgz, __DCons = __dconMap, depth = 0 }
+  topLevel (v, e) flgz = Just $ pretty v <+> pretty "=" <+> ws
+    e
+    PInfo { flags = flgz, __DCons = __dconMap }
