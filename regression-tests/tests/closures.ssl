@@ -10,6 +10,8 @@ main (in: &Int) (out : &Int) -> () =
   let c = g b
   after 20, out <- h (a + b + c)
   wait out
+  after 20, out <- 0
+  wait out
 
 // a = foo 3 4 5 = 3 + 4 + 5 = 12
 // b = g a = f 2 a = foo 1 2 a = 1 + 2 + 12 = 15
