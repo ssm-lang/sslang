@@ -284,7 +284,6 @@ genInitProgram entry = [cunit|
     void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
     void $id:stdin_handler_kill(void);
 
-    $ty:value_t stdout_ret, entry_ret;
     void $id:program_init(void) {
       $ty:value_t ssm_stdin = $exp:std_sv;
       $ty:value_t ssm_stdout = $exp:std_sv;
@@ -311,13 +310,13 @@ genInitProgram entry = [cunit|
                                                 $exp:stdoutPrio,
                                                 $exp:stdoutDepth,
                                                 &ssm_stdout,
-                                                &stdout_ret)|]
+                                                NULL)|]
 
   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
                                          $exp:entryPrio,
                                          $exp:entryDepth,
                                          std_argv,
-                                         &entry_ret)|]
+                                         NULL)|]
 
 
 -- | Generate struct definition for an SSM procedure.
@@ -435,7 +434,8 @@ genStep = do
           default:
             break;
           }
-        *$id:acts->$id:ret_val = $exp:ret_expr;
+        if ($id:acts->$id:ret_val)
+          *$id:acts->$id:ret_val = $exp:ret_expr;
         $id:leave_label:
           $exp:do_leave;
         }
