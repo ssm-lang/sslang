@@ -438,22 +438,16 @@ initTypeVars (I.Prim I.Assign [lhs, rhs] annT) = do
   lhs' <- initTypeVars lhs
   rhs' <- initTypeVars rhs
   return $ I.Prim I.Assign [lhs', rhs'] t
-initTypeVars (I.Prim (I.PrimOp I.PrimSub) [e1, e2] annT) = do
-  let annT' = collapseAnnT annT
-  t   <- typeCheck annT' (int 32)
-  e1' <- initTypeVars e1
-  e2' <- initTypeVars e2
-  insertEquation (extract e1', int 32)
-  insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] t
-initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] annT) = do
-  let annT' = collapseAnnT annT
-  t   <- typeCheck annT' (int 32)
-  e1' <- initTypeVars e1
-  e2' <- initTypeVars e2
-  insertEquation (extract e1', int 32)
-  insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] t
+initTypeVars (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimEq) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimGt) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimLt) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimGe) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimLe) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
   t    <- typeCheck annT' unit
@@ -514,6 +508,17 @@ initTypeVars e =
     $  fromString
     $  "Unable to type unknown expression: "
     ++ show e
+
+-- | Infer the type of a binary integer operation.
+inferPrimBinop :: I.PrimOp -> I.Expr Ann.Type -> I.Expr Ann.Type -> Ann.Type -> InferFn (I.Expr Classes.Type)
+inferPrimBinop o e1 e2 annT = do
+  let annT' = collapseAnnT annT
+  t   <- typeCheck annT' (int 32)
+  e1' <- initTypeVars e1
+  e2' <- initTypeVars e2
+  insertEquation (extract e1', int 32)
+  insertEquation (extract e2', int 32)
+  return $ I.Prim (I.PrimOp o) [e1', e2'] t
 
 -- | @typeCheck annT expectedT@ checks whether the type annotation @annT@ is
 -- compatible with the expected type @expectedT@. Insert new type equations when

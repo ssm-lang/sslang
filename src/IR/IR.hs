@@ -79,6 +79,7 @@ data PrimOp
   | PrimBitAnd  -- ^ bitwise-and, i.e., x & y
   | PrimBitOr   -- ^ bitwise-or, i.e., x | y
   | PrimEq      -- ^ equality, i.e., x == y
+  | PrimNeq     -- ^ equality, i.e., x != y
   | PrimGt      -- ^ greater than, i.e., x > y
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
@@ -381,6 +382,7 @@ instance Pretty PrimOp where
   pretty PrimBitAnd = pretty "&"
   pretty PrimBitOr  = pretty "|"
   pretty PrimEq     = pretty "=="
+  pretty PrimNeq     = pretty "!="
   pretty PrimGt     = pretty ">"
   pretty PrimGe     = pretty ">="
   pretty PrimLt     = pretty "<"
