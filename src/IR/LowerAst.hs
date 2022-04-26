@@ -19,10 +19,10 @@ import qualified IR.IR                         as I
 import qualified IR.Types.Annotated            as I
 import qualified IR.Types.TypeSystem           as I
 
-import           Common.Identifiers             ( fromId
+import           Common.Identifiers             ( TVarId(..)
+                                                , fromId
                                                 , fromString
                                                 , isCons
-                                                , TVarId (..)
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -75,7 +75,9 @@ lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef I.Type)
 lowerTypeDef A.TypeDef { A.typeName = tn, A.typeParams = tvs, A.typeVariants = tds }
   = return
     ( fromId tn
-    , I.TypeDef { I.targs = map TVarId tvs, I.variants = map lowerTypeVariant tds }
+    , I.TypeDef { I.targs    = map TVarId tvs
+                , I.variants = map lowerTypeVariant tds
+                }
     )
  where
   lowerTypeVariant (A.VariantUnnamed vn ts) =
@@ -160,8 +162,8 @@ lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
 lowerExpr (A.IfElse c t e) k = I.Match cond [tArm, eArm] (k I.untyped)
  where
   cond = lowerExpr c id
-  tArm = (I.AltLit (I.LitBool True), lowerExpr t id)
-  eArm = (I.AltDefault Nothing, lowerExpr e id)
+  tArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
+  eArm = (I.AltDefault Nothing, lowerExpr t id)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
@@ -216,6 +218,14 @@ lowerPrim (A.Id "new"  ) = Just I.New
 lowerPrim (A.Id "deref") = Just I.Deref
 lowerPrim (A.Id "+"    ) = Just $ I.PrimOp I.PrimAdd
 lowerPrim (A.Id "-"    ) = Just $ I.PrimOp I.PrimSub
+lowerPrim (A.Id "*"    ) = Just $ I.PrimOp I.PrimMul
+lowerPrim (A.Id "/"    ) = Just $ I.PrimOp I.PrimDiv
+lowerPrim (A.Id "=="   ) = Just $ I.PrimOp I.PrimEq
+lowerPrim (A.Id "!="   ) = Just $ I.PrimOp I.PrimNeq
+lowerPrim (A.Id ">="   ) = Just $ I.PrimOp I.PrimGe
+lowerPrim (A.Id "<="   ) = Just $ I.PrimOp I.PrimLe
+lowerPrim (A.Id ">"    ) = Just $ I.PrimOp I.PrimGt
+lowerPrim (A.Id "<"    ) = Just $ I.PrimOp I.PrimLt
 lowerPrim _              = Nothing
 
 -- | Extract an optional identifier from an Ast pattern.

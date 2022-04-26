@@ -32,5 +32,7 @@ builtinTypes = M.fromList $ map mkBuiltin ["Int", "[]", "&"]
 
 -- | Map of builtin data.
 builtinData :: M.Map Identifier DataInfo
-builtinData = M.fromList $ map mkBuiltin ["-", "+", "*", "/", "deref", "new"]
+builtinData = M.fromList $ map
+  mkBuiltin
+  ["-", "+", "*", "/", "==", "!=", "<=", ">=", "<", ">", "deref", "new"]
   where mkBuiltin i = (i, DataInfo { dataKind = Builtin })
