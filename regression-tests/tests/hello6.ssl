@@ -1,5 +1,5 @@
-main =
-  fun (cout)
+main (cin : &Int) =
+  fun cout
     after 10 , cout <- 72
     wait cout
     after 10 , cout <- 101

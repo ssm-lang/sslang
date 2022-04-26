@@ -10,7 +10,7 @@ type Tree
 // ^ tests whether ADTs can be defined, specifically with 
 // ^ nullary data constructors and integer fields
 
-main ( cout : & Int ) -> () =
+main (cin : &Int) ( cout : & Int ) -> () =
 // test initialization of ADTs works
   let b = MyTrue 65                            // A
   let c = (MyFalse 83 84)                      // S T

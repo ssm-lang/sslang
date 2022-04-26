@@ -1,11 +1,11 @@
-main ( cout : & Int ) -> () =
+main (cin : &Int) ( cout : & Int ) -> () =
   after 10 , cout <- 70 + 2 + 8500 + 5 - 8000 - 505
   wait cout
   after 10 , cout <- 9 + 5 + 10 -5 + 90 - 111 + 103
   wait cout
   after 10 , cout <- 109 - 1
   wait cout
-  after 10 , cout <- deref cout -86 + 4 + 83 +3 -5 +1
+  after 10 , cout <- deref cout - 86 + 4 + 83 + 3 - 5 + 1
   wait cout
   after 10 , cout <- 219 - deref cout
   wait cout

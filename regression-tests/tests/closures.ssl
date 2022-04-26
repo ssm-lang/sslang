@@ -1,7 +1,7 @@
 foo x y z =
   x + y + z
 
-main (out : &Int) -> () =
+main (in: &Int) (out : &Int) -> () =
   let f = foo 1
   let g = f 2
   let a = foo 3 4 5
