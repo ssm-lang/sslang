@@ -13,4 +13,4 @@ main (cin : &Int) (cout : &Int) =
   putc cout 108
   putc cout 111
   putc cout 10
-  eof // Not actually calling eof: perhaps a type error
+  eof cout
