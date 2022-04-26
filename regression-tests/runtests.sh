@@ -7,7 +7,7 @@ SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
 CC="cc -O -g -Wall -Wno-unused-label -pedantic -std=c99 -I ${SSMINC} -I out"
-LINK="cc -g -L $SSMLIBDIR"
+LINK="cc -g -I $SSMINC -L $SSMLIBDIR"
 
 globallog=runtests.log
 rm -f $globallog
@@ -93,23 +93,19 @@ Check() {
     csource="out/${basename}.c"
     cheader="out/${basename}.h"
     obj="out/${basename}.o"
-    mainsource="${reffile}-main.c"
-    mainobj="out/${basename}-main.o"
+    platformdir=${SSMDIR}/platform/posix/src
     exec="out/${basename}"
     result="out/${basename}.out"
     reference="${reffile}.out"
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
-    Run $SSLC "$1" ">" "${csource}" &&
-    Run $CC -c -o "${obj}" "${csource}" &&
-    if [ -f "${mainsource}" ] ; then
-	NoteGen "${mainobj} ${exec} ${result} ${diff}"
-	Run $CC -c -o "${mainobj}" "${mainsource}" &&
-	Run $LINK -o "${exec}" "${obj}" "${mainobj}" -lssm &&
-	Run "${exec}" ">" "${result}" &&
-	Compare "${result}" "${reference}" "${diff}"
-    fi
+    NoteGen "${exec} ${result} ${diff}"
+    Run $SSLC "$1" ">" "${csource}" && \
+    Run $CC -c -o "${obj}" "${csource}" && \
+    Run $LINK -o "${exec}" "${obj}" $platformdir/*.c -lssm -lpthread && \
+    Run "${exec}" ">" "${result}" && \
+    Compare "${result}" "${reference}" "${diff}"
 
     # Report the status and clean up the generated files
 
