@@ -189,7 +189,7 @@ Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
 for file in $files
 do
   case "$file" in
-    *-fail.pen)
+    *-fail.ssl)
 	  CheckFail "$file" 2>> $globallog
 	  ;;
     *)

@@ -17,8 +17,8 @@ puts cout s =
       puts cout s
     Nil = ()
 
-main cin (cout : &Int) =
+main cin (cout : &Int) -> () =
   let hello = Cons 72 (Cons 101 (Cons 108 (Cons 108
                 (Cons 108 (Cons 111 (Cons 10 Nil))))))
   puts cout hello
-  eof // Causing problems because eof isn't actually being called here
+  eof // Should cause a type error
