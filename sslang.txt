@@ -1627,7 +1627,7 @@ data Expr t
 -- | <tt>Var n t</tt> is a variable named <tt>n</tt> of type <tt>t</tt>.
 Var :: VarId -> t -> Expr t
 
--- | <tt>Data d t</tt> is a data constructor named <tt>n</tt> of type
+-- | <tt>Data d t</tt> is a data constructor named <tt>d</tt> of type
 --   <tt>t</tt>.
 Data :: DConId -> t -> Expr t
 
@@ -1666,7 +1666,7 @@ data Alt
 --   dcon members <tt>vs</tt>.
 AltData :: DConId -> [Binder] -> Alt
 
--- | <tt>AltLit l e</tt> matches against literal <tt>d</tt>, producing
+-- | <tt>AltLit l</tt> matches against literal <tt>l</tt>, producing
 --   expression <tt>e</tt>.
 AltLit :: Literal -> Alt
 
@@ -1701,6 +1701,7 @@ collectLambda :: Expr t -> ([Binder], Expr t)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
 makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
+extract :: Comonad w => w a -> a
 
 -- | Apply a function to zero or more arguments.
 --   
@@ -1849,7 +1850,7 @@ module IR.SubstMagic
 --   <li>- Given: myProm :: Program Annotated.Type</li>
 --   <li>- Do: substMagic (Proxy :: Proxy Annotated.Type) myProg @@</li>
 --   </ul>
-substMagic :: (Data t, Data a) => Proxy t -> a -> a
+substMagic :: (TypeSystem t, Data t, Data a) => Proxy t -> a -> a
 
 
 -- | Lower the representation of a sslang Ast into sslang IR.
@@ -1887,7 +1888,15 @@ instance GHC.Base.Applicative IR.LambdaLift.LiftFn
 instance GHC.Base.Functor IR.LambdaLift.LiftFn
 
 module IR.DropInference
-inferDrops :: Expr t -> Expr t
+
+-- | Entry-point to insert dup/drops.
+insertDropsProgram :: Program Type -> Pass (Program Type)
+instance Control.Monad.State.Class.MonadState IR.DropInference.InsertState IR.DropInference.InsertFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.DropInference.InsertFn
+instance Control.Monad.Fail.MonadFail IR.DropInference.InsertFn
+instance GHC.Base.Monad IR.DropInference.InsertFn
+instance GHC.Base.Applicative IR.DropInference.InsertFn
+instance GHC.Base.Functor IR.DropInference.InsertFn
 
 module IR.ClassInstantiation
 instProgram :: Program Type -> Pass (Program Type)
@@ -2258,6 +2267,9 @@ setHM :: Options -> Options
 
 -- | Helper function to set ti type to TC-only
 setTC :: Options -> Options
+
+-- | Drop inference stage.
+dropInf :: Program Type -> Pass (Program Type)
 instance GHC.Show.Show IR.Mode
 instance GHC.Classes.Eq IR.Mode
 instance GHC.Show.Show IR.TIType
@@ -2348,10 +2360,10 @@ genTypeInfo :: [(TConId, TypeDef Type)] -> Pass TypegenInfo
 module Codegen.Codegen
 
 -- | Possible, but temporarily punted for the sake of expediency.
-todo :: a
+todo :: HasCallStack => a
 
 -- | Impossible without a discussion about implementation strategy.
-nope :: a
+nope :: HasCallStack => a
 
 -- | State maintained while compiling a top-level SSM function.
 --   
