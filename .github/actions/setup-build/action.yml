@@ -12,6 +12,7 @@ runs:
   steps:
     - name: Cache Stack files
       uses: actions/cache@v2
+      id: cache
       with:
         path: |
           ~/.stack
@@ -23,13 +24,6 @@ runs:
           ${{ inputs.os }}-stack-${{ inputs.resolver }}-
           ${{ inputs.os }}-stack-
 
-    - name: Install Ubuntu dependencies
-      if: ${{ inputs.os == 'ubuntu-latest' }}
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential gcc valgrind clang
-
     - name: Install Haskell Stack
       uses: haskell/actions/setup@v1
       with:
@@ -38,11 +32,13 @@ runs:
 
     - name: Setup Haskell Stack
       shell: bash
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         stack setup --resolver ${{ inputs.resolver }}
 
     - name: Install dependencies
       shell: bash
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         stack build --test --no-run-tests --no-terminal --only-dependencies
         # Run with --test environment to ensure test dependencies are installed.
