@@ -28,6 +28,11 @@ import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
 import qualified Front.Ast                     as A
+import           Front.Pattern.Common           ( CInfo(..)
+                                                , TInfo(..)
+                                                , buildConsMap
+                                                , buildTypeMap
+                                                )
 import qualified Front.Pattern.Matrix          as PM
 import qualified Front.Pattern.Vector          as PV
 
@@ -47,19 +52,6 @@ This is considered okay because:
 - Mal-typed patterns will be type-checked later in the IR type-inference pass
 -}
 
-data CInfo = CInfo
-  { cName  :: Identifier
-  , cType  :: Identifier
-  , cArity :: Int
-  }
-  deriving (Eq, Show)
-
-data TInfo = TInfo
-  { tName :: Identifier
-  , tCSet :: S.Set Identifier
-  }
-  deriving (Eq, Show)
-
 data AnomalyCtx = AnomalyCtx
   { typeMap :: M.Map Identifier TInfo
   , consMap :: M.Map Identifier CInfo
@@ -75,22 +67,8 @@ newtype AnomalyFn a = AnomalyFn (ReaderT AnomalyCtx Pass a)
   deriving (MonadReader AnomalyCtx) via (ReaderT AnomalyCtx Pass)
 
 buildCtx :: [A.TypeDef] -> AnomalyCtx
-buildCtx tds = AnomalyCtx { typeMap = tmap, consMap = cmap }
- where
-  tmap = foldr tAcc M.empty tds
-  cmap = foldr cAcc M.empty tds
-  tAcc td tmap' =
-    let typ   = A.typeName td
-        clist = map (\(A.VariantUnnamed cid _) -> cid) (A.typeVariants td)
-        cset  = S.fromList clist
-    in  M.insert typ (TInfo { tName = typ, tCSet = cset }) tmap'
-  cAcc td cmap' =
-    let typ   = A.typeName td
-        clist = A.typeVariants td
-        cAcc' (A.VariantUnnamed cid ts) cmap'' =
-          let c = CInfo { cName = cid, cType = typ, cArity = length ts }
-          in  M.insert cid c cmap''
-    in  foldr cAcc' cmap' clist
+buildCtx tds =
+  AnomalyCtx { typeMap = buildTypeMap tds, consMap = buildConsMap tds }
 
 -- | Run a AnomalyFn computation.
 runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
