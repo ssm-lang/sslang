@@ -44,7 +44,7 @@ jobs:
         resolver: ${{ matrix.resolver }}
 
     - name: Install Ubuntu dependencies
-      if: ${{ inputs.os == 'ubuntu-latest' }}
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       shell: bash
       run: |
         sudo apt-get update
