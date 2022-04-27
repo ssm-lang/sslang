@@ -44,4 +44,5 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        stack build --no-terminal --only-dependencies
+        stack build --test --no-run-tests --no-terminal --only-dependencies
+        # Run with --test environment to ensure test dependencies are installed.

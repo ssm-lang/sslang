@@ -44,7 +44,7 @@ jobs:
 
     - name: Build sslang compiler
       run: |
-        stack build
+        stack build --test --no-run-tests
 
     - name: Run sslang test suite
       run: |
