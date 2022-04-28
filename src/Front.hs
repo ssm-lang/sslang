@@ -79,9 +79,10 @@ parseAst opt src = do
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
   -- TODO: other desugaring
+  astD <- Desugar.desugarProgram ast
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
-  return astP
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
+  return astD
 
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
@@ -94,4 +95,4 @@ run :: Options -> String -> Pass A.Program
 run opt src = do
   ast <- parseAst opt src
   checkAst opt ast
-  Desugar.desugarProgram ast
+  return ast

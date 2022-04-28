@@ -129,9 +129,9 @@ desugarMatch :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatch [] [] def = case def of
   A.NoExpr -> throwInexhaustionError -- INFO: for now, can't handle inexhaustive patterns
   _        -> return def
-desugarMatch [] (([], e) : _) _   = return e
-desugarMatch [] _             _   = throwDesugarError
-desugarMatch us qs            def = do
+desugarMatch []         (([], e) : _) _   = return e
+desugarMatch []         _             _   = throwDesugarError
+desugarMatch us@(_ : _) qs            def = do
   qs' <- desugarMatchAsAnn us qs >>= desugarMatchWild >>= desugarMatchIdCons
   foldrM (desugarMatchGen us) def (partitionEqs qs')
 
@@ -179,7 +179,9 @@ desugarMatchCons (u : us) qs def = do
       (us' ++ us)
       [ (ps' ++ ps, e) | (A.PatApp ((A.PatId _) : ps') : ps, e) <- qs' ]
       def
-    return (A.PatApp (A.PatId c : map A.PatId us'), body)
+    if k == 0
+      then return (A.PatId c, body)
+      else return (A.PatApp (A.PatId c : map A.PatId us'), body)
 desugarMatchCons _ _ _ = error "can't happen"
 
 {-
@@ -217,11 +219,7 @@ desugarMatchTup _ _ _ = error "can't happen"
 To make life easier: transform PatWildcard into variable PatId
 -}
 desugarMatchWild :: [Equation] -> DesugarFn [Equation]
-desugarMatchWild []       = return []
-desugarMatchWild (x : xs) = do
-  xs' <- desugarMatchWild xs
-  x'  <- desugar x
-  return (x' : xs')
+desugarMatchWild = mapM desugar
  where
   desugar (A.PatWildcard : rs, v) = do
     i <- freshVar
