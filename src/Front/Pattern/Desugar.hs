@@ -4,35 +4,22 @@
 module Front.Pattern.Desugar where
 
 import           Common.Compiler                ( Error(..)
-                                                , ErrorMsg
                                                 , MonadError(..)
-                                                , MonadWriter
                                                 , Pass(..)
-                                                , Warning(..)
                                                 , fromString
                                                 )
-import           Common.Identifiers             ( Identifiable(..)
-                                                , Identifier(..)
+import           Common.Identifiers             ( Identifier(..)
                                                 , isCons
                                                 , isVar
                                                 )
-import           Control.Monad                  ( replicateM
-                                                , unless
-                                                , when
-                                                )
-import           Control.Monad.Reader           ( MonadReader(..)
-                                                , ReaderT(..)
-                                                , asks
-                                                )
+import           Control.Monad                  ( replicateM )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
-                                                , forM
                                                 , gets
                                                 , modify
                                                 )
 import           Data.Bifunctor                 ( first )
-import           Data.Foldable                  ( find )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
@@ -42,8 +29,6 @@ import           Front.Pattern.Common           ( CInfo(..)
                                                 , buildConsMap
                                                 , buildTypeMap
                                                 )
-import qualified Front.Pattern.Matrix          as PM
-import qualified Front.Pattern.Vector          as PV
 
 type Equation = ([A.Pat], A.Expr)
 type Arm = (A.Pat, A.Expr)
@@ -69,7 +54,7 @@ freshVar :: DesugarFn Identifier
 freshVar = do
   currCount <- gets anonCount
   modify $ \ctx -> ctx { anonCount = anonCount ctx + 1 }
-  return $ fromString ("anon" ++ show currCount)
+  return $ fromString ("__pat_anon" ++ show currCount)
 
 buildCtx :: [A.TypeDef] -> DesugarCtx
 buildCtx tds = DesugarCtx { typeMap   = buildTypeMap tds
@@ -147,9 +132,8 @@ desugarMatch [] [] def = case def of
 desugarMatch [] (([], e) : _) _   = return e
 desugarMatch [] _             _   = throwDesugarError
 desugarMatch us qs            def = do
-  qs'  <- desugarMatchAsAnn us qs
-  qs'' <- desugarMatchWild qs'
-  foldrM (desugarMatchGen us) def (partitionEqs qs'')
+  qs' <- desugarMatchAsAnn us qs >>= desugarMatchWild >>= desugarMatchIdCons
+  foldrM (desugarMatchGen us) def (partitionEqs qs')
 
 desugarMatchGen :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
@@ -159,10 +143,9 @@ desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | otherwise          = error "can't happen"
  where
   isVarEq (ps, _) = case head ps of
-    A.PatId i -> isVar i
+    A.PatId _ -> True
     _         -> False
   isConsEq (ps, _) = case head ps of
-    A.PatId  i -> isCons i
     A.PatApp _ -> True
     _          -> False
   isLitEq (ps, _) = case head ps of
@@ -177,34 +160,62 @@ desugarMatchVar [] _ _ = error "can't happen"
 desugarMatchVar (u : us) qs def =
   desugarMatch us [ (ps, singleAlias v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
 
+{-
+Assume only having PatApp
+-}
 desugarMatchCons :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
-desugarMatchCons []       _  _   = error "can't happen"
 desugarMatchCons (u : us) qs def = do
   cs   <- getConstructors . getCon . head $ qs
-  arms <- sequence
-    [ desugarMatchConsArm c (u : us) (choose c) def | c <- S.toList cs ]
+  arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
   return $ A.Match (A.Id u) arms
  where
-  getCon (A.PatId i : _, _) = i
   getCon ((A.PatApp (A.PatId i : _)) : _, _) = i
   getCon _ = error "can't happen"
   choose c = [ q | q <- qs, getCon q == c ]
+  desugarArm c qs' = do
+    k    <- getArity c
+    us'  <- replicateM k freshVar
+    body <- desugarMatch
+      (us' ++ us)
+      [ (ps' ++ ps, e) | (A.PatApp ((A.PatId _) : ps') : ps, e) <- qs' ]
+      def
+    return (A.PatApp (A.PatId c : map A.PatId us'), body)
+desugarMatchCons _ _ _ = error "can't happen"
 
-desugarMatchConsArm
-  :: Identifier -> [Identifier] -> [Equation] -> A.Expr -> DesugarFn Arm
-desugarMatchConsArm _ []       _  _   = error "can't happen"
-desugarMatchConsArm c (u : us) qs def = do
-  k   <- getArity c
-  us' <- replicateM k freshVar
-
-  undefined -- TODO:
-
+{-
+Simple pass for PatLit; no special desugaring
+(Assuming that the patterns are exhaustive)
+-}
 desugarMatchLit :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
-desugarMatchLit = undefined
+desugarMatchLit (u : us) qs def = do
+  arms <- sequence [ desugarArm p | (p : _, _) <- qs ]
+  return $ A.Match (A.Id u) arms
+ where
+  desugarArm p = do
+    body <- desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
+    return (p, body)
+desugarMatchLit _ _ _ = error "can't happen"
 
+{-
+Similar to PatApp, but with only one kind of constructor
+-}
 desugarMatchTup :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
-desugarMatchTup = undefined
+desugarMatchTup (u : us) qs@((A.PatTup rs : _, _) : _) def = do
+  arm <- desugarArm
+  return $ A.Match (A.Id u) [arm]
+ where
+  desugarArm = do
+    let k = length rs
+    us'  <- replicateM k freshVar
+    body <- desugarMatch (us' ++ us)
+                         [ (ps' ++ ps, e) | (A.PatTup ps' : ps, e) <- qs ]
+                         def
+    return (A.PatTup $ map A.PatId us', body)
+desugarMatchTup _ _ _ = error "can't happen"
 
+{-
+To make life easier: transform PatWildcard into variable PatId
+-}
 desugarMatchWild :: [Equation] -> DesugarFn [Equation]
 desugarMatchWild []       = return []
 desugarMatchWild (x : xs) = do
@@ -217,6 +228,25 @@ desugarMatchWild (x : xs) = do
     return (A.PatId i : rs, v)
   desugar eq = return eq
 
+{-
+To make life easier: transform constructor PatId into PatApp [PatId]
+-}
+desugarMatchIdCons :: [Equation] -> DesugarFn [Equation]
+desugarMatchIdCons []       = return []
+desugarMatchIdCons (x : xs) = do
+  xs' <- desugarMatchIdCons xs
+  let x' = desugar x
+  return (x' : xs')
+ where
+  desugar eq@(A.PatId i : rs, v) =
+    if isCons i then (A.PatApp [A.PatId i] : rs, v) else eq
+  desugar eq = eq
+
+
+{-
+Desugar PatAs and PatAnn into its actual pattern,
+and propagate the 'as' or 'ann' part using let-bindings in the body
+-}
 desugarMatchAsAnn :: [Identifier] -> [Equation] -> DesugarFn [Equation]
 desugarMatchAsAnn us@(u : _) (x : xs) = do
   xs' <- desugarMatchAsAnn us xs

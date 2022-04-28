@@ -15,6 +15,7 @@ import qualified Front.Ast                     as A
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
 import qualified Front.Pattern.Anomaly         as Anomaly
+import qualified Front.Pattern.Desugar         as Desugar
 import           Front.Scanner                  ( scanTokens )
 import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( prettyTokens )
@@ -93,4 +94,4 @@ run :: Options -> String -> Pass A.Program
 run opt src = do
   ast <- parseAst opt src
   checkAst opt ast
-  return ast
+  Desugar.desugarProgram ast
