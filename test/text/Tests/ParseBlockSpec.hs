@@ -10,9 +10,16 @@ import           Front.Parser                   ( parseProgram )
 shouldParse :: HasCallStack => String -> Expectation
 shouldParse = shouldPass . parseProgram
 
+shouldntParse :: HasCallStack => String -> Expectation
+shouldntParse = (`shouldFailWith` ParseError "parse error") . parseProgram
+
 spec :: Spec
 spec = do
   it "parses basic layout-next-token blocks" $ do
+    shouldParse [here|
+      main (clk : &Int) =
+        wait clk
+    |]
     shouldParse [here|
       main (clk : &Int) =
         loop
@@ -48,6 +55,18 @@ spec = do
           wait clk
           loop
             wait clk
+    |]
+
+  it "rejects starting blocks at the same indentation" $ do
+    shouldntParse [here|
+      main (clk : &Int) =
+      loop
+        wait clk
+    |]
+    shouldntParse [here|
+      main (clk : &Int) =
+        loop
+        wait clk
     |]
 
   it "parses basic layout-next-line blocks" $ do
@@ -101,6 +120,13 @@ spec = do
     shouldParse [here|
       main (clk : &Int) =
         if True
+          32
+         else
+          23
+    |]
+    shouldParse [here|
+      main (clk : &Int) =
+        if True
           if False
             32
         else
@@ -134,7 +160,27 @@ spec = do
           else
             12
     |]
-    -- TODO: add failing test cases for dangling else
+
+  it "rejects dangling or mismatched else blocks" $ do
+    shouldntParse [here|
+      main (clk : &Int) =
+        else
+          23
+    |]
+    shouldntParse [here|
+      main (clk : &Int) =
+        if True
+          23
+        else
+          23
+        else 12
+    |]
+    shouldntParse [here|
+      main (clk : &Int) =
+        if True
+          23
+          else 123
+    |]
 
   it "parses let-blocks" $ do
     shouldParse [here|
@@ -170,6 +216,15 @@ spec = do
                 3
         True
     |]
-    -- TODO: adding pending test cases for
-    -- let x =
-    --   ...
+
+  it "parses singleton let-blocks without needing extra indentation" $ do
+    pendingWith "refinement of scanner algorithm"
+    -- TODO: handle this test case:
+    --
+    --   let x =
+    --     1
+    --   2
+    --
+    -- Note that e has less indentation than x. This should be parsed as:
+    --
+    --   let { x = { 1 } } ; 2
