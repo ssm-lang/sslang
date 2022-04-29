@@ -7,7 +7,7 @@
 </span><span id="line-7"></span><span>
 </span><span id="line-8"></span><span class="hs-comment">-- | Tokens extracted from source text.</span><span>
 </span><span id="line-9"></span><span class="hs-keyword">newtype</span><span> </span><span id="Token"><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-var">Token</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Token"><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-var">Token</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Front.Token.html#TokenType"><span class="hs-identifier hs-type">TokenType</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-10"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409136"><span id="local-6989586621679409138"><span id="local-6989586621679409140"><span class="annot"><span class="annottext">Int -&gt; Token -&gt; ShowS
+</span><span id="line-10"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409168"><span id="local-6989586621679409170"><span id="local-6989586621679409172"><span class="annot"><span class="annottext">Int -&gt; Token -&gt; ShowS
 [Token] -&gt; ShowS
 Token -&gt; String
 (Int -&gt; Token -&gt; ShowS)
@@ -20,7 +20,7 @@ show :: Token -&gt; String
 $cshow :: Token -&gt; String
 showsPrec :: Int -&gt; Token -&gt; ShowS
 $cshowsPrec :: Int -&gt; Token -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409131"><span id="local-6989586621679409133"><span class="annot"><span class="annottext">Token -&gt; Token -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409163"><span id="local-6989586621679409165"><span class="annot"><span class="annottext">Token -&gt; Token -&gt; Bool
 (Token -&gt; Token -&gt; Bool) -&gt; (Token -&gt; Token -&gt; Bool) -&gt; Eq Token
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Token -&gt; Token -&gt; Bool
@@ -33,9 +33,9 @@ $c== :: Token -&gt; Token -&gt; Bool
 </span><span id="line-13"></span><span class="annot"><a href="Front.Token.html#tokenType"><span class="hs-identifier hs-type">tokenType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Token.html#TokenType"><span class="hs-identifier hs-type">TokenType</span></a></span><span>
 </span><span id="line-14"></span><span id="tokenType"><span class="annot"><span class="annottext">tokenType :: Token -&gt; TokenType
 </span><a href="Front.Token.html#tokenType"><span class="hs-identifier hs-var hs-var">tokenType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409128"><span class="annot"><span class="annottext">TokenType
-</span><a href="#local-6989586621679409128"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TokenType
-</span><a href="#local-6989586621679409128"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409160"><span class="annot"><span class="annottext">TokenType
+</span><a href="#local-6989586621679409160"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TokenType
+</span><a href="#local-6989586621679409160"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-15"></span><span>
 </span><span id="line-16"></span><span class="hs-comment">-- | The location of a token in the source text.</span><span>
 </span><span id="line-17"></span><span class="hs-keyword">data</span><span> </span><span id="Span"><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-var">Span</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Span"><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-var">Span</span></a></span></span><span>
@@ -48,14 +48,14 @@ $c== :: Token -&gt; Token -&gt; Bool
 </span><span id="line-21"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="tokCol"><span class="annot"><span class="annottext">Span -&gt; Int
 </span><a href="Front.Token.html#tokCol"><span class="hs-identifier hs-var hs-var">tokCol</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-22"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-23"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409119"><span id="local-6989586621679409121"><span class="annot"><span class="annottext">Span -&gt; Span -&gt; Bool
+</span><span id="line-23"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409151"><span id="local-6989586621679409153"><span class="annot"><span class="annottext">Span -&gt; Span -&gt; Bool
 (Span -&gt; Span -&gt; Bool) -&gt; (Span -&gt; Span -&gt; Bool) -&gt; Eq Span
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Span -&gt; Span -&gt; Bool
 $c/= :: Span -&gt; Span -&gt; Bool
 == :: Span -&gt; Span -&gt; Bool
 $c== :: Span -&gt; Span -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409113"><span id="local-6989586621679409115"><span id="local-6989586621679409117"><span class="annot"><span class="annottext">Int -&gt; Span -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409145"><span id="local-6989586621679409147"><span id="local-6989586621679409149"><span class="annot"><span class="annottext">Int -&gt; Span -&gt; ShowS
 [Span] -&gt; ShowS
 Span -&gt; String
 (Int -&gt; Span -&gt; ShowS)
@@ -107,7 +107,7 @@ $cshowsPrec :: Int -&gt; Span -&gt; ShowS
 </span><span id="line-59"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TString"><span class="annot"><a href="Front.Token.html#TString"><span class="hs-identifier hs-var">TString</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-60"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TId"><span class="annot"><a href="Front.Token.html#TId"><span class="hs-identifier hs-var">TId</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-61"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TOp"><span class="annot"><a href="Front.Token.html#TOp"><span class="hs-identifier hs-var">TOp</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
-</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409074"><span id="local-6989586621679409076"><span class="annot"><span class="annottext">TokenType -&gt; TokenType -&gt; Bool
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409106"><span id="local-6989586621679409108"><span class="annot"><span class="annottext">TokenType -&gt; TokenType -&gt; Bool
 (TokenType -&gt; TokenType -&gt; Bool)
 -&gt; (TokenType -&gt; TokenType -&gt; Bool) -&gt; Eq TokenType
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -115,7 +115,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: TokenType -&gt; TokenType -&gt; Bool
 == :: TokenType -&gt; TokenType -&gt; Bool
 $c== :: TokenType -&gt; TokenType -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409068"><span id="local-6989586621679409070"><span id="local-6989586621679409072"><span class="annot"><span class="annottext">Int -&gt; TokenType -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409100"><span id="local-6989586621679409102"><span id="local-6989586621679409104"><span class="annot"><span class="annottext">Int -&gt; TokenType -&gt; ShowS
 [TokenType] -&gt; ShowS
 TokenType -&gt; String
 (Int -&gt; TokenType -&gt; ShowS)
@@ -136,18 +136,18 @@ $cshowsPrec :: Int -&gt; TokenType -&gt; ShowS
 
 Prints 'TokenType' via both its 'Pretty' and 'Show' instances for clarity.
 -}</span><span>
-</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409065"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-69"></span><span>  </span><span id="local-6989586621679409063"><span class="annot"><span class="annottext">pretty :: Token -&gt; Doc ann
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409061"><span class="annot"><span class="annottext">Span
-</span><a href="#local-6989586621679409061"><span class="hs-identifier hs-var">sp</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409060"><span class="annot"><span class="annottext">TokenType
-</span><a href="#local-6989586621679409060"><span class="hs-identifier hs-var">tok</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409097"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679409095"><span class="annot"><span class="annottext">pretty :: Token -&gt; Doc ann
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679409093"><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621679409093"><span class="hs-identifier hs-var">sp</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409092"><span class="annot"><span class="annottext">TokenType
+</span><a href="#local-6989586621679409092"><span class="hs-identifier hs-var">tok</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-70"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; Doc ann -&gt; Doc ann
 forall ann. Int -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">fill</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">15</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Span
-</span><a href="#local-6989586621679409061"><span class="hs-identifier hs-var">sp</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679409093"><span class="hs-identifier hs-var">sp</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-71"></span><span>      </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc ann -&gt; Doc ann
@@ -156,7 +156,7 @@ forall ann. Int -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-number">31</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TokenType -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TokenType
-</span><a href="#local-6989586621679409060"><span class="hs-identifier hs-var">tok</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679409092"><span class="hs-identifier hs-var">tok</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-72"></span><span>      </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
@@ -168,7 +168,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>  </span><span class="annot"><span class="annottext">TokenType -&gt; Doc ann
 forall a ann. Show a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">viaShow</span></span><span> </span><span class="annot"><span class="annottext">TokenType
-</span><a href="#local-6989586621679409060"><span class="hs-identifier hs-var">tok</span></a></span><span>
+</span><a href="#local-6989586621679409092"><span class="hs-identifier hs-var">tok</span></a></span><span>
 </span><span id="line-74"></span><span>      </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Doc ann
@@ -177,28 +177,28 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;)&quot;</span></span><span>
 </span><span id="line-75"></span><span>
 </span><span id="line-76"></span><span class="hs-comment">-- | 'Pretty' instance for 'Span'. Reports both line:col and [addr+len].</span><span>
-</span><span id="line-77"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409054"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-type">Span</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-78"></span><span>  </span><span id="local-6989586621679409053"><span class="annot"><span class="annottext">pretty :: Span -&gt; Doc ann
-</span><a href="#local-6989586621679409053"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span id="local-6989586621679409052"><span class="annot"><span class="annottext">Int
+</span><span id="line-77"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409086"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-type">Span</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-78"></span><span>  </span><span id="local-6989586621679409085"><span class="annot"><span class="annottext">pretty :: Span -&gt; Doc ann
+</span><a href="#local-6989586621679409085"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><a href="Front.Token.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span id="local-6989586621679409084"><span class="annot"><span class="annottext">Int
 tokPos :: Int
 tokPos :: Span -&gt; Int
-</span><a href="#local-6989586621679409052"><span class="hs-identifier hs-var hs-var">tokPos</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409051"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679409084"><span class="hs-identifier hs-var hs-var">tokPos</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409083"><span class="annot"><span class="annottext">Int
 tokLen :: Int
 tokLen :: Span -&gt; Int
-</span><a href="#local-6989586621679409051"><span class="hs-identifier hs-var hs-var">tokLen</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409050"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679409083"><span class="hs-identifier hs-var hs-var">tokLen</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409082"><span class="annot"><span class="annottext">Int
 tokLine :: Int
 tokLine :: Span -&gt; Int
-</span><a href="#local-6989586621679409050"><span class="hs-identifier hs-var hs-var">tokLine</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409049"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679409082"><span class="hs-identifier hs-var hs-var">tokLine</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679409081"><span class="annot"><span class="annottext">Int
 tokCol :: Int
 tokCol :: Span -&gt; Int
-</span><a href="#local-6989586621679409049"><span class="hs-identifier hs-var hs-var">tokCol</span></a></span></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679409081"><span class="hs-identifier hs-var hs-var">tokCol</span></a></span></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-79"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; Doc ann -&gt; Doc ann
 forall ann. Int -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">fill</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">8</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679409050"><span class="hs-identifier hs-var">tokLine</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679409082"><span class="hs-identifier hs-var">tokLine</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -208,7 +208,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679409049"><span class="hs-identifier hs-var">tokCol</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679409081"><span class="hs-identifier hs-var">tokCol</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc ann -&gt; Doc ann
 forall ann. Int -&gt; Doc ann -&gt; Doc ann
@@ -223,7 +223,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679409052"><span class="hs-identifier hs-var">tokPos</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679409084"><span class="hs-identifier hs-var">tokPos</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -233,7 +233,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679409051"><span class="hs-identifier hs-var">tokLen</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679409083"><span class="hs-identifier hs-var">tokLen</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -241,9 +241,9 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;]&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-82"></span><span>
 </span><span id="line-83"></span><span class="hs-comment">-- | 'Pretty' instance for 'TokenType'. Recovers strings from keywords.</span><span>
-</span><span id="line-84"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409046"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#TokenType"><span class="hs-identifier hs-type">TokenType</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-85"></span><span>  </span><span id="local-6989586621679409045"><span class="annot"><span class="annottext">pretty :: TokenType -&gt; Doc ann
-</span><a href="#local-6989586621679409045"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">TokenType
+</span><span id="line-84"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679409078"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Front.Token.html#TokenType"><span class="hs-identifier hs-type">TokenType</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-85"></span><span>  </span><span id="local-6989586621679409077"><span class="annot"><span class="annottext">pretty :: TokenType -&gt; Doc ann
+</span><a href="#local-6989586621679409077"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">TokenType
 </span><a href="Front.Token.html#TEOF"><span class="hs-identifier hs-var">TEOF</span></a></span><span>         </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
@@ -397,17 +397,17 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;]&quot;</span></span><span>
-</span><span id="line-116"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TInteger"><span class="hs-identifier hs-type">TInteger</span></a></span><span> </span><span id="local-6989586621679409044"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679409044"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
+</span><span id="line-116"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TInteger"><span class="hs-identifier hs-type">TInteger</span></a></span><span> </span><span id="local-6989586621679409076"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679409076"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Doc ann) -&gt; String -&gt; Doc ann
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679409044"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-117"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TString"><span class="hs-identifier hs-type">TString</span></a></span><span>  </span><span id="local-6989586621679409042"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679409042"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
+</span><a href="#local-6989586621679409076"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-117"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TString"><span class="hs-identifier hs-type">TString</span></a></span><span>  </span><span id="local-6989586621679409074"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679409074"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Doc ann) -&gt; String -&gt; Doc ann
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -415,20 +415,20 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679409042"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679409074"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span>
-</span><span id="line-118"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TId"><span class="hs-identifier hs-type">TId</span></a></span><span>      </span><span id="local-6989586621679409041"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679409041"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Doc ann
+</span><span id="line-118"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TId"><span class="hs-identifier hs-type">TId</span></a></span><span>      </span><span id="local-6989586621679409073"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679409073"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679409041"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-119"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TOp"><span class="hs-identifier hs-type">TOp</span></a></span><span>      </span><span id="local-6989586621679409040"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679409040"><span class="hs-identifier hs-var">o</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Doc ann
+</span><a href="#local-6989586621679409073"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-119"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Token.html#TOp"><span class="hs-identifier hs-type">TOp</span></a></span><span>      </span><span id="local-6989586621679409072"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679409072"><span class="hs-identifier hs-var">o</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679409040"><span class="hs-identifier hs-var">o</span></a></span><span>
+</span><a href="#local-6989586621679409072"><span class="hs-identifier hs-var">o</span></a></span><span>
 </span><span id="line-120"></span><span>
 </span><span id="line-121"></span><span class="hs-comment">-- | Pretty print a list of tokens.</span><span>
 </span><span id="line-122"></span><span class="annot"><a href="Front.Token.html#prettyTokens"><span class="hs-identifier hs-type">prettyTokens</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Front.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>

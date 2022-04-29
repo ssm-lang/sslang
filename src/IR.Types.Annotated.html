@@ -27,7 +27,7 @@ Type annotations can be added using '&lt;&gt;' (from 'Semigroup'), while 'mempty
 represents no type annotation.
 -}</span><span>
 </span><span id="line-29"></span><span class="hs-keyword">newtype</span><span> </span><span id="Type"><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Type"><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-30"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423820"><span id="local-6989586621679423822"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+</span><span id="line-30"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423852"><span id="local-6989586621679423854"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
 (Type -&gt; Type -&gt; Bool) -&gt; (Type -&gt; Type -&gt; Bool) -&gt; Eq Type
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Type -&gt; Type -&gt; Bool
@@ -35,7 +35,7 @@ $c/= :: Type -&gt; Type -&gt; Bool
 == :: Type -&gt; Type -&gt; Bool
 $c== :: Type -&gt; Type -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
-</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423813"><span id="local-6989586621679423815"><span id="local-6989586621679423817"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423845"><span id="local-6989586621679423847"><span id="local-6989586621679423849"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
 [Type] -&gt; ShowS
 Type -&gt; String
 (Int -&gt; Type -&gt; ShowS)
@@ -50,7 +50,7 @@ showsPrec :: Int -&gt; Type -&gt; ShowS
 $cshowsPrec :: Int -&gt; Type -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cType"><span id="%24tType"><span id="local-6989586621679423783"><span id="local-6989586621679423785"><span id="local-6989586621679423787"><span id="local-6989586621679423789"><span id="local-6989586621679423791"><span id="local-6989586621679423793"><span id="local-6989586621679423795"><span id="local-6989586621679423797"><span id="local-6989586621679423799"><span id="local-6989586621679423801"><span id="local-6989586621679423803"><span id="local-6989586621679423805"><span id="local-6989586621679423807"><span id="local-6989586621679423809"><span class="annot"><span class="annottext">Typeable Type
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cType"><span id="%24tType"><span id="local-6989586621679423815"><span id="local-6989586621679423817"><span id="local-6989586621679423819"><span id="local-6989586621679423821"><span id="local-6989586621679423823"><span id="local-6989586621679423825"><span id="local-6989586621679423827"><span id="local-6989586621679423829"><span id="local-6989586621679423831"><span id="local-6989586621679423833"><span id="local-6989586621679423835"><span id="local-6989586621679423837"><span id="local-6989586621679423839"><span id="local-6989586621679423841"><span class="annot"><span class="annottext">Typeable Type
 DataType
 Constr
 Typeable Type
@@ -199,7 +199,7 @@ $cgfoldl :: forall (c :: * -&gt; *).
 -&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type
 $cp1Data :: Typeable Type
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-34"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423774"><span id="local-6989586621679423776"><span id="local-6989586621679423778"><span class="annot"><span class="annottext">b -&gt; Type -&gt; Type
+</span><span id="line-34"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423806"><span id="local-6989586621679423808"><span id="local-6989586621679423810"><span class="annot"><span class="annottext">b -&gt; Type -&gt; Type
 NonEmpty Type -&gt; Type
 Type -&gt; Type -&gt; Type
 (Type -&gt; Type -&gt; Type)
@@ -219,7 +219,7 @@ $csconcat :: NonEmpty Type -&gt; Type
 &lt;&gt; :: Type -&gt; Type -&gt; Type
 $c&lt;&gt; :: Type -&gt; Type -&gt; Type
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span>  </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423766"><span id="local-6989586621679423768"><span id="local-6989586621679423770"><span class="annot"><span class="annottext">Semigroup Type
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679423798"><span id="local-6989586621679423800"><span id="local-6989586621679423802"><span class="annot"><span class="annottext">Semigroup Type
 Type
 Semigroup Type
 -&gt; Type
@@ -244,7 +244,7 @@ $cp1Monoid :: Semigroup Type
 </span><span id="line-39"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TBuiltin"><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-var">TBuiltin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.TypeSystem.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span>         </span><span class="hs-comment">-- ^ Builtin types</span><span>
 </span><span id="line-40"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TCon"><span class="annot"><a href="IR.Types.Annotated.html#TCon"><span class="hs-identifier hs-var">TCon</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span>              </span><span class="hs-comment">-- ^ Type constructor, e.g., Option '0</span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TVar"><span class="annot"><a href="IR.Types.Annotated.html#TVar"><span class="hs-identifier hs-var">TVar</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarId"><span class="hs-identifier hs-type">TVarId</span></a></span><span>                     </span><span class="hs-comment">-- ^ Type variables, e.g., '0</span><span>
-</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679423756"><span id="local-6989586621679423758"><span id="local-6989586621679423760"><span class="annot"><span class="annottext">Int -&gt; TypeAnnote -&gt; ShowS
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679423788"><span id="local-6989586621679423790"><span id="local-6989586621679423792"><span class="annot"><span class="annottext">Int -&gt; TypeAnnote -&gt; ShowS
 [TypeAnnote] -&gt; ShowS
 TypeAnnote -&gt; String
 (Int -&gt; TypeAnnote -&gt; ShowS)
@@ -259,7 +259,7 @@ show :: TypeAnnote -&gt; String
 $cshow :: TypeAnnote -&gt; String
 showsPrec :: Int -&gt; TypeAnnote -&gt; ShowS
 $cshowsPrec :: Int -&gt; TypeAnnote -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679423752"><span id="local-6989586621679423754"><span class="annot"><span class="annottext">TypeAnnote -&gt; TypeAnnote -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679423784"><span id="local-6989586621679423786"><span class="annot"><span class="annottext">TypeAnnote -&gt; TypeAnnote -&gt; Bool
 (TypeAnnote -&gt; TypeAnnote -&gt; Bool)
 -&gt; (TypeAnnote -&gt; TypeAnnote -&gt; Bool) -&gt; Eq TypeAnnote
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -267,7 +267,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
 == :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
 $c== :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="%24cTVar"><span id="%24cTCon"><span id="%24cTBuiltin"><span id="%24tTypeAnnote"><span id="local-6989586621679423723"><span id="local-6989586621679423725"><span id="local-6989586621679423727"><span id="local-6989586621679423729"><span id="local-6989586621679423731"><span id="local-6989586621679423733"><span id="local-6989586621679423735"><span id="local-6989586621679423737"><span id="local-6989586621679423739"><span id="local-6989586621679423741"><span id="local-6989586621679423743"><span id="local-6989586621679423745"><span id="local-6989586621679423747"><span id="local-6989586621679423749"><span class="annot"><span class="annottext">Typeable TypeAnnote
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="%24cTVar"><span id="%24cTCon"><span id="%24cTBuiltin"><span id="%24tTypeAnnote"><span id="local-6989586621679423755"><span id="local-6989586621679423757"><span id="local-6989586621679423759"><span id="local-6989586621679423761"><span id="local-6989586621679423763"><span id="local-6989586621679423765"><span id="local-6989586621679423767"><span id="local-6989586621679423769"><span id="local-6989586621679423771"><span id="local-6989586621679423773"><span id="local-6989586621679423775"><span id="local-6989586621679423777"><span id="local-6989586621679423779"><span id="local-6989586621679423781"><span class="annot"><span class="annottext">Typeable TypeAnnote
 DataType
 Constr
 Typeable TypeAnnote
@@ -431,7 +431,7 @@ $cp1Data :: Typeable TypeAnnote
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="hs-comment">-- | 'Type' is a type system.</span><span>
 </span><span id="line-45"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier hs-type">TypeSystem</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-46"></span><span>  </span><span id="local-6989586621679423715"><span class="annot"><span class="annottext">projectBuiltin :: Builtin Type -&gt; Type
+</span><span id="line-46"></span><span>  </span><span id="local-6989586621679423747"><span class="annot"><span class="annottext">projectBuiltin :: Builtin Type -&gt; Type
 </span><a href="IR.Types.TypeSystem.html#projectBuiltin"><span class="hs-identifier hs-var hs-var hs-var hs-var">projectBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TypeAnnote] -&gt; Type
 </span><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span><span> </span><span class="annot"><span class="annottext">([TypeAnnote] -&gt; Type)
 -&gt; (Builtin Type -&gt; [TypeAnnote]) -&gt; Builtin Type -&gt; Type
@@ -445,22 +445,22 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-var">TBuiltin</span></a></span><span>
 </span><span id="line-47"></span><span>
 </span><span id="line-48"></span><span>  </span><span class="hs-comment">-- | Unwrap the first TBuiltin annotation, if any.</span><span>
-</span><span id="line-49"></span><span>  </span><span id="local-6989586621679423712"><span class="annot"><span class="annottext">injectBuiltin :: Type -&gt; Maybe (Builtin Type)
-</span><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var hs-var hs-var hs-var">injectBuiltin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679423710"><span class="annot"><span class="annottext">Builtin Type
-</span><a href="#local-6989586621679423710"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679423744"><span class="annot"><span class="annottext">injectBuiltin :: Type -&gt; Maybe (Builtin Type)
+</span><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var hs-var hs-var hs-var">injectBuiltin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679423742"><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679423742"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Maybe (Builtin Type)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type
-</span><a href="#local-6989586621679423710"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621679423742"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-50"></span><span>  </span><span class="annot"><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeAnnote
-</span><span class="hs-identifier">_</span></span><span>          </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679423709"><span class="annot"><span class="annottext">[TypeAnnote]
-</span><a href="#local-6989586621679423709"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Maybe (Builtin Type)
+</span><span class="hs-identifier">_</span></span><span>          </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679423741"><span class="annot"><span class="annottext">[TypeAnnote]
+</span><a href="#local-6989586621679423741"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Maybe (Builtin Type)
 forall t. TypeSystem t =&gt; t -&gt; Maybe (Builtin t)
 </span><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Maybe (Builtin Type)) -&gt; Type -&gt; Maybe (Builtin Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote] -&gt; Type
 </span><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
-</span><a href="#local-6989586621679423709"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><a href="#local-6989586621679423741"><span class="hs-identifier hs-var">ts</span></a></span><span>
 </span><span id="line-51"></span><span>  </span><span class="annot"><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>               </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Builtin Type)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
@@ -472,29 +472,29 @@ forall a. Maybe a
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
 </span><span id="line-56"></span><span>
-</span><span id="line-57"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679423706"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-58"></span><span>  </span><span id="local-6989586621679423704"><span class="annot"><span class="annottext">pretty :: Type -&gt; Doc ann
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679423702"><span class="annot"><span class="annottext">TypeAnnote
-</span><a href="#local-6989586621679423702"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
+</span><span id="line-57"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679423738"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-58"></span><span>  </span><span id="local-6989586621679423736"><span class="annot"><span class="annottext">pretty :: Type -&gt; Doc ann
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679423734"><span class="annot"><span class="annottext">TypeAnnote
+</span><a href="#local-6989586621679423734"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeAnnote -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TypeAnnote
-</span><a href="#local-6989586621679423702"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-comment">-- TODO: this only prints the outer-most ann</span><span>
+</span><a href="#local-6989586621679423734"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-comment">-- TODO: this only prints the outer-most ann</span><span>
 </span><span id="line-59"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>     </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_&quot;</span></span><span>
 </span><span id="line-60"></span><span>
-</span><span id="line-61"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679423699"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-62"></span><span>  </span><span id="local-6989586621679423698"><span class="annot"><span class="annottext">pretty :: TypeAnnote -&gt; Doc ann
-</span><a href="#local-6989586621679423698"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679423697"><span class="annot"><span class="annottext">Builtin Type
-</span><a href="#local-6989586621679423697"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Doc ann
+</span><span id="line-61"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679423731"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-62"></span><span>  </span><span id="local-6989586621679423730"><span class="annot"><span class="annottext">pretty :: TypeAnnote -&gt; Doc ann
+</span><a href="#local-6989586621679423730"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679423729"><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679423729"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type
-</span><a href="#local-6989586621679423697"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-63"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TCon"><span class="hs-identifier hs-type">TCon</span></a></span><span> </span><span id="local-6989586621679423696"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679423696"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679423695"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679423695"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679423729"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TCon"><span class="hs-identifier hs-type">TCon</span></a></span><span> </span><span id="local-6989586621679423728"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679423728"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679423727"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679423727"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann) -&gt; Doc ann -&gt; Doc ann
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -503,17 +503,17 @@ forall ann. [Doc ann] -&gt; Doc ann
 </span><span class="hs-identifier hs-var">hsep</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TConId -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679423696"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; [Doc ann] -&gt; [Doc ann]
+</span><a href="#local-6989586621679423728"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; [Doc ann] -&gt; [Doc ann]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Doc ann) -&gt; [Type] -&gt; [Doc ann]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679423695"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-64"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TVar"><span class="hs-identifier hs-type">TVar</span></a></span><span> </span><span id="local-6989586621679423692"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679423692"><span class="hs-identifier hs-var">v</span></a></span></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Doc ann
+</span><a href="#local-6989586621679423727"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TVar"><span class="hs-identifier hs-type">TVar</span></a></span><span> </span><span id="local-6989586621679423724"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679423724"><span class="hs-identifier hs-var">v</span></a></span></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679423692"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679423724"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-65"></span></pre></body></html>

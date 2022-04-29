@@ -2685,8 +2685,11 @@ genExpr :: Expr Type -> GenFn (Exp, [BlockItem])
 --   discussion.
 genPrim :: Primitive -> [Expr Type] -> Type -> GenFn (Exp, [BlockItem])
 
--- | Generate C value for SSM literal.
+-- | Generate C value for SSM literal, marshalled.
 genLiteral :: Literal -> Exp
+
+-- | Generate C value for SSM literal, unmarshalled.
+genLiteralRaw :: Literal -> Exp
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp :: PrimOp -> [Expr Type] -> Type -> GenFn (Exp, [BlockItem])
