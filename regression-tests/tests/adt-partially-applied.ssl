@@ -26,19 +26,24 @@ main ( cout : & Int ) -> () =
 
   // unapplied
   let c = Square                 
-  let d = Rect                   
+  let d = Rect                  
 
   // partially applied
-  let e = Rect 2                 
+  let e = Rect 18 
+
+  // finish applying
+  let f = e 15                
 
   // nullary dcon (should not get changed to func app!)
-  let f = Leaf
+  let g = Leaf
 
   after 10 , (cout : & Int) <- perimeter b + 2
   wait (cout : & Int)
-  //after 1, (cout : & Int) <- perimeter c 2         // throws type error 
-  //wait (cout : & Int)
-  //after 2, (cout : & Int) <- perimeter d 5 9       // throws type error 
-  //wait (cout : & Int)
-  //after 3, (cout : & Int) <- perimeter e 5         // throws type error 
-  //wait (cout : & Int)
+  after 1, (cout : & Int) <- perimeter f         
+  wait (cout : & Int)
+  after 1, (cout : & Int) <- perimeter (c 16) + 2
+  wait (cout : & Int)
+  after 2, (cout : & Int) <- perimeter (d 19 14)        
+  wait (cout : & Int)
+  after 3, (cout : & Int) <- perimeter (e 15)
+  wait (cout : & Int)

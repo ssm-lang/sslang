@@ -432,28 +432,27 @@ initTypeVars (I.Prim I.Dup [e] annT) = do
   e' <- initTypeVars e
   t  <- typeCheck annT' (extract e')
   return $ I.Prim I.Dup [e'] t
+initTypeVars (I.Prim I.Drop es annT) = do
+  let annT' = collapseAnnT annT
+  t   <- typeCheck annT' unit
+  es' <- mapM initTypeVars es
+  return $ I.Prim I.Drop es' t
 initTypeVars (I.Prim I.Assign [lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
   t    <- typeCheck annT' unit
   lhs' <- initTypeVars lhs
   rhs' <- initTypeVars rhs
   return $ I.Prim I.Assign [lhs', rhs'] t
-initTypeVars (I.Prim (I.PrimOp I.PrimSub) [e1, e2] annT) = do
-  let annT' = collapseAnnT annT
-  t   <- typeCheck annT' (int 32)
-  e1' <- initTypeVars e1
-  e2' <- initTypeVars e2
-  insertEquation (extract e1', int 32)
-  insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] t
-initTypeVars (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] annT) = do
-  let annT' = collapseAnnT annT
-  t   <- typeCheck annT' (int 32)
-  e1' <- initTypeVars e1
-  e2' <- initTypeVars e2
-  insertEquation (extract e1', int 32)
-  insertEquation (extract e2', int 32)
-  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] t
+initTypeVars (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimEq)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimGt)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimLt)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimGe)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimLe)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
   t    <- typeCheck annT' unit
@@ -514,6 +513,17 @@ initTypeVars e =
     $  fromString
     $  "Unable to type unknown expression: "
     ++ show e
+
+-- | Infer the type of a binary integer operation.
+inferPrimBinop :: I.PrimOp -> I.Expr Ann.Type -> I.Expr Ann.Type -> Ann.Type -> InferFn (I.Expr Classes.Type)
+inferPrimBinop o e1 e2 annT = do
+  let annT' = collapseAnnT annT
+  t   <- typeCheck annT' (int 32)
+  e1' <- initTypeVars e1
+  e2' <- initTypeVars e2
+  insertEquation (extract e1', int 32)
+  insertEquation (extract e2', int 32)
+  return $ I.Prim (I.PrimOp o) [e1', e2'] t
 
 -- | @typeCheck annT expectedT@ checks whether the type annotation @annT@ is
 -- compatible with the expected type @expectedT@. Insert new type equations when
@@ -629,18 +639,24 @@ getType (I.Prim I.Dup [e] t) = do
   e' <- getType e
   t' <- solveType t
   return $ I.Prim I.Dup [e'] t'
+getType (I.Prim I.Drop [e] t) = do
+  e' <- getType e
+  t' <- solveType t
+  return $ I.Prim I.Drop [e'] t'
 getType (I.Prim I.Assign [lhs, rhs] _) = do
   lhs' <- getType lhs
   rhs' <- getType rhs
   return $ I.Prim I.Assign [lhs', rhs'] unit
-getType (I.Prim (I.PrimOp I.PrimSub) [e1, e2] _) = do
-  e1' <- getType e1
-  e2' <- getType e2
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-getType (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] _) = do
-  e1' <- getType e1
-  e2' <- getType e2
-  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimAdd) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimSub) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimMul) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimDiv) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimEq)  es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimNeq) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimGt)  es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimLt)  es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimGe)  es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimLe)  es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim I.After [del, lhs, rhs] _) = do
   del' <- getType del
   rhs' <- getType rhs
@@ -675,6 +691,12 @@ getType e =
     $  fromString
     $  "Unable to get the type of unknown expression: "
     ++ show e
+
+-- | Recursively get type of operands to PrimOp, then apply given type.
+getTypePrimOp :: I.PrimOp -> [I.Expr Classes.Type] -> Classes.Type -> InferFn (I.Expr Classes.Type)
+getTypePrimOp o es t = do
+  es' <- mapM getType es
+  return $ I.Prim (I.PrimOp o) es' t
 
 -- | 'solveType' @t@ solves the type @t@ by replacing any embeded 'TVar' @tvar@
 --   with its real type, which is the root of @tvar@ in the 'unionFindTree'.

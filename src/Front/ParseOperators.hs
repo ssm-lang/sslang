@@ -26,7 +26,18 @@ data Stack = BOS
 -- | Default fixity of operators.
 defaultOps :: [Fixity]
 defaultOps =
-  [Infixl 6 "+", Infixl 6 "-", Infixl 7 "*", Infixl 8 "/", Infixr 8 "^"]
+  [ Infixl 4 "=="
+  , Infixl 4 "!="
+  , Infixl 4 "<="
+  , Infixl 4 ">="
+  , Infixl 4 "<"
+  , Infixl 4 ">"
+  , Infixl 6 "+"
+  , Infixl 6 "-"
+  , Infixl 7 "*"
+  , Infixl 8 "/"
+  , Infixr 8 "^"
+  ]
 
 -- | Parse OpRegion nodes inside of an AST 'Program'.
 parseOperators :: Program -> Compiler.Pass Program

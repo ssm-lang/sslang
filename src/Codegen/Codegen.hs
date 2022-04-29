@@ -55,13 +55,15 @@ import           Data.Maybe                     ( isJust
                                                 )
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
+import           GHC.Stack                      ( HasCallStack )
+
 
 -- | Possible, but temporarily punted for the sake of expediency.
-todo :: a
+todo :: HasCallStack => a
 todo = error "Not yet implemented"
 
 -- | Impossible without a discussion about implementation strategy.
-nope :: a
+nope :: HasCallStack => a
 nope = error "Not yet supported"
 
 {- | State maintained while compiling a top-level SSM function.
@@ -596,7 +598,7 @@ genExpr (I.Match s as t) = do
       return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do
       blk <- m
-      return ([citem|case $exp:(genLiteral l):;|], mkBlk label blk)
+      return ([citem|case $exp:(genLiteralRaw l):;|], mkBlk label blk)
     withAltScope label (I.AltDefault b) m = do
       blk <- withBindings [(b, scrut)] m
       addBinding b scrut
@@ -678,7 +680,7 @@ genPrim I.Par procs _ = do
 
   (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
   yield              <- genYield
-  return (todo, checkNewDepth ++ activates ++ yield)
+  return (unit, checkNewDepth ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
@@ -703,12 +705,17 @@ genPrim I.Return [e] _ = do
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
--- | Generate C value for SSM literal.
+-- | Generate C value for SSM literal, marshalled.
 genLiteral :: I.Literal -> C.Exp
-genLiteral (I.LitIntegral i    ) = marshal [cexp|$int:i|]
-genLiteral (I.LitBool     True ) = marshal [cexp|true|]
-genLiteral (I.LitBool     False) = marshal [cexp|false|]
-genLiteral I.LitEvent            = marshal [cexp|1|]
+genLiteral = marshal . genLiteralRaw
+
+-- | Generate C value for SSM literal, unmarshalled.
+genLiteralRaw :: I.Literal -> C.Exp
+genLiteralRaw (I.LitIntegral i    ) = [cexp|$int:i|]
+genLiteralRaw (I.LitBool     True ) = [cexp|true|]
+genLiteralRaw (I.LitBool     False) = [cexp|false|]
+genLiteralRaw I.LitEvent            = [cexp|1|]
+
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp
@@ -760,6 +767,10 @@ genPrimOp I.PrimEq [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal == $exp:rhsVal|], stms)
+genPrimOp I.PrimNeq [lhs, rhs] _ = do
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal != $exp:rhsVal|], stms)
 genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
