@@ -58,7 +58,7 @@ instance TypeSystem Type where
 
 instance Pretty Type where
   pretty (TBuiltin b  ) = pretty b
-  pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
+  pretty (TCon tcon _) = pretty tcon -- parens (hsep $ pretty tcon : map pretty ts)
   pretty (TVar tvar   ) = pretty tvar
 
 instance IsUnit Type where

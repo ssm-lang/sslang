@@ -426,9 +426,10 @@ instance IsUnit t => WS (Expr t) where
    where
     (nm, args) = unzipApp a
     helper :: IsUnit t => (Expr t, t) -> Doc ann
-    helper (v@(Var _ t1), _) = typ an t1 $ ws v i
-    helper (l@(Lit _ t1), _) = typ an t1 $ ws l i
-    helper (e           , _) = typ an (extract e) (parens (ws e i))
+    helper (v@(Var  _ t1), _) = typ an t1 $ ws v i  -- variables
+    helper (l@(Lit  _ t1), _) = typ an t1 $ ws l i  -- literals 
+   -- helper (d@(Data _ t1), _) = typ an t1 $ ws d i  -- nullary dcons
+    helper (e            , _) = typ an (extract e) (parens (ws e i))
   ws (Prim Wait es t) PInfo { flags = PF { ann = an } } =
     typ an t $ pretty "wait" <+> vsep (map pretty es)
 
@@ -486,27 +487,27 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
     (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
    where
     vars' =
-      pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map blah vars)
+      pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map prettyTypInst vars)
     dcons   = fst <$> vars
     __dcons = VarId . fromString . (\x -> '_' : '_' : x) <$> (ident <$> dcons)
-    blah :: (IsUnit t) => (DConId, TypeVariant t) -> Doc ann
-    blah (dcon, VariantNamed args) =
+    prettyTypInst :: (IsUnit t) => (DConId, TypeVariant t) -> Doc ann
+    prettyTypInst (dcon, VariantNamed args) =
       pretty dcon <+> hsep (pretty . snd <$> args)
-    blah (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
+    prettyTypInst (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
   topLevel
     :: (TypeSystem t, IsUnit t)
     => (VarId, Expr t)
     -> PrettyFlags
     -> Maybe (Doc ann)
-  topLevel (v, l@(Lambda _ _ ty)) flgz@PF { _funcs = False } = case ident v of
-    '_' : '_' : _ -> Nothing
-    _ -> Just $ pretty v <+> typSig <+> pretty "=" <+> line <> indent
-      1
-      (ws body PInfo { flags = flgz, __DCons = __dconMap })
+  topLevel (v, l@(Lambda _ _ ty)) flgz@PF { _funcs = _funcz } = case ident v of
+    '_' : '_' : _ -> if _funcz then func else Nothing
+    _             -> func
    where
-    (argIds, body ) = collectLambda l
+    func = Just $ pretty v <+> typSig <+> pretty "=" <+> line <> funcBody
+    funcBody = indent 1 (ws body PInfo { flags = flgz, __DCons = __dconMap })
+    (argIds, body) = collectLambda l
     (argTys, retTy) = collectArrow ty
-    args            = zipWith
+    args = zipWith
       (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
       argIds
       argTys
