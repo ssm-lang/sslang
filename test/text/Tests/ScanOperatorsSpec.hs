@@ -3,35 +3,42 @@ module Tests.ScanOperatorsSpec where
 
 import           Sslang.Test
 
+import           Common.Identifiers             ( fromString )
 import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
-import           Common.Identifiers             ( fromString )
 
 spec :: Spec
 spec = do
-  it "scans basic operators as TOps" $ mapM_
-    (\op -> scanTokenTypes op `shouldProduce` [TOp $ fromString op])
-    [ "!"
-    , "#"
-    , "$"
-    , "%"
-    , "*"
-    , "+"
-    , "."
-    , "/"
-    , "<"
-    , "='"
-    , ">"
-    , "?"
-    , "@_"
-    , "\\"
-    , "^"
-    , "|\""
-    , "-"
-    , "~"
-    , "!_:\"'"
-    ]
+  it "scans basic operators as TOps" $ do
+    let t :: HasCallStack => String -> Expectation
+        t op = scanTokenTypes op `shouldProduce` [TOp $ fromString op]
+    t "!"
+    t "#"
+    t "$"
+    t "%"
+    t "*"
+    t "+"
+    t "."
+    t "/"
+    t "<"
+    t "='"
+    t ">"
+    t "?"
+    t "@_"
+    t "\\"
+    t "^"
+    t "|\""
+    t "-"
+    t "~"
+    t "!_:\"'"
 
-  it "scans infix identifiers as TOps" $ mapM_
-    (\op -> scanTokenTypes ("`" ++ op ++ "`") `shouldProduce` [TOp $ fromString op])
-    ["add", "plus", "foo_42_bar", "foo_bar_'2"]
+  it "scans infix identifiers as TOps" $ do
+    let
+      t :: HasCallStack => String -> Expectation
+      t op =
+        scanTokenTypes ("`" ++ op ++ "`") `shouldProduce` [TOp $ fromString op]
+
+    t "add"
+    t "plus"
+    t "foo_42_bar"
+    t "foo_bar_'2"
