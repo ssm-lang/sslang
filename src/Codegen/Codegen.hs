@@ -630,7 +630,7 @@ genExpr (I.Match s as t) = do
       return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do
       blk <- m
-      return ([citem|case $exp:(genLiteral l):;|], mkBlk label blk)
+      return ([citem|case $exp:(genLiteralRaw l):;|], mkBlk label blk)
     withAltScope label (I.AltDefault b) m = do
       blk <- withBindings [(b, scrut)] m
       addBinding b scrut
@@ -737,12 +737,17 @@ genPrim I.Return [e] _ = do
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
--- | Generate C value for SSM literal.
+-- | Generate C value for SSM literal, marshalled.
 genLiteral :: I.Literal -> C.Exp
-genLiteral (I.LitIntegral i    ) = marshal [cexp|$int:i|]
-genLiteral (I.LitBool     True ) = marshal [cexp|true|]
-genLiteral (I.LitBool     False) = marshal [cexp|false|]
-genLiteral I.LitEvent            = marshal [cexp|1|]
+genLiteral = marshal . genLiteralRaw
+
+-- | Generate C value for SSM literal, unmarshalled.
+genLiteralRaw :: I.Literal -> C.Exp
+genLiteralRaw (I.LitIntegral i    ) = [cexp|$int:i|]
+genLiteralRaw (I.LitBool     True ) = [cexp|true|]
+genLiteralRaw (I.LitBool     False) = [cexp|false|]
+genLiteralRaw I.LitEvent            = [cexp|1|]
+
 
 -- | Generate C expression for SSM primitive operation.
 genPrimOp
