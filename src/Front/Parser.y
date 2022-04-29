@@ -283,8 +283,7 @@ matchArm                              --> (Pat, Expr)
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
-  : ';' 'else' '{' expr '}'             { $4 }
-  | 'else' '{' expr '}'                 { $3 }
+  : 'else' '{' expr '}'                 { $3 }
   | {- empty -} %prec NOELSE            { NoExpr }
 
 -- | Expressions with application by juxtaposition.
