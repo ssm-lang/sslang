@@ -32,6 +32,7 @@ import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
+import Data.List (isPrefixOf)
 }
 
 %wrapper "monadUserState"
@@ -253,6 +254,7 @@ lineFirstToken' :: AlexAction Token
 lineFirstToken' i _ = do
   let tCol = alexColumn $ alexPosition i
       emptySpan = alexEmptySpan $ alexPosition i
+      (_, _, _, tokenStr) = i
 
   alexSetStartCode 0
 
@@ -267,8 +269,10 @@ lineFirstToken' i _ = do
         alexMonadScan
 
       | tCol == margin -> do
-        -- Next line started; insert 'sepToken'
-        return $ Token (emptySpan, sepToken)
+        -- Next line started; insert 'sepToken' if needed
+        if needsSep tokenStr
+           then alexMonadScan
+           else return $ Token (emptySpan, sepToken)
 
       | otherwise -> do
         -- Block ended; pop context and insert 'TRbrace', but return to
@@ -292,6 +296,9 @@ lineFirstToken' i _ = do
 
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
+-- | Whether a token needs a separator inserted if it starts a line.
+needsSep :: String -> Bool
+needsSep = isPrefixOf "else"
 
 -- | Left brace token.
 lBrace :: AlexAction Token
