@@ -41,8 +41,16 @@ $digit   = 0-9
 $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z] [a-zA-Z0-9_']*
-$symbol = [\!\#\$\%\&\*\+\-\.\/\<\=\>\?\@\\\^\|\~]
-@operator = $symbol ( $symbol | [\_\:\"\'] )*
+
+$symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolLeading      = [$symbolBase\*]
+$symbolAfterSlash   = [$symbolBase\_\:\"\']
+$symbolAny          = [$symbolBase\_\:\"\'\*]
+
+@operator = \/ | ( $symbolLeading | \/ $symbolAfterSlash ) ( $symbolAny | \/ $symbolAfterSlash )* \/?
+
+@commentL = \/\*
+@commentR = \*\/
 
 tokens :-
 
@@ -51,6 +59,14 @@ tokens :-
 
   -- Always ignore single-line comments
   "//".*                ;
+
+  @commentL             { commentBegin }
+  @commentR             { commentEnd }
+
+  <commentBody> {
+    -- Ignore anything inside a comment
+    . | @newline        ;
+  }
 
   <closeBraces> {
     -- Close implicit braces.
@@ -171,11 +187,19 @@ ctxMargin (ImplicitBlock m _        ) = m
 
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
-data AlexUserState = AlexUserState { usContext :: [ScannerContext] }
+data AlexUserState = AlexUserState
+  { usContext :: [ScannerContext] -- ^ stack of contexts
+  , commentLevel :: Word          -- ^ 0 means no block comment
+  , commentCtxCode :: Int         -- ^ scanning code before block comment
+  }
 
 -- | Initial Alex monad state.
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState { usContext = [ImplicitBlock 1 TDBar] }
+alexInitUserState = AlexUserState
+  { usContext = [ImplicitBlock 1 TDBar]
+  , commentLevel = 0
+  , commentCtxCode = 0
+  }
 
 -- | Enter a new context by pushing it onto stack.
 alexPushContext :: ScannerContext -> Alex ()
@@ -227,6 +251,38 @@ alexNoMoreInput _             = False
 -- | String processing helper that drops both ends of a string. Note: strict.
 dropEnds :: Int -> Int -> String -> String
 dropEnds b a = reverse . drop a . reverse . drop b
+
+
+-- | Beginning of a block comment.
+commentBegin :: AlexAction Token
+commentBegin _ _ = do
+  st <- alexGetUserState
+  c <- alexGetStartCode
+  alexSetUserState $ st
+    { commentLevel = commentLevel st + 1
+    , commentCtxCode = if commentLevel st == 0 then c
+                       else commentCtxCode st
+    }
+  alexSetStartCode commentBody
+  alexMonadScan
+
+
+-- | End of a block comment.
+commentEnd :: AlexAction Token
+commentEnd _ _ = do
+  st <- alexGetUserState
+  let lvl = commentLevel st
+
+  if lvl == 0 then
+    lexErr "unexpected token outside of a block comment: */"
+  else if lvl == 1 then
+    alexSetStartCode $ commentCtxCode st
+  else
+    alexSetStartCode commentBody
+
+  alexSetUserState $ st { commentLevel = commentLevel st - 1 }
+
+  alexMonadScan
 
 
 -- | Start of each line.
