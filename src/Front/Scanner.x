@@ -297,6 +297,22 @@ lineFirstToken' i _ = do
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
 -- | Whether a token needs a separator inserted if it starts a line.
+--
+-- The argument should be the rest of the text to be parsed (i.e., the fourth
+-- element of the 'AlexInput' given to an 'AlexAction'). This function looks at
+-- that string to the predict upcoming token, and decides based on that. This is
+-- admittedly kind of a hack, but we need this to  prevent semicolons from being
+-- inserted in front of @else@ when we write something like:
+--
+-- @@
+-- if cond
+--   expr1
+-- else
+--   expr2
+-- @@
+--
+-- The correct scanner output should be @if cond { expr1 } else { expr2 }@, and
+-- not @if cond { expr1 } ; else { expr2 }@.
 needsSep :: String -> Bool
 needsSep = isPrefixOf "else"
 
