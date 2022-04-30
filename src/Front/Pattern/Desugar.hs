@@ -10,7 +10,6 @@ import           Common.Compiler                ( Error(..)
                                                 )
 import           Common.Identifiers             ( Identifier(..)
                                                 , isCons
-                                                , isVar
                                                 )
 import           Control.Monad                  ( replicateM )
 import           Control.Monad.State.Lazy       ( MonadState
@@ -264,9 +263,7 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
  where
   tack y yss = (y : head yss) : tail yss
   sameGroup (ys, _) (ys', _) = case (head ys, head ys') of
-    (A.PatId  i, A.PatId i') -> isVar i == isVar i'
-    (A.PatId  i, A.PatApp _) -> isCons i
-    (A.PatApp _, A.PatId i ) -> isCons i
+    (A.PatId  _, A.PatId _ ) -> True
     (A.PatApp _, A.PatApp _) -> True
     (A.PatLit _, A.PatLit _) -> True
     (A.PatTup _, A.PatTup _) -> True
