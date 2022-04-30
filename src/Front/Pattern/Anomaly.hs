@@ -23,7 +23,7 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.Foldable                  ( find )
+import           Data.List
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
@@ -121,13 +121,30 @@ checkOpRegion (A.NextOp _ e opRegion) = checkExpr e >> checkOpRegion opRegion
 checkOpRegion A.EOR                   = return ()
 
 checkPats :: [A.Pat] -> AnomalyFn ()
-checkPats ps =
-  let pm = PM.singleCol ps
-  in  do
-        checkExhaustive pm
+checkPats ps = do
+  checkUselessArm ps
+  checkExhaustive ps
 
-checkExhaustive :: PM.PatMat -> AnomalyFn ()
-checkExhaustive pm = do
+checkUselessArm :: [A.Pat] -> AnomalyFn ()
+checkUselessArm ps = do
+  let
+    n = length ps
+    pms =
+      [ (ntrial, PM.singleCol $ take ntrial ps) | ntrial <- [0 .. (n - 1)] ]
+    trials = [ useful (PV.singleton $ ps !! ntrial) pm | (ntrial, pm) <- pms ]
+  results <- sequence trials
+  case findIndex not results of
+    Nothing -> return ()
+    Just ind ->
+      throwError
+        $  PatternError
+        $  "Useless pattern: "
+        <> (fromString . show $ ps !! ind)
+
+
+checkExhaustive :: [A.Pat] -> AnomalyFn ()
+checkExhaustive ps = do
+  let pm = PM.singleCol ps
   u <- useful (PV.singleton A.PatWildcard) pm
   when u (throwError $ PatternError "Patterns are not exhaustive")
 

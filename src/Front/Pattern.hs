@@ -6,6 +6,7 @@ import qualified Front.Pattern.Anomaly         as Anomaly
 import qualified Front.Pattern.Desugar         as Desugar
 
 desugarProgram :: A.Program -> Pass A.Program
-desugarProgram ast = do
-  Anomaly.checkProgram ast
-  Desugar.desugarProgram ast
+desugarProgram = Desugar.desugarProgram
+
+checkAnomaly :: A.Program -> Pass ()
+checkAnomaly = Anomaly.checkProgram

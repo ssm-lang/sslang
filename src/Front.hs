@@ -78,6 +78,7 @@ parseAst opt src = do
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
   -- TODO: other desugaring
+  Pattern.checkAnomaly astP
   astD <- Pattern.desugarProgram astP
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
