@@ -146,7 +146,13 @@ checkExhaustive :: [A.Pat] -> AnomalyFn ()
 checkExhaustive ps = do
   let pm = PM.singleCol ps
   u <- useful (PV.singleton A.PatWildcard) pm
-  when u (throwError $ PatternError "Patterns are not exhaustive")
+  when
+    u
+    (  throwError
+    $  PatternError
+    $  "Patterns are not exhaustive"
+    <> (fromString . show $ ps)
+    )
 
 useful :: PV.PatVec -> PM.PatMat -> AnomalyFn Bool
 useful pv pm = do
