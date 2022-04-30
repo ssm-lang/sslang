@@ -64,7 +64,7 @@ getFresh str = do
 makeDrop :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
 makeDrop e = (Nothing, I.Prim I.Drop [e] $ Poly.TBuiltin Poly.Unit)
 
--- | Make a dup primitive with unit type
+-- | Make a dup primitive with actual type
 makeDup :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
 makeDup e = (Nothing, I.Prim I.Dup [e] $ I.extract e)
 
@@ -100,12 +100,15 @@ insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- | Inserting dup/drops into function application with arg
 insertDropExpr (I.App fun arg typ) = do
-  -- fun' <- insertDropExpr fun
   arg' <- insertDropExpr arg
   return $ I.App fun arg' typ
 
+-- | Skip let bindings that have unit type
+insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
+  return $ I.Let bins expr typ
+
 -- | Inserting drops into let bindings
-insertDropExpr (I.Let bins expr typ) = do
+insertDropExpr (I.Let bins expr typ) =   do
   retVar <- getFresh "_let"
   expr'  <- insertDropExpr expr
   bins'  <- forM bins $ \(v, d) -> do
@@ -121,7 +124,6 @@ insertDropExpr (I.Let bins expr typ) = do
   return $ I.Let bins' retExpr' typ
 
 -- | Inserting drops into lambda functions
-
 insertDropExpr (I.Lambda var expr typ) = do
   retVar <- getFresh "_lambda"
   expr'  <- insertDropExpr expr
@@ -133,7 +135,9 @@ insertDropExpr (I.Lambda var expr typ) = do
       exprBins = varDup : (Just retVar, expr') : [varDrop]
       retExpr  = I.Var retVar (typArg typ)
       retExpr' = seqExprs exprBins retExpr
-  return $ I.Lambda var retExpr' typ
+  if typArg typ == Poly.TBuiltin Poly.Unit
+    then return $ I.Lambda var expr' typ
+    else return $ I.Lambda var retExpr' typ
 
 -- | Inserting drops into pattern-matching
 insertDropExpr (I.Match expr alts typ) = do
@@ -168,7 +172,7 @@ insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do
   return (I.AltDefault var, retExpr')
 
 -- | Inserting dup/drops into AltData arms
--- | TODO: type is currently wrong and is only a placeholder
+-- | TODO: type info is currently unavailable and is only a placeholder
 insertDropAlt (I.AltData dcon vars, exprReturn) _ = do
   retVar      <- getFresh "_alt_data"
   exprReturn' <- insertDropExpr exprReturn
