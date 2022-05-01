@@ -101,6 +101,12 @@ Check() {
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
+    # --dump-ir-final
+    # stack exec -- sslc --dump-ir-final tests/hello1.ssl
+    # run it once and get output
+    # TEST 1: run w/ output as input and see if get same output
+    # TEST 2: run w/ output and see if test results pass when compiled to C
+
     Run $SSLC "$1" ">" "${csource}" &&
     Run $CC -c -o "${obj}" "${csource}" &&
     if [ -f "${mainsource}" ] ; then

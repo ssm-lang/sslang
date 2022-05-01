@@ -115,8 +115,12 @@ dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn (createArityEnv tDefs) $ do
     defs' <- everywhereM (mkM dataToApp) defs
-    return p { I.programDefs = defs' ++ concat (createFuncs <$> tDefs) }
+    return p
+      { I.programDefs = tDefs'
+                          ++ filter ((`notElem` (fst <$> tDefs')) . fst) defs'
+      }
  where
+  tDefs' = concat (createFuncs <$> tDefs)
   createFuncs (tconid, TypeDef { variants = vars }) =
     createFunc tconid `mapMaybe` vars
 
