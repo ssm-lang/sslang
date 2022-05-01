@@ -32,6 +32,7 @@ import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
 import Control.Monad (when)
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
+import Data.List (isPrefixOf)
 }
 
 %wrapper "monadUserState"
@@ -40,8 +41,16 @@ $digit   = 0-9
 $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z] [a-zA-Z0-9_']*
-$symbol = [\!\#\$\%\&\*\+\-\.\/\<\=\>\?\@\\\^\|\~]
-@operator = $symbol ( $symbol | [\_\:\"\'] )*
+
+$symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolLeading      = [$symbolBase\*]
+$symbolAfterSlash   = [$symbolBase\_\:\"\']
+$symbolAny          = [$symbolBase\_\:\"\'\*]
+
+@operator = \/ | ( $symbolLeading | \/ $symbolAfterSlash ) ( $symbolAny | \/ $symbolAfterSlash )* \/?
+
+@commentL = \/\*
+@commentR = \*\/
 
 tokens :-
 
@@ -50,6 +59,14 @@ tokens :-
 
   -- Always ignore single-line comments
   "//".*                ;
+
+  @commentL             { commentBegin }
+  @commentR             { commentEnd }
+
+  <commentBody> {
+    -- Ignore anything inside a comment
+    . | @newline        ;
+  }
 
   <closeBraces> {
     -- Close implicit braces.
@@ -170,11 +187,19 @@ ctxMargin (ImplicitBlock m _        ) = m
 
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
-data AlexUserState = AlexUserState { usContext :: [ScannerContext] }
+data AlexUserState = AlexUserState
+  { usContext :: [ScannerContext] -- ^ stack of contexts
+  , commentLevel :: Word          -- ^ 0 means no block comment
+  , commentCtxCode :: Int         -- ^ scanning code before block comment
+  }
 
 -- | Initial Alex monad state.
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState { usContext = [ImplicitBlock 1 TDBar] }
+alexInitUserState = AlexUserState
+  { usContext = [ImplicitBlock 1 TDBar]
+  , commentLevel = 0
+  , commentCtxCode = 0
+  }
 
 -- | Enter a new context by pushing it onto stack.
 alexPushContext :: ScannerContext -> Alex ()
@@ -228,6 +253,38 @@ dropEnds :: Int -> Int -> String -> String
 dropEnds b a = reverse . drop a . reverse . drop b
 
 
+-- | Beginning of a block comment.
+commentBegin :: AlexAction Token
+commentBegin _ _ = do
+  st <- alexGetUserState
+  c <- alexGetStartCode
+  alexSetUserState $ st
+    { commentLevel = commentLevel st + 1
+    , commentCtxCode = if commentLevel st == 0 then c
+                       else commentCtxCode st
+    }
+  alexSetStartCode commentBody
+  alexMonadScan
+
+
+-- | End of a block comment.
+commentEnd :: AlexAction Token
+commentEnd _ _ = do
+  st <- alexGetUserState
+  let lvl = commentLevel st
+
+  if lvl == 0 then
+    lexErr "unexpected token outside of a block comment: */"
+  else if lvl == 1 then
+    alexSetStartCode $ commentCtxCode st
+  else
+    alexSetStartCode commentBody
+
+  alexSetUserState $ st { commentLevel = commentLevel st - 1 }
+
+  alexMonadScan
+
+
 -- | Start of each line.
 gotoStartLine :: AlexAction Token
 gotoStartLine _ _ = do
@@ -253,6 +310,7 @@ lineFirstToken' :: AlexAction Token
 lineFirstToken' i _ = do
   let tCol = alexColumn $ alexPosition i
       emptySpan = alexEmptySpan $ alexPosition i
+      (_, _, _, tokenStr) = i
 
   alexSetStartCode 0
 
@@ -267,8 +325,10 @@ lineFirstToken' i _ = do
         alexMonadScan
 
       | tCol == margin -> do
-        -- Next line started; insert 'sepToken'
-        return $ Token (emptySpan, sepToken)
+        -- Next line started; insert 'sepToken' if needed
+        if needsSep tokenStr
+           then alexMonadScan
+           else return $ Token (emptySpan, sepToken)
 
       | otherwise -> do
         -- Block ended; pop context and insert 'TRbrace', but return to
@@ -292,6 +352,25 @@ lineFirstToken' i _ = do
 
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
+-- | Whether a token needs a separator inserted if it starts a line.
+--
+-- The argument should be the rest of the text to be parsed (i.e., the fourth
+-- element of the 'AlexInput' given to an 'AlexAction'). This function looks at
+-- that string to the predict upcoming token, and decides based on that. This is
+-- admittedly kind of a hack, but we need this to  prevent semicolons from being
+-- inserted in front of @else@ when we write something like:
+--
+-- @@
+-- if cond
+--   expr1
+-- else
+--   expr2
+-- @@
+--
+-- The correct scanner output should be @if cond { expr1 } else { expr2 }@, and
+-- not @if cond { expr1 } ; else { expr2 }@.
+needsSep :: String -> Bool
+needsSep = isPrefixOf "else"
 
 -- | Left brace token.
 lBrace :: AlexAction Token
