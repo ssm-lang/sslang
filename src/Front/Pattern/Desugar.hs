@@ -114,9 +114,18 @@ desugarExpr (A.Wait es  )    = A.Wait <$> desugarExprs es
 desugarExpr (A.Seq e1 e2)    = A.Seq <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr A.Break          = return A.Break
 desugarExpr (A.Match e arms) = do -- INFO: the only important one
-  v <- freshVar
-  let arms' = map (first (: [])) arms
-  singleLet v e <$> desugarMatch [v] arms' A.NoExpr -- INFO: for now, default expression is NoExpr
+  arms' <- mapM
+    (\(p, body) -> do
+      body' <- desugarExpr body
+      return (p, body')
+    )
+    arms
+  let armsForDesugar = map (first (: [])) arms'
+  case e of
+    A.Id v -> desugarMatch [v] armsForDesugar A.NoExpr
+    _      -> do
+      v <- freshVar
+      singleLet v e <$> desugarMatch [v] armsForDesugar A.NoExpr -- INFO: for now, default expression is NoExpr
 desugarExpr (A.Return e) = A.Return <$> desugarExpr e
 
 desugarOpRegion :: A.OpRegion -> DesugarFn A.OpRegion
