@@ -111,37 +111,38 @@ Check() {
 	Compare "${result}" "${reference}" "${diff}"
     fi
 
-    # --dump-ir-final
-    # stack exec -- sslc --dump-ir-final tests/hello1.ssl
-    # run it once and get output
-    # TEST 1: run w/ output as input and see if get same output
-    # TEST 2: run w/ output and see if test results pass when compiled to C
-    # generatedfiles2=
-    # testing pretty printer
+    # Pretty Printer Tests
     ir1="out/${basename}-ir1.ssl"
     ir2="out/${basename}-ir2.ssl"
-    #csource-ir2="out/${basename}-ir2.c"
-    # obj-ir2="out/${basename}-ir2.o"
-    # mainsource="${reffile}-main.c"
-    # mainobj="out/${basename}-main.o"
-    # exec-ir2="out/${basename}-ir2"
-    # result-ir2="out/${basename}-ir2.out"
-    # diff-ir2="out/${basename}-ir2.diff"
-    # NoteGen "${ir1} ${ir2} ${obj-ir2}"
+    csourceIr2="out/${basename}-ir2.c"
+    objIr2="out/${basename}-ir2.o"
+    execIr2="out/${basename}-ir2"
+    resultIr2="out/${basename}-ir2.out"
+    diffIr2="out/${basename}-ir2.diff"
+    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2}"
 
+    TEST: can we pretty print the IR?
     Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
+    # TEST: can pretty printed IR be read in?
+    Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
+    # TEST: is the input IR the same as the output IR?
+    if [ -f "${ir2}" ] ; then
+	Compare "out/${basename}-ir2.out" "${reference}" "out/${basename}-ir2.diff"
+    fi &&
+    # TEST: can we fully compile pretty printed IR?
     Run $SSLC "${ir1}" ">" "out/${basename}-ir2.c" &&
-    Run $CC -c -o "out/${basename}-ir2.o" "out/${basename}-ir2.c" &&
+    Run $CC -c -o "${objIr2}" "${csourceIr2}" &&
     if [ -f "${mainsource}" ] ; then
-	NoteGen "${mainobj} "out/${basename}-ir2" ${result-ir2} ${diff-ir2}"
+	NoteGen "${ir1} ${ir2} ${objIr2} ${execIr2} ${result-ir2} ${diff-ir2}"
 	Run $CC -c -o "${mainobj}" "${mainsource}" &&
 	Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
-	Run "out/${basename}-ir2" ">" "out/${basename}-ir2.out" &&
-	Compare "out/${basename}-ir2.out" "${reference}" "out/${basename}-ir2.diff"
+	Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
+    # TEST: does compiled IR produce the same results as compiled source?
+	Compare "${resultIr2}" "${reference}" "out/${basename}-ir2.diff"
     fi
-    # testing pretty printer
 
     # Report the status and clean up the generated files
+    
 
     if [ -z "$error" ] ; then
 	if [ -z "$keep" ] ; then

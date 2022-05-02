@@ -116,7 +116,7 @@ poly2Poly opt ir = do
   irLifted  <- liftProgramLambdas dConsGone
   when (mode opt == DumpIRLifted) $ dump irLifted
   when (mode opt == DumpIRFinal)
-    $ (throwError . Dump . show) (I.indentPretty (I.PF False True) irLifted)
+    $ (throwError . Dump . show) (I.indentPretty irLifted)
   return irLifted
 
 -- | IR compiler stage.
