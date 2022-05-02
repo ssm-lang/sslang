@@ -22,7 +22,6 @@ import           Data.Bifunctor                 ( first )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
-import           Debug.Trace                    ( trace )
 import qualified Front.Ast                     as A
 import           Front.Pattern.Common           ( CInfo(..)
                                                 , TInfo(..)
@@ -143,8 +142,7 @@ desugarMatch []         _             _   = throwDesugarError
 desugarMatch us@(_ : _) qs            def = do
   -- qs' <- desugarMatchAsAnn us qs >>= desugarMatchWild >>= desugarMatchIdCons
   qs' <- desugarMatchAsAnn us qs >>= desugarMatchIdCons
-  trace ("pre-match: " ++ show qs')
-    $ foldrM (desugarMatchGen us) def (partitionEqs qs')
+  foldrM (desugarMatchGen us) def (partitionEqs qs')
 
 desugarMatchGen :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
