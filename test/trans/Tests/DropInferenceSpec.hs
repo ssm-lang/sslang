@@ -115,36 +115,38 @@ spec = do
 
   it "drop inference in pattern matching" $ do
     let undropped = parseDrop [here|
-        type MyBool 
-          MyFalse Int Int
-          MyTrue Int
+        type MyADT
+          MyDCon1 Int Int
+          MyDCon2 Int
+          MyDCon3 MyADT
 
-        x = MyTrue 30
+        x = MyDCon2 30
         top = match x
-                MyTrue fst = fst
-                MyFalse fst snd = snd
+                MyDCon2 fst = fst
+                MyDCon1 fst snd = snd
                 _ = 69
         |]
     let dropped = parseNoDrop [here|
-        type MyBool 
-          MyFalse Int Int
-          MyTrue Int
+        type MyADT
+          MyDCon1 Int Int
+          MyDCon2 Int
+          MyDCon3 MyADT
 
-        x = MyTrue 30
+        x = MyDCon2 30
         top = match x
-                MyTrue fst = 
+                MyDCon2 fst =
                   let _ = dup fst
                   let anon0_alt_data = fst
                   let _ = drop fst
                   anon0_alt_data
-                MyFalse fst snd = 
+                MyDCon1 fst snd =
                   let _ = dup fst
                   let _ = dup snd
                   let anon2_alt_data = snd
                   let _ = drop fst
                   let _ = drop snd
                   anon2_alt_data
-                _ = 
+                _ =
                   let _ = dup x
                   let anon4_alt_default = 69
                   let _ = drop x
