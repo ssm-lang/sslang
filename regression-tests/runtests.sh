@@ -122,7 +122,7 @@ Check() {
     diffIr3="out/${basename}-ir3.diff"
     NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2}"
 
-    TEST: can we pretty print the IR?
+    # TEST: can we pretty print the IR?
     Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
     # TEST: can pretty printed IR be read in?
     Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
