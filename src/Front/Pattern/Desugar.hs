@@ -22,6 +22,7 @@ import           Data.Bifunctor                 ( first )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
+import           Debug.Trace                    ( trace )
 import qualified Front.Ast                     as A
 import           Front.Pattern.Common           ( CInfo(..)
                                                 , TInfo(..)
@@ -140,16 +141,22 @@ desugarMatch [] [] def = case def of
 desugarMatch []         (([], e) : _) _   = return e
 desugarMatch []         _             _   = throwDesugarError
 desugarMatch us@(_ : _) qs            def = do
-  qs' <- desugarMatchAsAnn us qs >>= desugarMatchWild >>= desugarMatchIdCons
-  foldrM (desugarMatchGen us) def (partitionEqs qs')
+  -- qs' <- desugarMatchAsAnn us qs >>= desugarMatchWild >>= desugarMatchIdCons
+  qs' <- desugarMatchAsAnn us qs >>= desugarMatchIdCons
+  trace ("pre-match: " ++ show qs')
+    $ foldrM (desugarMatchGen us) def (partitionEqs qs')
 
 desugarMatchGen :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | isConsEq (head qs) = desugarMatchCons us qs def
                           | isLitEq (head qs)  = desugarMatchLit us qs def
                           | isTupEq (head qs)  = desugarMatchTup us qs def
+                          | isWildEq (head qs) = desugarMatchWild us qs def
                           | otherwise          = error "can't happen"
  where
+  isWildEq (ps, _) = case head ps of
+    A.PatWildcard -> True
+    _             -> False
   isVarEq (ps, _) = case head ps of
     A.PatId _ -> True
     _         -> False
@@ -167,6 +174,22 @@ desugarMatchVar :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchVar [] _ _ = error "can't happen"
 desugarMatchVar (u : us) qs def =
   desugarMatch us [ (ps, singleAlias v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
+
+{-
+To make life easier: transform PatWildcard into variable PatId
+-}
+desugarMatchWild :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
+desugarMatchWild [] _ _ = error "can't happen"
+desugarMatchWild (_ : us) qs def =
+  desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
+
+-- desugarMatchWild :: [Equation] -> DesugarFn [Equation]
+-- desugarMatchWild = mapM desugar
+--  where
+--   desugar (A.PatWildcard : rs, v) = do
+--     i <- freshVar
+--     return (A.PatId i : rs, v)
+--   desugar eq = return eq
 
 {-
 Assume only having PatApp
@@ -198,11 +221,12 @@ Simple pass for PatLit; no special desugaring
 -}
 desugarMatchLit :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchLit (u : us) qs def = do
-  arms <- sequence [ desugarArm p | (p : _, _) <- qs ]
-  return $ A.Match (A.Id u) arms
+  arms <- sequence [ desugarArm p ps e | (p : ps, e) <- qs ]
+  let arms' = arms ++ [(A.PatWildcard, def)] -- WARN: assuming that PatLit is never exhaustive, adding a default case
+  return $ A.Match (A.Id u) arms'
  where
-  desugarArm p = do
-    body <- desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
+  desugarArm p ps e = do
+    body <- desugarMatch us [(ps, e)] def
     return (p, body)
 desugarMatchLit _ _ _ = error "can't happen"
 
@@ -222,17 +246,6 @@ desugarMatchTup (u : us) qs@((A.PatTup rs : _, _) : _) def = do
                          def
     return (A.PatTup $ map A.PatId us', body)
 desugarMatchTup _ _ _ = error "can't happen"
-
-{-
-To make life easier: transform PatWildcard into variable PatId
--}
-desugarMatchWild :: [Equation] -> DesugarFn [Equation]
-desugarMatchWild = mapM desugar
- where
-  desugar (A.PatWildcard : rs, v) = do
-    i <- freshVar
-    return (A.PatId i : rs, v)
-  desugar eq = return eq
 
 {-
 To make life easier: transform constructor PatId into PatApp [PatId]
