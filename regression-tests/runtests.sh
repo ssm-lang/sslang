@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SSLC="stack exec sslc --"
-
+pretty="--dump-ir-final"
 SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
@@ -89,7 +89,7 @@ Check() {
     generatedfiles=
 
     # Run the compiler
-
+    pretty = "--dump-ir-final"
     csource="out/${basename}.c"
     cheader="out/${basename}.h"
     obj="out/${basename}.o"
@@ -101,12 +101,6 @@ Check() {
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
-    # --dump-ir-final
-    # stack exec -- sslc --dump-ir-final tests/hello1.ssl
-    # run it once and get output
-    # TEST 1: run w/ output as input and see if get same output
-    # TEST 2: run w/ output and see if test results pass when compiled to C
-
     Run $SSLC "$1" ">" "${csource}" &&
     Run $CC -c -o "${obj}" "${csource}" &&
     if [ -f "${mainsource}" ] ; then
@@ -116,6 +110,36 @@ Check() {
 	Run "${exec}" ">" "${result}" &&
 	Compare "${result}" "${reference}" "${diff}"
     fi
+
+    # --dump-ir-final
+    # stack exec -- sslc --dump-ir-final tests/hello1.ssl
+    # run it once and get output
+    # TEST 1: run w/ output as input and see if get same output
+    # TEST 2: run w/ output and see if test results pass when compiled to C
+    # generatedfiles2=
+    # testing pretty printer
+    ir1="out/${basename}-ir1.ssl"
+    ir2="out/${basename}-ir2.ssl"
+    #csource-ir2="out/${basename}-ir2.c"
+    # obj-ir2="out/${basename}-ir2.o"
+    # mainsource="${reffile}-main.c"
+    # mainobj="out/${basename}-main.o"
+    # exec-ir2="out/${basename}-ir2"
+    # result-ir2="out/${basename}-ir2.out"
+    # diff-ir2="out/${basename}-ir2.diff"
+    # NoteGen "${ir1} ${ir2} ${obj-ir2}"
+
+    Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
+    Run $SSLC "${ir1}" ">" "out/${basename}-ir2.c" &&
+    Run $CC -c -o "out/${basename}-ir2.o" "out/${basename}-ir2.c" &&
+    if [ -f "${mainsource}" ] ; then
+	NoteGen "${mainobj} "out/${basename}-ir2" ${result-ir2} ${diff-ir2}"
+	Run $CC -c -o "${mainobj}" "${mainsource}" &&
+	Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
+	Run "out/${basename}-ir2" ">" "out/${basename}-ir2.out" &&
+	Compare "out/${basename}-ir2.out" "${reference}" "out/${basename}-ir2.diff"
+    fi
+    # testing pretty printer
 
     # Report the status and clean up the generated files
 

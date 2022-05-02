@@ -487,7 +487,7 @@ indentPretty flgs Program { programDefs = ds, typeDefs = tys } =
     (accMap <> M.fromList (zip __dcons dcons), accDoc <> vars')
    where
     vars' =
-      pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map prettyTypInst vars)
+      pretty "type" <+> pretty tcon <+> line <> indent 1 (vsep $ map prettyTypInst vars) <+> line
     dcons   = fst <$> vars
     __dcons = VarId . fromString . (\x -> '_' : '_' : x) <$> (ident <$> dcons)
     prettyTypInst :: (IsUnit t) => (DConId, TypeVariant t) -> Doc ann
