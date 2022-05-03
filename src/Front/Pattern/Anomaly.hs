@@ -23,7 +23,9 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.List
+import           Data.List                      ( find
+                                                , findIndex
+                                                )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
