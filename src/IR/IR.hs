@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveFunctor #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
@@ -17,6 +19,8 @@ module IR.IR
   , extract
   , zipApp
   , unzipApp
+  , usedFreeVars
+  , makeLetChain
   ) where
 import           Common.Identifiers             ( Binder
                                                 , DConId(..)
@@ -31,9 +35,15 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Data                      ( Data
+import           Data.Generics                  ( Data(..)
+                                                , GenericQ
+                                                , Proxy(..)
                                                 , Typeable
+                                                , everythingWithContext
+                                                , mkQ
                                                 )
+import           Data.Maybe                     ( mapMaybe )
+import qualified Data.Set                      as S
 
 {- | Top-level compilation unit.
 
@@ -44,7 +54,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor)
 
 {- | Literal values supported by the language.
 
@@ -159,14 +169,14 @@ data Expr t
   a value to parameter @v@ in its body @b@.
   -}
   | Match (Expr t) [(Alt, Expr t)] t
-  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
-  @alts@, each producing a value of type @t@.
+  {- ^ @Match s arms t@ pattern-matches on scrutinee @s@ against arms @arms@,
+  each producing a value of type @t@.
   -}
   | Prim Primitive [Expr t] t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -220,22 +230,36 @@ makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
 makeLambdaChain args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `arrow` extract b
 
-instance Functor Program where
-  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
-    Program { programEntry = e
-            , programDefs  = fmap (second $ fmap f) defs
-            , typeDefs     = fmap (second $ fmap f) tds
-            }
+{- | Create a let-chain given a list of binder-def pairs and a body.
 
-instance Functor Expr where
-  fmap f (Var  v t      ) = Var v (f t)
-  fmap f (Data d t      ) = Data d (f t)
-  fmap f (Lit  l t      ) = Lit l (f t)
-  fmap f (App    l  r  t) = App (fmap f l) (fmap f r) (f t)
-  fmap f (Let    xs b  t) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
-  fmap f (Lambda v  b  t) = Lambda v (fmap f b) (f t)
-  fmap f (Match  s  as t) = Match (fmap f s) (fmap (second $ fmap f) as) (f t)
-  fmap f (Prim   p  as t) = Prim p (fmap (fmap f) as) (f t)
+Note that this implementation duplicates the given type annotation @t@ across
+each of the chained let expressions.
+-}
+makeLetChain :: TypeSystem t => [[(Binder, Expr t)]] -> Expr t -> t -> Expr t
+makeLetChain defs body t = foldr chain body defs where chain d b = Let d b t
+
+-- | Report the set of free identifiers used by some 'Expr'.
+usedFreeVars :: Data t => Proxy t -> Expr t -> S.Set VarId
+usedFreeVars p = everythingWithContext mempty (<>) getVarQ
+ where
+  -- | Generic query to obtain free vars given a context of bound vars
+  getVarQ :: GenericQ (S.Set VarId -> (S.Set VarId, S.Set VarId))
+  getVarQ = mkQ (mempty, ) $ getVar p
+
+  -- | Query expressions to determine where variables are used and bound.
+  getVar
+    :: Proxy t      -- ^ Proxy type to assure GHC that t is an instance of Data
+    -> Expr t       -- ^ Expression begin queried
+    -> S.Set VarId  -- ^ Context of bound variables
+    -> (S.Set VarId, S.Set VarId) -- ^ (Used variables, updated context)
+  getVar _ (Var v _) ctx | not (v `S.member` ctx) = (S.singleton v, ctx)
+  getVar _ (Let ds _ _) ctx = (mempty, ctx `S.union` newVars)
+    where newVars = S.fromList $ mapMaybe fst ds
+  getVar _ (Lambda (Just v) _ _) ctx = (mempty, ctx `S.union` S.singleton v)
+  -- TODO: this totally does not account for match expressions!
+  -- Problem is that we need a separate @Arm@ type for each match arm, so that
+  -- we can extend the context of each arm separately.
+  getVar _ _                     ctx = (mempty, ctx)
 
 instance Comonad Expr where
   extract (Var  _ t    ) = t
@@ -383,7 +407,7 @@ instance Pretty PrimOp where
   pretty PrimBitAnd = pretty "&"
   pretty PrimBitOr  = pretty "|"
   pretty PrimEq     = pretty "=="
-  pretty PrimNeq     = pretty "!="
+  pretty PrimNeq    = pretty "!="
   pretty PrimGt     = pretty ">"
   pretty PrimGe     = pretty ">="
   pretty PrimLt     = pretty "<"
