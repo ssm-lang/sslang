@@ -867,6 +867,71 @@ data Fixity
 Infixl :: Int -> Identifier -> Fixity
 Infixr :: Int -> Identifier -> Fixity
 
+module Front.Pattern.Common
+data CInfo
+CInfo :: Identifier -> Identifier -> Int -> CInfo
+[cName] :: CInfo -> Identifier
+[cType] :: CInfo -> Identifier
+[cArity] :: CInfo -> Int
+data TInfo
+TInfo :: Identifier -> Set Identifier -> TInfo
+[tName] :: TInfo -> Identifier
+[tCSet] :: TInfo -> Set Identifier
+buildTypeMap :: [TypeDef] -> Map Identifier TInfo
+buildConsMap :: [TypeDef] -> Map Identifier CInfo
+instance GHC.Show.Show Front.Pattern.Common.CInfo
+instance GHC.Classes.Eq Front.Pattern.Common.CInfo
+instance GHC.Show.Show Front.Pattern.Common.TInfo
+instance GHC.Classes.Eq Front.Pattern.Common.TInfo
+
+module Front.Pattern.Desugar
+type Equation = ([Pat], Expr)
+type Arm = (Pat, Expr)
+data DesugarCtx
+DesugarCtx :: Map Identifier TInfo -> Map Identifier CInfo -> Int -> DesugarCtx
+[typeMap] :: DesugarCtx -> Map Identifier TInfo
+[consMap] :: DesugarCtx -> Map Identifier CInfo
+[anonCount] :: DesugarCtx -> Int
+newtype DesugarFn a
+DesugarFn :: StateT DesugarCtx Pass a -> DesugarFn a
+runDesugarFn :: DesugarFn a -> DesugarCtx -> Pass a
+freshVar :: DesugarFn Identifier
+buildCtx :: [TypeDef] -> DesugarCtx
+desugarProgram :: Program -> Pass Program
+desugarTopDefs :: [TopDef] -> DesugarFn [TopDef]
+desugarDefs :: [Definition] -> DesugarFn [Definition]
+desugarDef :: Definition -> DesugarFn Definition
+desugarExprs :: [Expr] -> DesugarFn [Expr]
+desugarExpr :: Expr -> DesugarFn Expr
+desugarOpRegion :: OpRegion -> DesugarFn OpRegion
+desugarMatch :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchGen :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchVar :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchWild :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchCons :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchLit :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchTup :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
+desugarMatchIdCons :: [Equation] -> DesugarFn [Equation]
+desugarMatchAsAnn :: [Identifier] -> [Equation] -> DesugarFn [Equation]
+partitionEqs :: [Equation] -> [[Equation]]
+substId :: Identifier -> Identifier -> Expr -> Expr
+singleLet :: Identifier -> Expr -> Expr -> Expr
+singleAlias :: Identifier -> Identifier -> Expr -> Expr
+singleAliasWithTyp :: Identifier -> Identifier -> Typ -> Expr -> Expr
+getConstructors :: Identifier -> DesugarFn (Set Identifier)
+getArity :: Identifier -> DesugarFn Int
+getCInfo :: Identifier -> DesugarFn CInfo
+getTInfo :: Identifier -> DesugarFn TInfo
+foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
+throwDesugarError :: DesugarFn a
+throwInexhaustionError :: DesugarFn a
+instance Control.Monad.State.Class.MonadState Front.Pattern.Desugar.DesugarCtx Front.Pattern.Desugar.DesugarFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Front.Pattern.Desugar.DesugarFn
+instance Control.Monad.Fail.MonadFail Front.Pattern.Desugar.DesugarFn
+instance GHC.Base.Monad Front.Pattern.Desugar.DesugarFn
+instance GHC.Base.Applicative Front.Pattern.Desugar.DesugarFn
+instance GHC.Base.Functor Front.Pattern.Desugar.DesugarFn
+
 module Front.Pattern.Vector
 data PatVec
 PatVec :: Int -> [Pat] -> PatVec
@@ -905,15 +970,6 @@ instance GHC.Show.Show Front.Pattern.Matrix.PatMat
 instance GHC.Classes.Eq Front.Pattern.Matrix.PatMat
 
 module Front.Pattern.Anomaly
-data CInfo
-CInfo :: Identifier -> Identifier -> Int -> CInfo
-[cName] :: CInfo -> Identifier
-[cType] :: CInfo -> Identifier
-[cArity] :: CInfo -> Int
-data TInfo
-TInfo :: Identifier -> Set Identifier -> TInfo
-[tName] :: TInfo -> Identifier
-[tCSet] :: TInfo -> Set Identifier
 data AnomalyCtx
 AnomalyCtx :: Map Identifier TInfo -> Map Identifier CInfo -> AnomalyCtx
 [typeMap] :: AnomalyCtx -> Map Identifier TInfo
@@ -931,7 +987,8 @@ checkExprs :: [Expr] -> AnomalyFn ()
 checkExpr :: Expr -> AnomalyFn ()
 checkOpRegion :: OpRegion -> AnomalyFn ()
 checkPats :: [Pat] -> AnomalyFn ()
-checkExhaustive :: PatMat -> AnomalyFn ()
+checkUselessArm :: [Pat] -> AnomalyFn ()
+checkExhaustive :: [Pat] -> AnomalyFn ()
 useful :: PatVec -> PatMat -> AnomalyFn Bool
 usefulWildLit :: LitType -> PatVec -> PatMat -> AnomalyFn Bool
 samplePat :: PatMat -> Maybe Pat
@@ -957,10 +1014,6 @@ askTInfo :: Identifier -> AnomalyFn TInfo
 showId :: Identifier -> ErrorMsg
 showSet :: Set Identifier -> ErrorMsg
 throwMalformedError :: AnomalyFn a
-instance GHC.Show.Show Front.Pattern.Anomaly.CInfo
-instance GHC.Classes.Eq Front.Pattern.Anomaly.CInfo
-instance GHC.Show.Show Front.Pattern.Anomaly.TInfo
-instance GHC.Classes.Eq Front.Pattern.Anomaly.TInfo
 instance Control.Monad.Reader.Class.MonadReader Front.Pattern.Anomaly.AnomalyCtx Front.Pattern.Anomaly.AnomalyFn
 instance Control.Monad.Writer.Class.MonadWriter [Common.Compiler.Warning] Front.Pattern.Anomaly.AnomalyFn
 instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Front.Pattern.Anomaly.AnomalyFn
@@ -970,6 +1023,10 @@ instance GHC.Base.Applicative Front.Pattern.Anomaly.AnomalyFn
 instance GHC.Base.Functor Front.Pattern.Anomaly.AnomalyFn
 instance GHC.Show.Show Front.Pattern.Anomaly.LitType
 instance GHC.Classes.Eq Front.Pattern.Anomaly.LitType
+
+module Front.Pattern
+desugarProgram :: Program -> Pass Program
+checkAnomaly :: Program -> Pass ()
 
 
 -- | Check scoping rules and naming conventions for identifiers.
