@@ -240,14 +240,16 @@ inferPrim e@(I.Prim I.After [del, lhs, rhs] _) = do
         _ -> return ()
       return $ I.Prim I.After [(\_ -> int 32) <$> del', rrty <$ lhs', rhs'] unit
     else throwError $ Compiler.TypeError $ fromString $ "After expression has inconsistent type: " ++ show e
-inferPrim (I.Prim (I.PrimOp I.PrimSub) [e1, e2] _) = do
-  e1' <- inferExpr e1
-  e2' <- inferExpr e2
-  return $ I.Prim (I.PrimOp I.PrimSub) [e1', e2'] $ int 32
-inferPrim (I.Prim (I.PrimOp I.PrimAdd) [e1, e2] _) = do
-  e1' <- inferExpr e1
-  e2' <- inferExpr e2
-  return $ I.Prim (I.PrimOp I.PrimAdd) [e1', e2'] $ int 32
+inferPrim (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimEq) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimGt) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimLt) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimGe) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimLe) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
 inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
 inferPrim (I.Prim I.Loop es _) = do
@@ -261,6 +263,13 @@ inferPrim (I.Prim I.Par es _) = do
   let ts = map extract es'
   return $ I.Prim I.Par es' $ tuple ts
 inferPrim e = throwError $ Compiler.TypeError $ fromString $ "Unable to type Prim expression: " ++ show e
+
+-- | Check type of a binary integer operation.
+inferPrimBinop :: I.PrimOp -> I.Expr Ann.Type -> I.Expr Ann.Type -> InferFn (I.Expr Classes.Type)
+inferPrimBinop o e1 e2 = do
+  e1' <- inferExpr e1
+  e2' <- inferExpr e2
+  return $ I.Prim (I.PrimOp o) [e1', e2'] $ int 32
 
 -- | Helper function to support local modificaton of type context.
 withNewScope :: InferFn a -> InferFn a

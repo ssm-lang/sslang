@@ -5,6 +5,8 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{syntax}
+\usepackage{amsmath}
+\usepackage{algorithm2e}
 \renewcommand{\grammarlabel}[2]{\textit{#1}\hfill#2}
 \renewcommand{\syntleft}{\itshape\normalsize}
 \renewcommand{\syntright}{\normalfont\normalsize}
@@ -12,6 +14,7 @@
 \renewcommand{\ulitright}{\normalsize\normalfont}
 \def\<#1>{\synt{#1}}
 \definecolor{listingbackground}{rgb}{0.8,0.8,0.8}
+\definecolor{commentcolor}{rgb}{0.2,0.2,0.8}
 
 \title{SSLANG Language Reference Manual}
 \author{Hans Montero, John Hui, and Stephen A. Edwards}
@@ -26,7 +29,7 @@
 
 \lstset{language=sslang,
   columns=flexible,
-  commentstyle={\itshape\color{red}},
+  commentstyle={\itshape\color{commentcolor}},
   backgroundcolor=\color{listingbackground},
 }
 
@@ -62,17 +65,46 @@ Multi-line comments start with \lit*{/*} and end at a matching
 \lit*{*/}.  Multi-line comments nest and may also include
 single-line comments.
 
+To avoid confusion with comments, user-defined operators
+should not contain \lit*{//} or \lit*{/*} as substrings.
+Furthermore, comments must be separated from operator symbols
+by at least one character:
+
+\begin{lstlisting}
+&// invalid comment
+&/* invalid comment */
+& // valid comment
+& /* valid comment */
+\end{lstlisting}
+
 \subsection{Layout}
 
-For brevity, sslang allows the programmer to selectively omit braces \texttt{\{} and \texttt{\}} as well as certain separator tokens, and instead convey the same information using \emph{layout} (indentation). Layout-sensitive and layout-insensitive syntax are both supported and mutually compatible, so the meaning of a layout-sensitive program can always specified by adding braces and tokens to produce some equivalent layout-insensitive program. This section describes the procedure by which those tokens are inserted.
+Sslang's syntax contains \emph{blocks} surrounded by brace tokens \lit*{\{} and \lit*{\}}.
+Blocks consist of other syntactic items separated by some \emph{separator} token.
 
-Sslang's syntax contains \emph{blocks} surrounded by brace tokens \texttt{\{} and \texttt{\}}. Blocks consist of other syntactic items separated by some \emph{separator} token.
+For brevity, sslang allows the programmer to selectively omit braces \lit*{\{} and \lit*{\}}
+as well as certain separator tokens, and instead convey the same information
+using \emph{layout} (indentation).
+
+Layout-sensitive and layout-insensitive syntax are both supported and
+mutually compatible, so the meaning of a layout-sensitive program can always
+be specified by adding braces and tokens to produce some equivalent
+layout-insensitive program.
+This section describes the procedure by which those tokens are inserted.
 
 \subsubsection{Implicit Blocks}
 
-Items in sslang's syntax that are surrounded by braces are called \emph{blocks}, and the enclosed items of a block are delimited by some \emph{separator} token (e.g., \texttt{;}). We call blocks whose tokens are inserted by the scanner \emph{implicit} blocks.
+Items in sslang's syntax that are surrounded by braces are called \emph{blocks},
+and the enclosed items of a block are delimited by some \emph{separator} token (e.g., \lit*{;}).
+We call blocks whose tokens are inserted by the scanner \emph{implicit} blocks.
 
-In an implicit block, items all share the same indentation; visually, they are vertically aligned. The scanner treats lines with greater indentation (that are not part of an inner block) as part of the previous item; these are called \emph{line continuations}. When the scanner comes across lines with less indentation, an implicit block is ended.
+In an implicit block, items all share the same indentation; visually, they are
+vertically aligned.
+The scanner treats lines with greater indentation
+(that are not part of an inner block) as part of the previous item;
+these are called \emph{line continuations}.
+When the scanner comes across lines with less indentation,
+an implicit block is ended.
 
 For instance, a user may write:
 
@@ -94,9 +126,11 @@ loop
 ; h x
 \end{lstlisting}
 
-Implicit blocks are started after \emph{layout} keywords, which come in two flavors: \emph{layout-next-token} keywords, which start blocks at the next token, and \emph{layout-next-line} keywords, which start blocks on the following line.
+Implicit blocks are started after \emph{layout} keywords, which come in two flavors:
+\emph{layout-next-token} keywords, which start blocks at the next token, and
+\emph{layout-next-line} keywords, which start blocks on the following line.
 
-An example of a layout-next-line keyword is \texttt{if}:
+An example of a \emph{layout-next-line} keyword is \lit*{if}:
 
 \begin{lstlisting}
 if f x
@@ -113,58 +147,31 @@ if f x
   }
 \end{lstlisting}
 
-A special layout-next-token that behaves slightly differently than those above is \texttt{do} (whose separator is \texttt{;}). If the scanner comes across \texttt{do} token when it would have otherwise started a block on the next line, the scanner instead \emph{replaces} the \texttt{do} with a \texttt{\{}, and immediately starts an implicit block at the next token.
-
-This allows the programmer to write:
-
-\begin{lstlisting}
-if f x do g x
-\end{lstlisting}
-
-Which will be expanded to:
-
-\begin{lstlisting}
-if f x { g x }
-\end{lstlisting}
-
-In any other case, \texttt{do} behaves like a regular layout-next-token, and is used to start implicit blocks. For instance:
-
-\begin{lstlisting}
-f x do g y
-       g x
-\end{lstlisting}
-
-Is expanded to:
-
-\begin{lstlisting}
-f x do { g y
-       ; g x
-       }
-\end{lstlisting}
-
-Sslang recognizes the following layout-next-token keywords:
+Sslang recognizes the following \emph{layout-next-token} keywords:
 
 \begin{itemize}
-  \item \texttt{loop} with \texttt{;} separating sequenced expressions
-  \item \texttt{=} with \texttt{;} separating sequenced expressions
-  \item \texttt{<-} with \texttt{;} separating sequenced expression
-  \item \texttt{else} with \texttt{;} separating sequenced expression
-  \item \texttt{wait} with \texttt{||} separating sensitized scheduled variables
-  \item \texttt{par} with \texttt{||} separating parallel expressions
-  \item \texttt{let} with \texttt{||} separating mutually recursive definitions
+  \item \lit*{loop} with \lit*{;} separating sequenced expressions
+  \item \lit*{=} with \lit*{;} separating sequenced expressions
+  \item \lit*{else} with \lit*{;} separating sequenced expression
+  \item \lit*{wait} with \lit*{||} separating sensitized scheduled variables
+  \item \lit*{par} with \lit*{||} separating parallel expressions
+  \item \lit*{let} with \lit*{||} separating mutually recursive definitions
 \end{itemize}
 
-And the following layout-next-line keywords:
+And the following \emph{layout-next-line} keywords:
 
 \begin{itemize}
-  \item \texttt{if} with \texttt{;} separating sequenced expressions
-  \item \texttt{while} with \texttt{;} separating sequenced expressions
-  \item \texttt{match} with \texttt{|} separating match arms
+  \item \lit*{if} with \lit*{;} separating sequenced expressions
+  \item \lit*{while} with \lit*{;} separating sequenced expressions
+  \item \lit*{match} with \lit*{|} separating match arms
 \end{itemize}
 
 \subsubsection{Explicit Blocks}
 
-Programmers may also choose to write braces and separators anyway, where allowed by the syntax; these blocks are called \emph{explicit} blocks. Writing explicit blocks effectively turns off the scanner's token insertion for that block (though inner implicit blocks may still be created).
+Programmers may also choose to write braces and separators anyway,
+where allowed by the syntax; these blocks are called \emph{explicit} blocks.
+Writing explicit blocks effectively turns off the scanner's token insertion for
+that block (though inner implicit blocks may still be created).
 
 For instance, if the user writes:
 
@@ -176,7 +183,7 @@ loop {
 }
 \end{lstlisting}
 
-The scanner transforms this into the following token stream:
+The scanner only encloses tokens in the implicit block introduced by \lit*{wait}:
 
 \begin{lstlisting}
 loop {
@@ -187,7 +194,8 @@ loop {
 }
 \end{lstlisting}
 
-Inside of an explicit block, the scanner does not insert separators and ignores indentation (unless an inner block is started). So the following is legal:
+Inside of an explicit block, the scanner does not insert separators and ignores
+indentation (unless an inner block is started). So the following is legal:
 
 \begin{lstlisting}
 loop
@@ -211,9 +219,15 @@ loop {
 h z
 \end{lstlisting}
 
-\subsubsection{Delimited Expressions}
+\subsubsection{Matching Delimiters}
 
-In addition to the braces \texttt{\{\}}, which delimit blocks, sslang also includes other matched delimiters: \texttt{[]} and \texttt{()}. To ensure that any program with matched delimiters remains correctly matched after token insertion, the scanner also keeps track of these delimiter pairs. In particular, if it comes across an explicit closing delimiter, it closes all implicit blocks opened since the corresponding opening delimiter, even if indentation would not have otherwise caused it to do so.
+In addition to the braces \lit*{\{} \lit*{\}}, which surround blocks,
+sslang also includes other matched delimiters: \lit*{[} \lit*{]} and \lit*{(} \lit*{)}.
+To ensure that any program with matched delimiters remains correctly matched
+after token insertion, the scanner also keeps track of these delimiter pairs.
+In particular, if it comes across an explicit closing delimiter, it closes all
+implicit blocks opened since the corresponding opening delimiter, even if
+indentation would not have otherwise caused it to do so.
 
 For instance, the following:
 
@@ -256,133 +270,145 @@ loop
 
 which the parser shall deem a syntax error.
 
-\begin{lstlisting}
-TODO: turn this into \algorithm or at least something that doesn't look like some text adventure game
+\subsubsection{Layout Algorithm}
 
-What kind of token?
+This section describes the layout algorithm the sslang scanner uses
+to insert braces and separators prior to parsing.
+The pseudocode in Algorithm~\ref{alg:layout-algorithm} receives tokens from the
+source program as input, and emits zero or more output tokens for each input
+token.
 
-> newline
+The input token stream consists of only non-whitespace tokens and newline tokens.
+The algorithm assumes that indentation information conveyed by horizontal
+whitespace (spaces and tabs) is attached to all non-whitespace tokens.
+The indentation of any token $t$ is a natural number indicating the column in
+the source text where the first character of $t$ appears, and is denoted by
+$\Delta(t)$.
 
-  About to start new block?
+The scanner maintains a stack of states, where $\sigma_n$ denotes the $n$th
+state from the top of the stack;
+$\sigma_0$ is the state at the top of the stack.
+The scanner updates $\sigma_0$ by pushing and popping states to and from the
+state stack, following a \emph{first-in-first-out} discipline.
+Each state in the state stack falls into one of three categories $\{ B, I, N \}$:
 
-  > yes
+\begin{itemize}
+  \item $B$ means that the scanner is within an explicit block.
+    $B$ states remember the matching delimiter that ends that block.
+    For example, in an explicit block started by \lit*{(}, the matching delimiter is \lit*{)}.
 
-    What is the indentation level of the next non-whitespace token?
+  \item $I$ means that the scanner is within an implicit block.
+    $I$ states remember the separator that separates items of that block, as
+    well as the indentation level of that block.
+    For example, in an implicit block started by a \lit*{par}, $\sigma_0$ is $B$
+    with separator \lit*{||} and the indentation of the first token following the \lit*{par}.
 
-    > equal to or less than previous block
+  \item $N$ means that the scanner is scanning through the rest of a line
+    following a \emph{layout-next-line} keyword.
+    $N$ states remember the separator of the \emph{layout-next-line} keyword.
+    For example, following an \lit*{if}, $\sigma_0$ is $N$ with separator \lit*{;}.
+\end{itemize}
 
-      Error: block indentation level must be greater than before.
+The ``current indentation'' of the scanner is written $\Delta(\sigma_0)$, computed by:
 
-    > greater than previous block
+\begin{equation*}
+  \Delta(\sigma_n) =
+  \begin{cases}
+    i                     & \text{ $\sigma_n$ is $I$ with indentation $i$ } \\
+    \Delta(\sigma_{n+1})  & \text{otherwise}
+  \end{cases}
+\end{equation*}
 
-      What is the next non-whitespace token?
+\begin{algorithm}[H]
 
-      > '{'
+\newcommand{\commentfont}{\relsize{-1}\color{commentcolor}\it}
+\SetCommentSty{commentfont}
+\SetFuncSty{bf}
+\SetArgSty{}
 
-        Scan past that next '{', and start explicit block there.
+% Pythonic pseudocode, get rid of clutter from do, end
+\SetStartEndCondition{ }{}{}%
+\SetKwIF{If}{ElseIf}{Else}{if}{:}{else if}{else:}{}%
+\SetKwBlock{Case}{case}{:}%
+\SetKwSwitch{Switch}{Case}{Other}{switch}{:}{case}{otherwise}{}{}%
+\SetKwFor{While}{while}{:}{}
 
-      > anything else
+\DontPrintSemicolon
+\SetAlgoVlined
+% \SetAlgoNoEnd
 
-        Insert '{' before next token to start implicit block there.
+\SetKwData{CurrentState}{$\sigma_0$}
+\SetKwFunction{Indent}{$\Delta$}
+\SetKwData{CurrentIndent}{\Indent{$\sigma_0$}}
 
-  > no
-
-    What kind of context are we in?
-
-    > Implicit block
-
-      What is the indentation level?
-
-      > less than implicit block
-
-        Insert '}' to end implicit block.
-
-      > same as implicit block
-
-        Insert separator, continue implicit block.
-
-      > greater than implicit block
-
-        Continue (treated as continuation).
-
-
-    > Explicit block (started by '{')
-
-      Continue (user is responsible for managing explicit blocks).
-
-    > Delimited (started by '[' or '(')
-
-      What is the indentation level?
-
-      > equal to or less than block
-
-        Error: continuation level must be greater than before.
-
-      > greater than block
-
-        Continue (treated as continuation).
-
-> 'do'
-
-  About to start a new block on next line?
-
-  > yes
-
-    Give up on starting that new block; instead, replace with '{' and start implicit block at next token.
-
-  > no
-
-    Emit 'do', and try to start a new block with ';' on next token.
-
-> layout token (e.g., 'loop', '=', 'wait')
-
-  Emit token, and try to start a new block with appropriate separator on next token.
-
-> layoutNL token (e.g., 'if', 'while')
-
-  Emit token, and try to start a new block at the next line of the current block.
-
-> '{'
-
-  About to start new block?
-
-  > yes
-
-    Emit '{' to start explicit block at this column.
-
-  > no
-
-    Emit '{' to start explicit block at this column (probably an error, but let that be handled by parser (?)).
-
-> '[' or '('
-
-  About to start new block?
-
-  > yes
-
-    Insert '{' to start implicit block at this column, before emitting this token to start its explicit block.
-
-  > no
-
-    Emit this token to start its explicit block.
-
-> '}' ']' or ')'
-
-  Can the most recent explicit block/delimited expression (if any) be closed by this token?
-
-  > yes
-
-    Insert enough '}' tokens to close all implicit blocks, before emitting this token to close most recent explicit block.
-
-  > no
-
-    Error: mismatched right delimiter.
-
-> anything else
-
-  Emit token.
-
-\end{lstlisting}
+Initialize \CurrentState to $I$ with separator \lit{||} and indentation 1 \;
+\Repeat{end of file has been reached}{
+  Scan to and consume next non-whitespace token $t$ \;
+  \uCase{$t$ is a newline}{
+    Scan to (but don't consume) next non-whitespace token $t'$ \;
+    \While (\tcc*[f]{$t'$ closes an implicit block})
+    {\CurrentState is $I$ and \Indent{$t'$} $<$ \CurrentIndent} {
+      Pop state and emit \lit{\}} \;
+    }
+    \uIf (\tcc*[f]{$t'$ starts a new implicit block item})
+    {\CurrentState is $I$ and \Indent{$t'$} $=$ \CurrentIndent } {
+      Emit separator of \CurrentState \;
+    }
+    \uElseIf (\tcc*[f]{$t'$ is a line continuation})
+    {\CurrentState is $I$ and \Indent{$t'$} $>$ \CurrentIndent } {
+      Do nothing \;
+    }
+    \uElseIf (\tcc*[f]{$t'$ starts a \emph{layout-next-line} block})
+    {\CurrentState is $N$ with separator $s$} {
+      Assert \Indent{$t'$} $>$ \CurrentIndent \;
+      Pop state and emit \lit{\{} \;
+      Push $I$ with separator $s$ and indentation \Indent{$t'$} \;
+    }
+    \ElseIf (\tcc*[f]{$t'$ starts a line in an explicit block})
+    {current state is $B$} {
+      Do nothing \;
+    }
+  }
+  \uCase{$t$ is \lit{(}, \lit{[}, or \lit{\{}} {
+    \If (\tcc*[f]{$t'$ explicitly starts a \emph{layout-next-line} block})
+    {$t$ is \lit{\{} and \CurrentState is $N$} {
+      Pop state \;
+    }
+    Push $B$ with matching delimiter \lit{)}, \lit{]}, or \lit{\}} \;
+    Emit $t$ \;
+  }
+  \uCase{$t$ is \lit{)}, \lit{]}, or \lit{\}}} {
+    \While (\tcc*[f]{implicit block needs to be closed})
+    {\CurrentState is $I$} {
+      Pop state and emit \lit{\}} \;
+    }
+    Assert \CurrentState is $B$ with matching delimiter $t$ \;
+    Pop state and emit $t$ \;
+    % B with non-matching delimiter means something like (}
+    % Otherwise means state was N, which makes no sense
+  }
+  \uCase(\tcc*[f]{e.g., \lit*{loop}}) {$t$ is a \emph{layout-next-token} keyword} {
+    Scan to and consume next non-whitespace token $t'$ \;
+    \uIf(\tcc*[f]{$t'$ starts an explicit block}) {$t'$ is \lit{\{}}{
+      Push $B$ with matching delimiter \lit{\}} \;
+      Emit $t$ \lit{\{} \;
+    }\Else (\tcc*[f]{$t'$ starts an implicit block}) {
+      Assert \Indent{$t'$} $>$ \CurrentIndent \;
+      Push $I$ with separator of $t$ and indentation \Indent{$t'$} \;
+      Emit $t$ \lit{\{} $t'$ \;
+    }
+  }
+  \uCase(\tcc*[f]{e.g., \lit*{if}}) {$t$ is a \emph{layout-next-line} keyword} {
+    Push $N$ with separator of $t$ \;
+    Emit $t$ \;
+  }
+  \Other(\tcc*[f]{$t$ is any plain old token with no implications for layout}){
+    Emit $t$ \;
+  }
+}
+\caption{The layout algorithm.}
+\label{alg:layout-algorithm}
+\end{algorithm}
 
 \subsection{User-defined operators}
 
@@ -903,3 +929,164 @@ main(led : Ref (Sched Bool)) =
 \end{lstlisting}
 
 \end{document}
+
+
+loop
+  f x
+    y
+  g x
+h x
+
+I0 loop P1
+   { I1 f x
+         y
+   ;   g x
+   } I0 ; h x
+
+
+   (    loop
+              wait    x    )
+
+I0 ( B1 loop P2
+         { I2 wait P3 { I3 x } I2 } B1 ) I0
+
+N PendingBlockNL
+I ImplicitBlock
+B Block
+
+-- add this aside from [ScannerContext] state
+X EndingExplicitBlock
+
+
+NOTE:
+To find current block indentation, search up context stack until B of brace (no indentation) or I (take that indentation)
+
+
+any time you find [ or ( delimiter, push B with that delimiter
+
+if you find { in N, pop that state and then push B with {
+    otherwise, just push B with {
+
+if you find close delimiter ], ), or } I, emit }, and pop, then repeat without consuming close delimiter
+
+if you find close delimiter ], ), or } in matching B, emit close delimiter
+  if non-matching B, report syntax error about expecting matching delimiter
+
+if you find close delimiter ], ), or } in N, report syntax error about expecting expression
+
+if you across layout token (e.g., loop), scan to next token;
+  if next token is {, emit {, push B
+  if next token is anything else, make sure indentation of next token is greater than current block indentation, emit {, emit token, push I
+
+if you across layoutNL token (e.g., if), push N on stack
+
+newlines in B are ignored
+
+newlines in N ...
+
+newlines in I ...
+
+
+---
+
+take 2
+
+states:
+
+N PendingBlockNL of separator token
+I ImplicitBlock of separator token and indentation level
+B Block of delimiter token
+
+definitions:
+
+current block indentation := search up context stack until B of brace (no indentation) or I (take that indentation)
+
+horizontal whitespace := spaces, tabs
+
+whitespace := horizontal whitespace + newlines
+
+rules:
+
+next token is newline:
+  scan to next non-whitespace token t but don't consume it
+
+  current state is B:
+    ignore -- explicit newlines don't mean anything in explicit blocks
+
+  current state is I with separator s:
+    if indentation of t > current block indentation:
+      ignore -- this is a line continuation
+
+    if indentation of t < current block indentation:
+      emit '}'
+      pop B from state stack and keep checking
+
+    if indentation of t = current block indentation:
+      emit s
+
+  current state is N with separator s:
+    assert indentation of t > current block indentation
+    push I with separator s and indentation of t
+    emit '{'
+
+next token d is '[' or '(':
+  push B with d
+
+next token is '{':
+  current state is N:
+    pop state
+    push B with '{'
+    emit '{'
+
+  otherwise:
+    push B with '{'
+    emit '{'
+
+next token d is '}', ']', or ')':
+  current state is I:
+    pop state
+    emit '}'
+    unconsume d and repeat
+
+  current state is B with matching delimiter:
+    pop state
+    emit d
+
+  current state is B with non-matching delimiter:
+    syntax error: unmatched delimiter d
+
+  otherwise: (it was N)
+    syntax error: expected expression
+
+next token is layout token l (e.g., 'loop'):
+  scan to next non-whitespace token t and consume it
+
+  t is '{':
+    push B with '{'
+    emit l '{'
+
+  t is anything else:
+    assert indentation of t > current block indentation
+    push I with separator of l and indentation of t
+    emit l '{' t
+
+next token is layoutNL token l (e.g., 'if'):
+  push N with separator of l
+  emit l
+
+
+next token t is anything else:
+  emit t
+
+---
+
+In Haskell, this is actually ok:
+
+  do {(
+return 0)}
+
+loop
+  a (wt
+   x)
+
+so we can't just check the top-most context's indentation level

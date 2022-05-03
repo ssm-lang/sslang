@@ -15,6 +15,7 @@ module IR.IR
   , collectLambda
   , makeLambdaChain
   , indentPretty
+  , extract
   , zipApp
   , unzipApp
   ) where
@@ -84,6 +85,7 @@ data PrimOp
   | PrimBitAnd  -- ^ bitwise-and, i.e., x & y
   | PrimBitOr   -- ^ bitwise-or, i.e., x | y
   | PrimEq      -- ^ equality, i.e., x == y
+  | PrimNeq     -- ^ equality, i.e., x != y
   | PrimGt      -- ^ greater than, i.e., x > y
   | PrimGe      -- ^ greater than or equal to, i.e., x >= y
   | PrimLt      -- ^ less than, i.e., x < y
@@ -144,7 +146,7 @@ data Expr t
   = Var VarId t
   {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
   | Data DConId t
-  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
+  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
   | Lit Literal t
   {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
   | App (Expr t) (Expr t) t
@@ -176,7 +178,7 @@ data Alt
   = AltData DConId [Binder]
   -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
   | AltLit Literal
-  -- ^ @AltLit l e@ matches against literal @d@, producing expression @e@.
+  -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
@@ -380,6 +382,7 @@ instance Pretty PrimOp where
   pretty PrimBitAnd = pretty "&"
   pretty PrimBitOr  = pretty "|"
   pretty PrimEq     = pretty "=="
+  pretty PrimNeq    = pretty "!="
   pretty PrimGt     = pretty ">"
   pretty PrimGe     = pretty ">="
   pretty PrimLt     = pretty "<"

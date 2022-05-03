@@ -70,6 +70,7 @@ import Data.Bifunctor (first)
 -- | Root node of sslang program parser.
 program                               --> Program
   : topDefs                             { Program $1 }
+  | '||' topDefs                        { Program $2 }
   | {- empty -}                         { Program [] }
 
 {- | Top-level definitions.
@@ -262,8 +263,7 @@ Note that do-blocks appear here as an alternative to parenthesizing expressions,
 which the scanner can exploit to insert implicit braces and semicolons.
 -}
 exprBlk                               --> Expr
-  : 'do' '{' expr '}'                   { $3 }
-  | 'loop' '{' expr '}'                 { Loop $3 }
+  : 'loop' '{' expr '}'                 { Loop $3 }
   | 'wait' '{' exprPar '}'              { Wait $3 }
   | 'par' '{' exprPar '}'               { Par $3 }
   | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
@@ -283,8 +283,7 @@ matchArm                              --> (Pat, Expr)
 
 -- | Optional trailing 'else' branch to 'if' statement.
 exprElse                              --> Expr
-  : ';' 'else' '{' expr '}'             { $4 }
-  | 'else' '{' expr '}'                 { $3 }
+  : 'else' '{' expr '}'                 { $3 }
   | {- empty -} %prec NOELSE            { NoExpr }
 
 -- | Expressions with application by juxtaposition.
