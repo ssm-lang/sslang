@@ -171,7 +171,7 @@ desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
 desugarMatchVar :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchVar [] _ _ = error "can't happen"
 desugarMatchVar (u : us) qs def =
-  desugarMatch us [ (ps, substId v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
+  desugarMatch us [ (ps, singleAlias v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
 
 {-
 To make life easier: transform PatWildcard into variable PatId

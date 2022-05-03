@@ -4,12 +4,14 @@
 
 -- | Sanity check test suite for equivalent and unequivalent programs.
 module Tests.DropInferenceSpec where
-import           Sslang.Test
+import           Control.Concurrent             ( yield )
 import           Data.Data                      ( Data
                                                 , Proxy(..)
                                                 )
 import qualified Front
-import           Front.Ast
+import qualified Front.Ast                     as A
+import           Front.ParseOperators           ( parseOperators )
+import           Front.Parser                   ( parseProgram )
 import qualified IR
 import           IR.DropInference               ( insertDropsProgram )
 import qualified IR.IR                         as I
@@ -18,12 +20,18 @@ import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.SubstMagic                  ( substMagic )
 import           IR.Types.Annotated            as I
 import           IR.Types.Poly                 as Poly
-import           Control.Concurrent             ( yield )
+import           Sslang.Test
 
+parseWithoutPatDesugar :: String -> Pass A.Program
+parseWithoutPatDesugar src = do
+  ast  <- parseProgram src
+  astP <- parseOperators ast
+  Front.checkAst def astP
+  return astP
 
 parseFront :: String -> Pass (I.Program I.Type)
 parseFront s = substMagic (Proxy :: Proxy I.Type) <$> do
-  Front.run def s >>= IR.lower def
+  parseWithoutPatDesugar s >>= IR.lower def
 
 parseDrop :: String -> Pass (IR.IR.Program Poly.Type)
 parseDrop s =
