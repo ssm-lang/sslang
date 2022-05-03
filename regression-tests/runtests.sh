@@ -89,7 +89,6 @@ Check() {
     generatedfiles=
 
     # Run the compiler
-    pretty = "--dump-ir-final"
     csource="out/${basename}.c"
     cheader="out/${basename}.h"
     obj="out/${basename}.o"
@@ -120,7 +119,7 @@ Check() {
     resultIr2="out/${basename}-ir2.out"
     diffIr2="out/${basename}-ir2.diff"
     diffIr3="out/${basename}-ir3.diff"
-    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2}"
+    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2} ${resultIr2}"
 
     # TEST: can we pretty print the IR?
     Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
@@ -138,7 +137,7 @@ Check() {
 	Run $CC -c -o "${mainobj}" "${mainsource}" &&
 	Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
 	Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
-    # TEST: does compiled IR produce the same results as compiled source?
+        # TEST: does compiled IR produce the same results as compiled source?
 	Compare "${resultIr2}" "${reference}" "out/${basename}-ir3.diff"
     fi
 
