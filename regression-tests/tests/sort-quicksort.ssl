@@ -1,0 +1,74 @@
+type List
+    Cons Int List
+    Nil
+
+concat (l: List) (ys: List) -> List = 
+    match l
+        Cons x xs = Cons x (concat xs ys)
+        Nil = ys
+
+predr (i1: Int) (i2: Int) -> Int = 
+    i1 >= i2
+
+predl (i1: Int) (i2: Int) -> Int = 
+    i1 < i2
+
+filter (f: Int -> Int) (l: List) -> List =
+    match l
+        Cons i l0 = match (f i) 
+                        1 = Cons i (filter f l0)
+                        _ = filter f l0
+        Nil = Nil
+
+filter2 (f: Int -> Int) (l: List) -> List =
+    match l
+        Cons i l0 = if (f i) { Cons i (filter f l0) } else { filter f l0 }
+        Nil = Nil
+
+quickSort (l: List) -> List = 
+    match l
+        Cons i l0 = 
+            concat (quickSort (filter (predl i) l0))
+                   (Cons i
+                   (quickSort (filter (predr i) l0)))
+        Nil = Nil
+
+quickSort2 (l: List) -> List = 
+    match l
+        Cons i l0 = 
+            concat (quickSort (filter2 (predl i) l0))
+                   (Cons i
+                   (quickSort (filter2 (predr i) l0)))
+        Nil = Nil
+
+print_list2 (out: &Int) (l: List) -> () =
+  match l
+    Cons i l0 =
+      after 1, out <- i
+      wait out
+      after 1, out <- 32
+      wait out
+      print_list2 out l0
+    Nil = ()
+
+print_list (out: &Int) (l: List) -> () =
+    after 1, out <- 91
+    wait out
+    after 1, out <- 32
+    wait out
+
+    print_list2 out l
+
+    after 1, out <- 93
+    wait out
+    after 1, out <- 10
+    wait out
+
+main (in: &Int) (out: &Int) -> () =
+  let l1 = (Cons 102 (Cons 101 (Cons 100 (Cons 99 (Cons 98 (Cons 97 Nil))))))
+  print_list out l1
+  let l2 = quickSort  l1
+  let l3 = quickSort2 l1
+  print_list out l1
+  print_list out l2
+  print_list out l3
