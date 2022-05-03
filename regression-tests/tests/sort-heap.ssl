@@ -1,0 +1,105 @@
+type List
+    Cons Int List
+    Nil
+
+type Tree
+    Node Tree Int Tree
+    Leaf Int
+
+concat (l: List) (ys: List) -> List = 
+    match l
+        Cons x xs = Cons x (concat xs ys)
+        Nil = ys
+
+atTop (t: Tree) -> Int = 
+    match t
+        Leaf a = a
+        Node _ a _ = a
+
+replaceTop (t: Tree) (a: Int) -> Tree =
+    match t
+        Leaf _ = Leaf a
+        Node l _ r = heapify (Node l a r)
+
+adjustLeft (t: Tree) -> Tree = 
+    match t
+        Leaf a = Leaf a
+        Node l a r = match ((atTop l) <= a)
+                        1 = Node l a r
+                        _ = Node (replaceTop l a) (atTop l) r
+
+adjustRight (t: Tree) -> Tree = 
+    match t
+        Leaf a = Leaf a
+        Node l a r = match ((atTop r) <= a)
+                        1 = Node l a r
+                        _ = Node l (atTop r) (replaceTop l a) 
+
+doTop (t: Tree) -> Tree =
+    match t
+        Leaf a = Leaf a
+        Node l a r = match ((atTop l) > (atTop r))
+                        1 = adjustLeft (Node l a r)
+                        _ = adjustRight (Node l a r)
+
+heapify (t: Tree) -> Tree =
+    match t
+        Leaf a = Leaf a
+        Node l a r = doTop (Node (heapify l) a (heapify r))
+
+inOrder (t: Tree) -> List = 
+    match t
+        Leaf a = Cons a Nil
+        Node tLeft a tRight = concat 
+                                (concat (inOrder tLeft) (Cons a Nil))
+                                (inOrder tRight) 
+
+preOrder (t: Tree) -> List = 
+    match t
+        Leaf a = Cons a Nil
+        Node tLeft a tRight = concat 
+                                (Cons a (inOrder tLeft))
+                                (inOrder tRight)
+
+postOrder (t: Tree) -> List = 
+    match t
+        Leaf a = Cons a Nil
+        Node tLeft a tRight = concat 
+                                (concat (inOrder tLeft) (inOrder tRight))
+                                (Cons a Nil)
+                                
+
+print_list2 (out: &Int) (l: List) -> () =
+  match l
+    Cons i l0 =
+      after 1, out <- i
+      wait out
+      after 1, out <- 32
+      wait out
+      print_list2 out l0
+    Nil = ()
+
+print_list (out: &Int) (l: List) -> () =
+    after 1, out <- 91
+    wait out
+    after 1, out <- 32
+    wait out
+
+    print_list2 out l
+
+    after 1, out <- 93
+    wait out
+    after 1, out <- 10
+    wait out
+
+
+main (in: &Int) (out: &Int) -> () =
+  let node1 = Node (Leaf 97) 98 (Leaf 99)
+  let node2 = Node (Leaf 101) 102 (Leaf 103)
+  let heap1 = Node node1 100 node2
+  let heap2 = heapify heap1
+  let l1 = inOrder heap1
+  let l2 = inOrder heap2
+  print_list out l1
+  print_list out l2
+  
