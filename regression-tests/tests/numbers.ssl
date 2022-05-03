@@ -1,0 +1,147 @@
+// incomplete big number library
+type Bool
+    True
+    False
+
+type Digit
+    Zero
+    One
+    Two
+    Three
+    Four
+    Five
+    Six
+    Seven
+    Eight
+    Nine
+
+type Number
+    Number List
+
+type List
+    Cons Digit List
+    Nil
+
+btos b : Bool -> Int =
+    match b
+          False = 70
+          True = 84
+
+dtoc (n : Digit) -> Int =
+    match n
+          Zero = 48
+          One = 49
+          Two = 50
+          Three = 51
+          Four = 52
+          Five = 53
+          Six = 54
+          Seven = 55
+          Eight = 56
+          Nine = 57
+          
+
+eqZero n : Digit -> Bool =
+    match n
+          Zero = True
+          _ = False
+
+eqOne n : Digit -> Bool =
+    match n
+          One = True
+          _ = False
+
+eqTwo n : Digit -> Bool =
+    match n
+          Two = True
+          _ = False
+
+eqThree n : Digit -> Bool =
+    match n
+          Three = True
+          _ = False
+
+eqFour n : Digit -> Bool =
+    match n
+          Four = True
+          _ = False
+
+eqFive n : Digit -> Bool =
+    match n
+          Five = True
+          _ = False
+
+eqSix n : Digit -> Bool =
+    match n
+          Six = True
+          _ = False
+
+eqSeven n : Digit -> Bool =
+    match n
+          Seven = True
+          _ = False    
+
+eqEight n : Digit -> Bool =
+    match n
+          Eight = True
+          _ = False
+
+eqNine n : Digit -> Bool =
+    match n
+          Nine = True
+          _ = False   
+
+eqDigit (n : Digit) (n2 : Digit) -> Bool =
+    match n
+          Zero = eqZero n2
+          One = eqOne n2
+          Two = eqTwo n2
+          Three = eqThree n2
+          Four = eqFour n2
+          Five = eqFive n2
+          Six = eqSix n2
+          Seven = eqSeven n2
+          Eight = eqEight n2
+          Nine = eqNine n2
+
+eqNumber (n : Number) (n2 : Number) -> Bool =
+    match n
+          Number lst = match lst
+                             Nil = match n2
+                                         Number lst2 = match lst2
+                                                             Nil = True
+                                                             _ = False
+                                         _ = False
+                             Cons num tl = match n2
+                                                 Number lst2 = match lst2
+                                                                     Cons num2 tl2 = match (eqDigit num num2)
+                                                                                           True = match (eqNumber (Number  tl) (Number  tl2))
+                                                                                                        True = True
+                                                                                                        _ = False
+                                                                                           _ = False
+                                                                     _ = False          
+                                                 _ = False
+                             _ = False
+          _ = False
+
+print (cout : & Int) (c : Int) -> () =
+    after 10 , (cout : & Int) <- c  
+    wait (cout : & Int)
+
+main (cint : & Int) ( cout : & Int ) -> () =
+    let x = Number  (Cons One (Cons Two (Cons Four Nil)))   // 124
+    let y = Number (Cons Five (Cons Five (Cons Zero Nil)))  // 125
+    print cout (btos (eqNumber  x x))
+    print cout (btos (eqNumber x y))
+    
+
+        
+
+        
+
+
+
+
+
+
+        
