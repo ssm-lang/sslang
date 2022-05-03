@@ -4,12 +4,14 @@
 
 -- | Sanity check test suite for equivalent and unequivalent programs.
 module Tests.DropInferenceSpec where
-import           Sslang.Test
+import           Control.Concurrent             ( yield )
 import           Data.Data                      ( Data
                                                 , Proxy(..)
                                                 )
 import qualified Front
-import           Front.Ast
+import qualified Front.Ast                     as A
+import           Front.ParseOperators           ( parseOperators )
+import           Front.Parser                   ( parseProgram )
 import qualified IR
 import           IR.DropInference               ( insertDropsProgram )
 import qualified IR.IR                         as I
@@ -18,12 +20,18 @@ import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.SubstMagic                  ( substMagic )
 import           IR.Types.Annotated            as I
 import           IR.Types.Poly                 as Poly
-import           Control.Concurrent             ( yield )
+import           Sslang.Test
 
+parseWithoutPatDesugar :: String -> Pass A.Program
+parseWithoutPatDesugar src = do
+  ast  <- parseProgram src
+  astP <- parseOperators ast
+  Front.checkAst def astP
+  return astP
 
 parseFront :: String -> Pass (I.Program I.Type)
 parseFront s = substMagic (Proxy :: Proxy I.Type) <$> do
-  Front.run def s >>= IR.lower def
+  parseWithoutPatDesugar s >>= IR.lower def
 
 parseDrop :: String -> Pass (IR.IR.Program Poly.Type)
 parseDrop s =
@@ -115,36 +123,38 @@ spec = do
 
   it "drop inference in pattern matching" $ do
     let undropped = parseDrop [here|
-        type MyBool 
-          MyFalse Int Int
-          MyTrue Int
+        type MyADT
+          MyDCon1 Int Int
+          MyDCon2 Int
+          MyDCon3 MyADT
 
-        x = MyTrue 30
+        x = MyDCon2 30
         top = match x
-                MyTrue fst = fst
-                MyFalse fst snd = snd
+                MyDCon2 fst = fst
+                MyDCon1 fst snd = snd
                 _ = 69
         |]
     let dropped = parseNoDrop [here|
-        type MyBool 
-          MyFalse Int Int
-          MyTrue Int
+        type MyADT
+          MyDCon1 Int Int
+          MyDCon2 Int
+          MyDCon3 MyADT
 
-        x = MyTrue 30
+        x = MyDCon2 30
         top = match x
-                MyTrue fst = 
+                MyDCon2 fst =
                   let _ = dup fst
                   let anon0_alt_data = fst
                   let _ = drop fst
                   anon0_alt_data
-                MyFalse fst snd = 
+                MyDCon1 fst snd =
                   let _ = dup fst
                   let _ = dup snd
                   let anon2_alt_data = snd
                   let _ = drop fst
                   let _ = drop snd
                   anon2_alt_data
-                _ = 
+                _ =
                   let _ = dup x
                   let anon4_alt_default = 69
                   let _ = drop x
