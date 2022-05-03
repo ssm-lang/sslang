@@ -171,7 +171,7 @@ desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
 desugarMatchVar :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
 desugarMatchVar [] _ _ = error "can't happen"
 desugarMatchVar (u : us) qs def =
-  desugarMatch us [ (ps, singleAlias v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
+  desugarMatch us [ (ps, substId v u e) | (A.PatId v : ps, e) <- qs ] def -- INFO: is this v, u order correct?
 
 {-
 To make life easier: transform PatWildcard into variable PatId
@@ -288,6 +288,57 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
     (A.PatLit _, A.PatLit _) -> True
     (A.PatTup _, A.PatTup _) -> True
     _                        -> False
+
+substId :: Identifier -> Identifier -> A.Expr -> A.Expr
+substId old new = substExpr
+ where
+  -- shadowPat (A.PatWildcard) = False
+  -- shadowPat (A.PatId i) = old == i
+  -- shadowPat (A.PatLit _) = False
+  -- shadowPat (A.PatAs i p) = old == i || shadowPat p
+  -- shadowPat (A.PatTup ps) = any shadowPat ps
+  -- shadowPat (A.PatApp ((A.PatId _):ps)) = any shadowPat ps
+  -- shadowPat (A.PatApp _) = error "can't happen"
+  -- shadowPat (A.PatAnn _ p) = shadowPat p
+  substOpRegion (A.NextOp i e opRegion) = A.NextOp
+    (if i == old then new else old)
+    (substExpr e)
+    (substOpRegion opRegion)
+  substOpRegion A.EOR = A.EOR
+  substExpr e@(A.Id  i       ) = if i == old then A.Id new else e
+  substExpr e@(A.Lit _       ) = e
+  substExpr (  A.Apply  e1 e2) = A.Apply (substExpr e1) (substExpr e2)
+  substExpr (  A.Lambda ps e ) = A.Lambda ps (substExpr e)
+  substExpr (A.OpRegion e opRegion) =
+    A.OpRegion (substExpr e) (substOpRegion opRegion)
+  substExpr A.NoExpr = A.NoExpr
+  substExpr (A.Let ds e) =
+    -- let shadowed [] = False
+    --     shadowed (x:xs) = isDefining x || shadowed xs
+    --     isDefining (A.DefFn i _ _ _) = i == old
+    --     isDefining (A.DefPat _ _) = undefined
+    let substDef (A.DefFn i ps typfn body) =
+          A.DefFn i ps typfn (substExpr body)
+        substDef (A.DefPat ps body) = A.DefPat ps (substExpr body)
+    -- in  if shadowed ds then A.Let ([undefined{-substDef d-} | d <- ds]) (substExpr e)
+    --                    else undefined
+    in  A.Let (map substDef ds) (substExpr e)
+  substExpr (A.While e1 e2) = A.While (substExpr e1) (substExpr e2)
+  substExpr (A.Loop e     ) = A.Loop (substExpr e)
+  substExpr (A.Par  es    ) = A.Par (map substExpr es)
+  substExpr (A.IfElse e1 e2 e3) =
+    A.IfElse (substExpr e1) (substExpr e2) (substExpr e3)
+  substExpr (A.After e1 e2 e3) =
+    A.After (substExpr e1) (substExpr e2) (substExpr e3)
+  substExpr (A.Assign     e1 e2    ) = A.Assign (substExpr e1) (substExpr e2)
+  substExpr (A.Constraint e  typann) = A.Constraint (substExpr e) typann
+  substExpr (A.Wait es             ) = A.Wait (map substExpr es)
+  substExpr (A.Seq e1 e2           ) = A.Seq (substExpr e1) (substExpr e2)
+  substExpr A.Break                  = A.Break
+  substExpr (A.Match e arms) =
+    let substArm (p, body) = (p, substExpr body)
+    in  A.Match (substExpr e) (map substArm arms)
+  substExpr (A.Return e) = A.Return (substExpr e)
 
 singleLet :: Identifier -> A.Expr -> A.Expr -> A.Expr
 singleLet i e = A.Let [A.DefFn i [] A.TypNone e]
