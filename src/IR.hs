@@ -6,11 +6,14 @@ compiler.
 -}
 module IR where
 
-import           Common.Compiler
+import           Common.Compiler                ( MonadError(throwError)
+                                                , Pass
+                                                , dump
+                                                , runPass
+                                                )
 import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
-
 import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
 import qualified IR.TypeChecker                as TC
@@ -20,10 +23,13 @@ import qualified IR.Types.Poly                 as Poly
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
+import           IR.DropInference               ( insertDropsProgram )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-import           IR.DropInference               ( insertDropsProgram )
+import           IR.SequentializeLet            ( sequentializeLet )
+
 import           Control.Monad                  ( when )
+import           Data.Proxy                     ( Proxy(..) )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -72,8 +78,8 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option "" ["only-hm"] (NoArg $ setHM) "Only run HM type inference"
-  , Option "" ["only-tc"] (NoArg $ setTC) "Only run type checker"
+  , Option "" ["only-hm"] (NoArg setHM) "Only run HM type inference"
+  , Option "" ["only-tc"] (NoArg setTC) "Only run type checker"
   ]
   where setMode m o = o { mode = m }
 
@@ -93,9 +99,10 @@ throw an error.
 -}
 ann2Class :: Options -> I.Program Ann.Type -> Pass (I.Program Cls.Type)
 ann2Class opt ir = do
+  sir        <- sequentializeLet (Proxy :: Proxy Ann.Type) ir
   irInferred <- do
-    let irHMInferred = HM.inferProgram ir
-        irTCInferred = TC.inferProgram ir
+    let irHMInferred = HM.inferProgram sir
+        irTCInferred = TC.inferProgram sir
     case tiType opt of
       HMOnly -> irHMInferred
       TCOnly -> irTCInferred

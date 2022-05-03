@@ -45,6 +45,8 @@ import           Data.Generics                  ( Data(..)
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
 
+import Debug.Trace
+
 {- | Top-level compilation unit.
 
 @t@ is the type system in use, e.g., "IR.Types.Flat"
@@ -240,7 +242,7 @@ makeLetChain defs body t = foldr chain body defs where chain d b = Let d b t
 
 -- | Report the set of free identifiers used by some 'Expr'.
 usedFreeVars :: Data t => Proxy t -> Expr t -> S.Set VarId
-usedFreeVars p = everythingWithContext mempty (<>) getVarQ
+usedFreeVars p = trace "usedFreeVars" $ everythingWithContext mempty (<>) getVarQ
  where
   -- | Generic query to obtain free vars given a context of bound vars
   getVarQ :: GenericQ (S.Set VarId -> (S.Set VarId, S.Set VarId))
