@@ -2053,8 +2053,49 @@ instance GHC.Base.Functor IR.LambdaLift.LiftFn
 
 module IR.DropInference
 
+-- | Inserting State.
+data InsertState
+InsertState :: Set VarId -> Set VarId -> [(VarId, Expr Type)] -> Int -> InsertState
+[globScope] :: InsertState -> Set VarId
+[currScope] :: InsertState -> Set VarId
+[newDrops] :: InsertState -> [(VarId, Expr Type)]
+[anonCount] :: InsertState -> Int
+
+-- | Insert Monad.
+newtype InsertFn a
+InsertFn :: StateT InsertState Pass a -> InsertFn a
+
+-- | Run a InsertFn computation.
+runInsertFn :: InsertFn a -> Pass a
+
+-- | Get a fresh variable name.
+getFresh :: String -> InsertFn VarId
+
+-- | Make a drop primitive with unit type.
+makeDrop :: Expr Type -> (Maybe a, Expr Type)
+
+-- | Make a dup primitive with actual type.
+makeDup :: Expr Type -> (Maybe a, Expr Type)
+
+-- | Given <tt>a</tt> and <tt>b</tt>, construct <tt>a ; b</tt> (i.e.,
+--   <tt>let _ = a ; b</tt>).
+seqExpr :: (Maybe VarId, Expr a) -> Expr a -> Expr a
+
+-- | Given <tt>[a1 .. an]</tt> and <tt>b</tt>, construct <tt>a1 ; .. ; an ;
+--   b</tt>.
+seqExprs :: [(Maybe VarId, Expr a)] -> Expr a -> Expr a
+
 -- | Entry-point to insert dup/drops.
 insertDropsProgram :: Program Type -> Pass (Program Type)
+
+-- | Entry point for top-level expressions.
+insertDropTop :: (VarId, Expr Type) -> InsertFn (VarId, Expr Type)
+
+-- | Entry-point to inserting into expressions.
+insertDropExpr :: Expr Type -> InsertFn (Expr Type)
+
+-- | Entry-point to inserting into pattern-matching arms.
+insertDropAlt :: (Alt, Expr Type) -> Expr Type -> InsertFn (Alt, Expr Type)
 instance Control.Monad.State.Class.MonadState IR.DropInference.InsertState IR.DropInference.InsertFn
 instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.DropInference.InsertFn
 instance Control.Monad.Fail.MonadFail IR.DropInference.InsertFn
