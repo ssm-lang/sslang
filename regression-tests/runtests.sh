@@ -123,21 +123,17 @@ Check() {
 
     # TEST: can we pretty print the IR?
     Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
-    # TEST: can pretty printed IR be read in?
+    # TEST: can pretty printed IR be read back in?
     Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
-    # TEST: is the input IR the same as the output IR?
-    if [ -f "${ir2}" ] ; then
-	Compare "${ir1}" "${ir2}" "out/${basename}-ir2.diff"
-    fi &&
     # TEST: can we fully compile pretty printed IR?
-    Run $SSLC "${ir1}" ">" "out/${basename}-ir2.c" &&
+    Run $SSLC "${ir2}" ">" "out/${basename}-ir2.c" &&
     Run $CC -c -o "${objIr2}" "${csourceIr2}" &&
     if [ -f "${mainsource}" ] ; then
 	NoteGen "${ir1} ${ir2} ${objIr2} ${execIr2} ${result-ir2} ${diff-ir3} ${diff-ir2}"
 	Run $CC -c -o "${mainobj}" "${mainsource}" &&
 	Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
 	Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
-        # TEST: does compiled IR produce the same results as compiled source?
+    # TEST: does compiled IR produce the same results as compiled source?
 	Compare "${resultIr2}" "${reference}" "out/${basename}-ir3.diff"
     fi
 

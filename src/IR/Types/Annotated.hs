@@ -15,7 +15,6 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , IsUnit(isUnit)
                                                 , TypeSystem(..)
                                                 )
 
@@ -63,7 +62,3 @@ instance Pretty TypeAnnote where
   pretty (TBuiltin t) = pretty t
   pretty (TCon t ts ) = parens $ hsep (pretty t : map pretty ts)
   pretty (TVar v    ) = pretty v
-
-instance IsUnit TypeAnnote where
-  isUnit (TBuiltin Unit) = True
-  isUnit _               = False

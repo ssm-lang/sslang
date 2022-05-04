@@ -367,7 +367,6 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Lambda a b  _) = pretty "fun" <+> pretty a <+> braces (pretty b)
   pretty (Match  s as _) = pretty "match" <+> pretty s <+> arms
    where
-    -- Where to add binder? See prettyBinder.
     arms = block bar (map arm as)
     arm (a, e) = pretty a <+> drarrow <+> braces (pretty e)
   pretty (Prim New   [r] _) = pretty "new" <+> pretty r

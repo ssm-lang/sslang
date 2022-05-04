@@ -57,15 +57,7 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Ref t       ) = pretty "&" <> pretty t
   pretty (Arrow a b   ) = pretty a <+> rarrow <+> pretty b
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
-  pretty (Integral _  ) = pretty "Int"
-  -- pretty (Ref t       ) = parens $ pretty "&" <> pretty t
-  -- pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
-  -- pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
-  -- pretty (Integral s  ) = pretty $ "Int" ++ show s
-
--- | helper typeclass for pritty printing
-class Pretty t => IsUnit t where
-  isUnit ::  t -> Bool
+  pretty (Integral _  ) = pretty "Int" -- ++ show s
 
 {- | A type system must allow us to construct and access underlying builtins.
 

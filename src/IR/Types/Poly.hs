@@ -39,7 +39,6 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 import           IR.Types.TypeSystem            ( Builtin(..)
-                                                , IsUnit(isUnit)
                                                 , TypeSystem(..)
                                                 )
 
@@ -57,10 +56,6 @@ instance TypeSystem Type where
   injectBuiltin _            = Nothing
 
 instance Pretty Type where
-  pretty (TBuiltin b  ) = pretty b
+  pretty (TBuiltin b ) = pretty b
   pretty (TCon tcon _) = pretty tcon -- parens (hsep $ pretty tcon : map pretty ts)
-  pretty (TVar tvar   ) = pretty tvar
-
-instance IsUnit Type where
-  isUnit (TBuiltin Unit) = True
-  isUnit _               = False
+  pretty (TVar tvar  ) = pretty tvar
