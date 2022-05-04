@@ -139,10 +139,13 @@ spec = do
       |]
     it "rejects identifiers across match arms" $ do
       doScope [here|
+       type Either
+         Left Int
+         Right Int
        f_ =
-          match 3
-            a = a
-            b = a
+          match Left 3
+            Left a = a
+            Right b = a
       |]
         `shouldFailWith` ScopeError "a is not defined in second match arm"
     it "rejects leaked pattern-matched identifiers" $ do
@@ -293,17 +296,20 @@ spec = do
       doScope [here|
         type Foo F
           Foo F
-      |] `shouldFailWith` NameError "type parameter 'F' must not be capitalized"
+      |]
+        `shouldFailWith` NameError "type parameter 'F' must not be capitalized"
     it "requires type parameters to be quantified in type definitions" $ do
       doScope [here|
         type Foo b
           Foo a
-      |] `shouldFailWith` ScopeError "type parameter 'a' is not defined"
+      |]
+        `shouldFailWith` ScopeError "type parameter 'a' is not defined"
     it "rejects repeated type parameters" $ do
       doScope [here|
         type Foo a a
           Foo a
-      |] `shouldFailWith` ScopeError "type parameter 'a' was specified twice"
+      |]
+        `shouldFailWith` ScopeError "type parameter 'a' was specified twice"
 
   describe "scoping data constructors" $ do
     it "supports data constructor matches" $ do
@@ -337,12 +343,15 @@ spec = do
         type Foo a
           Foo a
           Foo a
-      |] `shouldFailWith` ScopeError "data constructor 'Foo' was defined twice"
+      |]
+        `shouldFailWith` ScopeError "data constructor 'Foo' was defined twice"
     it "rejects data constructors named like variables" $ do
       doScope [here|
         type Foo a
           foo a
-      |] `shouldFailWith` NameError "data constructor 'foo' must begin with upper case"
+      |]
+        `shouldFailWith` NameError
+                           "data constructor 'foo' must begin with upper case"
 
   describe "scoping redefinitions and shadowing" $ do
     it "suppors local variable shadowing" $ do
@@ -353,10 +362,13 @@ spec = do
       |]
     it "supports the same name across different branches" $ do
       shouldPass $ doScope [here|
+        type Either
+          Left Int
+          Right Int
         f x =
-          match x
-            a = a
-            a = a
+          match Left 3
+            Left a = a
+            Right a = a
       |]
     it "supports match shadowing" $ do
       shouldPass $ doScope [here|

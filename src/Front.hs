@@ -14,7 +14,7 @@ import qualified Front.Ast                     as A
 
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
-import qualified Front.Pattern.Anomaly         as Anomaly
+import qualified Front.Pattern                 as Pattern
 import           Front.Scanner                  ( scanTokens )
 import           Front.Scope                    ( scopeProgram )
 import           Front.Token                    ( prettyTokens )
@@ -78,15 +78,16 @@ parseAst opt src = do
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
   -- TODO: other desugaring
+  Pattern.checkAnomaly astP
+  astD <- Pattern.desugarProgram astP
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astP
-  return astP
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
+  return astD
 
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
   scopeProgram ast
-  Anomaly.checkProgram ast
 
 -- | Front end compiler stage.
 run :: Options -> String -> Pass A.Program
