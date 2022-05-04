@@ -43,15 +43,18 @@ data TIType
  | Both               -- ^ Run both HM type Inference and type checker
  deriving (Eq, Show)
 
+type DupDrop = Bool   -- ^ Flag to run with dup/drop inference
+
 -- | Compiler options for the IR compiler stage.
 data Options = Options
-  { mode   :: Mode
-  , tiType :: TIType
+  { mode    :: Mode
+  , tiType  :: TIType
+  , dupDrop :: DupDrop
   }
   deriving (Eq, Show)
 
 instance Default Options where
-  def = Options { mode = Continue, tiType = Both }
+  def = Options { mode = Continue, tiType = Both, dupDrop = False }
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
@@ -72,10 +75,13 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option "" ["only-hm"] (NoArg $ setHM) "Only run HM type inference"
-  , Option "" ["only-tc"] (NoArg $ setTC) "Only run type checker"
+  , Option "" ["only-hm"]  (NoArg $ setHM)    "Only run HM type inference"
+  , Option "" ["only-tc"]  (NoArg $ setTC)    "Only run type checker"
+  , Option "" ["dup-drop"] (NoArg setDropInf) "run with drop inference"
   ]
-  where setMode m o = o { mode = m }
+ where
+  setMode m o = o { mode = m }
+  setDropInf o = o { dupDrop = True }
 
 -- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
 lower :: Options -> A.Program -> Pass (I.Program Ann.Type)
@@ -115,19 +121,17 @@ poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
   dConsGone <- dConToFunc ir
   irLifted  <- liftProgramLambdas dConsGone
-  when (mode opt == DumpIRLifted) $ dump irLifted
-  when (mode opt == DumpIRFinal)
-    $ (throwError . Dump . show) (I.indentPretty irLifted)
-  return irLifted
+  irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
+  when (mode opt == DumpIRLifted) $ throwError . Dump . show $ I.fmtPretty
+    irFinal
+  when (mode opt == DumpIRFinal) $ throwError . Dump . show $ I.fmtPretty
+    irFinal
+  return irFinal
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)
 run opt prg =
-  lower opt prg
-    >>= ann2Class opt
-    >>= class2Poly opt
-    >>= dropInf
-    >>= poly2Poly opt
+  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Poly opt
 
 -- | Helper function to set ti type to HM-only
 setHM :: Options -> Options

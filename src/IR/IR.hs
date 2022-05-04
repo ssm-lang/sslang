@@ -14,7 +14,7 @@ module IR.IR
   , wellFormed
   , collectLambda
   , makeLambdaChain
-  , indentPretty
+  , fmtPretty
   , extract
   , zipApp
   , unzipApp
@@ -320,9 +320,39 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
 
+{- | Pretty Print the IR
+
+src/IR.hs:          fmtPretty   
+
+                        |
+                        |
+                        v
+
+src/IR/IR.hs:          fmt       // FMT type class
+
+                        |
+                        |
+                        v
+
+src/IR/IR.hs:         pretty     // Pretty type class
+                                 
+                        |        
+                        |        
+                        v        
+
+                       AST
+
+-}
+
+-- | Pretty Typeclass: translates IR into a one to one Doc representation
 instance Pretty t => Pretty (Program t) where
   pretty Program { programDefs = ds } = vsep $ map pretty ds
   -- TODO: how to represent entry point?
+
+-- | pretty print a binder, which is an alias for Maybe Varid
+prettyBinder :: Binder -> Doc ann
+prettyBinder (Just varid) = pretty varid
+prettyBinder _            = pretty '_'
 
 instance Pretty t => Pretty (Expr t) where
   pretty (Var  v _  ) = pretty v
@@ -337,7 +367,7 @@ instance Pretty t => Pretty (Expr t) where
   pretty (Lambda a b  _) = pretty "fun" <+> pretty a <+> braces (pretty b)
   pretty (Match  s as _) = pretty "match" <+> pretty s <+> arms
    where
-    -- Where to add binder?
+    -- Where to add binder? See prettyBinder.
     arms = block bar (map arm as)
     arm (a, e) = pretty a <+> drarrow <+> braces (pretty e)
   pretty (Prim New   [r] _) = pretty "new" <+> pretty r
@@ -388,76 +418,91 @@ instance Pretty PrimOp where
   pretty PrimLt     = pretty "<"
   pretty PrimLe     = pretty "<="
 
--- | Whitespace typeclass
-class (Pretty a) => WS a where
-  ws :: a -> Doc ann
+{- | Format Typeclass
 
-instance WS Alt where
-  ws (AltData a b        ) = pretty a <+> hsep (map pretty b)
-  ws (AltLit     a       ) = pretty a
-  ws (AltDefault (Just v)) = pretty v
-  ws (AltDefault Nothing ) = pretty '_'
+Runs on top of pretty typeclass to make Doc output more readable.
+Adds 
+- indentation and line breaks
+- parens where necessary
+Omits 
+- let _ =
+- type annotations
+Reverts
+- curried funcs of one arg back to multiple arg funcs
+-}
 
--- | Pretty print each node of AST with appropriate whitespace
-instance Pretty t =>WS (Expr t) where
-  ws a@App{} = ws nm <+> hsep (mandParens <$> args)
+class (Pretty a) => FMT a where
+  fmt :: a -> Doc ann
+
+instance FMT Alt where
+  fmt (AltData a b        ) = pretty a <+> hsep (map prettyBinder b)
+  fmt (AltLit     a       ) = pretty a
+  fmt (AltDefault (Just v)) = pretty v
+  fmt (AltDefault Nothing ) = pretty '_'
+
+instance Pretty t => FMT (Expr t) where
+  fmt a@App{} = fmt nm <+> hsep (mandParens <$> args)
    where
     (nm, args) = unzipApp a
+    -- insert mandatory parens
     mandParens :: Pretty t => (Expr t, t) -> Doc ann
-    mandParens (v@(Var _ _), _) = ws v  -- variables
-    mandParens (l@(Lit _ _), _) = ws l  -- literals 
-    mandParens (e          , _) = parens (ws e) -- everything else must have parens
-  ws (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
-  ws (Var v _                  ) = pretty v
-  ws (Lambda a              b _) = pretty "fun" <+> pretty a <+> ws b
-  ws (Let    [(Nothing, e)] b _) = ws e <> line <> ws b
-  ws (Let    as             b _) = letexpr
+    mandParens (v@(Var _ _), _) = fmt v  -- variables
+    mandParens (l@(Lit _ _), _) = fmt l  -- literals 
+    mandParens (e          , _) = parens (fmt e)
+  fmt (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
+  fmt (Var v _                  ) = pretty v
+  fmt (Lambda a              b _) = pretty "fun" <+> pretty a <+> fmt b
+  fmt (Let    [(Nothing, e)] b _) = fmt e <> line <> fmt b
+  fmt (Let    as             b _) = letexpr
    where
-    letexpr = pretty "let" <+> vsep (map def as) <> line <> ws b
-    def (Just v , e) = pretty v <+> equals <+> align (ws e)
-    def (Nothing, e) = pretty '_' <+> equals <+> align (ws e)
-  ws (Prim After [d, l, r] _) = ae
-    where ae = pretty "after" <+> ws d <> comma <+> ws l <+> larrow <+> ws r
-  ws (Prim  Assign [l, r] _) = parens $ ws l <+> larrow <+> ws r
-  ws (Match s      as     _) = pretty "match" <+> pretty s <> line <> arms
+    letexpr = pretty "let" <+> vsep (map def as) <> line <> fmt b
+    def (Just v , e) = pretty v <+> equals <+> align (fmt e)
+    def (Nothing, e) = pretty '_' <+> equals <+> align (fmt e)
+  fmt (Prim After [d, l, r] _) = ae
+    where ae = pretty "after" <+> fmt d <> comma <+> fmt l <+> larrow <+> fmt r
+  fmt (Prim  Assign [l, r] _) = parens $ fmt l <+> larrow <+> fmt r
+  fmt (Match s      as     _) = pretty "match" <+> pretty s <> line <> arms
    where
-    -- Where to add binder?
     arms = vsep (map (indent 6 . arm) as)
     arm :: Pretty t => (Alt, Expr t) -> Doc ann
-    arm (a, e) = ws a <+> equals <+> align (ws e)
-  ws (Prim Loop [b] _) = pretty "loop" <> line <> indent 1 (ws b)
+    arm (a, e) = fmt a <+> equals <+> align (fmt e)
+  fmt (Prim Loop        [b]    _) = pretty "loop" <> line <> indent 1 (fmt b)
+  fmt (Prim (PrimOp po) [l, r] _) = fmt l <+> pretty po <+> fmt r
   -- everything else
-  ws a                 = pretty a
+  fmt a                           = pretty a
 
-indentPretty :: (TypeSystem t, Pretty t) => Program t -> Doc ann
-indentPretty Program { programDefs = ds, typeDefs = tys } = tys'
-  <> vsep (map ((<> line) . prettyFunc) ds)
+-- | Generates readable Doc representation of an IR Program
+fmtPretty :: (TypeSystem t, Pretty t) => Program t -> Doc ann
+fmtPretty Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
  where
-  tys' = foldl prettyTypDef (pretty "") tys
-  prettyTypDef :: Pretty t => Doc ann -> (TConId, TypeDef t) -> Doc ann
-  prettyTypDef accDoc (tcon, TypeDef { variants = vars }) = accDoc <> vars'
-   where
-    vars' =
-      pretty "type"
-        <+> pretty tcon
-        <+> line
-        <>  indent 1 (vsep $ map prettyTypInst vars)
-        <+> line
-    prettyTypInst :: (Pretty t) => (DConId, TypeVariant t) -> Doc ann
-    prettyTypInst (dcon, VariantNamed args) =
-      pretty dcon <+> hsep (pretty . snd <$> args)
-    prettyTypInst (dcon, VariantUnnamed args) =
-      pretty dcon <+> hsep (pretty <$> args)
-  prettyFunc :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
-  prettyFunc (v, l@(Lambda _ _ ty)) =
-    pretty v <+> typSig <+> pretty "=" <+> line <> funcBody
-   where
-    funcBody        = indent 2 (ws body)
-    (argIds, body ) = collectLambda l
-    (argTys, retTy) = collectArrow ty
-    args            = zipWith
-      (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
-      argIds
-      argTys
-    typSig = hsep args <+> rarrow <+> pretty retTy
-  prettyFunc (v, e) = pretty v <+> pretty "=" <+> ws e
+  ds' = case ds of
+    [h] -> fmtFuncDef h
+    _   -> vsep (map ((line <>) . fmtFuncDef) ds)
+  tys' = if null tys then pretty "" else vsep (fmtTypDef <$> tys)
+
+-- | Generates readable Doc representation of an IR Top Level Function
+fmtFuncDef :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
+fmtFuncDef (v, l@(Lambda _ _ ty)) =
+  pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (fmt body)
+ where
+  typSig = hsep args <+> rarrow <+> pretty retTy
+  args   = zipWith (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
+                   argIds
+                   argTys
+  (argIds, body ) = collectLambda l
+  (argTys, retTy) = collectArrow ty
+fmtFuncDef (v, e) = pretty v <+> pretty "=" <+> fmt e
+
+-- | Generates readable Doc representation of an IR Type Definition
+fmtTypDef :: Pretty t => (TConId, TypeDef t) -> Doc ann
+fmtTypDef (tcon, TypeDef { variants = vars }) =
+  pretty "type"
+    <+> pretty tcon
+    <+> line
+    <>  indent 1 (vsep $ map fmtDCon vars)
+    <>  line
+ where
+  fmtDCon :: (Pretty t) => (DConId, TypeVariant t) -> Doc ann
+  fmtDCon (dcon, VariantNamed args) =
+    pretty dcon <+> hsep (pretty . snd <$> args)
+  fmtDCon (dcon, VariantUnnamed args) = pretty dcon <+> hsep (pretty <$> args)
