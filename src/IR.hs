@@ -17,12 +17,12 @@ import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
+import qualified IR.DropInference              as DropInf
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-import           IR.DropInference               ( insertDropsProgram )
 import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
@@ -138,4 +138,4 @@ setTC o = o { tiType = TCOnly }
 
 -- | Drop inference stage.
 dropInf :: I.Program Poly.Type -> Pass (I.Program Poly.Type)
-dropInf = insertDropsProgram
+dropInf = DropInf.insertDropsProgram
