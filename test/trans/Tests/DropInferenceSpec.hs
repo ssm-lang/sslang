@@ -65,6 +65,21 @@ spec = do
             anon0_let
         |]
     undropped `shouldPassAs` dropped
+  
+  it "drop inference in effectful let (should skip)" $ do
+    let undropped = parseDrop [here|
+        x : &Int = ()
+        top = 
+            loop
+              wait 10
+        |]
+    let dropped = parseNoDrop [here|
+        x : &Int = ()
+        top = 
+            loop
+              wait 10
+        |]
+    undropped `shouldPassAs` dropped
 
   it "drop inference in nested let binding" $ do
     let undropped = parseDrop [here|
