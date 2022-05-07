@@ -37,14 +37,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: ./.github/actions/setup-build
+    - name: Setup Stack environment
+      uses: ./.github/actions/setup-build
       with:
         os:  ${{ matrix.os }}
         resolver: ${{ matrix.resolver }}
 
+    - name: Install Ubuntu dependencies
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc valgrind clang
+
     - name: Build sslang compiler
       run: |
-        stack build
+        stack build --test --no-run-tests
 
     - name: Run sslang test suite
       run: |
