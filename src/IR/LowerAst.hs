@@ -220,6 +220,7 @@ lowerPrim (A.Id "+"    ) = Just $ I.PrimOp I.PrimAdd
 lowerPrim (A.Id "-"    ) = Just $ I.PrimOp I.PrimSub
 lowerPrim (A.Id "*"    ) = Just $ I.PrimOp I.PrimMul
 lowerPrim (A.Id "/"    ) = Just $ I.PrimOp I.PrimDiv
+lowerPrim (A.Id "%"    ) = Just $ I.PrimOp I.PrimMod
 lowerPrim (A.Id "=="   ) = Just $ I.PrimOp I.PrimEq
 lowerPrim (A.Id "!="   ) = Just $ I.PrimOp I.PrimNeq
 lowerPrim (A.Id ">="   ) = Just $ I.PrimOp I.PrimGe

@@ -244,6 +244,7 @@ inferPrim (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimMod) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimEq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimGt) [e1, e2] _) = inferPrimBinop o e1 e2

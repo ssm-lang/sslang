@@ -69,7 +69,6 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                   )
                                                 , int
                                                 , unit
-                                                , void
                                                 )
 
 -- | Inference State.
@@ -442,6 +441,7 @@ initTypeVars (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] annT) = inferPrimBinop o e1
 initTypeVars (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimMod) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimEq)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimGt)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
@@ -642,6 +642,7 @@ getType (I.Prim (I.PrimOp o@I.PrimAdd) es@[_, _] _) = getTypePrimOp o es $ int 3
 getType (I.Prim (I.PrimOp o@I.PrimSub) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimMul) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimDiv) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimMod) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimEq)  es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimNeq) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimGt)  es@[_, _] _) = getTypePrimOp o es $ int 32
