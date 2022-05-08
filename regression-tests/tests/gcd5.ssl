@@ -1,0 +1,27 @@
+gcd a b cout =
+  after 1, cout <- a + 48
+  wait cout
+  after 1, cout <- 32
+  wait cout
+  after 1, cout <- b + 48
+  wait cout
+  after 1, cout <- 10
+  wait cout
+  if a == b
+    a
+  else
+    if a < b
+      after 1, cout <- 60 // <
+      wait cout
+      gcd a (b - a) cout
+    else
+      after 1, cout <- 62 // >
+      wait cout
+      gcd (a - b) b cout
+
+main cin cout =
+  let c = gcd 5 15 cout
+  after 1, cout <- c + 48
+  wait cout
+  after 1, cout <- 10
+  wait cout
