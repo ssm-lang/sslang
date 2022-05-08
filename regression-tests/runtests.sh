@@ -46,6 +46,10 @@ SignalError() {
 # Compares the outfile with reffile.  Differences, if any, written to difffile
 Compare() {
     NoteGen "$3"
+    if ! [ -f "$2" ] ; then
+      echo "$2 does not exist, nothing to compare" 1>&2
+      return
+    fi
     echo diff -b $1 $2 ">" $3 1>&2
     diff -b "$1" "$2" > "$3" 2>&1 || {
       SignalError "$1 differs"
