@@ -1,0 +1,16 @@
+gcd a b c =
+  while deref a != deref b
+    if deref a < deref b
+      b <- deref b - deref a
+    else
+      a <- deref a - deref b
+  c <- deref a
+
+main cin cout =
+  let c = new 0
+  gcd (new 4) (new 18) c
+  after 1, cout <- deref c + 48
+  wait cout
+  after 1, cout <- 10
+  wait cout
+  
