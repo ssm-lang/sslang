@@ -57,12 +57,15 @@ import           Data.Maybe                     ( isJust
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
 
+import           Debug.Trace                    ( traceM )
+import           GHC.Stack                      ( HasCallStack )
+
 -- | Possible, but temporarily punted for the sake of expediency.
-todo :: a
+todo :: HasCallStack => a
 todo = error "Not yet implemented"
 
 -- | Impossible without a discussion about implementation strategy.
-nope :: a
+nope :: HasCallStack => a
 nope = error "Not yet supported"
 
 {- | State maintained while compiling a top-level SSM function.
@@ -694,25 +697,23 @@ genPrim I.Par procs _ = do
       -- Par expressions must all be parallel applications that don't
       -- yield/block
       apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
-      apply (a@(I.App fn arg ty), (prio, depth)) = do
+      apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp , fnStms ) <- genExpr fn
         (argExp, argStms) <- genExpr arg
-        unless (null $ fnStms ++ argStms) $ do
-          -- FIXME:
-          fail $ "Cannot compile par with non-pure application: " ++ show a
-        ret <- genTmp ty
+        ret               <- genTmp ty
         let current = [cexp|$id:actg|]
             retp = [cexp|&$exp:ret|]
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
             |]
-        return (ret, appStms)
+        return (ret, fnStms ++ argStms ++ appStms)
       apply (e, _) = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
 
   (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
   yield              <- genYield
-  return (todo, checkNewDepth ++ activates ++ yield)
+  let parRetVal = unit -- TODO: return tuple of values
+  return (parRetVal, checkNewDepth ++ activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
