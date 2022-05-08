@@ -809,19 +809,19 @@ genPrimOp I.PrimNot [opr] _ = do
 genPrimOp I.PrimGt [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
+  return (marshal [cexp|$exp:lhsVal > $exp:rhsVal|], stms)
 genPrimOp I.PrimGe [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
+  return (marshal [cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
 genPrimOp I.PrimLt [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal > $exp:rhsVal|], stms)
+  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
 genPrimOp I.PrimLe [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
+  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
 genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
 -- | Helper for sequencing across binary operations.

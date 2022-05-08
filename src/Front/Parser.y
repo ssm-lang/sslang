@@ -266,10 +266,10 @@ exprBlk                               --> Expr
   : 'loop' '{' expr '}'                 { Loop $3 }
   | 'wait' '{' exprPar '}'              { Wait $3 }
   | 'par' '{' exprPar '}'               { Par $3 }
-  | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
-  | 'while' exprBlk '{' expr '}'        { While $2 $4 }
+  | 'if' exprOp '{' expr '}' exprElse   { IfElse $2 $4 $6 }
+  | 'while' exprOp '{' expr '}'         { While $2 $4 }
   | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
-  | 'match' exprBlk '{' matchArms '}'   { Match $2 $4 }
+  | 'match' exprOp '{' matchArms '}'    { Match $2 $4 }
   | exprApp                             { $1 }
 
 -- | Arms of a pattern match.
