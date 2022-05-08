@@ -1,13 +1,13 @@
 ms t = 1000000 * t
 
 blink n led =
-  let n' = new n
-  while deref n' > 0
+  let n_ = new n
+  while deref n_ > 0
     after ms 50, led <- 1
     wait led
     after ms 50, led <- 0
     wait led
-    n' <- deref n' - 1
+    n_ <- deref n_ - 1
 
 main cin cout =
   let putc c =
