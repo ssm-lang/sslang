@@ -6,7 +6,7 @@ SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
-CC="cc -O -g -Wall -Wno-unused-label -pedantic -std=c99 -I ${SSMINC} -I out"
+CC="cc -O -g -Wall -Wno-unused-label -Wno-parentheses -pedantic -std=c99 -I ${SSMINC} -I out"
 LINK="cc -g -I $SSMINC -L $SSMLIBDIR"
 
 globallog=runtests.log
