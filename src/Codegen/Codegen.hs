@@ -693,9 +693,12 @@ genPrim I.Par procs _ = do
             $exp:(throw EXHAUSTED_PRIORITY);
         |]
 
-      -- Par expressions must all be parallel applications that don't
-      -- yield/block
-      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
+      -- FIXME: ideally, par expressions must all be parallel applications that
+      -- don't yield/block. However, that relies on a liftPar pass that isn't
+      -- implemented just yet.
+      -- So, this is currently broken in that side effects inside the arguments
+      -- of function calls will be evaluated sequentially, which is wrong.
+      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
       apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp , fnStms ) <- genExpr fn
         (argExp, argStms) <- genExpr arg
@@ -705,14 +708,14 @@ genPrim I.Par procs _ = do
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
             |]
-        return (ret, fnStms ++ argStms ++ appStms)
+        return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
 
-  (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
+  (_rets, befores, activates) <- unzip3 <$> mapM apply (zip procs parArgs)
   yield              <- genYield
   let parRetVal = unit -- TODO: return tuple of values
-  return (parRetVal, checkNewDepth ++ activates ++ yield)
+  return (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
