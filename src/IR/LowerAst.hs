@@ -141,7 +141,7 @@ lowerExpr (A.Let ds b) k =
   I.Let (map lowerDef ds) (lowerExpr b id) (k I.untyped)
 lowerExpr (A.Lambda ps b) k = lowerLambda ps b k id
 lowerExpr (A.While  c  b) k = I.Prim I.Loop [body] (k I.untyped)
-  where body = lowerExpr (A.IfElse c A.Break A.NoExpr `A.Seq` b) id
+  where body = lowerExpr (A.IfElse c (A.Lit A.LitEvent) A.Break `A.Seq` b) id
 lowerExpr (A.Loop b ) k = I.Prim I.Loop [lowerExpr b id] (k I.untyped)
 lowerExpr (A.Par  es) k = I.Prim I.Par (map (`lowerExpr` id) es) (k I.untyped)
 lowerExpr (A.After delay lhs rhs) k =
@@ -159,11 +159,11 @@ lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
  where
   cond = lowerExpr s id
   f (a, b) = (lowerAlt a, lowerExpr b id)
-lowerExpr (A.IfElse c t e) k = I.Match cond [tArm, eArm] (k I.untyped)
+lowerExpr (A.IfElse c t e) k = I.Match cond [eArm, tArm] (k I.untyped)
  where
   cond = lowerExpr c id
-  tArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
-  eArm = (I.AltDefault Nothing, lowerExpr t id)
+  tArm = (I.AltDefault Nothing, lowerExpr t id)
+  eArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
 lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
