@@ -459,11 +459,11 @@ initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
   return $ I.Prim I.After [del', lhs', rhs'] t
 initTypeVars (I.Prim I.Break [] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' void
+  t <- typeCheck annT' unit
   return $ I.Prim I.Break [] t
 initTypeVars (I.Prim I.Return [] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' void
+  t <- typeCheck annT' unit
   return $ I.Prim I.Return [] t
 initTypeVars (I.Prim I.Loop es annT) = do
   let annT' = collapseAnnT annT
@@ -653,8 +653,8 @@ getType (I.Prim I.After [del, lhs, rhs] _) = do
   rhs' <- getType rhs
   lhs' <- getType lhs
   return $ I.Prim I.After [del', lhs', rhs'] unit
-getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] void
-getType (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
+getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] unit
+getType (I.Prim I.Return [] _) = return $ I.Prim I.Return [] unit
 getType (I.Prim I.Loop   es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Loop es' unit
