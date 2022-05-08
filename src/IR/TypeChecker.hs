@@ -37,7 +37,6 @@ import IR.Types.TypeSystem
     tuple,
     unit,
     variants,
-    void,
   )
 
 -- | Typing Environment
