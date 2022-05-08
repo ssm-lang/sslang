@@ -224,7 +224,7 @@ unit = marshal [cexp|0|]
 
 -- | Fake undefined value used for expressions of type Void.
 undef :: C.Exp
-undef = [cexp|0xdeadbeef|]
+undef = marshal [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
