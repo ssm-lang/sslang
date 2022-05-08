@@ -15,8 +15,8 @@ import           Language.C.Quote               ( Id(Id)
                                                 , ToIdent(..)
                                                 )
 import           Language.C.Quote.GCC           ( cexp
-                                                , cty
                                                 , cinit
+                                                , cty
                                                 )
 import qualified Language.C.Syntax             as C
 
@@ -45,6 +45,10 @@ cexpr i = [cexp|$id:i|]
 csizeof :: C.Type -> C.Exp
 csizeof t = [cexp|sizeof($ty:t)|]
 
+-- | Construct an integer literal in C.
+cint :: Int -> C.Exp
+cint i = [cexp|$int:i|]
+
 ccall :: C.Exp -> [C.Exp] -> C.Exp
 fn `ccall` args = [cexp|$exp:fn($args:args)|]
 
@@ -53,6 +57,25 @@ amp e = [cexp|&$exp:e|]
 
 star :: C.Exp -> C.Exp
 star e = [cexp|*$exp:e|]
+
+-- | Natively supported sizes in C.
+data CSize
+  = Size8
+  | Size16
+  | Size32
+  | Size64
+  deriving (Eq, Ord)
+
+-- | Convert a 'CSize' into an integer.
+size_to_int :: CSize -> Int
+size_to_int Size8  = 8
+size_to_int Size16 = 16
+size_to_int Size32 = 32
+size_to_int Size64 = 64
+
+-- | Convert a 'CSize' into some string identifier of the size.
+size_to_string :: IsString s => CSize -> s
+size_to_string = fromString . show . size_to_int
 
 {---- from ssm.h {{{ ----}
 
@@ -100,11 +123,11 @@ mm_tag = "tag"
 
 -- | @ssm_marshal@, construct a 'value_t' out of a 31-bit integral value.
 marshal :: C.Exp -> C.Exp
-marshal v = [cexp|ssm_marshal($exp:v)|]
+marshal v = [cexp|ssm_marshal($exp:(cast_to_unsigned Size32 v))|]
 
 -- | @ssm_unmarshal@, extract 31-bit integral value out of a 'value_t'.
 unmarshal :: C.Exp -> C.Exp
-unmarshal v = [cexp|ssm_unmarshal($exp:v)|]
+unmarshal v = cast_to_unsigned Size32 [cexp|ssm_unmarshal($exp:v)|]
 
 -- | @ssm_on_heap@, whether a 'value_t' points to something on the heap.
 on_heap :: C.Exp -> C.Exp
@@ -268,8 +291,7 @@ closure1_t = [cty|struct ssm_closure1|]
 -- FIXME: An ugly hack that shouldn't exist because John didn't have the
 -- foresight to provide an interface to define static closures.
 static_closure :: C.Exp -> Int -> C.Initializer
-static_closure f argc =
-  [cinit|{
+static_closure f argc = [cinit|{
     .mm = {
       .ref_count = 1,
       .kind = 3, // Ugly awful hack
@@ -424,3 +446,31 @@ leave_label :: CIdent
 leave_label = "__leave_step"
 
 {---- Naming conventions }}} ----}
+
+{---- Quasiquoting helpers {{{ ----}
+
+-- | Cast to a signed integer of a particular size.
+cast_to_signed :: CSize -> C.Exp -> C.Exp
+cast_to_signed = cast_to_int True
+
+-- | Cast to an unsigned integer of a particular size.
+cast_to_unsigned :: CSize -> C.Exp -> C.Exp
+cast_to_unsigned = cast_to_int False
+
+-- | Cast to an integer of a particular size and signedness.
+cast_to_int :: Bool -> CSize -> C.Exp -> C.Exp
+cast_to_int signed size e = [cexp|(typename $id:int_t) $exp:e|]
+ where
+  int_t :: CIdent
+  int_t = (if signed then "int" else "uint") <> size_to_string size <> "_t"
+
+-- | Shift left by the specified amount.
+shl :: C.Exp -> C.Exp -> C.Exp
+shl l r = [cexp|$exp:l << $exp:r|]
+
+-- | Shift right by the specified amount.
+shr :: C.Exp -> C.Exp -> C.Exp
+shr l r = [cexp|$exp:l >> $exp:r|]
+
+
+{---- Quasiquoting helpers }}} ----}

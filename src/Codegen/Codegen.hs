@@ -807,20 +807,24 @@ genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
 genPrimOp I.PrimGt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal > $exp:rhsVal|], stms)
 genPrimOp I.PrimGe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
 genPrimOp I.PrimLt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
 genPrimOp I.PrimLe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
 genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
