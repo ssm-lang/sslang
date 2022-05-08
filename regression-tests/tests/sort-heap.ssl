@@ -24,21 +24,21 @@ replaceTop (t: Tree) (a: Int) -> Tree =
 adjustLeft (t: Tree) -> Tree = 
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop l) <= a)
+        Node l a r = match ((atTop l) >= a)
                         1 = Node l a r
                         _ = Node (replaceTop l a) (atTop l) r
 
 adjustRight (t: Tree) -> Tree = 
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop r) <= a)
+        Node l a r = match ((atTop r) >= a)
                         1 = Node l a r
                         _ = Node l (atTop r) (replaceTop l a) 
 
 doTop (t: Tree) -> Tree =
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop l) > (atTop r))
+        Node l a r = match ((atTop l) < (atTop r))
                         1 = adjustLeft (Node l a r)
                         _ = adjustRight (Node l a r)
 

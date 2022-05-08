@@ -207,7 +207,7 @@ itod (i :Int) -> Digit =
 dtoN (d : Digit) -> Number = Nums d Nil
 
 itoNum (i : Int) (tl : Number)-> Number =
-    match (i < 10)
+    match (i > 10)
         0 = Nums (itod i) tl
         _ = let r = mod i 10
             let q = i / 10

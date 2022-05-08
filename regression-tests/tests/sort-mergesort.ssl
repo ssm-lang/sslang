@@ -7,7 +7,7 @@ merge (xlist: List) (ylist: List) -> List =
         Nil = ylist
         Cons x xs = match ylist
                         Nil = xlist
-                        Cons y ys = if (x >= y) 
+                        Cons y ys = if (x <= y) 
                                         Cons x (merge xs ylist)
                                       else
                                         Cons y (merge xlist ys)
