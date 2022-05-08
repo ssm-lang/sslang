@@ -57,7 +57,6 @@ import           Data.Maybe                     ( isJust
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
 
-import           Debug.Trace                    ( traceM )
 import           GHC.Stack                      ( HasCallStack )
 
 -- | Possible, but temporarily punted for the sake of expediency.
