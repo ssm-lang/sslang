@@ -27,7 +27,10 @@ import           Common.Identifiers             ( TVarId(..)
 
 import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( mapMaybe )
+import           Data.Maybe                     ( fromJust
+                                                , isJust
+                                                , mapMaybe
+                                                )
 {- | IR type annotation continuation.
 
 In the AST, type annotations appear as first-class expression/pattern nodes that
@@ -131,6 +134,8 @@ propogate it elsewhere. This is possible because the IR's type annotations
 the join operation.
 -}
 lowerExpr :: A.Expr -> AnnotationK -> I.Expr I.Type
+lowerExpr e k | isJust $ lowerPrim e =
+  I.Prim (fromJust $ lowerPrim e) [] (k I.untyped)
 lowerExpr (A.Id v) k | isCons v  = I.Data (fromId v) (k I.untyped)
                      | otherwise = I.Var (fromId v) (k I.untyped)
 lowerExpr (  A.Lit l    ) k = I.Lit (lowerLit l) (k I.untyped)
@@ -153,9 +158,9 @@ lowerExpr (A.Wait exprs) k =
   I.Prim I.Wait (map (`lowerExpr` id) exprs) (k I.untyped)
 lowerExpr (A.Seq l r) k =
   I.Let [(Nothing, lowerExpr l id)] (lowerExpr r id) (k I.untyped)
-lowerExpr A.Break        k = I.Prim I.Break [] (k I.untyped)
-lowerExpr (A.Return e  ) k = I.Prim I.Return [lowerExpr e id] (k I.untyped)
-lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
+lowerExpr A.Break        k  = I.Prim I.Break [] (k I.untyped)
+lowerExpr (A.Return _e ) _k = error "Return statements are not yet supported"
+lowerExpr (A.Match s ps) k  = I.Match cond (fmap f ps) (k I.untyped)
  where
   cond = lowerExpr s id
   f (a, b) = (lowerAlt a, lowerExpr b id)
@@ -216,6 +221,7 @@ lowerLit (A.LitRat    _r) = error "Rational literals are not yet implemented"
 lowerPrim :: A.Expr -> Maybe I.Primitive
 lowerPrim (A.Id "new"  ) = Just I.New
 lowerPrim (A.Id "deref") = Just I.Deref
+lowerPrim (A.Id "now"  ) = Just I.Now
 lowerPrim (A.Id "+"    ) = Just $ I.PrimOp I.PrimAdd
 lowerPrim (A.Id "-"    ) = Just $ I.PrimOp I.PrimSub
 lowerPrim (A.Id "*"    ) = Just $ I.PrimOp I.PrimMul

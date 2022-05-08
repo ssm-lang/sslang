@@ -698,7 +698,9 @@ genPrim I.Par procs _ = do
       -- implemented just yet.
       -- So, this is currently broken in that side effects inside the arguments
       -- of function calls will be evaluated sequentially, which is wrong.
-      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
+      apply
+        :: (I.Expr I.Type, (C.Exp, C.Exp))
+        -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
       apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp , fnStms ) <- genExpr fn
         (argExp, argStms) <- genExpr arg
@@ -713,9 +715,10 @@ genPrim I.Par procs _ = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
 
   (_rets, befores, activates) <- unzip3 <$> mapM apply (zip procs parArgs)
-  yield              <- genYield
+  yield                       <- genYield
   let parRetVal = unit -- TODO: return tuple of values
-  return (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
+  return
+    (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
@@ -728,15 +731,17 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break  []  _ = return (undef, [citems|break;|])
-genPrim I.Return [e] _ = do
-  (val, stms) <- genExpr e
-  -- Assign to return argument and jump to leave
-  let retBlock = [citems|
-                    *$exp:(acts_ ret_val) = $exp:val;
-                    goto $id:leave_label;
-                 |]
-  return (undef, stms ++ retBlock)
+genPrim I.Break       [] _ = return (undef, [citems|break;|])
+genPrim I.Now         [] _ = return (marshal $ ccall now [], [])
+-- Unused return statement
+-- genPrim I.Return [e] _ = do
+--   (val, stms) <- genExpr e
+--   -- Assign to return argument and jump to leave
+--   let retBlock = [citems|
+--                     *$exp:(acts_ ret_val) = $exp:val;
+--                     goto $id:leave_label;
+--                  |]
+--   return (undef, stms ++ retBlock)
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 

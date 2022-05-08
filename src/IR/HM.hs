@@ -461,10 +461,10 @@ initTypeVars (I.Prim I.Break [] annT) = do
   let annT' = collapseAnnT annT
   t <- typeCheck annT' unit
   return $ I.Prim I.Break [] t
-initTypeVars (I.Prim I.Return [] annT) = do
+initTypeVars (I.Prim I.Now [] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' unit
-  return $ I.Prim I.Return [] t
+  t <- typeCheck annT' $ int 32 -- TODO: this should be 64-bit timestamp type
+  return $ I.Prim I.Now [] t
 initTypeVars (I.Prim I.Loop es annT) = do
   let annT' = collapseAnnT annT
   t   <- typeCheck annT' unit
@@ -655,7 +655,7 @@ getType (I.Prim I.After [del, lhs, rhs] _) = do
   lhs' <- getType lhs
   return $ I.Prim I.After [del', lhs', rhs'] unit
 getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] unit
-getType (I.Prim I.Return [] _) = return $ I.Prim I.Return [] unit
+getType (I.Prim I.Now    [] _) = return $ I.Prim I.Now [] $ int 32 -- TODO: this should return 64-bit timestamp type
 getType (I.Prim I.Loop   es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Loop es' unit
