@@ -46,11 +46,15 @@ $symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]
 $symbolAfterSlash   = [$symbolBase\_\:\"\']
 $symbolAny          = [$symbolBase\_\:\"\'\*]
-
 @operator = \/ | ( $symbolLeading | \/ $symbolAfterSlash ) ( $symbolAny | \/ $symbolAfterSlash )* \/?
 
 @commentL = \/\*
 @commentR = \*\/
+
+$asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}]
+$escapable = [\\ \' \" n r t]
+@escapeChar = \\ $escapable
+@litChar = @escapeChar | $asciiChar
 
 tokens :-
 
@@ -140,6 +144,7 @@ tokens :-
     \` @identifier \`   { strTok (TOp . fromString . dropEnds 1 1) }
     @identifier         { strTok (TId . fromString) }
     $digit+             { strTok (TInteger . read) }
+    \' @litChar \'      { charTok }
   }
 
 {
@@ -505,7 +510,6 @@ layoutNL ttype sepToken i len = do
   -- Emit token and continue scanning.
   return $ Token (alexInputSpan i len, ttype)
 
-
 -- | Keyword is just a plain keyword, which just emits given 'TokenType'.
 keyword :: TokenType -> AlexAction Token
 keyword ttype i len = return $ Token (alexInputSpan i len, ttype)
@@ -520,6 +524,22 @@ reserved ttype _ _ = lexErr $ "keyword is reserved: '" ++ show ttype ++ "'"
 strTok :: (String -> TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = do
   return $ Token (alexInputSpan i len, f $ take len s)
+
+
+-- | Parse a char literal into the corresponding literal.
+charTok :: AlexAction Token
+charTok i@(_,_,_,s) len =
+  case dropEnds 1 1 $ take len s of
+    "\\\\"  -> retOrd '\\'
+    "\\'"   -> retOrd '\''
+    "\\\""  -> retOrd '"'
+    "\\n"   -> retOrd '\n'
+    "\\r"   -> retOrd '\r'
+    "\\t"   -> retOrd '\t'
+    c:[]    -> retOrd c
+    c       -> internalErr $ "Encountered unreachable empty char: " ++ show c
+  where retOrd c =
+          return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
 
 
 -- | Called when Alex reaches EOF.
