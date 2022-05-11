@@ -18,8 +18,8 @@ import           Prettyprinter
 import           Prettyprinter.Render.String
 
 -- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
-typeAnn :: Pretty t => t -> Doc ann -> Doc ann
-typeAnn t d = parens $ d <> colon <+> pretty t
+typeAnn :: Lengthy t => t -> Doc ann -> Doc ann
+typeAnn t d = parens $ d <> colon <+> lengthy t
 
 -- | @=>@
 drarrow :: Doc ann

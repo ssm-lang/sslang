@@ -442,9 +442,7 @@ instance Pretty PrimOp where
 
 instance (Lengthy t, TypeSystem t) => Lengthy (Program t) where
   lengthy Program { programDefs = ds } = vsep $ map y ds
-   where
-    y = \(a, b) -> pretty $ show (pretty a, lengthy b) --probably wrong
-    x = map y ds
+    where y = \(a, b) -> pretty $ show (pretty a, lengthy b)
   -- TODO: type defs
   -- TODO: how to represent entry point?
 

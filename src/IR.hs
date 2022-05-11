@@ -122,9 +122,8 @@ poly2Poly opt ir = do
   dConsGone <- dConToFunc ir
   irLifted  <- liftProgramLambdas dConsGone
   irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
-  let y = lengthy irFinal
   when (mode opt == DumpIRLifted) $ dump irFinal
-  when (mode opt == DumpIRFinal) $ (throwError . Dump . show) y --dump irFinal
+  when (mode opt == DumpIRFinal) $ dump irFinal
   return irFinal
 
 -- | IR compiler stage.

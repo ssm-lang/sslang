@@ -61,5 +61,6 @@ instance Pretty Type where
   pretty (TVar tvar  ) = pretty tvar
 
 instance Lengthy Type where
-  lengthy (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
-  lengthy a              = pretty a
+  lengthy (TBuiltin b  ) = lengthy b
+  lengthy (TCon tcon ts) = parens (hsep $ pretty tcon : map lengthy ts)
+  lengthy (TVar tvar   ) = pretty tvar
