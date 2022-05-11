@@ -57,5 +57,9 @@ instance TypeSystem Type where
 
 instance Pretty Type where
   pretty (TBuiltin b ) = pretty b
-  pretty (TCon tcon _) = pretty tcon -- parens (hsep $ pretty tcon : map pretty ts)
+  pretty (TCon tcon _) = pretty tcon
   pretty (TVar tvar  ) = pretty tvar
+
+instance Lengthy Type where
+  lengthy (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
+  lengthy a              = pretty a

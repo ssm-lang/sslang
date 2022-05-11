@@ -11,18 +11,19 @@ import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
 
+import           Common.Pretty
+import           Control.Monad                  ( when )
+import           IR.ClassInstantiation          ( instProgram )
+import           IR.DConToFunc                  ( dConToFunc )
+import qualified IR.DropInference              as DropInf
 import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
+import           IR.LambdaLift                  ( liftProgramLambdas )
+import           IR.LowerAst                    ( lowerProgram )
 import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
-import qualified IR.DropInference              as DropInf
-import           IR.ClassInstantiation          ( instProgram )
-import           IR.DConToFunc                  ( dConToFunc )
-import           IR.LambdaLift                  ( liftProgramLambdas )
-import           IR.LowerAst                    ( lowerProgram )
-import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -121,10 +122,9 @@ poly2Poly opt ir = do
   dConsGone <- dConToFunc ir
   irLifted  <- liftProgramLambdas dConsGone
   irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
-  when (mode opt == DumpIRLifted) $ throwError . Dump . show $ I.fmtPretty
-    irFinal
-  when (mode opt == DumpIRFinal) $ throwError . Dump . show $ I.fmtPretty
-    irFinal
+  let y = lengthy irFinal
+  when (mode opt == DumpIRLifted) $ dump irFinal
+  when (mode opt == DumpIRFinal) $ (throwError . Dump . show) y --dump irFinal
   return irFinal
 
 -- | IR compiler stage.

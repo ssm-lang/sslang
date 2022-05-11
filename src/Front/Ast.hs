@@ -125,12 +125,12 @@ collectApp t               = (t, [])
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
 getTopDataDef (TopDef d) = Just d
-getTopDataDef _ = Nothing
+getTopDataDef _          = Nothing
 
 -- | Unwrap a (potential) top-level type definition.
 getTopTypeDef :: TopDef -> Maybe TypeDef
 getTopTypeDef (TopType t) = Just t
-getTopTypeDef _ = Nothing
+getTopTypeDef _           = Nothing
 
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
@@ -236,3 +236,6 @@ instance Pretty Literal where
   pretty (LitRat    r) = pretty $ show r
   pretty (LitChar   c) = squotes $ pretty c
   pretty LitEvent      = pretty "()"
+
+instance Lengthy Program  where
+  lengthy = pretty

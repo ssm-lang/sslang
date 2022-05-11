@@ -59,6 +59,10 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
   pretty (Integral _  ) = pretty "Int" -- ++ show s
 
+instance Lengthy t => Lengthy (Builtin t) where
+  lengthy (Integral s) = pretty $ "Int" ++ show s
+  lengthy a            = pretty a
+
 {- | A type system must allow us to construct and access underlying builtins.
 
 Instances should satisfy the following law:

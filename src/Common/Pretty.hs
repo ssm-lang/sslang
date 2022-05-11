@@ -9,7 +9,9 @@ module Common.Pretty
   , bar
   , amp
   , block
+  , indentNo
   , spaghetti
+  , Lengthy(lengthy)
   ) where
 
 import           Prettyprinter
@@ -43,11 +45,25 @@ bar = pretty "|"
 amp :: Doc ann
 amp = pretty "&"
 
+-- | Number of spaces to indent
+indentNo :: Int
+indentNo = 2
+
 -- | Constructs a separator-delimited block 'Doc' out of a list of 'Doc's.
 block :: Doc ann -> [Doc ann] -> Doc ann
 block separator = braces . sep . punctuate separator
 
 -- | Format with a document of infinite width, preventing wraparound.
-spaghetti :: Pretty t => t -> String
-spaghetti = renderString . layoutPretty opts . pretty
+spaghetti :: Lengthy t => t -> String
+spaghetti = renderString . layoutPretty opts . lengthy
   where opts = LayoutOptions { layoutPageWidth = Unbounded }
+
+{- | Lengthy Typeclass: "pretty" print the IR; used in conjunction with spaghetti
+
+Translates from IR to Doc representation in one-to-one fashion
+No simplifications 
+No whitespace formatting
+Type annotates everything
+-}
+class (Pretty a) => Lengthy a where
+  lengthy :: a -> Doc ann
