@@ -10,8 +10,6 @@ import           Common.Compiler
 import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
-
-import           Common.Pretty
 import           Control.Monad                  ( when )
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )

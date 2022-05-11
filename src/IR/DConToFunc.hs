@@ -114,13 +114,16 @@ createArityEnv defs = M.fromList $ concatMap arities defs
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn (createArityEnv tDefs) $ do
-    defs' <- everywhereM (mkM dataToApp) defs
-    return p
-      { I.programDefs = tDefs'
-                          ++ filter ((`notElem` (fst <$> tDefs')) . fst) defs'
-      }
+    defs' <- defs'' -- user defined functions
+    return p { I.programDefs = tDefs' ++ defs' } -- constructor funcs ++ user funcs
  where
   tDefs' = concat (createFuncs <$> tDefs)
+  -- ^ top-level constructor functions
+  defs'' =
+    filter ((`notElem` (fst <$> tDefs')) . fst)
+      <$> everywhereM (mkM dataToApp) defs
+  -- ^ if a user defined func's name conflicts with a constructor func's name,
+  -- ^ omit it the user defined func in favor of constructor.
   createFuncs (tconid, TypeDef { variants = vars }) =
     createFunc tconid `mapMaybe` vars
 

@@ -17,7 +17,10 @@ module Common.Pretty
 import           Prettyprinter
 import           Prettyprinter.Render.String
 
--- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
+{- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
+
+Only used by spaghetti so constrained by Lengthy instead of Pretty for now.
+-}
 typeAnn :: Lengthy t => t -> Doc ann -> Doc ann
 typeAnn t d = parens $ d <> colon <+> lengthy t
 
@@ -60,10 +63,10 @@ spaghetti = renderString . layoutPretty opts . lengthy
 
 {- | Lengthy Typeclass: "pretty" print the IR; used in conjunction with spaghetti
 
-Translates from IR to Doc representation in one-to-one fashion
-No simplifications 
-No whitespace formatting
-Type annotates everything
+* Translates from IR to Doc representation in one-to-one fashion
+* No simplifications 
+* No whitespace formatting
+* Type annotates everything
 -}
 class (Pretty a) => Lengthy a where
   lengthy :: a -> Doc ann

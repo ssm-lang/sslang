@@ -323,13 +323,13 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
 {- | Pretty Typeclass: pretty print the IR
 
 Adds 
-- indentation and line breaks
-- some parens (not minimal parens, but fewer than around every node)
+* indentation and line breaks
+* some parens (not minimal parens, but fewer than around every node)
 Omits 
-- let _ =
-- type annotations
+* let _ =
+* type annotations
 Reverts
-- curried funcs of one arg back to multiple arg funcs
+* curried funcs of one arg back to multiple arg funcs
 -}
 instance (Pretty t, TypeSystem t) => Pretty (Program t) where
   pretty Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
@@ -440,6 +440,7 @@ instance Pretty PrimOp where
   pretty PrimLt     = pretty "<"
   pretty PrimLe     = pretty "<="
 
+-- | Lengthy Typeclass: generate comprehensive Doc representation of the IR
 instance (Lengthy t, TypeSystem t) => Lengthy (Program t) where
   lengthy Program { programDefs = ds } = vsep $ map y ds
     where y = \(a, b) -> pretty $ show (pretty a, lengthy b)
