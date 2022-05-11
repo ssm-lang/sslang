@@ -373,14 +373,15 @@ prettyTypDef (tcon, TypeDef { variants = vars }) =
 Never calls pretty on an expr node
 -}
 fmt :: Expr () -> Doc ann
-fmt a@App{} = fmt nm <+> hsep (mandParens <$> args)
+fmt a@App{} = fmt nm <+> hsep (parenz <$> args)
  where
   (nm, args) = unzipApp a
-  -- insert mandatory parens
-  mandParens :: (Expr (), ()) -> Doc ann
-  mandParens (v@(Var _ _), _) = fmt v  -- variables
-  mandParens (l@(Lit _ _), _) = fmt l  -- literals
-  mandParens (e          , _) = parens (fmt e)
+  -- insert (usually) necessary parens
+  parenz :: (Expr (), ()) -> Doc ann
+  parenz (v@(Var _ _), _) = fmt v  -- variables
+  parenz (l@(Lit _ _), _) = fmt l  -- literals
+  parenz (e          , _) = parens (fmt e)
+  -- TODO: minimum parens algo
 fmt (Prim Wait es _           ) = pretty "wait" <+> vsep (map fmt es)
 fmt (Var v _                  ) = pretty v
 fmt (Lambda a              b _) = pretty "fun" <+> pretty a <+> fmt b
