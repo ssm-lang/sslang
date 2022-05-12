@@ -8,10 +8,10 @@ concat (l: List) (ys: List) -> List =
         Nil = ys
 
 predr (i1: Int) (i2: Int) -> Int = 
-    i1 >= i2
+    i1 <= i2
 
 predl (i1: Int) (i2: Int) -> Int = 
-    i1 < i2
+    i1 > i2
 
 filter (f: Int -> Int) (l: List) -> List =
     match l

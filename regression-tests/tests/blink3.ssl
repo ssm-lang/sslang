@@ -1,0 +1,28 @@
+ms t = 1000000 * t
+
+blink n period led =
+  let toggle led = led <- 1 - deref led
+  let n_ = new n
+  let event = new ()
+  while deref n_ > 0
+    toggle led
+    after period, event <- ()
+    wait event
+    n_ <- deref n_ - 1
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let display led =
+       loop
+         wait led
+         putc (deref led + 48)
+	 putc 10
+  let led = new 0
+  par blink 30 (ms 50) led
+      blink 50 (ms 30) led
+      blink 75 (ms 20) led
+      display led
+
+  

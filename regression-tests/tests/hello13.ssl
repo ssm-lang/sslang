@@ -1,0 +1,40 @@
+putc_ (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+eof_ (cout : &Int) _ =
+  after 1, cout <- 0
+  wait cout
+
+type String
+  Cons Int String
+  Nil
+
+puts_ putc s =
+  match s
+    Cons c s = putc c
+               puts_ putc s
+    Nil = ()
+    
+/*
+puts_ putc s =
+  let puts__ ss =
+        match ss
+          Cons c s = putc c
+                     puts__ s
+          Nil = ()
+  puts__ s
+
+// TypeError (ErrorMsg "Unbound variable: Var (VarId puts__) (Type [])")
+
+*/
+
+main cin cout =
+  let putc = putc_ cout
+  let puts = puts_ putc
+  let eof = eof_ cout
+  let hello = Cons 72 (Cons 101 (Cons 108 (Cons 108
+                (Cons 111 (Cons 49 (Cons 51 (Cons 10 Nil)))))))
+  puts hello
+  eof ()
+  

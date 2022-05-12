@@ -27,12 +27,12 @@ instance Default TypInfo where
 
 -- | Map of builtin types.
 builtinTypes :: M.Map Identifier TypInfo
-builtinTypes = M.fromList $ map mkBuiltin ["Int", "[]", "&"]
+builtinTypes = M.fromList $ map mkBuiltin ["Int", "[]", "&", "()"]
   where mkBuiltin i = (i, TypInfo { typKind = Builtin })
 
 -- | Map of builtin data.
 builtinData :: M.Map Identifier DataInfo
 builtinData = M.fromList $ map
   mkBuiltin
-  ["-", "+", "*", "/", "==", "!=", "<=", ">=", "<", ">", "deref", "new"]
+  ["-", "+", "*", "/", "%", "==", "!=", "<=", ">=", "<", ">", "deref", "new", "now"]
   where mkBuiltin i = (i, DataInfo { dataKind = Builtin })

@@ -57,12 +57,14 @@ import           Data.Maybe                     ( isJust
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
 
+import           GHC.Stack                      ( HasCallStack )
+
 -- | Possible, but temporarily punted for the sake of expediency.
-todo :: a
+todo :: HasCallStack => a
 todo = error "Not yet implemented"
 
 -- | Impossible without a discussion about implementation strategy.
-nope :: a
+nope :: HasCallStack => a
 nope = error "Not yet supported"
 
 {- | State maintained while compiling a top-level SSM function.
@@ -224,7 +226,7 @@ unit = marshal [cexp|0|]
 
 -- | Fake undefined value used for expressions of type Void.
 undef :: C.Exp
-undef = [cexp|0xdeadbeef|]
+undef = marshal [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
@@ -691,28 +693,32 @@ genPrim I.Par procs _ = do
             $exp:(throw EXHAUSTED_PRIORITY);
         |]
 
-      -- Par expressions must all be parallel applications that don't
-      -- yield/block
-      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
-      apply (a@(I.App fn arg ty), (prio, depth)) = do
+      -- FIXME: ideally, par expressions must all be parallel applications that
+      -- don't yield/block. However, that relies on a liftPar pass that isn't
+      -- implemented just yet.
+      -- So, this is currently broken in that side effects inside the arguments
+      -- of function calls will be evaluated sequentially, which is wrong.
+      apply
+        :: (I.Expr I.Type, (C.Exp, C.Exp))
+        -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
+      apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp , fnStms ) <- genExpr fn
         (argExp, argStms) <- genExpr arg
-        unless (null $ fnStms ++ argStms) $ do
-          -- FIXME:
-          fail $ "Cannot compile par with non-pure application: " ++ show a
-        ret <- genTmp ty
+        ret               <- genTmp ty
         let current = [cexp|$id:actg|]
             retp = [cexp|&$exp:ret|]
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
             |]
-        return (ret, appStms)
+        return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
 
-  (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
-  yield              <- genYield
-  return (todo, checkNewDepth ++ activates ++ yield)
+  (_rets, befores, activates) <- unzip3 <$> mapM apply (zip procs parArgs)
+  yield                       <- genYield
+  let parRetVal = unit -- TODO: return tuple of values
+  return
+    (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
@@ -725,15 +731,17 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break  []  _ = return (undef, [citems|break;|])
-genPrim I.Return [e] _ = do
-  (val, stms) <- genExpr e
-  -- Assign to return argument and jump to leave
-  let retBlock = [citems|
-                    *$exp:(acts_ ret_val) = $exp:val;
-                    goto $id:leave_label;
-                 |]
-  return (undef, stms ++ retBlock)
+genPrim I.Break       [] _ = return (undef, [citems|break;|])
+genPrim I.Now         [] _ = return (marshal $ ccall now [], [])
+-- Unused return statement
+-- genPrim I.Return [e] _ = do
+--   (val, stms) <- genExpr e
+--   -- Assign to return argument and jump to leave
+--   let retBlock = [citems|
+--                     *$exp:(acts_ ret_val) = $exp:val;
+--                     goto $id:leave_label;
+--                  |]
+--   return (undef, stms ++ retBlock)
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
@@ -807,21 +815,25 @@ genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
 genPrimOp I.PrimGt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
-genPrimOp I.PrimGe [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
-genPrimOp I.PrimLt [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal > $exp:rhsVal|], stms)
-genPrimOp I.PrimLe [lhs, rhs] _ = do
+genPrimOp I.PrimGe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
+genPrimOp I.PrimLt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
+genPrimOp I.PrimLe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
 genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
 -- | Helper for sequencing across binary operations.

@@ -34,8 +34,9 @@ defaultOps =
   , Infixl 4 ">"
   , Infixl 6 "+"
   , Infixl 6 "-"
-  , Infixl 7 "*"
+  , Infixl 8 "*"
   , Infixl 8 "/"
+  , Infixl 8 "%"
   , Infixr 8 "^"
   ]
 

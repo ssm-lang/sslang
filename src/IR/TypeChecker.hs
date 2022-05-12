@@ -37,7 +37,6 @@ import IR.Types.TypeSystem
     tuple,
     unit,
     variants,
-    void,
   )
 
 -- | Typing Environment
@@ -244,14 +243,15 @@ inferPrim (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimMod) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimEq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimGt) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimLt) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimGe) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimLe) [e1, e2] _) = inferPrimBinop o e1 e2
-inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
-inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
+inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] unit
+inferPrim (I.Prim I.Now [] _) = return $ I.Prim I.Now [] $ int 32 -- TODO: make this timestamp type
 inferPrim (I.Prim I.Loop es _) = do
   es' <- mapM inferExpr es
   return $ I.Prim I.Loop es' unit

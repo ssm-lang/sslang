@@ -2,6 +2,8 @@
 // integer to big num conversion complete
 // big num printing complete
 // big num increment complete
+//
+// same as numbers2 but we use builtin mod instead
 
 type Bool
     True
@@ -186,12 +188,6 @@ pow (a : Int) (b : Int) -> Int =
           0 = 1
           _ = a * (pow a (b-1))
 
-mod (a : Int) (b : Int) -> Int =
-    let q = a / b
-    match q
-          0 = 0
-          _ = a - (q * b)
-
 itod (i :Int) -> Digit =
     match i
           1 = One
@@ -209,7 +205,7 @@ dtoN (d : Digit) -> Number = Nums d Nil
 itoNum (i : Int) (tl : Number)-> Number =
     match (i > 10)
         0 = Nums (itod i) tl
-        _ = let r = mod i 10
+        _ = let r = i % 10
             let q = i / 10
             itoNum q (Nums (itod r) tl)
 
@@ -242,9 +238,9 @@ main (cint : & Int) ( cout : & Int ) -> () =
     print cout 10
     printNum cout (incNumber(incNumber(incNumber z)))
     print cout 10
-    print cout ((mod 124 10) + 48)
+    print cout ((124 % 10) + 48)
     print cout 10
-    print cout ((mod 12 10) + 48)
+    print cout ((12 % 10) + 48)
     print cout 10
     printNum cout (itoN 124)
     clear cout

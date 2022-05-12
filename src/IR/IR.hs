@@ -114,8 +114,8 @@ data Primitive
   {- ^ @Loop b@ loops body @b@ forever. -}
   | Break
   {- ^ @Break@ breaks out of the innermost loop. -}
-  | Return
-  {- ^ @Return e@ returns the value @e@ from the current function. -}
+  | Now
+  {- ^ @Now@ obtains the value of the current instant -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
   deriving (Eq, Show, Typeable, Data)
@@ -296,7 +296,7 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim Par                 (_ : _)   = True
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
-  wfPrim Return              [_]       = True
+  wfPrim Now                 [_]       = True
   wfPrim (PrimOp PrimNeg   ) [_]       = True
   wfPrim (PrimOp PrimNot   ) [_]       = True
   wfPrim (PrimOp PrimBitNot) [_]       = True
@@ -353,8 +353,7 @@ instance Pretty t => Pretty (Expr t) where
     typeAnn t $ pretty "wait" <+> block dbar (map pretty es)
   pretty (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (pretty b)
   pretty (Prim Break []  t) = typeAnn t $ pretty "break"
-  pretty (Prim Return [e] t) =
-    typeAnn t $ pretty "return" <+> braces (pretty e)
+  pretty (Prim Now   []  t) = typeAnn t $ pretty "now"
   pretty (Prim (PrimOp po) [l, r] t) =
     parens $ pretty l <+> pretty po <+> pretty r <> pretty t
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
