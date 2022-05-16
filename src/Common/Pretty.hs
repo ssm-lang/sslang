@@ -11,7 +11,7 @@ module Common.Pretty
   , block
   , indentNo
   , spaghetti
-  , Lengthy(lengthy)
+  , Dumpy(dumpy)
   ) where
 
 import           Prettyprinter
@@ -21,8 +21,8 @@ import           Prettyprinter.Render.String
 
 Only used by spaghetti so constrained by Lengthy instead of Pretty for now.
 -}
-typeAnn :: Lengthy t => t -> Doc ann -> Doc ann
-typeAnn t d = parens $ d <> colon <+> lengthy t
+typeAnn :: Dumpy t => t -> Doc ann -> Doc ann
+typeAnn t d = parens $ d <> colon <+> dumpy t
 
 -- | @=>@
 drarrow :: Doc ann
@@ -57,16 +57,16 @@ block :: Doc ann -> [Doc ann] -> Doc ann
 block separator = braces . sep . punctuate separator
 
 -- | Format with a document of infinite width, preventing wraparound.
-spaghetti :: Lengthy t => t -> String
-spaghetti = renderString . layoutPretty opts . lengthy
+spaghetti :: Dumpy t => t -> String
+spaghetti = renderString . layoutPretty opts . dumpy
   where opts = LayoutOptions { layoutPageWidth = Unbounded }
 
-{- | Lengthy Typeclass: "pretty" print the IR; used in conjunction with spaghetti
+{- | Lengthy Typeclass: print an ugly but parseable representation of the AST
 
 * Translates from IR to Doc representation in one-to-one fashion
 * No simplifications 
 * No whitespace formatting
 * Type annotates everything
 -}
-class (Pretty a) => Lengthy a where
-  lengthy :: a -> Doc ann
+class Dumpy a where
+  dumpy :: a -> Doc ann

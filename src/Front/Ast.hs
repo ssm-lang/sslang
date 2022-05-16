@@ -237,5 +237,5 @@ instance Pretty Literal where
   pretty (LitChar   c) = squotes $ pretty c
   pretty LitEvent      = pretty "()"
 
-instance Lengthy Program  where
-  lengthy = pretty
+instance Dumpy Program  where
+  dumpy = pretty

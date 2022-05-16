@@ -60,7 +60,7 @@ instance Pretty Type where
   pretty (TCon tcon _) = pretty tcon
   pretty (TVar tvar  ) = pretty tvar
 
-instance Lengthy Type where
-  lengthy (TBuiltin b  ) = lengthy b
-  lengthy (TCon tcon ts) = parens (hsep $ pretty tcon : map lengthy ts)
-  lengthy (TVar tvar   ) = pretty tvar
+instance Dumpy Type where
+  dumpy (TBuiltin b  ) = dumpy b
+  dumpy (TCon tcon ts) = parens (hsep $ pretty tcon : map dumpy ts)
+  dumpy (TVar tvar   ) = pretty tvar

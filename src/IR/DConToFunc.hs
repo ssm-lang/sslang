@@ -114,16 +114,89 @@ createArityEnv defs = M.fromList $ concatMap arities defs
 dConToFunc :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
 dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
   runArityFn (createArityEnv tDefs) $ do
-    defs' <- defs'' -- user defined functions
-    return p { I.programDefs = tDefs' ++ defs' } -- constructor funcs ++ user funcs
+    defs'' <- defs' -- user defined functions
+    return p { I.programDefs = tDefs' ++ defs'' } -- constructor funcs ++ user funcs
  where
   tDefs' = concat (createFuncs <$> tDefs)
   -- ^ top-level constructor functions
-  defs'' =
+  defs' =
     filter ((`notElem` (fst <$> tDefs')) . fst)
       <$> everywhereM (mkM dataToApp) defs
-  -- ^ if a user defined func's name conflicts with a constructor func's name,
-  -- ^ omit it the user defined func in favor of constructor.
+  -- ^ We need to filter defs to account for name collisions
+  -- ^ between user defined funcs and newly created and inserted constructor funcs
+  {- Example of name collision case and correction
+  Given the SSLANG program
+  @
+  type Color
+    White
+    Black
+    RGB Int Int Int
+
+  main ( cout : & Int ) -> () = ()
+  @
+  dConToFunc will produce
+  @
+  type Color
+    White
+    Black
+    RGB Int Int Int
+
+  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color = 
+  RGB __arg0 __arg1 __arg2
+    
+  main ( cout : & Int ) -> () = ()
+  @
+  This is okay.
+  Now, given the SSLANG program
+  @
+  type Color
+    White
+    Black
+    RGB Int Int Int
+
+  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  RGB r (g+2) b
+    
+  main ( cout : & Int ) -> () = ()
+  @
+  dConToFunc (without filtering defs!) produces
+  @
+  type Color
+    White
+    Black
+    RGB Int Int Int
+
+  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color = 
+  RGB __arg0 __arg1 __arg2
+
+  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  RGB r (g+2) b
+    
+  main ( cout : & Int ) -> () = ()
+  @
+  This is not okay, because there are two functions named > __RGB.
+  To prevent this duplicate function case, we search defs for any user defined functions
+  that have the same name as our newly inserted constructor functions, and remove them.
+  @
+  // defs = [ (__RGB, ...), (main, ...) ]
+  // tDefs' = [ (__RGB,...) ]
+  // If defs contains func w/ same name as a func in tDefs', remove it!
+  // defs' = [ (main, ...) ]
+  @
+  dConToFunc (with filtering of defs) produces
+  @
+  type Color
+    White
+    Black
+    RGB Int Int Int
+
+  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  RGB r (g+2) b
+    
+  main ( cout : & Int ) -> () = ()
+  @
+  Now this is okay.
+    -}
   createFuncs (tconid, TypeDef { variants = vars }) =
     createFunc tconid `mapMaybe` vars
 

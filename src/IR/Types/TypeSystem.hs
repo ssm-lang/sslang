@@ -59,13 +59,13 @@ instance Pretty t => Pretty (Builtin t) where
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
   pretty (Integral _  ) = pretty "Int" -- ++ show s
 
-instance Lengthy t => Lengthy (Builtin t) where
-  lengthy Unit           = pretty "()"
-  lengthy Void           = pretty "!"
-  lengthy (Ref t       ) = parens $ pretty "&" <> lengthy t
-  lengthy (Arrow a b   ) = parens $ lengthy a <+> rarrow <+> lengthy b
-  lengthy (Tuple    tys) = parens $ hsep $ punctuate comma $ map lengthy tys
-  lengthy (Integral s  ) = pretty $ "Int" ++ show s
+instance Dumpy t => Dumpy (Builtin t) where
+  dumpy Unit           = pretty "()"
+  dumpy Void           = pretty "!"
+  dumpy (Ref t       ) = parens $ pretty "&" <> dumpy t
+  dumpy (Arrow a b   ) = parens $ dumpy a <+> rarrow <+> dumpy b
+  dumpy (Tuple    tys) = parens $ hsep $ punctuate comma $ map dumpy tys
+  dumpy (Integral s  ) = pretty $ "Int" ++ show s
 
 {- | A type system must allow us to construct and access underlying builtins.
 
