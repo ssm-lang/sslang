@@ -441,9 +441,38 @@ instance Pretty PrimOp where
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
 instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
-  dumpy Program { programDefs = ds } = vsep $ map y ds
-    where y = \(a, b) -> pretty $ show (pretty a, dumpy b)
-  -- TODO: type defs
+  dumpy Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
+   where
+    ds' = case ds of
+      [h] -> dumpyFuncDef h
+      _   -> vsep (map ((line <>) . dumpyFuncDef) ds)
+    tys' = if null tys then pretty "" else vsep (dumpyTypDef <$> tys)
+    -- Generates readable Doc representation of an IR Top Level Function
+    dumpyFuncDef :: (TypeSystem t, Dumpy t) => (VarId, Expr t) -> Doc ann
+    dumpyFuncDef (v, l@(Lambda _ _ ty)) =
+      pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
+     where
+      typSig = hsep args <+> rarrow <+> dumpy retTy
+      args   = zipWith
+        (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
+        argIds
+        argTys
+      (argIds, body ) = collectLambda l
+      (argTys, retTy) = collectArrow ty
+    dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
+    -- Generates readable Doc representation of an IR Type Definition
+    dumpyTypDef :: Dumpy t => (TConId, TypeDef t) -> Doc ann
+    dumpyTypDef (tcon, TypeDef { variants = vars }) =
+      pretty "type"
+        <+> pretty tcon
+        <+> line
+        <>  indent indentNo (vsep $ map dumpyDCon vars)
+        <>  line
+    dumpyDCon :: (Dumpy t) => (DConId, TypeVariant t) -> Doc ann
+    dumpyDCon (dcon, VariantNamed argz) =
+      pretty dcon <+> hsep (dumpy . snd <$> argz)
+    dumpyDCon (dcon, VariantUnnamed argz) =
+      pretty dcon <+> hsep (dumpy <$> argz)
   -- TODO: how to represent entry point?
 
 instance (Dumpy t) => Dumpy (Expr t) where
@@ -462,7 +491,7 @@ instance (Dumpy t) => Dumpy (Expr t) where
    where
     -- Where to add binder?
     arms = block bar (map arm as)
-    arm (a, e) = dumpy a <+> drarrow <+> braces (dumpy e)
+    arm (a, e) = dumpy a <+> pretty "=" <+> braces (dumpy e)
   dumpy (Prim New   [r] t) = typeAnn t $ pretty "new" <+> dumpy r
   dumpy (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> dumpy r
   dumpy (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> dumpy r
@@ -471,21 +500,18 @@ instance (Dumpy t) => Dumpy (Expr t) where
     typeAnn t $ parens $ dumpy l <+> larrow <+> braces (dumpy r)
   dumpy (Prim After [d, l, r] t) = typeAnn t $ parens ae
    where
-    ae =
-      pretty "after" <+> dumpy d <> comma <+> dumpy l <+> larrow <+> braces
-        (dumpy r)
+    ae = pretty "after" <+> dumpy d <> comma <+> dumpy l <+> larrow <+> braces
+      (dumpy r)
   dumpy (Prim Par es t) =
     typeAnn t $ pretty "par" <+> block dbar (map dumpy es)
   dumpy (Prim Wait es t) =
     typeAnn t $ pretty "wait" <+> block dbar (map dumpy es)
-  dumpy (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
-  dumpy (Prim Break []  t) = typeAnn t $ pretty "break"
-  dumpy (Prim Return [e] t) =
-    typeAnn t $ pretty "return" <+> braces (dumpy e)
+  dumpy (Prim Loop   [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
+  dumpy (Prim Break  []  t) = typeAnn t $ pretty "break"
+  dumpy (Prim Return [e] t) = typeAnn t $ pretty "return" <+> braces (dumpy e)
   dumpy (Prim (PrimOp po) [l, r] t) =
-    parens $ dumpy l <+> dumpy po <+> dumpy r <> dumpy t
-  dumpy (Prim p _ _) =
-    error "Primitive expression not well-formed: " $ show p
+    typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
+  dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
 instance Dumpy Alt where
   dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)

@@ -25,6 +25,7 @@ import qualified IR.Types.Poly                 as Poly
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
+import Common.Pretty (Dumpy(dumpy))
 
 -- | Operation modes for the IR compiler stage.
 data Mode
@@ -121,7 +122,7 @@ poly2Poly opt ir = do
   irLifted  <- liftProgramLambdas dConsGone
   irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
   when (mode opt == DumpIRLifted) $ dump irFinal
-  when (mode opt == DumpIRFinal) $ dump irFinal
+  when (mode opt == DumpIRFinal) $ (throwError . Dump . show . dumpy) irFinal-- dump irFinal
   return irFinal
 
 -- | IR compiler stage.

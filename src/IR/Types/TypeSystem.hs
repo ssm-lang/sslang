@@ -65,7 +65,7 @@ instance Dumpy t => Dumpy (Builtin t) where
   dumpy (Ref t       ) = parens $ pretty "&" <> dumpy t
   dumpy (Arrow a b   ) = parens $ dumpy a <+> rarrow <+> dumpy b
   dumpy (Tuple    tys) = parens $ hsep $ punctuate comma $ map dumpy tys
-  dumpy (Integral s  ) = pretty $ "Int" ++ show s
+  dumpy (Integral _  ) = pretty "Int" -- ++ show s
 
 {- | A type system must allow us to construct and access underlying builtins.
 
