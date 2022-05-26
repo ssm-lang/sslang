@@ -229,10 +229,10 @@ createFunc tcon (dconid, VariantNamed params) = Just (func_name, lambda)
   lambda    = I.makeLambdaChain (first Just <$> params) body
   body      = I.zipApp dcon args
   dcon      = I.Data (fromId dconid) t
-  args      = zip (reverse $ uncurry I.Var <$> params) (tconTyp : ts)
+  args      = reverse $ zip (uncurry I.Var <$> params) ts
   tconTyp   = Poly.TCon tcon []
-  (t : ts) =
-    reverse $ foldl1 arrow . (++ [tconTyp]) <$> tail (inits (snd <$> params))
+  (t : ts)  = reverse $ foldr1 arrow . reverse <$> tail
+    (inits $ reverse ((snd <$> params) ++ [tconTyp]))
   {- Turns a list of types into arrow types representing nested lambdas
      @[Int, Int, Shape]@ becomes
      @[Int -> Int -> Shape, Int -> Shape, Shape]@

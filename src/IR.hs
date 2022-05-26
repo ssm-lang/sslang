@@ -9,8 +9,8 @@ module IR where
 import           Common.Compiler
 import           Common.Default                 ( Default(..) )
 
-import qualified Front.Ast                     as A
 import           Control.Monad                  ( when )
+import qualified Front.Ast                     as A
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import qualified IR.DropInference              as DropInf
@@ -25,7 +25,6 @@ import qualified IR.Types.Poly                 as Poly
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
-import Common.Pretty (Dumpy(dumpy))
 
 -- | Operation modes for the IR compiler stage.
 data Mode
@@ -122,7 +121,7 @@ poly2Poly opt ir = do
   irLifted  <- liftProgramLambdas dConsGone
   irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
   when (mode opt == DumpIRLifted) $ dump irFinal
-  when (mode opt == DumpIRFinal) $ (throwError . Dump . show . dumpy) irFinal-- dump irFinal
+  when (mode opt == DumpIRFinal) $ dump irFinal -- (throwError . Dump . show . dumpy) irFinal
   return irFinal
 
 -- | IR compiler stage.
