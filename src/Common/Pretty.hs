@@ -19,7 +19,7 @@ import           Prettyprinter.Render.String
 
 {- | @typeAnn t d@ annotates document @d@ with type annotation @t@.
 
-Only used by spaghetti so constrained by Lengthy instead of Pretty for now.
+Only used by spaghetti so constrained by Dumpy instead of Pretty for now.
 -}
 typeAnn :: Dumpy t => t -> Doc ann -> Doc ann
 typeAnn t d = parens $ d <> colon <+> dumpy t

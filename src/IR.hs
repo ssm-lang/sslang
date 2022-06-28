@@ -41,13 +41,11 @@ data TIType
  | Both               -- ^ Run both HM type Inference and type checker
  deriving (Eq, Show)
 
-type DupDrop = Bool   -- ^ Flag to run with dup/drop inference
-
 -- | Compiler options for the IR compiler stage.
 data Options = Options
   { mode    :: Mode
   , tiType  :: TIType
-  , dupDrop :: DupDrop
+  , dupDrop :: Bool
   }
   deriving (Eq, Show)
 

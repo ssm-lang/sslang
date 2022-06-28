@@ -117,13 +117,12 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
     defs'' <- defs' -- user defined functions
     return p { I.programDefs = tDefs' ++ defs'' } -- constructor funcs ++ user funcs
  where
-  tDefs' = concat (createFuncs <$> tDefs)
-  -- ^ top-level constructor functions
+  tDefs' = concat (createFuncs <$> tDefs) -- top-level constructor functions
   defs' =
     filter ((`notElem` (fst <$> tDefs')) . fst)
       <$> everywhereM (mkM dataToApp) defs
-  -- ^ We need to filter defs to account for name collisions
-  -- ^ between user defined funcs and newly created and inserted constructor funcs
+  -- We need to filter defs to account for name collisions
+  -- between user defined funcs and newly created and inserted constructor funcs
   {- Example of name collision case and correction
   Given the SSLANG program
   @
