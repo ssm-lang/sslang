@@ -21,7 +21,10 @@ module Common.Pretty
 
 -- | <tt>typeAnn t d</tt> annotates document <tt>d</tt> with type
 --   annotation <tt>t</tt>.
-typeAnn :: Pretty t => t -> Doc ann -> Doc ann
+--   
+--   Only used by spaghetti so constrained by Dumpy instead of Pretty for
+--   now.
+typeAnn :: Dumpy t => t -> Doc ann -> Doc ann
 
 -- | <pre>
 --   =&gt;
@@ -57,8 +60,24 @@ amp :: Doc ann
 --   <a>Doc</a>s.
 block :: Doc ann -> [Doc ann] -> Doc ann
 
+-- | Number of spaces to indent
+indentNo :: Int
+
 -- | Format with a document of infinite width, preventing wraparound.
-spaghetti :: Pretty t => t -> String
+spaghetti :: Dumpy t => t -> String
+
+-- | Lengthy Typeclass: print an ugly but parseable representation of the
+--   AST
+--   
+--   <ul>
+--   <li>Translates from IR to Doc representation in one-to-one
+--   fashion</li>
+--   <li>No simplifications</li>
+--   <li>No whitespace formatting</li>
+--   <li>Type annotates everything</li>
+--   </ul>
+class Dumpy a
+dumpy :: Dumpy a => a -> Doc ann
 
 
 -- | The types of identifiers used across the compiler.
@@ -809,6 +828,7 @@ instance GHC.Classes.Eq Front.Ast.TopDef
 instance GHC.Show.Show Front.Ast.Program
 instance GHC.Classes.Eq Front.Ast.Program
 instance Prettyprinter.Internal.Pretty Front.Ast.Program
+instance Common.Pretty.Dumpy Front.Ast.Program
 instance Prettyprinter.Internal.Pretty Front.Ast.TopDef
 instance Prettyprinter.Internal.Pretty Front.Ast.Definition
 instance Prettyprinter.Internal.Pretty Front.Ast.Expr
@@ -1442,6 +1462,7 @@ instance GHC.Base.Functor IR.Types.TypeSystem.TypeDef
 instance GHC.Base.Functor IR.Types.TypeSystem.TypeVariant
 instance GHC.Base.Functor IR.Types.TypeSystem.Builtin
 instance Prettyprinter.Internal.Pretty t => Prettyprinter.Internal.Pretty (IR.Types.TypeSystem.Builtin t)
+instance Common.Pretty.Dumpy t => Common.Pretty.Dumpy (IR.Types.TypeSystem.Builtin t)
 
 
 -- | Type system supporting (parametric) polymorphism.
@@ -1512,6 +1533,7 @@ instance GHC.Show.Show IR.Types.Poly.Type
 instance GHC.Classes.Eq IR.Types.Poly.Type
 instance IR.Types.TypeSystem.TypeSystem IR.Types.Poly.Type
 instance Prettyprinter.Internal.Pretty IR.Types.Poly.Type
+instance Common.Pretty.Dumpy IR.Types.Poly.Type
 
 
 -- | Types with Typeclasses, e.g., after type inference
@@ -1561,10 +1583,11 @@ instance Data.Data.Data IR.Types.Classes.Type
 instance GHC.Classes.Ord IR.Types.Classes.Type
 instance GHC.Show.Show IR.Types.Classes.Type
 instance GHC.Classes.Eq IR.Types.Classes.Type
+instance GHC.Show.Show IR.Types.Classes.Scheme
 instance Data.Data.Data IR.Types.Classes.Scheme
 instance GHC.Classes.Ord IR.Types.Classes.Scheme
 instance GHC.Classes.Eq IR.Types.Classes.Scheme
-instance GHC.Show.Show IR.Types.Classes.Scheme
+instance Prettyprinter.Internal.Pretty IR.Types.Classes.Scheme
 instance IR.Types.TypeSystem.TypeSystem IR.Types.Classes.Type
 instance Prettyprinter.Internal.Pretty IR.Types.Classes.Type
 
@@ -1908,14 +1931,19 @@ instance Data.Data.Data t => Data.Data.Data (IR.IR.Program t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.IR.Program t)
 instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.IR.Program t)
 instance GHC.Base.Functor IR.IR.Program
-instance Prettyprinter.Internal.Pretty t => Prettyprinter.Internal.Pretty (IR.IR.Program t)
+instance (Prettyprinter.Internal.Pretty t, IR.Types.TypeSystem.TypeSystem t) => Prettyprinter.Internal.Pretty (IR.IR.Program t)
+instance (Common.Pretty.Dumpy t, IR.Types.TypeSystem.TypeSystem t) => Common.Pretty.Dumpy (IR.IR.Program t)
 instance GHC.Base.Functor IR.IR.Expr
 instance Control.Comonad.Comonad IR.IR.Expr
 instance Data.Foldable.Foldable IR.IR.Expr
-instance Prettyprinter.Internal.Pretty t => Prettyprinter.Internal.Pretty (IR.IR.Expr t)
+instance Prettyprinter.Internal.Pretty (IR.IR.Expr ())
+instance Common.Pretty.Dumpy t => Common.Pretty.Dumpy (IR.IR.Expr t)
 instance Prettyprinter.Internal.Pretty IR.IR.Alt
+instance Common.Pretty.Dumpy IR.IR.Alt
 instance Prettyprinter.Internal.Pretty IR.IR.PrimOp
+instance Common.Pretty.Dumpy IR.IR.PrimOp
 instance Prettyprinter.Internal.Pretty IR.IR.Literal
+instance Common.Pretty.Dumpy IR.IR.Literal
 
 
 -- | Infer types for optionally annotated program.
@@ -2442,9 +2470,10 @@ Both :: TIType
 
 -- | Compiler options for the IR compiler stage.
 data Options
-Options :: Mode -> TIType -> Options
+Options :: Mode -> TIType -> Bool -> Options
 [mode] :: Options -> Mode
 [tiType] :: Options -> TIType
+[dupDrop] :: Options -> Bool
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
