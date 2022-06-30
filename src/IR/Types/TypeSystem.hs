@@ -54,10 +54,18 @@ instance Functor Builtin where
 instance Pretty t => Pretty (Builtin t) where
   pretty Unit           = pretty "()"
   pretty Void           = pretty "!"
-  pretty (Ref t       ) = parens $ pretty "&" <> pretty t
-  pretty (Arrow a b   ) = parens $ pretty a <+> rarrow <+> pretty b
+  pretty (Ref t       ) = pretty "&" <> pretty t
+  pretty (Arrow a b   ) = pretty a <+> rarrow <+> pretty b
   pretty (Tuple    tys) = parens $ hsep $ punctuate comma $ map pretty tys
-  pretty (Integral s  ) = pretty $ "Int" ++ show s
+  pretty (Integral _  ) = pretty "Int" -- ++ show s
+
+instance Dumpy t => Dumpy (Builtin t) where
+  dumpy Unit           = pretty "()"
+  dumpy Void           = pretty "!"
+  dumpy (Ref t       ) = parens $ pretty "&" <> dumpy t
+  dumpy (Arrow a b   ) = parens $ dumpy a <+> rarrow <+> dumpy b
+  dumpy (Tuple    tys) = parens $ hsep $ punctuate comma $ map dumpy tys
+  dumpy (Integral _  ) = pretty "Int" -- ++ show s
 
 {- | A type system must allow us to construct and access underlying builtins.
 

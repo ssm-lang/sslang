@@ -40,7 +40,7 @@ import Data.List (isPrefixOf)
 $digit   = 0-9
 $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
-@identifier = [a-zA-Z] [a-zA-Z0-9_']*
+@identifier = [a-zA-Z_] [a-zA-Z0-9_']*
 
 $symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]

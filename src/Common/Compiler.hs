@@ -28,7 +28,6 @@ import           Control.Monad.Except           ( Except
 import           Control.Monad.Writer           ( MonadWriter(..)
                                                 , WriterT(..)
                                                 )
-
 import           Data.String                    ( IsString(..) )
 import           System.Exit                    ( exitFailure
                                                 , exitSuccess
