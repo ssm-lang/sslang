@@ -276,49 +276,50 @@ typedef char unit;
 
 -- | Setup the entry point of the program.
 genInitProgram :: I.VarId -> [C.Definition]
-genInitProgram entry = [cunit|
-    $ty:act_t *$id:stdout_handler_enter($ty:act_t *parent,
-                                        $ty:priority_t priority,
-                                        $ty:depth_t depth,
-                                        $ty:value_t *argv,
-                                        $ty:value_t *ret);
-
-    void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
-    void $id:stdin_handler_kill(void);
-
-    void $id:program_init(void) {
-      $ty:value_t ssm_stdin = $exp:std_sv;
-      $ty:value_t ssm_stdout = $exp:std_sv;
-
-      $ty:value_t std_argv[2] = { ssm_stdin, ssm_stdout };
-
-      $exp:(activate enter_stdout);
-      $exp:(activate enter_entry);
-
-      $id:stdin_handler_spawn($exp:(to_sv $ cexpr "ssm_stdin"));
-    }
-
-    void $id:program_exit(void) {
-      $id:stdin_handler_kill();
-    }
-  |]
- where
-  std_sv                    = new_sv $ marshal [cexp|0|]
-
-  parArgs                   = genParArgs 2 (root_priority, root_depth)
-  (stdoutPrio, stdoutDepth) = head parArgs
-  (entryPrio , entryDepth ) = parArgs !! 1
-  enter_stdout = [cexp|$id:stdout_handler_enter(&$exp:top_parent,
-                                                $exp:stdoutPrio,
-                                                $exp:stdoutDepth,
-                                                &ssm_stdout,
-                                                NULL)|]
-
-  enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
-                                         $exp:entryPrio,
-                                         $exp:entryDepth,
-                                         std_argv,
-                                         NULL)|]
+genInitProgram = const []
+-- genInitProgram entry = [cunit|
+--     $ty:act_t *$id:stdout_handler_enter($ty:act_t *parent,
+--                                         $ty:priority_t priority,
+--                                         $ty:depth_t depth,
+--                                         $ty:value_t *argv,
+--                                         $ty:value_t *ret);
+--
+--     void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
+--     void $id:stdin_handler_kill(void);
+--
+--     void $id:program_init(void) {
+--       $ty:value_t ssm_stdin = $exp:std_sv;
+--       $ty:value_t ssm_stdout = $exp:std_sv;
+--
+--       $ty:value_t std_argv[2] = { ssm_stdin, ssm_stdout };
+--
+--       $exp:(activate enter_stdout);
+--       $exp:(activate enter_entry);
+--
+--       $id:stdin_handler_spawn($exp:(to_sv $ cexpr "ssm_stdin"));
+--     }
+--
+--     void $id:program_exit(void) {
+--       $id:stdin_handler_kill();
+--     }
+--   |]
+--  where
+--   std_sv                    = new_sv $ marshal [cexp|0|]
+--
+--   parArgs                   = genParArgs 2 (root_priority, root_depth)
+--   (stdoutPrio, stdoutDepth) = head parArgs
+--   (entryPrio , entryDepth ) = parArgs !! 1
+--   enter_stdout = [cexp|$id:stdout_handler_enter(&$exp:top_parent,
+--                                                 $exp:stdoutPrio,
+--                                                 $exp:stdoutDepth,
+--                                                 &ssm_stdout,
+--                                                 NULL)|]
+--
+--   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
+--                                          $exp:entryPrio,
+--                                          $exp:entryDepth,
+--                                          std_argv,
+--                                          NULL)|]
 
 
 -- | Generate struct definition for an SSM procedure.
