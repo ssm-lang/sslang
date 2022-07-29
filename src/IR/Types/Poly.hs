@@ -56,6 +56,11 @@ instance TypeSystem Type where
   injectBuiltin _            = Nothing
 
 instance Pretty Type where
-  pretty (TBuiltin b  ) = pretty b
-  pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
-  pretty (TVar tvar   ) = pretty tvar
+  pretty (TBuiltin b ) = pretty b
+  pretty (TCon tcon _) = pretty tcon
+  pretty (TVar tvar  ) = pretty tvar
+
+instance Dumpy Type where
+  dumpy (TBuiltin b  ) = dumpy b
+  dumpy (TCon tcon ts) = parens (hsep $ pretty tcon : map dumpy ts)
+  dumpy (TVar tvar   ) = pretty tvar

@@ -11,7 +11,7 @@ itod x =
 pr putc dd =
   match dd
     Digit i = putc (i + 48)
-    Digits i dd' = pr putc dd'
+    Digits i dd_ = pr putc dd_
                    putc (i + 48)
 
 printi_ putc d = pr putc (itod d)

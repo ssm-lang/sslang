@@ -37,7 +37,6 @@ main (in: &Int) ( cout : & Int ) -> () =
                                                                                         Leaf = v 
                                                                                         _ = 88
                                                                   _ = 88
-                                       _ = 88
                 _ = 88
   let rmd = match root
 // Here, every arm in the pattern match as an identifier v...

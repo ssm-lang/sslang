@@ -34,12 +34,12 @@ data Type
 
 -- | Type scheme.
 data Scheme = Forall [TVarId] Type
-  deriving (Eq, Ord, Typeable, Data)
+  deriving (Eq, Ord, Typeable, Data, Show)
 
-instance Show Scheme where
-  show (Forall [] t) = "Forall . " ++ show t
-  show (Forall args t)
-    = "Forall " ++ unwords (map show args) ++ " . " ++ show t
+instance Pretty Scheme where
+  pretty (Forall [] t) = pretty $ "Forall . " ++ show t
+  pretty (Forall args t) =
+    pretty $ "Forall " ++ unwords (map show args) ++ " . " ++ show t
 
 instance TypeSystem Type where
   projectBuiltin = TBuiltin

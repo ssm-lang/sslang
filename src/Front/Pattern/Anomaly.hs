@@ -23,11 +23,18 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.Foldable                  ( find )
+import           Data.List                      ( find
+                                                , findIndex
+                                                )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( mapMaybe )
 import qualified Data.Set                      as S
 import qualified Front.Ast                     as A
+import           Front.Pattern.Common           ( CInfo(..)
+                                                , TInfo(..)
+                                                , buildConsMap
+                                                , buildTypeMap
+                                                )
 import qualified Front.Pattern.Matrix          as PM
 import qualified Front.Pattern.Vector          as PV
 
@@ -47,19 +54,6 @@ This is considered okay because:
 - Mal-typed patterns will be type-checked later in the IR type-inference pass
 -}
 
-data CInfo = CInfo
-  { cName  :: Identifier
-  , cType  :: Identifier
-  , cArity :: Int
-  }
-  deriving (Eq, Show)
-
-data TInfo = TInfo
-  { tName :: Identifier
-  , tCSet :: S.Set Identifier
-  }
-  deriving (Eq, Show)
-
 data AnomalyCtx = AnomalyCtx
   { typeMap :: M.Map Identifier TInfo
   , consMap :: M.Map Identifier CInfo
@@ -75,22 +69,8 @@ newtype AnomalyFn a = AnomalyFn (ReaderT AnomalyCtx Pass a)
   deriving (MonadReader AnomalyCtx) via (ReaderT AnomalyCtx Pass)
 
 buildCtx :: [A.TypeDef] -> AnomalyCtx
-buildCtx tds = AnomalyCtx { typeMap = tmap, consMap = cmap }
- where
-  tmap = foldr tAcc M.empty tds
-  cmap = foldr cAcc M.empty tds
-  tAcc td tmap' =
-    let typ   = A.typeName td
-        clist = map (\(A.VariantUnnamed cid _) -> cid) (A.typeVariants td)
-        cset  = S.fromList clist
-    in  M.insert typ (TInfo { tName = typ, tCSet = cset }) tmap'
-  cAcc td cmap' =
-    let typ   = A.typeName td
-        clist = A.typeVariants td
-        cAcc' (A.VariantUnnamed cid ts) cmap'' =
-          let c = CInfo { cName = cid, cType = typ, cArity = length ts }
-          in  M.insert cid c cmap''
-    in  foldr cAcc' cmap' clist
+buildCtx tds =
+  AnomalyCtx { typeMap = buildTypeMap tds, consMap = buildConsMap tds }
 
 -- | Run a AnomalyFn computation.
 runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
@@ -143,15 +123,38 @@ checkOpRegion (A.NextOp _ e opRegion) = checkExpr e >> checkOpRegion opRegion
 checkOpRegion A.EOR                   = return ()
 
 checkPats :: [A.Pat] -> AnomalyFn ()
-checkPats ps =
-  let pm = PM.singleCol ps
-  in  do
-        checkExhaustive pm
+checkPats ps = do
+  checkUselessArm ps
+  checkExhaustive ps
 
-checkExhaustive :: PM.PatMat -> AnomalyFn ()
-checkExhaustive pm = do
+checkUselessArm :: [A.Pat] -> AnomalyFn ()
+checkUselessArm ps = do
+  let
+    n = length ps
+    pms =
+      [ (ntrial, PM.singleCol $ take ntrial ps) | ntrial <- [0 .. (n - 1)] ]
+    trials = [ useful (PV.singleton $ ps !! ntrial) pm | (ntrial, pm) <- pms ]
+  results <- sequence trials
+  case findIndex not results of
+    Nothing -> return ()
+    Just ind ->
+      throwError
+        $  PatternError
+        $  "Useless pattern: "
+        <> (fromString . show $ ps !! ind)
+
+
+checkExhaustive :: [A.Pat] -> AnomalyFn ()
+checkExhaustive ps = do
+  let pm = PM.singleCol ps
   u <- useful (PV.singleton A.PatWildcard) pm
-  when u (throwError $ PatternError "Patterns are not exhaustive")
+  when
+    u
+    (  throwError
+    $  PatternError
+    $  "Patterns are not exhaustive"
+    <> (fromString . show $ ps)
+    )
 
 useful :: PV.PatVec -> PM.PatMat -> AnomalyFn Bool
 useful pv pm = do

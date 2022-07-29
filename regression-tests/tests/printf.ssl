@@ -43,17 +43,17 @@ print_integer (cout: & Int) (i: Integer) -> () =
 
 print_decimal (cout: & Int) (d: Decimal) -> () =
   match d
-    PDecimal int dec =
-      match int
+    PDecimal i dec =
+      match i
         DNil = print_digit cout 0
-        _ = print_digits cout int
+        _ = print_digits cout i
       print_char cout 46
       match dec
         DNil = print_digit cout 0
         _ = print_digits cout dec
-    NDecimal int dec =
+    NDecimal i dec =
       print_char cout 45
-      print_decimal cout (PDecimal int dec)
+      print_decimal cout (PDecimal i dec)
 
 print_string (cout: & Int) (s: String) -> () =
   match s

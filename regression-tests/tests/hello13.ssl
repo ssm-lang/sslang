@@ -12,10 +12,10 @@ type String
 
 puts_ putc s =
   match s
-    Cons c s = putc c
-               puts_ putc s
+    Cons c ss = putc c
+                puts_ putc ss
     Nil = ()
-    
+
 /*
 puts_ putc s =
   let puts__ ss =

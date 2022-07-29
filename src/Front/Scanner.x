@@ -40,12 +40,13 @@ import Data.List (isPrefixOf)
 $digit   = 0-9
 $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
-@identifier = [a-zA-Z] [a-zA-Z0-9_']*
+@identifier = [a-zA-Z_] [a-zA-Z0-9_']*
 
 $symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]
 $symbolAfterSlash   = [$symbolBase\_\:\"\']
 $symbolAny          = [$symbolBase\_\:\"\'\*]
+
 @operator = \/ | ( $symbolLeading | \/ $symbolAfterSlash ) ( $symbolAny | \/ $symbolAfterSlash )* \/?
 
 @commentL = \/\*
@@ -476,6 +477,7 @@ layout ttype sepToken i len = do
   -- Emit layout token.
   return $ Token (alexInputSpan i len, ttype)
 
+
 -- | First token in a block (epsilon action).
 blockFirstToken :: AlexAction Token
 blockFirstToken i _ = do
@@ -509,6 +511,7 @@ layoutNL ttype sepToken i len = do
 
   -- Emit token and continue scanning.
   return $ Token (alexInputSpan i len, ttype)
+
 
 -- | Keyword is just a plain keyword, which just emits given 'TokenType'.
 keyword :: TokenType -> AlexAction Token

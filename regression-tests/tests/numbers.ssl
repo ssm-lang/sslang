@@ -111,18 +111,12 @@ eqNumber (n : Number) (n2 : Number) -> Bool =
                                          Number lst2 = match lst2
                                                              Nil = True
                                                              _ = False
-                                         _ = False
                              Cons num tl = match n2
                                                  Number lst2 = match lst2
                                                                      Cons num2 tl2 = match (eqDigit num num2)
-                                                                                           True = match (eqNumber (Number  tl) (Number  tl2))
-                                                                                                        True = True
-                                                                                                        _ = False
+                                                                                           True = eqNumber (Number  tl) (Number  tl2)
                                                                                            _ = False
-                                                                     _ = False          
-                                                 _ = False
-                             _ = False
-          _ = False
+                                                                     _ = False
 
 print (cout : & Int) (c : Int) -> () =
     after 10 , (cout : & Int) <- c  
@@ -133,15 +127,3 @@ main (cint : & Int) ( cout : & Int ) -> () =
     let y = Number (Cons Five (Cons Five (Cons Zero Nil)))  // 125
     print cout (btos (eqNumber  x x))
     print cout (btos (eqNumber x y))
-    
-
-        
-
-        
-
-
-
-
-
-
-        

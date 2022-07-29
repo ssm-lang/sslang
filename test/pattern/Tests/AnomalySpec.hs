@@ -18,7 +18,7 @@ spec :: Spec
 spec = do
   describe "pure stuff" $ do
     it "defaultize" $ do
-      (PM.emptyWithCols 0)
+      PM.emptyWithCols 0
         `shouldBe` (PM.defaultize . PM.singleCol $ [A.PatLit (A.LitInt 1)])
   describe "allows valid matches" $ do
     it "allows simple data constructor match" $ do

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SSLC="stack exec sslc --"
-
+pretty="--dump-ir-final"
 SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
@@ -94,7 +94,6 @@ Check() {
     generatedfiles=
 
     # Run the compiler
-
     csource="out/${basename}.c"
     cheader="out/${basename}.h"
     obj="out/${basename}.o"
@@ -112,7 +111,35 @@ Check() {
     Run "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
-    # Report the status and clean up the generated files
+ #    # Pretty Printer Tests
+ #    ir1="out/${basename}-ir1.ssl"
+ #    ir2="out/${basename}-ir2.ssl"
+ #    csourceIr2="out/${basename}-ir2.c"
+ #    objIr2="out/${basename}-ir2.o"
+ #    execIr2="out/${basename}-ir2"
+ #    resultIr2="out/${basename}-ir2.out"
+ #    diffIr2="out/${basename}-ir2.diff"
+ #    diffIr3="out/${basename}-ir3.diff"
+ #    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2} ${resultIr2}"
+ #
+ #    # TEST: can we pretty print the IR?
+ #    Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
+ #    # TEST: can pretty printed IR be read back in?
+ #    Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
+ #    # TEST: can we fully compile pretty printed IR?
+ #    Run $SSLC "${ir2}" ">" "out/${basename}-ir2.c" &&
+ #    Run $CC -c -o "${objIr2}" "${csourceIr2}" &&
+ #    if [ -f "${mainsource}" ] ; then
+	# NoteGen "${ir1} ${ir2} ${objIr2} ${execIr2} ${result-ir2} ${diff-ir3} ${diff-ir2}"
+	# Run $CC -c -o "${mainobj}" "${mainsource}" &&
+	# Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
+	# Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
+ #    # TEST: does compiled IR produce the same results as compiled source?
+	# Compare "${resultIr2}" "${reference}" "out/${basename}-ir3.diff"
+ #    fi
+ #
+ #    # Report the status and clean up the generated files
+ #    
 
     if [ -z "$error" ] ; then
 	if [ -z "$keep" ] ; then

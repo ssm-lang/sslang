@@ -33,7 +33,6 @@ main (cin : &Int)( cout : & Int ) -> () =
                                                                                         Leaf = v 
                                                                                         _ = 88
                                                                   _ = 88
-                                       _ = 88
                 _ = 88
 // Pattern match on root of tree to extract the right most descendant.               
   let rmd = match root

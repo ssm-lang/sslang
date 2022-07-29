@@ -12,9 +12,9 @@ type String
 
 puts cout s =
   match s
-    Cons c s =
+    Cons c ss =
       putc cout c
-      puts cout s
+      puts cout ss
     Nil = ()
 
 main cin (cout : &Int) =

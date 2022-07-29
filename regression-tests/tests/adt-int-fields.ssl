@@ -23,13 +23,13 @@ main (cin : &Int) ( cout : & Int ) -> () =
   let g = match d
               Leaf = 78                        // chooses this one, N
               OneChild e1 e2 = e1              
-              TwoChildren b' b'' = 68          // D
+              TwoChildren b_ b__ = 68          // D
   let h = match e
               Leaf = 78                        // N
 // test the second arm of pattern match can be selected 
 // (not always picking the first option)
-              OneChild e' e'' = e'             // chooses this one    
-              TwoChildren b' b'' = 68          // D
+              OneChild e_ e__ = e_             // chooses this one    
+              TwoChildren b_ b__ = 68          // D
 // make sure pattern matching/field access worked as expected 
 // by printing out particular integer fields
   after 10 , (cout : & Int) <- a

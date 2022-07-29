@@ -23,6 +23,7 @@ import           Common.Identifiers             ( TVarId(..)
                                                 , fromId
                                                 , fromString
                                                 , isCons
+                                                , isVar
                                                 )
 
 import           Control.Comonad                ( Comonad(..) )
@@ -174,9 +175,10 @@ lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt
-lowerAlt A.PatWildcard              = I.AltDefault Nothing
-lowerAlt (A.PatId  d              ) = I.AltData (I.DConId d) []
-lowerAlt (A.PatLit l              ) = I.AltLit $ lowerLit l
+lowerAlt A.PatWildcard = I.AltDefault Nothing
+lowerAlt (A.PatId i) =
+  if isVar i then I.AltDefault (Just $ I.VarId i) else I.AltData (I.DConId i) []
+lowerAlt (A.PatLit l) = I.AltLit $ lowerLit l
 lowerAlt (A.PatTup _) = error "I.Alt for A.PatTup not implemented yet"
 lowerAlt (A.PatApp (A.PatId d : t)) = I.AltData (I.DConId d)
                                                 (lowerPatArg <$> t)

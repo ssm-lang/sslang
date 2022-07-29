@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
@@ -14,6 +15,7 @@ module IR.IR
   , wellFormed
   , collectLambda
   , makeLambdaChain
+  , extract
   , zipApp
   , unzipApp
   ) where
@@ -23,15 +25,17 @@ import           Common.Identifiers             ( Binder
                                                 , VarId(..)
                                                 )
 import           Common.Pretty
-import           IR.Types.TypeSystem            ( TypeDef(..)
-                                                , TypeSystem
-                                                , arrow
-                                                )
-
 import           Control.Comonad                ( Comonad(..) )
+import           Control.Monad                  ( void )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
+                                                )
+import           IR.Types.TypeSystem            ( TypeDef(..)
+                                                , TypeSystem
+                                                , TypeVariant(..)
+                                                , arrow
+                                                , collectArrow
                                                 )
 
 {- | Top-level compilation unit.
@@ -140,7 +144,7 @@ data Expr t
   = Var VarId t
   {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
   | Data DConId t
-  {- ^ @Data d t@ is a data constructor named @n@ of type @t@. -}
+  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
   | Lit Literal t
   {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
   | App (Expr t) (Expr t) t
@@ -172,7 +176,7 @@ data Alt
   = AltData DConId [Binder]
   -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
   | AltLit Literal
-  -- ^ @AltLit l e@ matches against literal @d@, producing expression @e@.
+  -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
@@ -314,52 +318,100 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp PrimLe    ) [_, _]    = True
   wfPrim _                   _         = False
 
-instance Pretty t => Pretty (Program t) where
-  pretty Program { programDefs = ds } = vsep $ map pretty ds
-  -- TODO: type defs
-  -- TODO: how to represent entry point?
+{- | Pretty Typeclass: pretty print the IR
 
-instance Pretty t => Pretty (Expr t) where
-  pretty (Var  v t  ) = typeAnn t $ pretty v
-  pretty (Data d t  ) = typeAnn t $ pretty d
-  pretty (Lit  l t  ) = typeAnn t $ pretty l
-  pretty (App l  r t) = typeAnn t $ pretty l <+> pretty r
-  pretty (Let as b t) = typeAnn t $ parens letexpr
+Adds 
+* indentation and line breaks
+* some parens (not minimal parens, but fewer than around every node)
+Omits 
+* let _ =
+* type annotations
+Reverts
+* curried funcs of one arg back to multiple arg funcs
+-}
+instance (Pretty t, TypeSystem t) => Pretty (Program t) where
+  pretty Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
    where
-    letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> pretty b
-    def (Just v , e) = pretty v <+> equals <+> braces (pretty e)
-    def (Nothing, e) = pretty '_' <+> equals <+> braces (pretty e)
-  pretty (Lambda a b t) =
-    typeAnn t $ pretty "fun" <+> pretty a <+> braces (pretty b)
-  pretty (Match s as t) = typeAnn t $ pretty "match" <+> pretty s <+> arms
+    ds' = case ds of
+      [h] -> prettyFuncDef h
+      _   -> vsep (map ((line <>) . prettyFuncDef) ds)
+    tys' = if null tys then pretty "" else vsep (prettyTypDef <$> tys)
+    -- Generates readable Doc representation of an IR Top Level Function
+    prettyFuncDef :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
+    prettyFuncDef (v, l@(Lambda _ _ ty)) =
+      pretty v <+> typSig <+> pretty "=" <+> line <> indent
+        2
+        (pretty (void body))
+     where
+      typSig = hsep args <+> rarrow <+> pretty retTy
+      args   = zipWith
+        (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
+        argIds
+        argTys
+      (argIds, body ) = collectLambda l
+      (argTys, retTy) = collectArrow ty
+    prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
+    -- Generates readable Doc representation of an IR Type Definition
+    prettyTypDef :: Pretty t => (TConId, TypeDef t) -> Doc ann
+    prettyTypDef (tcon, TypeDef { variants = vars }) =
+      pretty "type"
+        <+> pretty tcon
+        <+> line
+        <>  indent indentNo (vsep $ map prettyDCon vars)
+        <>  line
+    prettyDCon :: (Pretty t) => (DConId, TypeVariant t) -> Doc ann
+    prettyDCon (dcon, VariantNamed argz) =
+      pretty dcon <+> hsep (pretty . snd <$> argz)
+    prettyDCon (dcon, VariantUnnamed argz) =
+      pretty dcon <+> hsep (pretty <$> argz)
+
+
+-- | Pretty prints IR Expr nodes without type annotations
+instance Pretty (Expr ()) where
+  pretty a@App{} = pretty nm <+> hsep (parenz <$> args)
    where
-    -- Where to add binder?
-    arms = block bar (map arm as)
-    arm (a, e) = pretty a <+> drarrow <+> braces (pretty e)
-  pretty (Prim New   [r] t) = typeAnn t $ pretty "new" <+> pretty r
-  pretty (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> pretty r
-  pretty (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> pretty r
-  pretty (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> pretty r
-  pretty (Prim Assign [l, r] t) =
-    typeAnn t $ parens $ pretty l <+> pretty "<-" <+> braces (pretty r)
-  pretty (Prim After [d, l, r] t) = typeAnn t $ parens ae
+    (nm, args) = unzipApp a
+    -- insert (usually) necessary parens
+    parenz :: (Expr (), ()) -> Doc ann
+    parenz (v@(Var _ _), _) = pretty v  -- variables
+    parenz (l@(Lit _ _), _) = pretty l  -- literals
+    parenz (e          , _) = parens (pretty e)
+    -- TODO: minimum parens algo
+  pretty (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
+  pretty (Var v _                  ) = pretty v
+  pretty (Lambda a              b _) = pretty "fun" <+> pretty a <+> pretty b
+  pretty (Let    [(Nothing, e)] b _) = pretty e <> line <> pretty b
+  pretty (Let    as             b _) = letexpr
+   where
+    letexpr = pretty "let" <+> vsep (map def as) <> line <> pretty b
+    def (Just v , e) = pretty v <+> equals <+> align (pretty e)
+    def (Nothing, e) = pretty '_' <+> equals <+> align (pretty e)
+  pretty (Prim After [d, l, r] _) = ae
    where
     ae =
-      pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> braces
-        (pretty r)
-  pretty (Prim Par es t) =
-    typeAnn t $ pretty "par" <+> block dbar (map pretty es)
-  pretty (Prim Wait es t) =
-    typeAnn t $ pretty "wait" <+> block dbar (map pretty es)
-  pretty (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (pretty b)
-  pretty (Prim Break []  t) = typeAnn t $ pretty "break"
-  pretty (Prim Now   []  t) = typeAnn t $ pretty "now"
-  pretty (Prim (PrimOp po) [l, r] t) =
-    parens $ pretty l <+> pretty po <+> pretty r <> pretty t
+      pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> pretty r
+  pretty (Prim  Assign [l, r] _) = parens $ pretty l <+> larrow <+> pretty r
+  pretty (Match s      as     _) = pretty "match" <+> pretty s <> line <> arms
+   where
+    arms = vsep (map (indent indentNo . arm) as)
+    arm :: (Alt, Expr ()) -> Doc ann
+    arm (a, e) = pretty a <+> equals <+> align (pretty e)
+  pretty (Prim Loop [b] _) =
+    pretty "loop" <> line <> indent indentNo (pretty b)
+  pretty (Prim (PrimOp po) [l, r] _) = pretty l <+> pretty po <+> pretty r
+  pretty (Data d _                 ) = pretty d
+  pretty (Lit  l _                 ) = pretty l
+  pretty (Prim New    [r] _        ) = pretty "new" <+> pretty r
+  pretty (Prim Dup    [r] _        ) = pretty "__dup" <+> pretty r
+  pretty (Prim Drop   [r] _        ) = pretty "__drop" <+> pretty r
+  pretty (Prim Deref  [r] _        ) = pretty "deref" <+> pretty r
+  pretty (Prim Par es _) = pretty "par" <+> block dbar (map pretty es)
+  pretty (Prim Break  []  _        ) = pretty "break"
+  -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
 instance Pretty Alt where
-  pretty (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
+  pretty (AltData a b        ) = pretty a <+> hsep (map pretty b)
   pretty (AltLit     a       ) = pretty a
   pretty (AltDefault (Just v)) = pretty v
   pretty (AltDefault Nothing ) = pretty '_'
@@ -381,8 +433,111 @@ instance Pretty PrimOp where
   pretty PrimBitAnd = pretty "&"
   pretty PrimBitOr  = pretty "|"
   pretty PrimEq     = pretty "=="
-  pretty PrimNeq     = pretty "!="
+  pretty PrimNeq    = pretty "!="
   pretty PrimGt     = pretty ">"
   pretty PrimGe     = pretty ">="
   pretty PrimLt     = pretty "<"
   pretty PrimLe     = pretty "<="
+
+-- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
+instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
+  dumpy Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
+   where
+    ds' = case ds of
+      [h] -> dumpyFuncDef h
+      _   -> vsep (map ((line <>) . dumpyFuncDef) ds)
+    tys' = if null tys then pretty "" else vsep (dumpyTypDef <$> tys)
+    -- Generates readable Doc representation of an IR Top Level Function
+    dumpyFuncDef :: (TypeSystem t, Dumpy t) => (VarId, Expr t) -> Doc ann
+    dumpyFuncDef (v, l@(Lambda _ _ ty)) =
+      pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
+     where
+      typSig = hsep args <+> rarrow <+> dumpy retTy
+      args   = zipWith
+        (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
+        argIds
+        argTys
+      (argIds, body ) = collectLambda l
+      (argTys, retTy) = collectArrow ty
+    dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
+    -- Generates readable Doc representation of an IR Type Definition
+    dumpyTypDef :: Dumpy t => (TConId, TypeDef t) -> Doc ann
+    dumpyTypDef (tcon, TypeDef { variants = vars }) =
+      pretty "type"
+        <+> pretty tcon
+        <+> line
+        <>  indent indentNo (vsep $ map dumpyDCon vars)
+        <>  line
+    dumpyDCon :: (Dumpy t) => (DConId, TypeVariant t) -> Doc ann
+    dumpyDCon (dcon, VariantNamed argz) =
+      pretty dcon <+> hsep (dumpy . snd <$> argz)
+    dumpyDCon (dcon, VariantUnnamed argz) =
+      pretty dcon <+> hsep (dumpy <$> argz)
+  -- TODO: how to represent entry point?
+
+instance (Dumpy t) => Dumpy (Expr t) where
+  dumpy (Var  v t  ) = typeAnn t $ pretty v
+  dumpy (Data d t  ) = typeAnn t $ pretty d
+  dumpy (Lit  l t  ) = typeAnn t $ dumpy l
+  dumpy (App l  r t) = typeAnn t $ dumpy l <+> dumpy r
+  dumpy (Let as b t) = typeAnn t $ parens letexpr
+   where
+    letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> dumpy b
+    def (Just v , e) = pretty v <+> equals <+> braces (dumpy e)
+    def (Nothing, e) = pretty '_' <+> equals <+> braces (dumpy e)
+  dumpy (Lambda a b t) =
+    typeAnn t $ pretty "fun" <+> pretty a <+> braces (dumpy b)
+  dumpy (Match s as t) = typeAnn t $ pretty "match" <+> dumpy s <+> arms
+   where
+    -- Where to add binder?
+    arms = block bar (map arm as)
+    arm (a, e) = dumpy a <+> pretty "=" <+> braces (dumpy e)
+  dumpy (Prim New   [r] t) = typeAnn t $ pretty "new" <+> dumpy r
+  dumpy (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> dumpy r
+  dumpy (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> dumpy r
+  dumpy (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> dumpy r
+  dumpy (Prim Assign [l, r] t) =
+    typeAnn t $ parens $ dumpy l <+> larrow <+> braces (dumpy r)
+  dumpy (Prim After [d, l, r] t) = typeAnn t $ parens ae
+   where
+    ae = pretty "after" <+> dumpy d <> comma <+> dumpy l <+> larrow <+> braces
+      (dumpy r)
+  dumpy (Prim Par es t) =
+    typeAnn t $ pretty "par" <+> block dbar (map dumpy es)
+  dumpy (Prim Wait es t) =
+    typeAnn t $ pretty "wait" <+> block dbar (map dumpy es)
+  dumpy (Prim Loop   [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
+  dumpy (Prim Break  []  t) = typeAnn t $ pretty "break"
+  -- dumpy (Prim Return [e] t) = typeAnn t $ pretty "return" <+> braces (dumpy e)
+  dumpy (Prim (PrimOp po) [l, r] t) =
+    typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
+  dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
+
+instance Dumpy Alt where
+  dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
+  dumpy (AltLit     a       ) = pretty a
+  dumpy (AltDefault (Just v)) = pretty v
+  dumpy (AltDefault Nothing ) = pretty '_'
+
+instance Dumpy Literal where
+  dumpy (LitIntegral i) = pretty $ show i
+  dumpy (LitBool     b) = pretty $ show b
+  dumpy LitEvent        = pretty "()"
+
+instance Dumpy PrimOp where
+  dumpy PrimNeg    = pretty "-"
+  dumpy PrimNot    = pretty "!"
+  dumpy PrimBitNot = pretty "~"
+  dumpy PrimAdd    = pretty "+"
+  dumpy PrimSub    = pretty "-"
+  dumpy PrimMul    = pretty "*"
+  dumpy PrimDiv    = pretty "/"
+  dumpy PrimMod    = pretty "%"
+  dumpy PrimBitAnd = pretty "&"
+  dumpy PrimBitOr  = pretty "|"
+  dumpy PrimEq     = pretty "=="
+  dumpy PrimNeq    = pretty "!="
+  dumpy PrimGt     = pretty ">"
+  dumpy PrimGe     = pretty ">="
+  dumpy PrimLt     = pretty "<"
+  dumpy PrimLe     = pretty "<="
