@@ -47,15 +47,16 @@ SignalError() {
 Compare() {
     NoteGen "$3"
     if ! [ -f "$2" ] ; then
-      echo "$2 does not exist, nothing to compare" 1>&2
-      return
+      SignalError "$2 not found"	
+      echo "$2 not found" 1>&2
+    else
+	echo diff -b $1 $2 ">" $3 1>&2
+	diff -b "$1" "$2" > "$3" 2>&1 || {
+	    SignalError "$1 differs"
+	    echo "FAILED $1 differs from $2" 1>&2
+	    cat $3 >&2
+	}
     fi
-    echo diff -b $1 $2 ">" $3 1>&2
-    diff -b "$1" "$2" > "$3" 2>&1 || {
-      SignalError "$1 differs"
-      echo "FAILED $1 differs from $2" 1>&2
-      cat $3 >&2
-    }
 }
 
 # Run <args>
