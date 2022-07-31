@@ -109,8 +109,9 @@ inferProgram p = runInferFn $ do
   recordFDefs $ I.programDefs p
   defs'     <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
-                     , I.programEntry = I.programEntry p
                      , I.typeDefs     = typeDefs'
+                     , I.programEntry = I.programEntry p
+                     , I.cDefs        = I.cDefs p
                      }
 
 -- | 'recordFDefs' saves information about all the declared functions for future use
@@ -501,6 +502,10 @@ initTypeVars (I.Match cond arms annT) = do
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
   checkArm (_, rhs) = withNewScope $ initTypeVars rhs
+initTypeVars (I.Prim c@(I.CCall _) es annT) = do
+  es' <- mapM initTypeVars es
+  t <- typeCheck (collapseAnnT annT) unit
+  return $ I.Prim c es' t
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError
@@ -686,6 +691,9 @@ getType (I.Match cond arms _) = do
       let t      = extract h
       -- type of match is type of one of its arms
       return (I.Match cond' arms'' t)
+getType (I.Prim c@(I.CCall _) es _) = do
+  es' <- mapM getType es
+  return $ I.Prim c es' unit -- TODO: handle non-unit return value typet
 getType e =
   throwError
     $  Compiler.TypeError

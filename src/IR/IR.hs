@@ -20,6 +20,7 @@ module IR.IR
   , unzipApp
   ) where
 import           Common.Identifiers             ( Binder
+                                                , CSym(..)
                                                 , DConId(..)
                                                 , TConId(..)
                                                 , VarId(..)
@@ -44,6 +45,7 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 -}
 data Program t = Program
   { programEntry :: VarId
+  , cDefs        :: String
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
@@ -122,6 +124,7 @@ data Primitive
   {- ^ @Now@ obtains the value of the current instant -}
   | PrimOp PrimOp
   {- ^ Primitive operator. -}
+  | CCall CSym
   deriving (Eq, Show, Typeable, Data)
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
@@ -224,11 +227,9 @@ makeLambdaChain args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `arrow` extract b
 
 instance Functor Program where
-  fmap f Program { programEntry = e, programDefs = defs, typeDefs = tds } =
-    Program { programEntry = e
-            , programDefs  = fmap (second $ fmap f) defs
-            , typeDefs     = fmap (second $ fmap f) tds
-            }
+  fmap f p = p { programDefs = second (fmap f) <$> programDefs p
+               , typeDefs    = second (fmap f) <$> typeDefs p
+               }
 
 instance Functor Expr where
   fmap f (Var  v t      ) = Var v (f t)
@@ -301,6 +302,7 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim Wait                (_ : _)   = True
   wfPrim Break               []        = True
   wfPrim Now                 [_]       = True
+  wfPrim (CCall  _         ) _         = True
   wfPrim (PrimOp PrimNeg   ) [_]       = True
   wfPrim (PrimOp PrimNot   ) [_]       = True
   wfPrim (PrimOp PrimBitNot) [_]       = True
@@ -401,12 +403,12 @@ instance Pretty (Expr ()) where
   pretty (Prim (PrimOp po) [l, r] _) = pretty l <+> pretty po <+> pretty r
   pretty (Data d _                 ) = pretty d
   pretty (Lit  l _                 ) = pretty l
-  pretty (Prim New    [r] _        ) = pretty "new" <+> pretty r
-  pretty (Prim Dup    [r] _        ) = pretty "__dup" <+> pretty r
-  pretty (Prim Drop   [r] _        ) = pretty "__drop" <+> pretty r
-  pretty (Prim Deref  [r] _        ) = pretty "deref" <+> pretty r
+  pretty (Prim New   [r] _         ) = pretty "new" <+> pretty r
+  pretty (Prim Dup   [r] _         ) = pretty "__dup" <+> pretty r
+  pretty (Prim Drop  [r] _         ) = pretty "__drop" <+> pretty r
+  pretty (Prim Deref [r] _         ) = pretty "deref" <+> pretty r
   pretty (Prim Par es _) = pretty "par" <+> block dbar (map pretty es)
-  pretty (Prim Break  []  _        ) = pretty "break"
+  pretty (Prim Break []  _         ) = pretty "break"
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
@@ -506,8 +508,8 @@ instance (Dumpy t) => Dumpy (Expr t) where
     typeAnn t $ pretty "par" <+> block dbar (map dumpy es)
   dumpy (Prim Wait es t) =
     typeAnn t $ pretty "wait" <+> block dbar (map dumpy es)
-  dumpy (Prim Loop   [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
-  dumpy (Prim Break  []  t) = typeAnn t $ pretty "break"
+  dumpy (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
+  dumpy (Prim Break []  t) = typeAnn t $ pretty "break"
   -- dumpy (Prim Return [e] t) = typeAnn t $ pretty "return" <+> braces (dumpy e)
   dumpy (Prim (PrimOp po) [l, r] t) =
     typeAnn t $ dumpy l <+> dumpy po <+> dumpy r

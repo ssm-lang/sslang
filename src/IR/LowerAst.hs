@@ -65,6 +65,7 @@ lowerProgram (A.Program ds) = do
   return $ I.Program { I.programEntry = fromString "main" -- TODO: don't hardcode
                      , I.programDefs  = dds
                      , I.typeDefs     = tds
+                     , I.cDefs        = concat $ mapMaybe A.getTopCDefs ds
                      }
 
 -- | Lower a top-level data definition into IR.
@@ -159,9 +160,8 @@ lowerExpr (A.Wait exprs) k =
   I.Prim I.Wait (map (`lowerExpr` id) exprs) (k I.untyped)
 lowerExpr (A.Seq l r) k =
   I.Let [(Nothing, lowerExpr l id)] (lowerExpr r id) (k I.untyped)
-lowerExpr A.Break        k  = I.Prim I.Break [] (k I.untyped)
-lowerExpr (A.Return _e ) _k = error "Return statements are not yet supported"
-lowerExpr (A.Match s ps) k  = I.Match cond (fmap f ps) (k I.untyped)
+lowerExpr A.Break        k = I.Prim I.Break [] (k I.untyped)
+lowerExpr (A.Match s ps) k = I.Match cond (fmap f ps) (k I.untyped)
  where
   cond = lowerExpr s id
   f (a, b) = (lowerAlt a, lowerExpr b id)
@@ -170,8 +170,10 @@ lowerExpr (A.IfElse c t e) k = I.Match cond [eArm, tArm] (k I.untyped)
   cond = lowerExpr c id
   tArm = (I.AltDefault Nothing, lowerExpr t id)
   eArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
+lowerExpr (A.CCall s es) k =
+  I.Prim (I.CCall $ fromId s) (map (`lowerExpr` id) es) (k I.untyped)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
-lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
+lowerExpr A.NoExpr k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt

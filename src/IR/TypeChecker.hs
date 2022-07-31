@@ -85,12 +85,11 @@ inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   typeDefs' <- inferADT $ I.typeDefs p
   defs' <- inferProgramDefs $ I.programDefs p
-  return $
-    I.Program
-      { I.programDefs = defs',
-        I.programEntry = I.programEntry p,
-        I.typeDefs = typeDefs'
-      }
+  return $ I.Program { I.programDefs = defs'
+                     , I.typeDefs = typeDefs'
+                     , I.programEntry = I.programEntry p
+                     , I.cDefs = I.cDefs p 
+                     }
 
 {-| Pass all program typeDefs through the typechecker
 
@@ -262,6 +261,9 @@ inferPrim (I.Prim I.Par es _) = do
   es' <- mapM inferExpr es
   let ts = map extract es'
   return $ I.Prim I.Par es' $ tuple ts
+inferPrim (I.Prim c@(I.CCall _) es _) = do
+  es' <- mapM inferExpr es
+  return $ I.Prim c es' unit
 inferPrim e = throwError $ Compiler.TypeError $ fromString $ "Unable to type Prim expression: " ++ show e
 
 -- | Check type of a binary integer operation.

@@ -240,11 +240,11 @@ undef = marshal [cexp|0xdeadbeef|]
 --
 -- Items 2 and 3 include both declarations and definitions.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs, I.programEntry = entry }
-  = do
-    (tdefs , tinfo) <- genTypes typedefs
-    (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
-    return $ includes ++ tdefs ++ cdecls ++ cdefs ++ genInitProgram entry
+genProgram p = do
+  (tdefs , tinfo ) <- genTypes $ I.typeDefs p
+  (cdecls, cdefns) <- cUnpack <$> mapM (genTop tinfo) (I.programDefs p)
+  return $ includes ++ tdefs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
+    (I.programEntry p)
  where
   genTop
     :: TypegenInfo
@@ -261,11 +261,14 @@ genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs, I.programEnt
         , [enterDefn, closureDefn, stepDefn]
         )
    where
-    tops            = map (second extract) defs
+    tops            = map (second extract) $ I.programDefs p
     (argIds, body ) = I.collectLambda l
     (argTys, retTy) = I.collectArrow ty
   genTop _ (_, I.Lit _ _) = todo
   genTop _ (_, _        ) = nope
+
+  cUnpack = bimap concat concat . unzip
+  cescs   = [cunit|$esc:(I.cDefs p)|]
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -732,17 +735,12 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break       [] _ = return (undef, [citems|break;|])
-genPrim I.Now         [] _ = return (marshal $ ccall now [], [])
--- Unused return statement
--- genPrim I.Return [e] _ = do
---   (val, stms) <- genExpr e
---   -- Assign to return argument and jump to leave
---   let retBlock = [citems|
---                     *$exp:(acts_ ret_val) = $exp:val;
---                     goto $id:leave_label;
---                  |]
---   return (undef, stms ++ retBlock)
+genPrim I.Break     [] _ = return (undef, [citems|break;|])
+genPrim I.Now       [] _ = return (marshal $ ccall now [], [])
+genPrim (I.CCall s) es _ = do
+  (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
+  -- TODO: obtain return value from call
+  return (unit, argStms ++ [citems|$id:s($args:argExps);|])
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 

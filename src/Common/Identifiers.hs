@@ -47,6 +47,7 @@ module Common.Identifiers
   , DConId(..)
   , VarId(..)
   , TVarIdx(..)
+  , CSym(..)
   , Binder
   , Identifier(..)
   , isCons
@@ -157,6 +158,20 @@ newtype DConId = DConId Identifier
 
 -- | Identifier for data variables, e.g., @x@.
 newtype VarId = VarId Identifier
+  deriving Eq
+  deriving Show
+  deriving Ord
+  deriving Typeable
+  deriving Data
+  deriving ToIdent via Identifier
+  deriving IsString via Identifier
+  deriving Identifiable via Identifier
+  deriving Semigroup via Identifier
+  deriving Monoid via Identifier
+  deriving Pretty via Identifier
+
+-- | Identifier for C symbols, e.g., @printf@.
+newtype CSym = CSym Identifier
   deriving Eq
   deriving Show
   deriving Ord

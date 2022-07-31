@@ -42,7 +42,7 @@ $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z_] [a-zA-Z0-9_']*
 
-$symbolBase         = [\!\#\$\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolBase         = [\!\#\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]
 $symbolAfterSlash   = [$symbolBase\_\:\"\']
 $symbolAny          = [$symbolBase\_\:\"\'\*]
@@ -52,24 +52,24 @@ $symbolAny          = [$symbolBase\_\:\"\'\*]
 @commentL = \/\*
 @commentR = \*\/
 
+@cSym = \$
+@cBlockL = \$\$
+@cBlockR = \$\$
+
 $asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}]
 $escapable = [\\ \' \" n r t]
 @escapeChar = \\ $escapable
 @litChar = @escapeChar | $asciiChar
 
 tokens :-
-
-  -- Always ignore horizontal whitespace
-  $blank+               ;
-
-  -- Always ignore single-line comments
-  "//".*                ;
-
-  @commentL             { commentBegin }
-  @commentR             { commentEnd }
-
   <commentBody> {
-    -- Ignore anything inside a comment
+    $blank+             ;
+
+    @commentL           { commentBegin }
+
+    @commentR           { commentEnd }
+
+    -- Ignore anything else inside a comment
     . | @newline        ;
   }
 
@@ -79,6 +79,10 @@ tokens :-
   }
 
   <lineStart> {
+    $blank+             ;
+    "//".*              ;
+    @commentL           { commentBegin }
+
     -- Ignore consecutive newlines.
     @newline            ;
 
@@ -87,6 +91,10 @@ tokens :-
   }
 
   <blockStart> {
+    $blank+             ;
+    "//".*              ;
+    @commentL           { commentBegin }
+
     -- If we're about to start a block, newlines don't matter.
     @newline            ;
 
@@ -98,6 +106,10 @@ tokens :-
   }
 
   <0> {
+    $blank+             ;
+    "//".*              ;
+    @commentL           { commentBegin }
+
     -- Use lineStart to move scanner to first non-whitespace token of line.
     @newline            { gotoStartLine }
 
@@ -146,8 +158,17 @@ tokens :-
     @identifier         { strTok (TId . fromString) }
     $digit+             { strTok (TInteger . read) }
     \' @litChar \'      { charTok }
+
+    -- InlineC C code
+    @cSym @identifier   { strTok (TCSym . fromString . dropEnds 1 0) }
+    @cBlockL            { cBlockBegin }
   }
 
+  <cBlockBody> {
+    @cBlockR            { cBlockEnd }
+    @cBlockR @cBlockR   { cBlockChunk (const "$$") }
+    (. | @newline)+     { cBlockChunk id }
+  }
 {
 -- | Internal compiler error for unreachable code.
 internalErr :: String -> Alex a
@@ -181,6 +202,8 @@ data ScannerContext
   | PendingBlockNL Int TokenType
   -- | In an implicit block, lines separated by given token.
   | ImplicitBlock Int TokenType
+  -- | In a block of inlinec C code, accumulating the inlinecd C code.
+  | InlineCBlock [String] AlexPosn
   deriving (Show)
 
 -- | The 'Int' in 'ScannerContext' is the margin.
@@ -190,13 +213,14 @@ ctxMargin (EndingExplicitBlock m _ _) = m
 ctxMargin (PendingBlock m _         ) = m
 ctxMargin (PendingBlockNL m _       ) = m
 ctxMargin (ImplicitBlock m _        ) = m
+ctxMargin (InlineCBlock _ _         ) = 0
 
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
 data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
-  , commentCtxCode :: Int         -- ^ scanning code before block comment
+  , lastCtxCode :: Int            -- ^ last seen scanning code before special block
   }
 
 -- | Initial Alex monad state.
@@ -204,7 +228,7 @@ alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState
   { usContext = [ImplicitBlock 1 TDBar]
   , commentLevel = 0
-  , commentCtxCode = 0
+  , lastCtxCode = 0
   }
 
 -- | Enter a new context by pushing it onto stack.
@@ -238,10 +262,14 @@ alexPosition (pn, _, _, _) = pn
 alexColumn :: AlexPosn -> Int
 alexColumn (AlexPn _ _ c) = c
 
+-- | Obtain 'Span' from 'AlexPosn'.
+alexPosnSpan :: AlexPosn -> Int -> Span
+alexPosnSpan (AlexPn a l c) len =
+  Span {tokPos = a, tokLen = len, tokLine = l, tokCol = c}
+
 -- | Obtain 'Span' from 'AlexInput'.
 alexInputSpan :: AlexInput -> Int -> Span
-alexInputSpan (AlexPn a l c, _, _, _) len =
-  Span {tokPos = a, tokLen = len, tokLine = l, tokCol = c}
+alexInputSpan (pos, _, _, _) = alexPosnSpan pos
 
 -- | Construct empty 'Span' for current position, from 'AlexInput'.
 alexEmptySpan :: AlexPosn -> Span
@@ -266,8 +294,8 @@ commentBegin _ _ = do
   c <- alexGetStartCode
   alexSetUserState $ st
     { commentLevel = commentLevel st + 1
-    , commentCtxCode = if commentLevel st == 0 then c
-                       else commentCtxCode st
+    , lastCtxCode = if commentLevel st == 0 then c
+                    else lastCtxCode st
     }
   alexSetStartCode commentBody
   alexMonadScan
@@ -282,7 +310,7 @@ commentEnd _ _ = do
   if lvl == 0 then
     lexErr "unexpected token outside of a block comment: */"
   else if lvl == 1 then
-    alexSetStartCode $ commentCtxCode st
+    alexSetStartCode $ lastCtxCode st
   else
     alexSetStartCode commentBody
 
@@ -543,6 +571,39 @@ charTok i@(_,_,_,s) len =
     c       -> internalErr $ "Encountered unreachable empty char: " ++ show c
   where retOrd c =
           return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+
+
+-- | Start scanning block of inline C code
+cBlockBegin :: AlexAction Token
+cBlockBegin (pos,_,_,_) _ = do
+  st <- alexGetUserState
+  c <- alexGetStartCode
+  alexSetUserState $ st { lastCtxCode = c }
+  alexPushContext $ InlineCBlock [] pos
+  alexSetStartCode cBlockBody
+  alexMonadScan
+
+
+cBlockEnd :: AlexAction Token
+cBlockEnd (AlexPn a' _ _,_,_,_) _ = do
+  ctx <- alexPeekContext
+  case ctx of
+    InlineCBlock ss pos@(AlexPn a _ _) -> do
+      let len = a' - a
+          s = foldr (flip (++)) "" ss
+      return $ Token (alexPosnSpan pos len, TCBlock $ fromString s)
+    _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
+
+
+cBlockChunk :: (String -> String) -> AlexAction Token
+cBlockChunk f (_,_,_,s) len = do
+  ctx <- alexPeekContext
+  case ctx of
+    InlineCBlock ss pos -> do
+      alexPopContext
+      alexPushContext $ InlineCBlock (f (take len s) : ss) pos
+      alexMonadScan
+    _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
 
 
 -- | Called when Alex reaches EOF.
