@@ -167,7 +167,7 @@ tokens :-
   <cBlockBody> {
     @cBlockR            { cBlockEnd }
     @cBlockR @cBlockR   { cBlockChunk (const "$$") }
-    (. | @newline)+     { cBlockChunk id }
+    (. | @newline)      { cBlockChunk id }
   }
 {
 -- | Internal compiler error for unreachable code.
@@ -202,7 +202,7 @@ data ScannerContext
   | PendingBlockNL Int TokenType
   -- | In an implicit block, lines separated by given token.
   | ImplicitBlock Int TokenType
-  -- | In a block of inlinec C code, accumulating the inlinecd C code.
+  -- | In a block of inlinec C code, accumulating the inlined C code.
   | InlineCBlock [String] AlexPosn
   deriving (Show)
 
@@ -586,11 +586,14 @@ cBlockBegin (pos,_,_,_) _ = do
 
 cBlockEnd :: AlexAction Token
 cBlockEnd (AlexPn a' _ _,_,_,_) _ = do
+  st <- alexGetUserState
   ctx <- alexPeekContext
   case ctx of
     InlineCBlock ss pos@(AlexPn a _ _) -> do
       let len = a' - a
           s = foldr (flip (++)) "" ss
+      alexSetStartCode $ lastCtxCode st
+      alexPopContext
       return $ Token (alexPosnSpan pos len, TCBlock $ fromString s)
     _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
 
