@@ -55,6 +55,7 @@ $symbolAny          = [$symbolBase\_\:\"\'\*]
 @cSym = \$
 @cBlockL = \$\$
 @cBlockR = \$\$
+@cBlockChunk = ( [^\$] | @newline )+ | \$
 
 $asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}]
 $escapable = [\\ \' \" n r t]
@@ -167,7 +168,7 @@ tokens :-
   <cBlockBody> {
     @cBlockR            { cBlockEnd }
     @cBlockR @cBlockR   { cBlockChunk (const "$$") }
-    (. | @newline)      { cBlockChunk id }
+    @cBlockChunk        { cBlockChunk id }
   }
 {
 -- | Internal compiler error for unreachable code.
