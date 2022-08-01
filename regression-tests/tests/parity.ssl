@@ -15,7 +15,7 @@ isOdd x =
     Two   = isOdd(Zero)
     Three = isOdd(One)
 
-main(led) =
+main (in: &Int) led =
   match isOdd(Zero)
     MyFalse = after 10 , led <- 69
     MyTrue  = after 10 , led <- 79

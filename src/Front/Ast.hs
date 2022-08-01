@@ -16,6 +16,7 @@ newtype Program = Program [TopDef]
 data TopDef
   = TopDef Definition     -- ^ Bind a (data) value to a variable
   | TopType TypeDef       -- ^ Define an algebraic data type
+  | TopCDefs String       -- ^ Inlined block of C definitions
   deriving (Eq, Show)
 
 -- | An algebraic data type definition.
@@ -86,7 +87,7 @@ data Expr
   | Seq Expr Expr
   | Break
   | Match Expr [(Pat, Expr)]
-  | Return Expr
+  | CCall Identifier [Expr]
   deriving (Eq, Show)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -132,12 +133,18 @@ getTopTypeDef :: TopDef -> Maybe TypeDef
 getTopTypeDef (TopType t) = Just t
 getTopTypeDef _           = Nothing
 
+-- | Unwrap a (potential) top-level type definition.
+getTopCDefs :: TopDef -> Maybe String
+getTopCDefs (TopCDefs b) = Just b
+getTopCDefs _            = Nothing
+
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
 instance Pretty TopDef where
-  pretty (TopDef  d) = pretty d
-  pretty (TopType t) = pretty t
+  pretty (TopDef   d ) = pretty d
+  pretty (TopType  t ) = pretty t
+  pretty (TopCDefs ds) = pretty "$$" <> pretty ds <> pretty "$$"
 
 instance Pretty TypeDef where
   pretty TypeDef { typeName = tn, typeParams = tvs, typeVariants = tds } =
@@ -223,8 +230,9 @@ instance Pretty Expr where
   pretty (Id  i      ) = pretty i
   pretty (Lit l      ) = pretty l
   pretty Break         = pretty "break"
-  pretty (Return e  )  = pretty "return" <+> pretty e
-  pretty (Match s as)  = parens $ pretty "match" <+> pretty s <+> braces
+  pretty (CCall s as) =
+    pretty "$" <> pretty s <+> parens (hsep $ punctuate comma $ map pretty as)
+  pretty (Match s as) = parens $ pretty "match" <+> pretty s <+> braces
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)

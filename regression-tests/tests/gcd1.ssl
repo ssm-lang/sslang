@@ -1,0 +1,16 @@
+gcd a b =
+  if a == b
+    a
+  else
+    if a < b
+      gcd a (b - a)
+    else
+      gcd (a - b) b
+
+main cin cout =
+  let c = gcd 5 15
+  after 1, cout <- c + 48
+  wait cout
+  after 1, cout <- 10
+  wait cout
+  

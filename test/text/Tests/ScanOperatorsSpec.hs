@@ -14,7 +14,6 @@ spec = do
         t op = scanTokenTypes op `shouldProduce` [TOp $ fromString op]
     t "!"
     t "#"
-    t "$"
     t "%"
     t "*"
     t "+"

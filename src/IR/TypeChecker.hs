@@ -37,7 +37,6 @@ import IR.Types.TypeSystem
     tuple,
     unit,
     variants,
-    void,
   )
 
 -- | Typing Environment
@@ -86,12 +85,11 @@ inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   typeDefs' <- inferADT $ I.typeDefs p
   defs' <- inferProgramDefs $ I.programDefs p
-  return $
-    I.Program
-      { I.programDefs = defs',
-        I.programEntry = I.programEntry p,
-        I.typeDefs = typeDefs'
-      }
+  return $ I.Program { I.programDefs = defs'
+                     , I.typeDefs = typeDefs'
+                     , I.programEntry = I.programEntry p
+                     , I.cDefs = I.cDefs p 
+                     }
 
 {-| Pass all program typeDefs through the typechecker
 
@@ -244,14 +242,15 @@ inferPrim (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] _) = inferPrimBinop o e1 e2
+inferPrim (I.Prim (I.PrimOp o@I.PrimMod) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimEq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimGt) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimLt) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimGe) [e1, e2] _) = inferPrimBinop o e1 e2
 inferPrim (I.Prim (I.PrimOp o@I.PrimLe) [e1, e2] _) = inferPrimBinop o e1 e2
-inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] void
-inferPrim (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
+inferPrim (I.Prim I.Break [] _) = return $ I.Prim I.Break [] unit
+inferPrim (I.Prim I.Now [] _) = return $ I.Prim I.Now [] $ int 32 -- TODO: make this timestamp type
 inferPrim (I.Prim I.Loop es _) = do
   es' <- mapM inferExpr es
   return $ I.Prim I.Loop es' unit
@@ -262,6 +261,9 @@ inferPrim (I.Prim I.Par es _) = do
   es' <- mapM inferExpr es
   let ts = map extract es'
   return $ I.Prim I.Par es' $ tuple ts
+inferPrim (I.Prim c@(I.CCall _) es _) = do
+  es' <- mapM inferExpr es
+  return $ I.Prim c es' unit
 inferPrim e = throwError $ Compiler.TypeError $ fromString $ "Unable to type Prim expression: " ++ show e
 
 -- | Check type of a binary integer operation.

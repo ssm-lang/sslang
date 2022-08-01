@@ -1,0 +1,19 @@
+main (cin : &Int) (cout : &Int) =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+
+// Note that "after" needs to be to the right of "putc" since "let" starts a
+// new block.
+
+  let eof _ =
+       after 1, cout <- 0
+       wait cout
+
+  putc 72
+  putc 101
+  putc 108
+  putc 108
+  putc 111
+  putc 10
+  eof ()

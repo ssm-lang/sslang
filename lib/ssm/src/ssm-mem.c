@@ -103,7 +103,7 @@ static inline void alloc_pool(size_t p) {
   new_page[last_block].free_list_next = pool->free_list_head;
   pool->free_list_head = new_page;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Mark as NOACCESS; nothing should touch this memory until it is allocated.
   VALGRIND_MAKE_MEM_NOACCESS(new_page, SSM_MEM_PAGE_SIZE);
 
@@ -123,7 +123,7 @@ void ssm_mem_init(void *(*alloc_page_handler)(void),
     mem_pools[p].free_list_head = END_OF_FREELIST;
   }
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Ask Valgrind to checkpoint the amount of memory allocated so far.
   VALGRIND_PRINTF("Performing leak check at memory initialization.\n");
   VALGRIND_PRINTF("(Checkpoints how much memory is allocated at init time.)\n");
@@ -139,7 +139,7 @@ void ssm_mem_destroy(void (*free_page_handler)(void *)) {
   //   }
   // }
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Report how much memory has been leaked since the checkpoint in
   // ssm_mem_init().
   VALGRIND_PRINTF("About to destroy SSM allocator. Performing leak check.\n");
@@ -169,7 +169,7 @@ void *ssm_mem_alloc(size_t size) {
 
   void *m = pool->free_list_head->block_buf;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Tell Valgrind that we have allocated m as a chunk of pool.
   //
   // The memory range [m..m+size] is now considered DEFINED.
@@ -179,7 +179,7 @@ void *ssm_mem_alloc(size_t size) {
   pool->free_list_head =
       find_next_block(pool->free_list_head, SSM_MEM_POOL_SIZE(p));
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Make the memory range [m..m+size] undefined, because the caller should
   // not rely on allocated chunks being defined.
   VALGRIND_MAKE_MEM_UNDEFINED(m, size);
@@ -201,7 +201,7 @@ void ssm_mem_free(void *m, size_t size) {
   new_head->free_list_next = pool->free_list_head;
   pool->free_list_head = new_head;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Tell Valgrind that we have freed m.
   VALGRIND_FREELIKE_BLOCK(m, 0);
 #endif

@@ -1,0 +1,21 @@
+putc_ (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+eof_ (cout : &Int) _ =
+  after 1, cout <- 0
+  wait cout
+
+main cin cout =
+  let putc = putc_ cout
+  let eof = eof_ cout
+  putc 72
+  putc 101
+  putc 108
+  putc 108
+  putc 111
+  putc 49
+  putc 50
+  putc 10
+  eof ()
+  

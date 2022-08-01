@@ -1,0 +1,16 @@
+putc (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+eof (cout : &Int) =
+  after 1, cout <- 0
+  wait cout
+
+main (cin : &Int) (cout : &Int) =
+  putc cout 72
+  putc cout 101
+  putc cout 108
+  putc cout 108
+  putc cout 111
+  putc cout 10
+  eof cout

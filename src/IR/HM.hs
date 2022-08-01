@@ -69,7 +69,6 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                   )
                                                 , int
                                                 , unit
-                                                , void
                                                 )
 
 -- | Inference State.
@@ -110,8 +109,9 @@ inferProgram p = runInferFn $ do
   recordFDefs $ I.programDefs p
   defs'     <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
-                     , I.programEntry = I.programEntry p
                      , I.typeDefs     = typeDefs'
+                     , I.programEntry = I.programEntry p
+                     , I.cDefs        = I.cDefs p
                      }
 
 -- | 'recordFDefs' saves information about all the declared functions for future use
@@ -447,6 +447,7 @@ initTypeVars (I.Prim (I.PrimOp o@I.PrimAdd) [e1, e2] annT) = inferPrimBinop o e1
 initTypeVars (I.Prim (I.PrimOp o@I.PrimSub) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimMul) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimDiv) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
+initTypeVars (I.Prim (I.PrimOp o@I.PrimMod) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimEq)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimNeq) [e1, e2] annT) = inferPrimBinop o e1 e2 annT
 initTypeVars (I.Prim (I.PrimOp o@I.PrimGt)  [e1, e2] annT) = inferPrimBinop o e1 e2 annT
@@ -464,12 +465,12 @@ initTypeVars (I.Prim I.After [del, lhs, rhs] annT) = do
   return $ I.Prim I.After [del', lhs', rhs'] t
 initTypeVars (I.Prim I.Break [] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' void
+  t <- typeCheck annT' unit
   return $ I.Prim I.Break [] t
-initTypeVars (I.Prim I.Return [] annT) = do
+initTypeVars (I.Prim I.Now [] annT) = do
   let annT' = collapseAnnT annT
-  t <- typeCheck annT' void
-  return $ I.Prim I.Return [] t
+  t <- typeCheck annT' $ int 32 -- TODO: this should be 64-bit timestamp type
+  return $ I.Prim I.Now [] t
 initTypeVars (I.Prim I.Loop es annT) = do
   let annT' = collapseAnnT annT
   t   <- typeCheck annT' unit
@@ -501,6 +502,10 @@ initTypeVars (I.Match cond arms annT) = do
     mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
     initTypeVars rhs
   checkArm (_, rhs) = withNewScope $ initTypeVars rhs
+initTypeVars (I.Prim c@(I.CCall _) es annT) = do
+  es' <- mapM initTypeVars es
+  t <- typeCheck (collapseAnnT annT) unit
+  return $ I.Prim c es' t
 initTypeVars e@I.Prim{} =
   throwError
     $  Compiler.TypeError
@@ -651,6 +656,7 @@ getType (I.Prim (I.PrimOp o@I.PrimAdd) es@[_, _] _) = getTypePrimOp o es $ int 3
 getType (I.Prim (I.PrimOp o@I.PrimSub) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimMul) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimDiv) es@[_, _] _) = getTypePrimOp o es $ int 32
+getType (I.Prim (I.PrimOp o@I.PrimMod) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimEq)  es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimNeq) es@[_, _] _) = getTypePrimOp o es $ int 32
 getType (I.Prim (I.PrimOp o@I.PrimGt)  es@[_, _] _) = getTypePrimOp o es $ int 32
@@ -662,8 +668,8 @@ getType (I.Prim I.After [del, lhs, rhs] _) = do
   rhs' <- getType rhs
   lhs' <- getType lhs
   return $ I.Prim I.After [del', lhs', rhs'] unit
-getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] void
-getType (I.Prim I.Return [] _) = return $ I.Prim I.Return [] void
+getType (I.Prim I.Break  [] _) = return $ I.Prim I.Break [] unit
+getType (I.Prim I.Now    [] _) = return $ I.Prim I.Now [] $ int 32 -- TODO: this should return 64-bit timestamp type
 getType (I.Prim I.Loop   es _) = do
   es' <- mapM getType es
   return $ I.Prim I.Loop es' unit
@@ -685,6 +691,9 @@ getType (I.Match cond arms _) = do
       let t      = extract h
       -- type of match is type of one of its arms
       return (I.Match cond' arms'' t)
+getType (I.Prim c@(I.CCall _) es _) = do
+  es' <- mapM getType es
+  return $ I.Prim c es' unit -- TODO: handle non-unit return value typet
 getType e =
   throwError
     $  Compiler.TypeError

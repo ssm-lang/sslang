@@ -1,0 +1,29 @@
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+add2 a = a <- deref a + 2
+
+mult4 a = a <- deref a * 4
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let puti = putip_ putc
+  
+  let a = new 1
+  par add2 a
+      mult4 a
+  puti (deref a) // 3 * 4 = 12
+  putc 10
+  a <- 1
+  par mult4 a
+      add2 a
+  puti (deref a) // 4 + 2 = 6
+  putc 10
+
+

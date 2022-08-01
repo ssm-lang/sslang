@@ -1,5 +1,5 @@
-main : & Int -> () =
-  fun (cout : &Int)
+main : &Int -> & Int -> () =
+  fun (cin : & Int) (cout : &Int)
     after 10 , (cout : & Int) <- 72
     wait (cout : & Int)
     after 10 , (cout : & Int) <- 101

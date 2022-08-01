@@ -15,7 +15,7 @@ type Tree
 // 2) print out the right-most descendant
 // expected output: DC
 
-main ( cout : & Int ) -> () =
+main (in: &Int) ( cout : & Int ) -> () =
   let d = OneChild 68 Leaf
   let e = OneChild 69 Leaf
   let b = TwoChildren d e 66

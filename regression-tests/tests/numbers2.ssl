@@ -1,0 +1,262 @@
+// incomplete big number library
+// integer to big num conversion complete
+// big num printing complete
+// big num increment complete
+
+type Bool
+    True
+    False
+
+type Digit
+    Zero
+    One
+    Two
+    Three
+    Four
+    Five
+    Six
+    Seven
+    Eight
+    Nine
+
+type Number
+    Nums Digit Number
+    Nil
+
+btos b : Bool -> Int =
+    match b
+          False = 70
+          True = 84
+
+dtoc (n : Digit) -> Int =
+    match n
+          Zero = 48
+          One = 49
+          Two = 50
+          Three = 51
+          Four = 52
+          Five = 53
+          Six = 54
+          Seven = 55
+          Eight = 56
+          Nine = 57
+          
+
+eqZero n : Digit -> Bool =
+    match n
+          Zero = True
+          _ = False
+
+eqOne n : Digit -> Bool =
+    match n
+          One = True
+          _ = False
+
+eqTwo n : Digit -> Bool =
+    match n
+          Two = True
+          _ = False
+
+eqThree n : Digit -> Bool =
+    match n
+          Three = True
+          _ = False
+
+eqFour n : Digit -> Bool =
+    match n
+          Four = True
+          _ = False
+
+eqFive n : Digit -> Bool =
+    match n
+          Five = True
+          _ = False
+
+eqSix n : Digit -> Bool =
+    match n
+          Six = True
+          _ = False
+
+eqSeven n : Digit -> Bool =
+    match n
+          Seven = True
+          _ = False    
+
+eqEight n : Digit -> Bool =
+    match n
+          Eight = True
+          _ = False
+
+eqNine n : Digit -> Bool =
+    match n
+          Nine = True
+          _ = False   
+
+eqDigit (n : Digit) (n2 : Digit) -> Bool =
+    match n
+          Zero = eqZero n2
+          One = eqOne n2
+          Two = eqTwo n2
+          Three = eqThree n2
+          Four = eqFour n2
+          Five = eqFive n2
+          Six = eqSix n2
+          Seven = eqSeven n2
+          Eight = eqEight n2
+          Nine = eqNine n2
+
+type Carry
+    Carry Number Bool
+    Invalid
+
+incNumHelper (c : Carry) -> Carry =
+    match c
+          Carry n b = match n 
+                            Nums d tl = match tl
+                                              Nil = match b
+                                                          True = Invalid
+                                                          _ = match d 
+                                                                    Nine = Carry (Nums Zero Nil) True
+                                                                    _ = Carry (Nums (incDigit d) Nil) False
+                                              _ = let tl2 = incNumHelper (Carry tl False)
+                                                  match tl2
+                                                        Carry n2 b = match b
+                                                                           True = match d
+                                                                                        Nine = Carry (Nums Zero n2) True
+                                                                                        _ = Carry (Nums (incDigit d) n2) False
+                                                                           False = Carry (Nums d n2) False
+                                                        _ = Invalid
+                            _ = Invalid
+          _ = Invalid
+
+incDigit (d : Digit) -> Digit =
+    match d
+          Zero = One
+          One = Two
+          Two = Three
+          Three = Four
+          Four = Five
+          Five = Six
+          Six = Seven
+          Seven = Eight
+          Eight = Nine
+          _ = Zero // should never hit this case
+
+incNumber (n : Number) -> Number =
+    match n
+          Nums d tl = match (incNumHelper (Carry tl False))
+                            (Carry tl2 b) = match b
+                                                False = Nums d tl2
+                                                _ = match d 
+                                                          Nine = Nums One (Nums Zero tl2)
+                                                          _ = Nums (incDigit d) tl2
+                            _ = Nums Zero Nil
+          _ = Nums Zero Nil
+                                        
+
+eqNumber (n : Number) (n2 : Number) -> Bool =
+    match n
+          Nil = match n2
+                      Nil = True
+                      _ = False
+          Nums d tl = match n2
+                            Nums d2 tl2 = match (eqDigit d d2)
+                                                True = match (eqNumber tl tl2)
+                                                             True = True
+                                                             _ = False
+                                                _ = False
+                            _ = False          
+
+printNum (cout : & Int) (n : Number) -> () =
+    match n
+          Nums d tl = match tl
+                            Nil = print cout (dtoc d)
+                            _ = print cout (dtoc d)
+                                printNum cout tl
+          _ = ()
+
+divCount (a : Int) (b : Int) (res : Int) -> Int =
+    let q = a/b 
+    match q
+          0 = res
+          _ = divCount q b (res+1)
+
+pow (a : Int) (b : Int) -> Int =
+    match b 
+          0 = 1
+          _ = a * (pow a (b-1))
+
+mod (a : Int) (b : Int) -> Int =
+    let q = a / b
+    match q
+          0 = 0
+          _ = a - (q * b)
+
+itod (i :Int) -> Digit =
+    match i
+          1 = One
+          2 = Two
+          3 = Three
+          4 = Four
+          5 = Five
+          6 = Six
+          7 = Seven
+          8 = Eight
+          _ = Nine
+
+dtoN (d : Digit) -> Number = Nums d Nil
+
+itoNum (i : Int) (tl : Number)-> Number =
+    match (i > 10)
+        0 = Nums (itod i) tl
+        _ = let r = mod i 10
+            let q = i / 10
+            itoNum q (Nums (itod r) tl)
+
+itoN (i : Int) -> Number =
+    itoNum i Nil
+   
+
+clear (cout : & Int) -> () =
+    after 5 , (cout : & Int) <- 13     // carriage return
+    wait (cout : & Int)
+
+print (cout : & Int) (c : Int) -> () =
+    after 10 , (cout : & Int) <- c  
+    wait (cout : & Int)
+
+main (cint : & Int) ( cout : & Int ) -> () =
+    let x = (Nums One (Nums Nine (Nums Nine Nil)))   // 124
+    let y = (Nums Five (Nums Five (Nums Zero Nil)))  // 125
+    let z = incNumber x
+    print cout (btos (eqNumber  x x))
+    print cout (btos (eqNumber x y))
+    print cout 10
+    printNum cout x
+    print cout 10
+    printNum cout z
+    print cout 10
+    printNum cout (incNumber z)
+    print cout 10
+    printNum cout (incNumber(incNumber z))
+    print cout 10
+    printNum cout (incNumber(incNumber(incNumber z)))
+    print cout 10
+    print cout ((mod 124 10) + 48)
+    print cout 10
+    print cout ((mod 12 10) + 48)
+    print cout 10
+    printNum cout (itoN 124)
+    clear cout
+    
+
+        
+
+        
+
+
+
+
+
+
+        

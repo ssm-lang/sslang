@@ -211,15 +211,19 @@ dataDecl i = do
 -- | Validate a reference to a data 'Identifier'.
 dataRef :: Identifier -> ScopeFn ()
 dataRef i = do
-  let _ = print(showId i)
-  let isDupDrop =  ident i == "dup" || ident i == "drop"
+  let _         = print (showId i)
+  let isDupDrop = ident i == "dup" || ident i == "drop"
   inScope <- asks $ M.member i . dataMap
-  unless (inScope || isDupDrop) $ throwError $ ScopeError $ "Not in scope: " <> showId i
+  unless (inScope || isDupDrop)
+    $  throwError
+    $  ScopeError
+    $  "Not in scope: "
+    <> showId i
 
 -- | Validate a reference to a type 'Identifier'.
 typeRef :: Identifier -> ScopeFn ()
 typeRef i = do
-  inScope <- asks $ M.member i . typeMap
+  inScope       <- asks $ M.member i . typeMap
   allowImplicit <- asks implicitScheme
   when (not inScope && isCons i) $ do
     throwError $ ScopeError $ "Type constructor is out of scope: " <> showId i
@@ -324,8 +328,7 @@ scopeExpr (A.After  d l r   ) = mapM_ scopeExpr [d, l, r]
 scopeExpr (A.Assign l r     ) = mapM_ scopeExpr [l, r]
 scopeExpr (A.Wait es        ) = mapM_ scopeExpr es
 scopeExpr (A.Seq e e'       ) = mapM_ scopeExpr [e, e']
-scopeExpr (A.Return e       ) = scopeExpr e
-scopeExpr (A.Lit    _       ) = return ()
+scopeExpr (A.Lit _          ) = return ()
 scopeExpr A.Break             = return ()
 scopeExpr (A.OpRegion e o) =
   throwError
@@ -334,6 +337,7 @@ scopeExpr (A.OpRegion e o) =
     <> fromString (show e)
     <> " "
     <> fromString (show o)
+scopeExpr (A.CCall _ es) = mapM_ scopeExpr es
 scopeExpr A.NoExpr =
   throwError $ UnexpectedError "NoExpr should not be reachable"
 

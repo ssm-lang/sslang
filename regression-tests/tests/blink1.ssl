@@ -1,0 +1,24 @@
+ms t = 1000000 * t
+
+blink n led =
+  let n_ = new n
+  while deref n_ > 0
+    after ms 50, led <- 1
+    wait led
+    after ms 50, led <- 0
+    wait led
+    n_ <- deref n_ - 1
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let display led =
+       loop
+         wait led
+         putc (deref led + 48)
+	 putc 10
+  let led = new 0       
+  par blink 10 led
+      display led
+  

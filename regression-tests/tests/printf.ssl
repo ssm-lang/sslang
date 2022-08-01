@@ -1,0 +1,83 @@
+// incomplete print library
+type String
+    SCons Int String
+    SNil
+
+type Bool
+    True
+    False
+
+type Digits
+    DCons Int Digits
+    DNil
+
+type Integer
+    PInteger Digits
+    NInteger Digits
+
+type Decimal
+    PDecimal Digits Digits
+    NDecimal Digits Digits
+
+print_char (cout : & Int) (c : Int) -> () =
+    after 10 , (cout : & Int) <- c
+    wait (cout : & Int)
+
+print_digit (cout : & Int) (c : Int) -> () =
+    after 10 , (cout : & Int) <- (c + 48)
+    wait (cout : & Int)
+
+print_digits (cout: & Int) (d: Digits) -> () =
+  match d
+    DCons c ds =
+      print_digit cout c
+      print_digits cout ds
+    DNil = ()
+
+print_integer (cout: & Int) (i: Integer) -> () =
+  match i
+    PInteger ds = print_digits cout ds
+    NInteger ds =
+      print_char cout 45
+      print_digits cout ds
+
+print_decimal (cout: & Int) (d: Decimal) -> () =
+  match d
+    PDecimal i dec =
+      match i
+        DNil = print_digit cout 0
+        _ = print_digits cout i
+      print_char cout 46
+      match dec
+        DNil = print_digit cout 0
+        _ = print_digits cout dec
+    NDecimal i dec =
+      print_char cout 45
+      print_decimal cout (PDecimal i dec)
+
+print_string (cout: & Int) (s: String) -> () =
+  match s
+    SCons c subs =
+      print_char cout c
+      print_string cout subs
+    SNil = ()
+
+println (cout: & Int) -> () =
+  print_char cout 10
+
+main (cint : & Int) (cout : & Int) -> () =
+  let s = (SCons 102 (SCons 101 (SCons 100 (SCons 99 (SCons 98 (SCons 97 SNil))))))
+  let d = (DCons 1 (DCons 2 (DCons 3 DNil)))
+  let pi = (PInteger d)
+  let ni = (NInteger d)
+  let pd = (PDecimal d d)
+  let nd = (NDecimal d d)
+  print_string cout s
+  println cout
+  print_integer cout pi
+  println cout
+  print_integer cout ni
+  println cout
+  print_decimal cout pd
+  println cout
+  print_decimal cout nd

@@ -1,7 +1,7 @@
 foo x y z =
   x + y + z
 
-main (out : &Int) -> () =
+main (in: &Int) (out : &Int) -> () =
   let f = foo 1
   let g = f 2
   let a = foo 3 4 5
@@ -9,6 +9,8 @@ main (out : &Int) -> () =
   let b = g a
   let c = g b
   after 20, out <- h (a + b + c)
+  wait out
+  after 20, out <- 0
   wait out
 
 // a = foo 3 4 5 = 3 + 4 + 5 = 12

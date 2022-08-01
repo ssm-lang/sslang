@@ -1,0 +1,24 @@
+putc (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+eof (cout : &Int) =
+  after 1, cout <- 0
+  wait cout
+
+type String
+  Cons Int String
+  Nil
+
+puts cout s =
+  match s
+    Cons c ss =
+      putc cout c
+      puts cout ss
+    Nil = ()
+
+main cin (cout : &Int) =
+  let hello = Cons 72 (Cons 101 (Cons 108 (Cons 108
+                (Cons 108 (Cons 111 (Cons 10 Nil))))))
+  puts cout hello
+  eof cout

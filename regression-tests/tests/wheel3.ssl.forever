@@ -1,0 +1,20 @@
+// ./runtests.sh -k tests/wheel2.ssl
+// out/wheel2
+
+print ( cout : & Int ) (n : Int) -> () =
+  let clear = 13  // '\r'
+  after 10, cout <- clear
+  wait cout
+  after 100000000 , cout <- n
+  wait cout
+
+main (cint : &Int) ( cout : & Int ) -> () =
+  let left = 92    // '\'
+  let vert = 124   // '|'
+  let right = 47   // '/'
+  let horz = 45    // '-'
+  loop
+    print cout left
+    print cout vert
+    print cout right
+    print cout horz

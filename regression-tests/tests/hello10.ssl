@@ -1,0 +1,33 @@
+type Fd
+  Fd (Int -> ()) (() -> ())
+
+putc fd =
+  match fd
+    Fd pc _ = pc
+
+eof fd =
+  match fd
+    Fd _ e = e
+
+putc_ (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+eof_ (cout : &Int) _ =
+  after 1, cout <- 0
+  wait cout
+
+open fd = Fd (putc_ fd) (eof_ fd)
+
+main cin cout =
+  let myfd = open cout
+  let myputc = putc myfd
+  let myeof = eof myfd
+  putc myfd 72
+  myputc 101
+  myputc 108
+  myputc 108
+  myputc 111
+  myputc 10
+  myeof ()
+  

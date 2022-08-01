@@ -5,7 +5,7 @@ type MyBool
 // test whether wild card can be successfully chosen by match
 // expected output is B
 
-main ( cout : & Int ) -> () =
+main (in: &Int) ( cout : & Int ) -> () =
   let b = MyTrue 65                            // A
   let a = match b
             MyFalse fst snd = snd - 10         

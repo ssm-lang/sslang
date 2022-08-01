@@ -1,0 +1,32 @@
+us t = 1000 * t
+now_us _ = now / 1000
+
+logger n period current_time start_time =
+  let n_ = new n
+  let event = new ()
+  while deref n_ > 0
+    current_time <- now_us () - start_time
+    after period, event <- ()
+    wait event
+    n_ <- deref n_ - 1
+
+putip putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip putc (x / 10)
+    putc (48 + x % 10)
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let display r =
+       loop
+         wait r
+         putip putc (deref r)
+         putc 10
+  let current_time = new (now_us ())
+  par logger 30 (us 50) current_time (deref current_time)
+      logger 50 (us 30) current_time (deref current_time)
+      display current_time

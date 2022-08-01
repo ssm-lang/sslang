@@ -55,3 +55,40 @@ spec = do
         |]
         output = [TInteger 42]
     scanTokenTypes input `shouldProduce` output
+
+  it "supports multi-line comments" $ do
+    let input = [here|
+
+        /* Hello
+          this is a*/
+
+        42
+
+        /* Multi-line
+        */
+        |]
+        output = [TDBar, TInteger 42]
+    scanTokenTypes input `shouldProduce` output
+
+  it "supports nested multi-line comments" $ do
+    let input = [here|
+
+        /* Hello
+          this is a
+          /* Multi-line comment*/*/
+
+        42 /* Hello this is a
+        /* Multi-line comment*/*/
+        |]
+        output = [TDBar, TInteger 42]
+    scanTokenTypes input `shouldProduce` output
+
+  it "ignores mixed nested comments" $ do
+    let input = [here|
+        // /* this does not start a multi-line comment
+
+        42 /* this does not
+        ignore the // end delimiter */
+        |]
+        output = [TDBar, TInteger 42]
+    scanTokenTypes input `shouldProduce` output
