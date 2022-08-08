@@ -1,0 +1,54 @@
+pause t =
+  let event = new ()
+  after t, event <- ()
+  wait event
+
+main cin cout =
+  after 10, cout <- 72
+  wait cout
+  after 10, cout <- 101
+  wait cout 
+  after 10, cout <- 108
+  wait cout
+  after 10, cout <- 108
+  wait cout
+  after 10, cout <- 111
+  wait cout
+  after 10, cout <- 10
+  wait cout
+
+/*
+
+  let i = new 0
+  i <- 65
+  while deref i < 123
+      after 10, cout <- deref i
+      wait cout
+      pause 1000
+      i <- deref i + 1
+      
+  after 10, cout <- 10
+  wait cout
+
+*/
+
+  let i = new 0
+  let j = new 33
+  while deref j < 58
+    after 10, cout <- deref j
+    wait cout
+    after 10, cout <- 58 // ;
+    wait cout
+    
+    i <- 65
+    while deref i < 123
+      after 10, cout <- deref i
+      wait cout
+      pause 1000
+      i <- deref i + 1
+    j <- deref j + 1
+    after 1, cout <- 10
+    wait cout    
+
+  after 1, cout <- 0
+  wait cout
