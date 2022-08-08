@@ -180,8 +180,8 @@ syntaxErr :: String -> Alex a
 syntaxErr s = alexError $ "_s:" ++ s
 
 -- | User-facing lexer error.
-lexErr :: String -> Alex a
-lexErr s = alexError $ "_l:" ++ s
+lexErr :: AlexInput -> String -> Alex a
+lexErr i s = alexError $ "_l:" ++ showAlexLineCol (alexPosition i) ++ ":" ++ s
 
 -- | Convert Alex's String-encoded errors to Sslang 'Compiler.Error'.
 liftErr :: String -> Error
@@ -263,6 +263,10 @@ alexPosition (pn, _, _, _) = pn
 alexColumn :: AlexPosn -> Int
 alexColumn (AlexPn _ _ c) = c
 
+-- | Return a string reporting line:column of the position
+showAlexLineCol :: AlexPosn -> String
+showAlexLineCol (AlexPn _ l c) = show l ++ ":" ++ show c
+
 -- | Obtain 'Span' from 'AlexPosn'.
 alexPosnSpan :: AlexPosn -> Int -> Span
 alexPosnSpan (AlexPn a l c) len =
@@ -304,12 +308,12 @@ commentBegin _ _ = do
 
 -- | End of a block comment.
 commentEnd :: AlexAction Token
-commentEnd _ _ = do
+commentEnd i _ = do
   st <- alexGetUserState
   let lvl = commentLevel st
 
   if lvl == 0 then
-    lexErr "unexpected token outside of a block comment: */"
+    lexErr i "unexpected token outside of a block comment: */"
   else if lvl == 1 then
     alexSetStartCode $ lastCtxCode st
   else
@@ -375,7 +379,7 @@ lineFirstToken' i _ = do
 
     PendingBlockNL margin sepToken
       | tCol <= margin ->
-        syntaxErr $ "cannot start block at lower indentation than before"
+        lexErr i $ "cannot start block at lower indentation than before"
 
       | otherwise -> do
         -- We were about to start a block in a new line, and we encountered the
@@ -477,14 +481,14 @@ closeBrace i _ = do
 
     -- If somehow in ExplicitBlock for different closer, then we there must be
     -- a delimiter mismatch, e.g., @( ]@.
-    ExplicitBlock _ closer' -> syntaxErr $
+    ExplicitBlock _ closer' -> lexErr i $
       "mismatched delimiter: expected '" ++ show closer' ++ "', got '" ++ show closer ++ "'"
 
     -- If pending block, then user wrote something like @loop )@ or -- @if x )@,
     -- both of which are syntax errors.
-    PendingBlock _  _ -> syntaxErr $
+    PendingBlock _  _ -> lexErr i $
       "unexpected token: expected expression, got '" ++ show closer ++ "'"
-    PendingBlockNL _ _ -> syntaxErr $
+    PendingBlockNL _ _ -> lexErr i $
       "unexpected token: expected expression, got '" ++ show closer ++ "'"
 
     ctx' -> internalErr $
@@ -521,7 +525,7 @@ blockFirstToken i _ = do
   -- Assert that indentation of this token is greater than that of layout token.
   let tCol = alexColumn $ alexPosition i
   when (tCol <= margin) $ do
-    syntaxErr $ "cannot start block at lower indentation than before"
+    lexErr i $ "cannot start block at lower indentation than before"
 
   -- About to start a block; remember current indentation level and separator.
   alexPushContext $ ImplicitBlock tCol sepToken
@@ -549,7 +553,7 @@ keyword ttype i len = return $ Token (alexInputSpan i len, ttype)
 
 -- | Keyword is reserved keyword and should not be used.
 reserved :: TokenType -> AlexAction Token
-reserved ttype _ _ = lexErr $ "keyword is reserved: '" ++ show ttype ++ "'"
+reserved ttype i _ = lexErr i $ "keyword is reserved: '" ++ show ttype ++ "'"
 
 
 -- | Arbitrary string token helper, which uses @f@ to produce 'TokenType'.
