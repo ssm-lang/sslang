@@ -33,6 +33,8 @@ printl_ puti putc l =
 //
 // See /usr/lib/ocaml/list.ml
 
+// FIXME: would be nice to include this in the body of length
+
 length_aux len l =
   match l
     Cons _ ll = length_aux (len + 1) ll
@@ -48,6 +50,9 @@ tl l = match l
         Cons _ ll = Just ll
         Nil     = Nothing
 
+
+// FIXME: would be nice to include this in the body of nth
+
 nth_aux l n =
   match l
     Nil       = Nothing
@@ -57,6 +62,16 @@ nth_aux l n =
 	          nth_aux ll (n-1)
 
 nth l n = if n < 0 { Nothing } else { nth_aux l n }
+
+rev_append l1 l2 =
+  match l1
+    Nil      = l2
+    Cons x l = rev_append l (Cons x l2)
+
+reverse l = rev_append l Nil
+
+append l1 l2 = rev_append (reverse l1) l2
+
 
 
 // Test the various functions
@@ -69,10 +84,10 @@ main cin cout =
   let puti = puti_ putc
   let printl l = printl_ puti putc l
   
-  let zero = Nil
-  let one = Cons 57 Nil
-  let two = Cons 21 one
-  let three = Cons 42 (Cons 17 (Cons 8 Nil))
+  let zero = Nil                             // []
+  let one = Cons 57 Nil                      // 57
+  let two = Cons 21 one                      // 21 57
+  let three = Cons 42 (Cons 17 (Cons 8 Nil)) // 42 17 8
 
   putc 65 // A
   putc 10 // nl  
@@ -133,5 +148,19 @@ main cin cout =
     Just i = putc 33
     Nothing = putc 45 // -
   putnl ()
+
+  printl (reverse zero) // nl
+
+  printl (reverse one) // 57
+
+  printl (reverse two) // 57 21
+
+  printl (reverse three) // 8 17 42
+
+  printl (rev_append three two) // 8 17 42 21 57
+
+  printl (append zero three) // 42 21 57
+  
+  printl (append two three) // 21 57 42 17 8
 
 
