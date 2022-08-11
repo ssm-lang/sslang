@@ -45,37 +45,28 @@ main cin cout =
                Nil      = putc 34
     Nothing = putc 35
 
-/* Erroneously gives a unification error
+  putc nl
+
   let foo = match (tl two)
-              Just l = l
+              Just l = l     // Should be D::[]
               Nothing = Nil
-*/
 
-
-/*
   match foo
     Cons c _ = putc c // Should print D
     Nil      = putc 33
   putc nl
-*/
 
-/* Generates a seg fault; should generate a type error
+/* Should generate a type error
   match (tl just_two)
     Just l = match l
                Cons c _ = putc c
                Nil      = putc 34
     Nothing = putc 35
-*/
+*/    
 
-/* The below generates a seg fault
-  match (tl just_two)
+  match (tl two)
     Just l = match l
-               Cons _ ll = match ll
-                             Cons c _ = putc c
-                       	     Nil      = putc 33
+               Cons c _ = putc c // should print D
                Nil      = putc 34
     Nothing = putc 35
-*/
-
   putc nl  
-  	       
