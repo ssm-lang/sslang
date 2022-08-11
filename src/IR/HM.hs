@@ -33,6 +33,7 @@ TODO:
 {-# LANGUAGE BlockArguments #-}
 module IR.HM where
 
+import           Control.Monad                  ( forM_ )
 import           Data.Bifunctor                 ( second )
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
@@ -68,7 +69,7 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                   , VariantUnnamed
                                                   )
                                                 , int
-                                                , unit
+                                                , unit, arrow
                                                 )
 
 -- | Inference State.
@@ -77,8 +78,7 @@ data InferState = InferState
   , equations     :: [(Classes.Type, Classes.Type)]
   , unionFindTree :: M.Map Classes.Type Classes.Type
   , count         :: Int
-  , dConType      :: M.Map I.DConId Classes.Scheme
-  , dConArgType   :: M.Map I.DConId [Classes.Type]
+  , dConType      :: M.Map I.DConId (I.TConId, [TVarId], [Classes.Type])
   }
 
 -- | Inference Monad.
@@ -99,7 +99,6 @@ runInferFn (InferFn m) = evalStateT
              , count         = 0
              , equations     = []
              , dConType      = M.empty
-             , dConArgType   = M.empty
              }
 
 -- | 'inferProgram' @p@ infers the type of all the programDefs of the given program @p@.
@@ -136,37 +135,18 @@ recordADTs
   :: [(I.TConId, TypeDef Ann.Type)]
   -> InferFn [(I.TConId, TypeDef Classes.Type)]
 recordADTs defs = do
-  mapM_ recordADT defs
-  let defs' = second (fmap collapseAnnT) <$> defs
-  mapM_ insertArg $ concat $ variants . snd <$> defs'
-  return defs'
-  where
-    recordADT :: (I.TConId, TypeDef Ann.Type) -> InferFn ()
-    recordADT (tcon, TypeDef { variants = vars, targs = tvs }) =
-      mapM_ (insertDCon tcon tvs) vars
-
--- | 'buildDConType' recursively builds the type for a data constructor
-buildDConType :: I.TConId -> [TVarId] -> TypeVariant Ann.Type -> Classes.Type
-buildDConType tcon tvs variant = case variant of
-  VariantNamed [] -> Classes.TCon tcon (map Classes.TVar tvs)
-  VariantUnnamed [] -> Classes.TCon tcon (map Classes.TVar tvs)
-  VariantNamed ((_,t):ts) -> Classes.TBuiltin $ Arrow (collapseAnnT t) ts'
-    where ts' = buildDConType tcon tvs (VariantNamed ts)
-  VariantUnnamed (t:ts) -> Classes.TBuiltin $ Arrow (collapseAnnT t) ts'
-    where ts' = buildDConType tcon tvs (VariantUnnamed ts)
+  forM_ defs $ \(tcon, TypeDef { variants = vars, targs = tvs }) -> do
+      mapM_ (recordDCon tcon tvs) vars
+  return $ second (fmap collapseAnnT) <$> defs
 
 -- | 'insertType' inserts the overall type of an ADT's 'DConid' into the Inference State
-insertDCon :: I.TConId -> [TVarId] -> (I.DConId, TypeVariant Ann.Type) -> InferFn ()
-insertDCon tcon tvs (dcon, variant) =
-  modify $ \st -> st { dConType = M.insert dcon t $ dConType st}
-  where t = Classes.Forall tvs (buildDConType tcon tvs variant)
-
--- | 'insertArg' inserts the type of a 'DConid''s arguments into the Inference State
-insertArg :: (I.DConId, TypeVariant Classes.Type) -> InferFn ()
-insertArg (dcon, VariantNamed vars) = modify
-  $ \st -> st { dConArgType = M.insert dcon (snd <$> vars) $ dConArgType st }
-insertArg (dcon, VariantUnnamed ts) =
-  modify $ \st -> st { dConArgType = M.insert dcon ts $ dConArgType st }
+recordDCon :: I.TConId -> [TVarId] -> (I.DConId, TypeVariant Ann.Type) -> InferFn ()
+recordDCon tcon tvs (dcon, variant) =
+  modify $ \st -> st { dConType = M.insert dcon t $ dConType st }
+    where t = (tcon, tvs, map collapseAnnT argTypes)
+          argTypes = case variant of
+              VariantNamed ts -> map snd ts
+              VariantUnnamed ts -> ts
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs
@@ -286,11 +266,11 @@ lookupVar v = M.lookup v <$> gets varMap
 
 -- | Look up the type of a data constructor in the inference state.
 lookupDCon :: I.DConId -> InferFn (Maybe Classes.Scheme)
-lookupDCon d = M.lookup d <$> gets dConType
-
--- | Look up the types of an ADT's fields in the inference state.
-lookupFieldTypes :: I.DConId -> InferFn (Maybe [Classes.Type])
-lookupFieldTypes d = M.lookup d <$> gets dConArgType
+lookupDCon d = fmap buildScheme . M.lookup d <$> gets dConType
+    where
+      buildScheme :: (I.TConId, [TVarId], [Classes.Type]) -> Classes.Scheme
+      buildScheme (tcon, tvs, ats) =
+        Classes.Forall tvs $ foldr arrow (Classes.TCon tcon (map Classes.TVar tvs)) ats
 
 -- | 'insertVar' @v t@ Insert a variable ID and its type scheme into current 'varMap'.
 insertVar :: I.VarId -> Classes.Scheme -> InferFn ()
@@ -386,18 +366,20 @@ initTypeVars (I.Let vs b annT) = do
       s   <- generalize $ extract e''
       insertBinder binder s
       return (binder, e'')
-initTypeVars e@(I.Data d _) = do
-  s <- lookupDCon d
-  case s of
+initTypeVars e@(I.Data d annT) = do
+  let annT' = collapseAnnT annT
+  record <- lookupDCon d
+  case record of
     Nothing ->
       throwError
         $  Compiler.TypeError
         $  fromString
-        $  "Unable to type ADT expression: "
+        $  "Unable to type data constructor: "
         ++ show e
-    Just s' -> do
-      t' <- instantiate s'
-      return $ I.Data d t'
+    Just s -> do
+      t'  <- instantiate s
+      t'' <- typeCheck annT' t'
+      return $ I.Data d t''
 initTypeVars (I.App a b annT) = do
   let annT' = collapseAnnT annT
   a'   <- initTypeVars a
@@ -498,8 +480,20 @@ initTypeVars (I.Match cond arms annT) = do
  where
   checkArm :: (I.Alt, I.Expr Ann.Type) -> InferFn (I.Expr Classes.Type)
   checkArm (I.AltData dcon args, rhs) = withNewScope do
-    Just ts <- lookupFieldTypes dcon
-    mapM_ (\(a, b) -> insertBinder a (Forall [] b)) (zip args ts)
+    Just (_, tvs, ats) <- M.lookup dcon <$> gets dConType
+    -- NOTE: this is kind of a hack, i.e., could be done more elegantly.
+    -- What I did here is inline 'instantiate', except instead of instantiating
+    -- a single scheme, I instantiate each of the DCon's arguments in
+    -- a dependent manner. That is, I create fresh type variables for each
+    -- quantified type variable in @tvs@, and then 'solveType' for each DCon arg
+    -- separately.
+    tvs' <- mapM (const fresh) tvs
+    ats' <- withNewTypeScope $ do
+      modify $ \st ->
+        st { unionFindTree = M.fromList (zip (map Classes.TVar tvs) tvs') }
+      mapM solveType ats
+    forM_ (zip args ats') $ \(a, at') -> do
+      insertBinder a (Forall [] at')
     initTypeVars rhs
   checkArm (_, rhs) = withNewScope $ initTypeVars rhs
 initTypeVars (I.Prim c@(I.CCall _) es annT) = do
