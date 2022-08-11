@@ -12,36 +12,54 @@ puti_ putc x =
   else
     putip_ putc x
 
-type MyMaybe a
-  MyJust a
-  MyNothing
+type Maybe a
+  Just a
+  Nothing
 
 type List a
-  MyCons a (List a)
-  MyNil
+  Cons a (List a)
+  Nil
 
 // Print the elements of an integer-valued list
 printl_ puti putc l =
   match l
-    MyCons v ll = puti v
-                  putc 32 // sp
-                  printl_ puti putc ll
-    MyNil = putc 10 // nl
+    Cons v ll = puti v
+                putc 32 // sp
+                printl_ puti putc ll
+    Nil = putc 10 // nl
+
+
+// OCaml-style List library begins
+//
+// See /usr/lib/ocaml/list.ml
 
 length_aux len l =
   match l
-    MyCons _ ll = length_aux (len + 1) ll
-    MyNil       = len
+    Cons _ ll = length_aux (len + 1) ll
+    Nil     = len
 
 length l = length_aux 0 l
 
 hd l = match l
-         MyCons v _ = MyJust v
-         MyNil      = MyNothing
+         Cons v _ = Just v
+         Nil    = Nothing
 
 tl l = match l
-        MyCons _ ll = MyJust ll
-        MyNil       = MyNothing
+        Cons _ ll = Just ll
+        Nil     = Nothing
+
+nth_aux l n =
+  match l
+    Nil       = Nothing
+    Cons c ll = if n == 0
+    	          Just c
+	        else
+	          nth_aux ll (n-1)
+
+nth l n = if n < 0 { Nothing } else { nth_aux l n }
+
+
+// Test the various functions
 
 main cin cout =
   let putc c =
@@ -51,10 +69,10 @@ main cin cout =
   let puti = puti_ putc
   let printl l = printl_ puti putc l
   
-  let zero = MyNil
-  let one = MyCons 57 MyNil
-  let two = MyCons 21 one
-  let three = MyCons 42 (MyCons 17 (MyCons 8 MyNil))
+  let zero = Nil
+  let one = Cons 57 Nil
+  let two = Cons 21 one
+  let three = Cons 42 (Cons 17 (Cons 8 Nil))
 
   putc 65 // A
   putc 10 // nl  
@@ -71,17 +89,49 @@ main cin cout =
   putnl ()
   
   puti (match (hd three)
-         MyJust i  = i     // 42
-         MyNothing = 0)
+         Just i  = i     // 42
+         Nothing = 0)
   putnl ()
   match (tl three)
-   MyJust l =
+   Just l =
      match l
-         MyJust ll = puti ll // 17
-         MyNothing = putc 68
-   MyNothing = putc 66
+         Just ll = puti ll // 17
+         Nothing = putc 68
+   Nothing = putc 66
   putnl ()
 
   printl (match (tl three)
-           MyJust l  = l
-           MyNothing = MyNil)
+           Just l  = l       // 17 8
+           Nothing = Nil)
+
+  match (nth three 0)
+    Just i = puti i    // 42
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 1)
+    Just i = puti i    // 17
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 2)
+    Just i = puti i    // 8
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 3)
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+  match (nth three 4)
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+  match (nth three (0 - 1)) // FIXME: might be nice to have "-3" work
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+
