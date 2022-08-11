@@ -24,13 +24,15 @@ import           IR.Types.TypeSystem            ( Builtin(..)
                                                 )
 import           Prettyprinter
 
+import           Data.List                      ( intercalate )
+
 
 -- | The language of type expressions, e.g., what appears in a type signature.
 data Type
   = TBuiltin (Builtin Type)         -- ^ Builtin types
   | TCon TConId [Type]              -- ^ Type constructor, e.g., Option '0
   | TVar TVarId                     -- ^ Type variables, e.g., '0
-  deriving (Eq, Show, Ord, Typeable, Data)
+  deriving (Eq, Ord, Typeable, Data)
 
 -- | Type scheme.
 data Scheme = Forall [TVarId] Type
@@ -50,3 +52,8 @@ instance Pretty Type where
   pretty (TBuiltin b  ) = pretty b
   pretty (TCon tcon ts) = parens (hsep $ pretty tcon : map pretty ts)
   pretty (TVar tvar   ) = pretty tvar
+
+instance Show Type where
+  show (TBuiltin t) = "#" ++ show t
+  show (TCon tc args) = intercalate " " (show tc : map show args)
+  show (TVar v) = show v

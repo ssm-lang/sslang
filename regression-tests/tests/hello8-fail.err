@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Single unification error: TBuiltin (Arrow (TBuiltin (Ref (TBuiltin (Integral 32)))) (TBuiltin Unit)), TBuiltin Unit")
+TypeError (ErrorMsg "Single unification error: #Arrow #Ref #Integral 32 #Unit, #Unit")

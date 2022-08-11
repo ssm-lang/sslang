@@ -1,0 +1,89 @@
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+type Maybe a
+  Just a
+  Nothing
+
+type List a
+  Cons a (List a)
+  Nil
+
+// Print the elements of an integer-valued list
+printl_ puti putc l =
+  match l
+    Cons v ll = puti v
+                putc 32 // sp
+		printl_ puti putc ll
+    Nil = putc 10 // nl
+
+length_aux len l =
+  match l
+    Cons _ ll = length_aux (len + 1) ll
+    Nil       = len
+
+length l = length_aux 0 l
+
+hd l = match l
+         Cons v _ = Just v
+	 Nil      = Nothing
+
+tl l = match l
+        Cons _ ll = Just ll
+        Nil       = Nothing
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let putnl _ = putc 10
+  let puti = puti_ putc
+  let printl l = printl_ puti putc l
+  
+  let zero = Nil
+  let one = Cons 57 Nil
+  let two = Cons 21 one
+  let three = Cons 42 (Cons 17 (Cons 8 Nil))
+
+  putc 65 // A
+  putc 10 // nl  
+  printl one   // 57
+  printl two   // 21 57
+  printl three  // 42 17 8
+  puti (length zero) // 0
+  putnl ()
+  puti (length one)  // 1
+  putnl ()
+  puti (length two)  // 2
+  putnl ()
+  puti (length three)  // 3
+  putnl ()
+  
+  puti (match (hd three)
+         Just i  = i     // 42
+         Nothing = 0)
+  putnl ()
+  match (tl three)
+   Just l = match l
+             Just ll = puti ll // 17
+	     Nothing = putc 68
+   Nothing = putc 66
+  putnl ()
+
+/* Incorrectly gives a unification error
+  printl (match (tl three)
+           Just l  = l
+           Nothing = Nil)
+*/
+
