@@ -78,6 +78,17 @@ concat l = match l
 	      Cons x xx = append x (concat xx)
 
 
+map f l = match l
+            Nil       = Nil
+	    Cons x xx = let r = f x
+	                Cons r (map f xx)
+
+mapi_aux i f l = match l
+                  Nil       = Nil
+		  Cons x xx = let r = f i x
+		              Cons r (mapi_aux (i + 1) f xx)
+
+mapi f l = mapi_aux 0 f l
 
 // Test the various functions
 
@@ -176,4 +187,7 @@ main cin cout =
 
   printl (concat (Cons three (Cons two (Cons three Nil)))) // 42 17 8 21 57 42 17 8
 
+  printl (map (fun x { x + 1 }) three) // 43 18 9
+
+  printl (mapi (fun i x { x - i}) three) // 42 16 6
 
