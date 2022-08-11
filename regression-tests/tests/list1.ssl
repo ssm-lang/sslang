@@ -73,6 +73,11 @@ reverse l = rev_append l Nil
 append l1 l2 = rev_append (reverse l1) l2
 
 
+concat l = match l
+              Nil       = Nil
+	      Cons x xx = append x (concat xx)
+
+
 
 // Test the various functions
 
@@ -149,6 +154,7 @@ main cin cout =
     Nothing = putc 45 // -
   putnl ()
 
+
   printl (reverse zero) // nl
 
   printl (reverse one) // 57
@@ -157,10 +163,17 @@ main cin cout =
 
   printl (reverse three) // 8 17 42
 
+
   printl (rev_append three two) // 8 17 42 21 57
+
 
   printl (append zero three) // 42 21 57
   
   printl (append two three) // 21 57 42 17 8
+
+
+  printl (concat (Cons Nil (Cons one (Cons three Nil)))) // 57 42 17 8
+
+  printl (concat (Cons three (Cons two (Cons three Nil)))) // 42 17 8 21 57 42 17 8
 
 
