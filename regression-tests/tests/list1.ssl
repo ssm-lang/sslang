@@ -1,0 +1,193 @@
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+type Maybe a
+  Just a
+  Nothing
+
+type List a
+  Cons a (List a)
+  Nil
+
+// Print the elements of an integer-valued list
+printl_ puti putc l =
+  match l
+    Cons v ll = puti v
+                putc 32 // sp
+                printl_ puti putc ll
+    Nil = putc 10 // nl
+
+
+// OCaml-style List library begins
+//
+// See /usr/lib/ocaml/list.ml
+
+// FIXME: would be nice to include this in the body of length
+
+length_aux len l =
+  match l
+    Cons _ ll = length_aux (len + 1) ll
+    Nil     = len
+
+length l = length_aux 0 l
+
+hd l = match l
+         Cons v _ = Just v
+         Nil    = Nothing
+
+tl l = match l
+        Cons _ ll = Just ll
+        Nil     = Nothing
+
+
+// FIXME: would be nice to include this in the body of nth
+
+nth_aux l n =
+  match l
+    Nil       = Nothing
+    Cons c ll = if n == 0
+    	          Just c
+	        else
+	          nth_aux ll (n-1)
+
+nth l n = if n < 0 { Nothing } else { nth_aux l n }
+
+rev_append l1 l2 =
+  match l1
+    Nil      = l2
+    Cons x l = rev_append l (Cons x l2)
+
+reverse l = rev_append l Nil
+
+append l1 l2 = rev_append (reverse l1) l2
+
+
+concat l = match l
+              Nil       = Nil
+	      Cons x xx = append x (concat xx)
+
+
+map f l = match l
+            Nil       = Nil
+	    Cons x xx = let r = f x
+	                Cons r (map f xx)
+
+mapi_aux i f l = match l
+                  Nil       = Nil
+		  Cons x xx = let r = f i x
+		              Cons r (mapi_aux (i + 1) f xx)
+
+mapi f l = mapi_aux 0 f l
+
+// Test the various functions
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let putnl _ = putc 10
+  let puti = puti_ putc
+  let printl l = printl_ puti putc l
+  
+  let zero = Nil                             // []
+  let one = Cons 57 Nil                      // 57
+  let two = Cons 21 one                      // 21 57
+  let three = Cons 42 (Cons 17 (Cons 8 Nil)) // 42 17 8
+
+  putc 65 // A
+  putc 10 // nl  
+  printl one   // 57
+  printl two   // 21 57
+  printl three  // 42 17 8
+  puti (length zero) // 0
+  putnl ()
+  puti (length one)  // 1
+  putnl ()
+  puti (length two)  // 2
+  putnl ()
+  puti (length three)  // 3
+  putnl ()
+  
+  puti (match (hd three)
+         Just i  = i     // 42
+         Nothing = 0)
+  putnl ()
+  match (tl three)
+   Just l =
+     match l
+         Just ll = puti ll // 17
+         Nothing = putc 68
+   Nothing = putc 66
+  putnl ()
+
+  printl (match (tl three)
+           Just l  = l       // 17 8
+           Nothing = Nil)
+
+  match (nth three 0)
+    Just i = puti i    // 42
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 1)
+    Just i = puti i    // 17
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 2)
+    Just i = puti i    // 8
+    Nothing = putc 66
+  putnl ()
+
+  match (nth three 3)
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+  match (nth three 4)
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+  match (nth three (0 - 1)) // FIXME: might be nice to have "-3" work
+    Just i = putc 33
+    Nothing = putc 45 // -
+  putnl ()
+
+
+  printl (reverse zero) // nl
+
+  printl (reverse one) // 57
+
+  printl (reverse two) // 57 21
+
+  printl (reverse three) // 8 17 42
+
+
+  printl (rev_append three two) // 8 17 42 21 57
+
+
+  printl (append zero three) // 42 21 57
+  
+  printl (append two three) // 21 57 42 17 8
+
+
+  printl (concat (Cons Nil (Cons one (Cons three Nil)))) // 57 42 17 8
+
+  printl (concat (Cons three (Cons two (Cons three Nil)))) // 42 17 8 21 57 42 17 8
+
+  printl (map (fun x { x + 1 }) three) // 43 18 9
+
+  printl (mapi (fun i x { x - i}) three) // 42 16 6
+

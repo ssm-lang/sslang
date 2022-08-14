@@ -62,6 +62,8 @@ import Data.Bifunctor (first)
   string  { Token (_, TString $$) }
   op      { Token (_, TOp $$) }
   id      { Token (_, TId $$) }
+  cblock  { Token (_, TCBlock $$) }
+  csym    { Token (_, TCSym $$) }
 
 %left ';' -- Helps with if-then-else
 %nonassoc NOELSE 'else'
@@ -86,6 +88,7 @@ topDefs                               --> [TopDef]
 topDef                                --> TopDef
   : defLet                              { TopDef $1 }
   | defType                             { TopType $1 }
+  | defCBlock                           { TopCDefs $1 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef
@@ -94,6 +97,10 @@ defType                               --> TypeDef
                                                   , typeVariants = $5
                                                   }
                                         }
+
+-- | Top-level block of C definitions
+defCBlock                             --> String
+  : cblock                              { $1 }
 
 -- | List of pipe-separated variants.
 typeVariants                          --> [TypeVariant]
@@ -266,10 +273,12 @@ exprBlk                               --> Expr
   : 'loop' '{' expr '}'                 { Loop $3 }
   | 'wait' '{' exprPar '}'              { Wait $3 }
   | 'par' '{' exprPar '}'               { Par $3 }
-  | 'if' exprBlk '{' expr '}' exprElse  { IfElse $2 $4 $6 }
-  | 'while' exprBlk '{' expr '}'        { While $2 $4 }
+  | 'if' exprOp '{' expr '}' exprElse   { IfElse $2 $4 $6 }
+  | 'while' exprOp '{' expr '}'         { While $2 $4 }
   | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
-  | 'match' exprBlk '{' matchArms '}'   { Match $2 $4 }
+  | 'match' exprOp '{' matchArms '}'    { Match $2 $4 }
+  | csym '(' ')'                        { CCall $1 [] }
+  | csym '(' exprTups ')'               { CCall $1 $3 }
   | exprApp                             { $1 }
 
 -- | Arms of a pattern match.
@@ -302,6 +311,11 @@ exprAtom
 -- | Pipe-separated expressions, for parallel composition.
 exprPar                               --> [Expr]
   : expr '||' exprPar                   { $1 : $3 }
+  | expr                                { [$1] }
+
+-- | Commas have the lowest precedence.
+exprTups                             --> [Expr]
+  : expr ',' exprTups                   { $1 : $3 }
   | expr                                { [$1] }
 
 -- | A list of juxtaposed identifiers.

@@ -24,25 +24,15 @@ stored in @a argv, which is in turn passed to the callee.
 Though this wastes extra space, it vastly increases opportunities to reuse the
 same closure (if it is uniquely owned by the caller).
 
-The #ssm_mm header's @a val_count field indicates how many arguments are
-currently applied (also called @a arg_count), i.e., how many fields the garbage
-collector should scan when the closure is dropped.
-The header's @a tag field indicates how many arguments the closure will
-accommodate (also called @a arg_cap), and determines its memory layout and size.
-When @a arg_count reaches @a arg_cap, the closure should reduce.
-
-A closure with an @a arg_cap of `N` has the following layout:
-
-~~~{.c}
-struct ssm_closureN {
-  struct ssm_mm mm;
-  ssm_value_t argv[N];
-};
-~~~
+Closures' #ssm_mm headers are vector-flavored; the @a cap field indicates how
+many arguments the closure is allocated with (i.e., how many can be applied to
+it), while the @a count field indicates how many arguments are currently applied.
+@a cap is used to determine the size, while @a count is used to determine how
+many valid values the garbage collector needs to scan when a closure is deallocated.
 
 The "template" for each closure's memory layout is defined by #ssm_closure1;
-closures with more argument capacity look like #ssm_closure1 with longer @a
-argv.
+closures with more argument capacity look like #ssm_closure1 with a longer
+@a argv.
 
 The function ssm_closure_apply() applies a closure to an argument, with or
 without reduction.

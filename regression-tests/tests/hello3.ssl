@@ -1,4 +1,4 @@
-main ( cout : & Int ) -> () =
+main (cint : &Int )( cout : & Int ) -> () =
   after 10 , cout <- 72
   wait cout
   after 10 , cout <- 101

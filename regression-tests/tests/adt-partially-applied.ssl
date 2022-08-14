@@ -16,7 +16,7 @@ perimeter (shp : Shape) -> Int =
    Square a = a+a+a+a
    Rect a b  = a+b+a+b
 
-main ( cout : & Int ) -> () =
+main (cin : &Int) ( cout : & Int ) -> () =
 
   // what a call to a constructor func should like
   let a = square_con 16

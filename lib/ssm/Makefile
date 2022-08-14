@@ -24,12 +24,15 @@ MAKE_CC ?= cc
 MAKE_LD ?= $(MAKE_CC)
 MAKE_AR ?= ar
 
+PLATFORM ?= simulation
+
 BUILD_DIR := build
 SRC_DIR := src
 INC_DIR := include
 TEST_DIR := test
-EXE_DIR := examples
+EXE_DIR := examples/$(PLATFORM)
 DOC_DIR := doc
+PLATFORM_DIR := platform/$(PLATFORM)
 GCOVR_CFG := test/gcovr.cfg
 
 LIB_SRC := $(wildcard $(SRC_DIR)/*.c)
@@ -55,19 +58,33 @@ TEST_SRC := $(wildcard $(TEST_DIR)/*.c)
 TEST_OBJ := $(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/test_%.o, $(TEST_SRC))
 TEST_TGT := $(patsubst %.o, %, $(TEST_OBJ))
 
+PLATFORM_SRC := $(wildcard $(PLATFORM_DIR)/src/*.c)
+PLATFORM_OBJ := $(patsubst $(PLATFORM_DIR)/src/%.c, $(BUILD_DIR)/%.o, $(PLATFORM_SRC))
+$(info PLATFORM is $(PLATFORM))
+
 COV_TGT := $(BUILD_DIR)/coverage.xml
 
 CC = $(MAKE_CC)
-CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic -std=c99
+CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic
 
+ifeq ($(PLATFORM),simulation)
+# enforce c99 for pure testing, but don't enforce it for other platforms
+CFLAGS += -std=c99
+endif
+
+ifeq ($(PLATFORM),simulation)
 # Check whether valgrind is available.
 ifeq ($(shell command -v valgrind),)
-# If not, we probably shouldn't try to include <valgrind/valgrind.h>,
-# which we use to instrument our memory allocator.
-# 
+$(info # Valgrind is not available; compiling without it.)
+else
+# If available, we try to #include <valgrind/valgrind.h>, which we use to
+# instrument our memory allocator.
+#
 # NOTE: this is just a heuristic that may not be very reliable.
 # We should probably implement better dependency management.
-CFLAGS += -DNVALGRIND
+$(info # Valgrind seems to be available; compiling libssm with Valgrind support.)
+CFLAGS += -DUSE_VALGRIND
+endif
 endif
 
 TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage
@@ -75,6 +92,7 @@ TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage
 LD = $(MAKE_LD)
 LDFLAGS = -L$(BUILD_DIR)
 TEST_LDFLAGS = $(LDFLAGS) --coverage
+LDLIBS= -lpthread
 
 AR = $(MAKE_AR)
 ARFLAGS = -cr
@@ -94,13 +112,13 @@ $(TLIB_TGT): $(TLIB_OBJ)
 	rm -f $@
 	$(AR) $(ARFLAGS) $@ $+
 
-$(EXE_TGT): %: %.o $(LIB_TGT)
-	$(LD) $(LDFLAGS) -o $@ $@.o -l$(LIB_NAME)
+$(EXE_TGT): %: %.o $(PLATFORM_OBJ) $(LIB_TGT)
+	$(LD) $(LDFLAGS) -o $@ $@.o $(PLATFORM_OBJ) -l$(LIB_NAME) $(LDLIBS)
 
 $(TEST_TGT): %: %.o $(TLIB_TGT)
-	$(LD) $(TEST_LDFLAGS) -o $@ $@.o -l$(TLIB_NAME)
+	$(LD) $(TEST_LDFLAGS) -o $@ $@.o -l$(TLIB_NAME) $(LDLIBS)
 
-vpath %.c $(SRC_DIR) $(EXE_DIR) $(TEST_DIR)
+vpath %.c $(SRC_DIR) $(EXE_DIR) $(TEST_DIR) $(PLATFORM_DIR)/src
 
 $(EXE_OBJ): $(BUILD_DIR)/%.o: %.c $(LIB_INC) $(EXE_INC) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -111,6 +129,9 @@ $(LIB_OBJ): $(BUILD_DIR)/%.o: %.c $(LIB_INC) | $(BUILD_DIR)
 $(TLIB_OBJ) $(TEST_OBJ): $(BUILD_DIR)/test_%.o: %.c $(LIB_INC) | $(BUILD_DIR)
 	rm -f $(patsubst %.o, %.gcda, $@) $(patsubst %.o, %.gcno, $@)
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
+
+$(PLATFORM_OBJ): $(BUILD_DIR)/%.o: %.c $(LIB_INC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(COV_TGT): $(GCOVR_CFG) $(TEST_TGT)
 	@for i in $(TEST_TGT) ; do \

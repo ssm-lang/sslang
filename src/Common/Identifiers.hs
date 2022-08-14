@@ -47,6 +47,7 @@ module Common.Identifiers
   , DConId(..)
   , VarId(..)
   , TVarIdx(..)
+  , CSym(..)
   , Binder
   , Identifier(..)
   , isCons
@@ -116,7 +117,6 @@ instance Pretty Identifier where
 -- | Identifier for type constructors, e.g., @Option@.
 newtype TConId = TConId Identifier
   deriving Eq
-  deriving Show
   deriving Ord
   deriving Typeable
   deriving Data
@@ -127,10 +127,12 @@ newtype TConId = TConId Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
 
+instance Show TConId where
+  show (TConId i) = show i
+
 -- | ToIdentifier for type variable, e.g., @a@.
 newtype TVarId = TVarId Identifier
   deriving Eq
-  deriving Show
   deriving Ord
   deriving Typeable
   deriving Data
@@ -140,6 +142,9 @@ newtype TVarId = TVarId Identifier
   deriving Semigroup via Identifier
   deriving Monoid via Identifier
   deriving Pretty via Identifier
+
+instance Show TVarId where
+  show (TVarId i) = '\'' : show i
 
 -- | Identifier for data constructors, e.g., @None@.
 newtype DConId = DConId Identifier
@@ -157,6 +162,20 @@ newtype DConId = DConId Identifier
 
 -- | Identifier for data variables, e.g., @x@.
 newtype VarId = VarId Identifier
+  deriving Eq
+  deriving Show
+  deriving Ord
+  deriving Typeable
+  deriving Data
+  deriving ToIdent via Identifier
+  deriving IsString via Identifier
+  deriving Identifiable via Identifier
+  deriving Semigroup via Identifier
+  deriving Monoid via Identifier
+  deriving Pretty via Identifier
+
+-- | Identifier for C symbols, e.g., @printf@.
+newtype CSym = CSym Identifier
   deriving Eq
   deriving Show
   deriving Ord

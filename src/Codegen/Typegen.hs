@@ -99,7 +99,6 @@ genTypeInfo tdefs = do
 
     -- Determine the encoding of inhabitants of this type
     let (encoding, tagFn)
-          | all dconOnHeap tvarsInfo       = (TypeHeap, adt_heap_tag)
           | not (any dconOnHeap tvarsInfo) = (TypePacked, unmarshal)
           | otherwise                      = (TypeMixed, adt_tag)
     return (tcon, TConInfo { typeEncoding = encoding, typeScrut = tagFn })

@@ -1,0 +1,45 @@
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let puti = puti_ putc
+  puti 123456789
+  putc 10
+  puti 0
+  putc 10
+  puti 1
+  putc 10
+  puti 9
+  putc 10
+  puti 10
+  putc 10
+  puti 12
+  putc 10
+  puti 19
+  putc 10
+  puti 99
+  putc 10
+  puti 100
+  putc 10
+  puti 901
+  putc 10
+  puti (0-1)
+  putc 10
+  puti (0-19)
+  putc 10
+  puti (0-987654321)
+  putc 10

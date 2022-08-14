@@ -1,0 +1,31 @@
+type Bool
+  False
+  True
+
+printBool cout b =
+  if b
+    after 1, cout <- 49 // 1
+    wait cout
+  else
+    after 1, cout <- 48 // 0
+    wait cout
+  after 1, cout <- 10
+  wait cout
+
+main cin cout =
+ printBool cout 1
+ printBool cout 0
+ printBool cout (1 == 0)
+ printBool cout (1 != 0)
+ printBool cout (1 < 0)
+ printBool cout (1 <= 0)
+ printBool cout (1 <= 1)
+ printBool cout (1 > 0)
+ printBool cout (1 >= 0)
+ printBool cout (1 >= 1)
+ printBool cout (5 < 6)
+ printBool cout (5 <= 6)
+ printBool cout (5 > 6)
+ printBool cout (5 >= 6)
+ printBool cout (5 == 5)
+ printBool cout (5 != 5)

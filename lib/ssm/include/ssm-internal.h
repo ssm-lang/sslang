@@ -10,6 +10,7 @@
 #ifndef _SSM_SCHED_H
 #define _SSM_SCHED_H
 
+#include <ssm-platform.h>
 #include <ssm.h>
 
 /** @ingroup error
@@ -35,6 +36,15 @@
  *  @returns the next event time, or #SSM_NEVER if the event queue is empty.
  */
 ssm_time_t ssm_next_event_time(void);
+
+/** @ingroup act
+ *  @brief Whether there are still active processes in the activation queue.
+ *
+ *  @platformonly
+ *
+ *  @returns true if there is at least one active process, false otherwise.
+ */
+bool ssm_active(void);
 
 /** @ingroup time
  *  @brief Reset the scheduler.
@@ -117,34 +127,10 @@ void ssm_unschedule(ssm_sv_t *var);
  */
 void ssm_tick(void);
 
-/** @ingroup adt
- *  @brief Compute the size of a heap-allocated ADT.
- *  @todo document
- */
-#define ssm_adt_size(vc) (sizeof(struct ssm_adt1) + sizeof(ssm_value_t) * ((vc) - 1))
-
-
-#define ssm_closure_size(vc)                                                   \
-  (sizeof(struct ssm_closure1) + (sizeof(ssm_value_t) * ((vc) - 1)))
-
 /**
  * @addtogroup mem
  * @{
  */
-
-/** @brief The different kinds of heap objects, enumerated.
- *
- *  Types enumerated here that are not ADTs are chosen because they cannot be
- *  easily or efficiently expressed as a product of words. For instance, 64-bit
- *  timestamps cannot be directly stored in the payload of a regular heap
- *  object, where even-numbered timestamps may be misinterpreted as pointers.
- */
-enum ssm_kind {
-  SSM_ADT_K = 0,  /**< ADT object, e.g., #ssm_adt1 */
-  SSM_TIME_K,     /**< 64-bit timestamps, #ssm_time_t */
-  SSM_SV_K,       /**< Scheduled variables, #ssm_sv_t */
-  SSM_CLOSURE_K,  /**< Closure object, #ssm_closure1 */
-};
 
 /** @brief Initializes the underlying allocator system.
  *
@@ -159,8 +145,8 @@ enum ssm_kind {
  *  alloc_mem_handler. These handlers may also assume they will not be invoked
  *  to request memory ranges of less than #SSM_MEM_POOL_MAX bytes.
  *
- *  If the allocator is compiled with valgrind support (i.e., without defining
- *  @a NVALGRIND), it will perform a leak-check summary, to checkpoint how much
+ *  If the allocator is compiled with valgrind support (i.e., @a USE_VALGRIND is
+ *  defined), it will perform a leak-check summary, to checkpoint how much
  *  memory has already been allocated.
  *
  *  @platformonly
@@ -175,8 +161,8 @@ void ssm_mem_init(void *(*alloc_page_handler)(void),
 
 /** @brief Tears down the underlying allocator system.
  *
- *  If the allocator is compiled with valgrind support (i.e., without defining
- *  @a NVALGRIND), it will perform a full leak-check summary, to report how much
+ *  If the allocator is compiled with valgrind support (i.e., @a USE_VALGRIND is
+ *  defined), it will perform a full leak-check summary, to report how much
  *  memory has been leaked since ssm_mem_init().
  *
  *  @TODO this doesn't actually call @a free_page_handler yet. It still needs to
@@ -257,7 +243,7 @@ void ssm_mem_destroy(void (*free_page_handler)(void *));
 
 /** @} */
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
 #include <valgrind/memcheck.h>
 #endif
 

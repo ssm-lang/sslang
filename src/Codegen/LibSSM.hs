@@ -15,8 +15,8 @@ import           Language.C.Quote               ( Id(Id)
                                                 , ToIdent(..)
                                                 )
 import           Language.C.Quote.GCC           ( cexp
-                                                , cty
                                                 , cinit
+                                                , cty
                                                 )
 import qualified Language.C.Syntax             as C
 
@@ -45,6 +45,10 @@ cexpr i = [cexp|$id:i|]
 csizeof :: C.Type -> C.Exp
 csizeof t = [cexp|sizeof($ty:t)|]
 
+-- | Construct an integer literal in C.
+cint :: Int -> C.Exp
+cint i = [cexp|$int:i|]
+
 ccall :: C.Exp -> [C.Exp] -> C.Exp
 fn `ccall` args = [cexp|$exp:fn($args:args)|]
 
@@ -53,6 +57,25 @@ amp e = [cexp|&$exp:e|]
 
 star :: C.Exp -> C.Exp
 star e = [cexp|*$exp:e|]
+
+-- | Natively supported sizes in C.
+data CSize
+  = Size8
+  | Size16
+  | Size32
+  | Size64
+  deriving (Eq, Ord)
+
+-- | Convert a 'CSize' into an integer.
+size_to_int :: CSize -> Int
+size_to_int Size8  = 8
+size_to_int Size16 = 16
+size_to_int Size32 = 32
+size_to_int Size64 = 64
+
+-- | Convert a 'CSize' into some string identifier of the size.
+size_to_string :: IsString s => CSize -> s
+size_to_string = fromString . show . size_to_int
 
 {---- from ssm.h {{{ ----}
 
@@ -93,18 +116,15 @@ packed_val = "packed_val"
 heap_ptr :: CIdent
 heap_ptr = "heap_ptr"
 
-mm_tag :: CIdent
-mm_tag = "tag"
-
 -- TODO: skip ssm mm
 
 -- | @ssm_marshal@, construct a 'value_t' out of a 31-bit integral value.
 marshal :: C.Exp -> C.Exp
-marshal v = [cexp|ssm_marshal($exp:v)|]
+marshal v = [cexp|ssm_marshal($exp:(cast_to_unsigned Size32 v))|]
 
 -- | @ssm_unmarshal@, extract 31-bit integral value out of a 'value_t'.
 unmarshal :: C.Exp -> C.Exp
-unmarshal v = [cexp|ssm_unmarshal($exp:v)|]
+unmarshal v = cast_to_unsigned Size32 [cexp|ssm_unmarshal($exp:v)|]
 
 -- | @ssm_on_heap@, whether a 'value_t' points to something on the heap.
 on_heap :: C.Exp -> C.Exp
@@ -245,7 +265,7 @@ desensitize trig = [cexp|ssm_desensitize($exp:trig)|]
 
 -- | @ssm_new_adt@, allocate a new ADT object on the heap.
 new_adt :: Int -> DConId -> C.Exp
-new_adt val_count tag = [cexp|ssm_new_adt($uint:val_count, $id:tag)|]
+new_adt field_count tag = [cexp|ssm_new_adt($uint:field_count, $id:tag)|]
 
 -- | @ssm_adt_field@, access the @i@th field of an ADT object. Assignable.
 adt_field :: C.Exp -> Int -> C.Exp
@@ -254,10 +274,6 @@ adt_field v i = [cexp|ssm_adt_field($exp:v, $uint:i)|]
 -- | @ssm_tag@, extract the tag of an ADT value.
 adt_tag :: C.Exp -> C.Exp
 adt_tag v = [cexp|ssm_tag($exp:v)|]
-
--- | Extract the tag of a heap-allocated ADT value.
-adt_heap_tag :: C.Exp -> C.Exp
-adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
 
 -- | @ssm_closure1_t@, the (template) type of a closure with a single argument.
 closure1_t :: C.Type
@@ -268,13 +284,16 @@ closure1_t = [cty|struct ssm_closure1|]
 -- FIXME: An ugly hack that shouldn't exist because John didn't have the
 -- foresight to provide an interface to define static closures.
 static_closure :: C.Exp -> Int -> C.Initializer
-static_closure f argc =
-  [cinit|{
+static_closure f argc = [cinit|{
     .mm = {
       .ref_count = 1,
-      .kind = 3, // Ugly awful hack
-      .val_count = 0,
-      .tag = $int:argc,
+      .kind = SSM_CLOSURE_K,
+      .info = {
+        .vector = {
+          .count = 0,
+          .cap = $int:argc,
+        },
+      },
     },
     .f = $exp:f,
     .argv = {{0}}, // https://stackoverflow.com/q/13746033/10497710
@@ -315,9 +334,28 @@ closure_free f = [cexp|ssm_closure_free($exp:f)|]
 container_of :: CIdent
 container_of = "container_of"
 
--- | Name of top level program initialization function
-initialize_program :: CIdent
-initialize_program = "ssm_program_initialize"
+-- | Name of program initialization hook, called to set up program with runtime.
+program_init :: CIdent
+program_init = "ssm_program_init"
+
+-- | Name of program destruction hook, called before gracefully exiting program.
+program_exit :: CIdent
+program_exit = "ssm_program_exit"
+
+-- | Name of stdout handler enter function, used to bind stdout for POSIX platforms.
+-- NOTE: this is a hack
+stdout_handler_enter :: CIdent
+stdout_handler_enter = "__enter_stdout_handler"
+
+-- | Name of stdin handler spawner, used to bind stdin for POSIX platforms.
+-- NOTE: this is a hack
+stdin_handler_spawn :: CIdent
+stdin_handler_spawn = "__spawn_stdin_handler"
+
+-- | Name of stdin handler killer, used to destroy handler thread on POSIX.
+-- NOTE: this is a hack
+stdin_handler_kill :: CIdent
+stdin_handler_kill = "__kill_stdin_handler"
 
 {---- from ssm.h }}} ----}
 
@@ -405,3 +443,31 @@ leave_label :: CIdent
 leave_label = "__leave_step"
 
 {---- Naming conventions }}} ----}
+
+{---- Quasiquoting helpers {{{ ----}
+
+-- | Cast to a signed integer of a particular size.
+cast_to_signed :: CSize -> C.Exp -> C.Exp
+cast_to_signed = cast_to_int True
+
+-- | Cast to an unsigned integer of a particular size.
+cast_to_unsigned :: CSize -> C.Exp -> C.Exp
+cast_to_unsigned = cast_to_int False
+
+-- | Cast to an integer of a particular size and signedness.
+cast_to_int :: Bool -> CSize -> C.Exp -> C.Exp
+cast_to_int signed size e = [cexp|(typename $id:int_t) $exp:e|]
+ where
+  int_t :: CIdent
+  int_t = (if signed then "int" else "uint") <> size_to_string size <> "_t"
+
+-- | Shift left by the specified amount.
+shl :: C.Exp -> C.Exp -> C.Exp
+shl l r = [cexp|$exp:l << $exp:r|]
+
+-- | Shift right by the specified amount.
+shr :: C.Exp -> C.Exp -> C.Exp
+shr l r = [cexp|$exp:l >> $exp:r|]
+
+
+{---- Quasiquoting helpers }}} ----}

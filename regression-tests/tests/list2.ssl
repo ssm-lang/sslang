@@ -1,0 +1,72 @@
+type Maybe a
+  Just a
+  Nothing
+
+type List a
+  Cons a (List a)
+  Nil
+
+tl l = match l
+        Cons _ ll = Just ll
+        Nil       = Nothing
+
+main cin cout =
+  let putc c = after 1, cout <- c
+               wait cout
+  let nl = 10
+  let two = Cons 65 (Cons 68 Nil) // 'A' : 'D' : []
+
+  let just_two = Just two
+  
+  match two
+    Cons c _ = putc c  // Should print A
+    Nil      = putc 33
+  putc nl
+
+  match two
+    Cons _ l = match l
+                 Cons c _ = putc c   // Should print D
+		 Nil      = putc 33
+    Nil      = putc 34
+  putc nl
+
+  match just_two
+    Just l = match l
+               Cons _ ll = match ll
+                             Cons c _ = putc c  // Should print D
+                       	     Nil      = putc 33
+               Nil      = putc 34
+    Nothing = putc 35
+  putc nl
+
+  match (tl two)
+    Just l = match l
+               Cons c _ = putc c // should print D
+               Nil      = putc 34
+    Nothing = putc 35
+
+  putc nl
+
+  let foo = match (tl two)
+              Just l = l     // Should be D::[]
+              Nothing = Nil
+
+  match foo
+    Cons c _ = putc c // Should print D
+    Nil      = putc 33
+  putc nl
+
+/* Should generate a type error
+  match (tl just_two)
+    Just l = match l
+               Cons c _ = putc c
+               Nil      = putc 34
+    Nothing = putc 35
+*/    
+
+  match (tl two)
+    Just l = match l
+               Cons c _ = putc c // should print D
+               Nil      = putc 34
+    Nothing = putc 35
+  putc nl  

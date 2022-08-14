@@ -6,8 +6,8 @@ SSMDIR="../lib/ssm"
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
-CC="cc -O -g -Wall -Wno-unused-label -pedantic -std=c99 -I ${SSMINC} -I out"
-LINK="cc -g -L $SSMLIBDIR"
+CC="cc -O -g -Wall -Wno-unused-label -Wno-parentheses -pedantic -std=c99 -I ${SSMINC} -I out"
+LINK="cc -g -I $SSMINC -L $SSMLIBDIR"
 
 globallog=runtests.log
 rm -f $globallog
@@ -18,7 +18,7 @@ keep=
 mkdir -p out
 
 # Set time limit
-ulimit -t 30
+ulimit -t 5
 
 Usage() {
     echo "Usage: runtests.sh [options] [files]"
@@ -46,11 +46,17 @@ SignalError() {
 # Compares the outfile with reffile.  Differences, if any, written to difffile
 Compare() {
     NoteGen "$3"
-    echo diff -b $1 $2 ">" $3 1>&2
-    diff -b "$1" "$2" > "$3" 2>&1 || {
-	SignalError "$1 differs"
-	echo "FAILED $1 differs from $2" 1>&2
-    }
+    if ! [ -f "$2" ] ; then
+      SignalError "$2 not found"	
+      echo "$2 not found" 1>&2
+    else
+	echo diff -b $1 $2 ">" $3 1>&2
+	diff -b "$1" "$2" > "$3" 2>&1 || {
+	    SignalError "$1 differs"
+	    echo "FAILED $1 differs from $2" 1>&2
+	    cat $3 >&2
+	}
+    fi
 }
 
 # Run <args>
@@ -92,53 +98,49 @@ Check() {
     csource="out/${basename}.c"
     cheader="out/${basename}.h"
     obj="out/${basename}.o"
-    mainsource="${reffile}-main.c"
-    mainobj="out/${basename}-main.o"
+    platformdir=${SSMDIR}/platform/posix/src
     exec="out/${basename}"
     result="out/${basename}.out"
     reference="${reffile}.out"
     diff="out/${basename}.diff"
     NoteGen "${csource} ${cheader} ${obj}"
 
-    Run $SSLC "$1" ">" "${csource}" &&
-    Run $CC -c -o "${obj}" "${csource}" &&
-    if [ -f "${mainsource}" ] ; then
-	NoteGen "${mainobj} ${exec} ${result} ${diff}"
-	Run $CC -c -o "${mainobj}" "${mainsource}" &&
-	Run $LINK -o "${exec}" "${obj}" "${mainobj}" -lssm &&
-	Run "${exec}" ">" "${result}" &&
-	Compare "${result}" "${reference}" "${diff}"
-    fi
+    NoteGen "${exec} ${result} ${diff}"
+    Run $SSLC "$1" ">" "${csource}" && \
+    Run $CC -c -o "${obj}" "${csource}" && \
+    Run $LINK -o "${exec}" "${obj}" $platformdir/*.c -lssm -lpthread && \
+    Run "${exec}" ">" "${result}" && \
+    Compare "${result}" "${reference}" "${diff}"
 
-    # Pretty Printer Tests
-    ir1="out/${basename}-ir1.ssl"
-    ir2="out/${basename}-ir2.ssl"
-    csourceIr2="out/${basename}-ir2.c"
-    objIr2="out/${basename}-ir2.o"
-    execIr2="out/${basename}-ir2"
-    resultIr2="out/${basename}-ir2.out"
-    diffIr2="out/${basename}-ir2.diff"
-    diffIr3="out/${basename}-ir3.diff"
-    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2} ${resultIr2}"
-
-    # TEST: can we pretty print the IR?
-    Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
-    # TEST: can pretty printed IR be read back in?
-    Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
-    # TEST: can we fully compile pretty printed IR?
-    Run $SSLC "${ir2}" ">" "out/${basename}-ir2.c" &&
-    Run $CC -c -o "${objIr2}" "${csourceIr2}" &&
-    if [ -f "${mainsource}" ] ; then
-	NoteGen "${ir1} ${ir2} ${objIr2} ${execIr2} ${result-ir2} ${diff-ir3} ${diff-ir2}"
-	Run $CC -c -o "${mainobj}" "${mainsource}" &&
-	Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
-	Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
-    # TEST: does compiled IR produce the same results as compiled source?
-	Compare "${resultIr2}" "${reference}" "out/${basename}-ir3.diff"
-    fi
-
-    # Report the status and clean up the generated files
-    
+ #    # Pretty Printer Tests
+ #    ir1="out/${basename}-ir1.ssl"
+ #    ir2="out/${basename}-ir2.ssl"
+ #    csourceIr2="out/${basename}-ir2.c"
+ #    objIr2="out/${basename}-ir2.o"
+ #    execIr2="out/${basename}-ir2"
+ #    resultIr2="out/${basename}-ir2.out"
+ #    diffIr2="out/${basename}-ir2.diff"
+ #    diffIr3="out/${basename}-ir3.diff"
+ #    NoteGen "${csourceIr2} ${ir1} ${ir2} ${objIr2} ${resultIr2}"
+ #
+ #    # TEST: can we pretty print the IR?
+ #    Run $SSLC "$pretty" "$1" ">" "${ir1}" &&
+ #    # TEST: can pretty printed IR be read back in?
+ #    Run $SSLC "$pretty" "${ir1}" ">" "${ir2}" &&
+ #    # TEST: can we fully compile pretty printed IR?
+ #    Run $SSLC "${ir2}" ">" "out/${basename}-ir2.c" &&
+ #    Run $CC -c -o "${objIr2}" "${csourceIr2}" &&
+ #    if [ -f "${mainsource}" ] ; then
+	# NoteGen "${ir1} ${ir2} ${objIr2} ${execIr2} ${result-ir2} ${diff-ir3} ${diff-ir2}"
+	# Run $CC -c -o "${mainobj}" "${mainsource}" &&
+	# Run $LINK -o "out/${basename}-ir2" "out/${basename}-ir2.o" "${mainobj}" -lssm &&
+	# Run "${execIr2}" ">" "out/${basename}-ir2.out" &&
+ #    # TEST: does compiled IR produce the same results as compiled source?
+	# Compare "${resultIr2}" "${reference}" "out/${basename}-ir3.diff"
+ #    fi
+ #
+ #    # Report the status and clean up the generated files
+ #    
 
     if [ -z "$error" ] ; then
 	if [ -z "$keep" ] ; then
@@ -219,7 +221,7 @@ Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
 for file in $files
 do
   case "$file" in
-    *-fail.pen)
+    *-fail.ssl)
 	  CheckFail "$file" 2>> $globallog
 	  ;;
     *)

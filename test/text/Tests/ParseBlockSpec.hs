@@ -13,6 +13,9 @@ shouldParse = shouldPass . parseProgram
 shouldntParse :: HasCallStack => String -> Expectation
 shouldntParse = (`shouldFailWith` ParseError "parse error") . parseProgram
 
+shouldntScan :: HasCallStack => String -> Expectation
+shouldntScan = (`shouldFailWith` LexError "parse error") . parseProgram
+
 spec :: Spec
 spec = do
   it "parses basic layout-next-token blocks" $ do
@@ -58,12 +61,12 @@ spec = do
     |]
 
   it "rejects starting blocks at the same indentation" $ do
-    shouldntParse [here|
+    shouldntScan [here|
       main (clk : &Int) =
       loop
         wait clk
     |]
-    shouldntParse [here|
+    shouldntScan [here|
       main (clk : &Int) =
         loop
         wait clk

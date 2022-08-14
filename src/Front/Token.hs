@@ -2,8 +2,8 @@
 -- | Sslang source code tokens.
 module Front.Token where
 
-import Common.Pretty
-import Common.Identifiers
+import           Common.Identifiers
+import           Common.Pretty
 
 -- | Tokens extracted from source text.
 newtype Token = Token (Span, TokenType)
@@ -59,6 +59,8 @@ data TokenType
   | TString String
   | TId Identifier
   | TOp Identifier
+  | TCSym Identifier
+  | TCBlock String
   deriving (Eq, Show)
 
 {- | 'Pretty' instance for 'Token', good for dumping tokens for inspection.
@@ -114,9 +116,11 @@ instance Pretty TokenType where
   pretty TLbracket    = pretty "["
   pretty TRbracket    = pretty "]"
   pretty (TInteger i) = pretty $ show i
-  pretty (TString  s) = pretty $ "\"" ++ s ++ "\""
+  pretty (TString  s) = pretty $ "\"" <> s <> "\""
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
+  pretty (TCSym    s) = pretty $ fromString "$" <> s
+  pretty (TCBlock  b) = pretty $ fromString "$$" <> b <> fromString "$$"
 
 -- | Pretty print a list of tokens.
 prettyTokens :: [Token] -> String

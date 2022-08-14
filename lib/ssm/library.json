@@ -1,22 +1,30 @@
 {
-    "name": "ssm",
-    "version": "0.1",
-    "description": "A lightweight runtime system for the sparse synchronous model, a deterministic real-time system model",
-    "repository":
+  "name": "ssm",
+  "version": "0.1",
+  "description": "A lightweight runtime system for the sparse synchronous model, a deterministic real-time system model",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssm-lang/ssm-runtime.git"
+  },
+  "authors": [
     {
-	"type":"git",
-	"url":"https://github.com/sedwards-lab/ssm.git"
+      "name": "Stephen A. Edwards",
+      "email": "sedwards@cs.columbia.edu",
+      "url": "http://www.cs.columbia.edu/~sedwards",
+      "maintainer": true
     },
-    "authors":
-    [
-	{"name":"Stephen A. Edwards",
-	 "email":"sedwards@cs.columbia.edu",
-	 "url":"http://www.cs.columbia.edu/~sedwards",
-	 "maintainer": true
-	}
-    ],
-    "license":"BSD-3-Clause",
-    "frameworks":"*",
-    "platform":"*"
+    {
+      "name": "John Hui",
+      "email": "j-hui@cs.columbia.edu",
+      "url": "https://j-hui.com",
+      "maintainer": true
+    }
+  ],
+  "license": "BSD-3-Clause",
+  "frameworks": "*",
+  "platform": "*",
+  "build": {
+    "srcDir": ".",
+    "extraScript": "library_platform.py"
+  }
 }
-    

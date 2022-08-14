@@ -103,7 +103,7 @@ static inline void alloc_pool(size_t p) {
   new_page[last_block].free_list_next = pool->free_list_head;
   pool->free_list_head = new_page;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Mark as NOACCESS; nothing should touch this memory until it is allocated.
   VALGRIND_MAKE_MEM_NOACCESS(new_page, SSM_MEM_PAGE_SIZE);
 
@@ -123,7 +123,7 @@ void ssm_mem_init(void *(*alloc_page_handler)(void),
     mem_pools[p].free_list_head = END_OF_FREELIST;
   }
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Ask Valgrind to checkpoint the amount of memory allocated so far.
   VALGRIND_PRINTF("Performing leak check at memory initialization.\n");
   VALGRIND_PRINTF("(Checkpoints how much memory is allocated at init time.)\n");
@@ -139,7 +139,7 @@ void ssm_mem_destroy(void (*free_page_handler)(void *)) {
   //   }
   // }
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Report how much memory has been leaked since the checkpoint in
   // ssm_mem_init().
   VALGRIND_PRINTF("About to destroy SSM allocator. Performing leak check.\n");
@@ -169,7 +169,7 @@ void *ssm_mem_alloc(size_t size) {
 
   void *m = pool->free_list_head->block_buf;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Tell Valgrind that we have allocated m as a chunk of pool.
   //
   // The memory range [m..m+size] is now considered DEFINED.
@@ -179,7 +179,7 @@ void *ssm_mem_alloc(size_t size) {
   pool->free_list_head =
       find_next_block(pool->free_list_head, SSM_MEM_POOL_SIZE(p));
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Make the memory range [m..m+size] undefined, because the caller should
   // not rely on allocated chunks being defined.
   VALGRIND_MAKE_MEM_UNDEFINED(m, size);
@@ -201,7 +201,7 @@ void ssm_mem_free(void *m, size_t size) {
   new_head->free_list_next = pool->free_list_head;
   pool->free_list_head = new_head;
 
-#ifndef NVALGRIND
+#ifdef USE_VALGRIND
   // Tell Valgrind that we have freed m.
   VALGRIND_FREELIKE_BLOCK(m, 0);
 #endif
@@ -215,6 +215,15 @@ ssm_value_t ssm_new_time(ssm_time_t time) {
   return (ssm_value_t){.heap_ptr = &t->mm};
 }
 
+ssm_value_t ssm_new_adt(uint8_t field_count, uint8_t tag) {
+  struct ssm_mm *mm = ssm_mem_alloc(ssm_adt_size(field_count));
+  mm->ref_count = 1;
+  mm->kind = SSM_ADT_K;
+  mm->info.variant.count = field_count;
+  mm->info.variant.tag = tag;
+  return (ssm_value_t){.heap_ptr = mm};
+}
+
 ssm_value_t ssm_new_sv(ssm_value_t val) {
   struct ssm_sv *sv = ssm_mem_alloc(sizeof(struct ssm_sv));
   sv->mm.ref_count = 1;
@@ -226,25 +235,47 @@ ssm_value_t ssm_new_sv(ssm_value_t val) {
   return (ssm_value_t){.heap_ptr = &sv->mm};
 }
 
-ssm_value_t ssm_new_adt(uint8_t val_count, uint8_t tag) {
-  struct ssm_mm *mm = ssm_mem_alloc(ssm_adt_size(val_count));
+ssm_value_t ssm_new_closure(ssm_func_t f, uint8_t arg_cap) {
+  struct ssm_closure1 *closure = container_of(
+      ssm_mem_alloc(ssm_closure_size(arg_cap)), struct ssm_closure1, mm);
+  closure->mm.ref_count = 1;
+  closure->mm.kind = SSM_CLOSURE_K;
+  closure->mm.info.vector.count = 0;
+  closure->mm.info.vector.cap = arg_cap;
+  closure->f = f;
+  return (ssm_value_t){.heap_ptr = &closure->mm};
+}
+
+ssm_value_t ssm_new_array(uint16_t elems) {
+  struct ssm_mm *mm = ssm_mem_alloc(ssm_array_size(elems));
   mm->ref_count = 1;
-  mm->kind = SSM_ADT_K;
-  mm->val_count = val_count;
-  mm->tag = tag;
+  mm->kind = SSM_ARRAY_K;
+  mm->info.size = elems;
+  return (ssm_value_t){.heap_ptr = mm};
+}
+
+ssm_value_t ssm_new_blob(uint16_t size) {
+  uint16_t scaled_size = // ceiling(size / SSM_BLOB_SIZE_SCALE)
+      size / SSM_BLOB_SIZE_SCALE + !!(size % SSM_BLOB_SIZE_SCALE);
+
+  struct ssm_mm *mm =
+      ssm_mem_alloc(ssm_blob_size(scaled_size * SSM_BLOB_SIZE_SCALE));
+  mm->ref_count = 1;
+  mm->kind = SSM_BLOB_K;
+  mm->info.size = scaled_size;
   return (ssm_value_t){.heap_ptr = mm};
 }
 
 void ssm_drop_final(ssm_value_t v) {
   size_t size = 0;
   switch (v.heap_ptr->kind) {
-  case SSM_ADT_K:
-    size = ssm_adt_size(v.heap_ptr->val_count);
-    for (size_t i = 0; i < v.heap_ptr->val_count; i++)
-      ssm_drop(ssm_adt_field(v, i));
-    break;
   case SSM_TIME_K:
     size = sizeof(struct ssm_time);
+    break;
+  case SSM_ADT_K:
+    size = ssm_adt_heap_size(v);
+    for (size_t i = 0; i < ssm_adt_field_count(v); i++)
+      ssm_drop(ssm_adt_field(v, i));
     break;
   case SSM_SV_K:
     size = sizeof(struct ssm_sv);
@@ -254,9 +285,20 @@ void ssm_drop_final(ssm_value_t v) {
       ssm_drop(ssm_to_sv(v)->later_value);
     break;
   case SSM_CLOSURE_K:
-    size = ssm_closure_size(ssm_closure_arg_cap(v));
+    size = ssm_closure_heap_size(v);
     for (size_t i = 0; i < ssm_closure_arg_count(v); i++)
       ssm_drop(ssm_closure_arg(v, i));
+    break;
+  case SSM_ARRAY_K:
+    size = ssm_array_heap_size(v);
+    for (size_t i = 0; i < ssm_array_len(v); i++)
+      ssm_drop(ssm_array_element(v, i));
+    break;
+  case SSM_BLOB_K:
+    size = ssm_blob_heap_size(v);
+    break;
+  default:
+    SSM_THROW(SSM_INTERNAL_ERROR); // Unknown object kind
     break;
   }
   ssm_mem_free(v.heap_ptr, size);

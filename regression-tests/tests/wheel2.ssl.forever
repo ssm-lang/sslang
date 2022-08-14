@@ -1,0 +1,14 @@
+// ./runtests.sh -k tests/wheel2.ssl
+// out/wheel2
+
+// fails with
+// SSM error at ../lib/ssm/platform/posix/src/posix-main.c:alloc_page:17: reason: 4
+
+print ( cout : & Int ) (n : Int) -> () =
+  after 10 , (cout : & Int) <- n
+  wait (cout : & Int)
+
+main (cint : &Int) ( cout : & Int ) -> () =
+  loop
+    print cout 87
+   

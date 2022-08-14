@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- | Translate SSM program to C compilation unit.
 
@@ -55,8 +56,8 @@ import           Data.Maybe                     ( isJust
                                                 )
 import           IR.Types.TypeSystem            ( dearrow )
 import           Prelude                 hiding ( drop )
-import           GHC.Stack                      ( HasCallStack )
 
+import           GHC.Stack                      ( HasCallStack )
 
 -- | Possible, but temporarily punted for the sake of expediency.
 todo :: HasCallStack => a
@@ -225,7 +226,7 @@ unit = marshal [cexp|0|]
 
 -- | Fake undefined value used for expressions of type Void.
 undef :: C.Exp
-undef = [cexp|0xdeadbeef|]
+undef = marshal [cexp|0xdeadbeef|]
 
 {-------- Compilation --------}
 
@@ -239,10 +240,11 @@ undef = [cexp|0xdeadbeef|]
 --
 -- Items 2 and 3 include both declarations and definitions.
 genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
-genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
-  (tdefs , tinfo) <- genTypes typedefs
-  (cdecls, cdefs) <- bimap concat concat . unzip <$> mapM (genTop tinfo) defs
-  return $ includes ++ tdefs ++ cdecls ++ cdefs -- ++ genInitProgram p
+genProgram p = do
+  (tdefs , tinfo ) <- genTypes $ I.typeDefs p
+  (cdecls, cdefns) <- cUnpack <$> mapM (genTop tinfo) (I.programDefs p)
+  return $ includes ++ tdefs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
+    (I.programEntry p)
  where
   genTop
     :: TypegenInfo
@@ -259,11 +261,14 @@ genProgram I.Program { I.programDefs = defs, I.typeDefs = typedefs } = do
         , [enterDefn, closureDefn, stepDefn]
         )
    where
-    tops            = map (second extract) defs
+    tops            = map (second extract) $ I.programDefs p
     (argIds, body ) = I.collectLambda l
     (argTys, retTy) = I.collectArrow ty
   genTop _ (_, I.Lit _ _) = todo
   genTop _ (_, _        ) = nope
+
+  cUnpack = bimap concat concat . unzip
+  cescs   = [cunit|$esc:(I.cDefs p)|]
 
 -- | Include statements in the generated C file.
 includes :: [C.Definition]
@@ -273,19 +278,51 @@ typedef char unit;
 |]
 
 -- | Setup the entry point of the program.
-genInitProgram :: I.Program I.Type -> [C.Definition]
-genInitProgram I.Program { I.programEntry = entry } = [cunit|
-    int $id:initialize_program($ty:value_t *argv, $ty:value_t *ret) {
-       $exp:(activate enter_entry);
-      return 0;
-    }
-  |]
- where
-  enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
-                                         $exp:root_priority,
-                                         $exp:root_depth,
-                                         argv,
-                                         ret)|]
+genInitProgram :: I.VarId -> [C.Definition]
+genInitProgram = const []
+-- genInitProgram entry = [cunit|
+--     $ty:act_t *$id:stdout_handler_enter($ty:act_t *parent,
+--                                         $ty:priority_t priority,
+--                                         $ty:depth_t depth,
+--                                         $ty:value_t *argv,
+--                                         $ty:value_t *ret);
+--
+--     void $id:stdin_handler_spawn($ty:sv_t *ssm_stdin);
+--     void $id:stdin_handler_kill(void);
+--
+--     void $id:program_init(void) {
+--       $ty:value_t ssm_stdin = $exp:std_sv;
+--       $ty:value_t ssm_stdout = $exp:std_sv;
+--
+--       $ty:value_t std_argv[2] = { ssm_stdin, ssm_stdout };
+--
+--       $exp:(activate enter_stdout);
+--       $exp:(activate enter_entry);
+--
+--       $id:stdin_handler_spawn($exp:(to_sv $ cexpr "ssm_stdin"));
+--     }
+--
+--     void $id:program_exit(void) {
+--       $id:stdin_handler_kill();
+--     }
+--   |]
+--  where
+--   std_sv                    = new_sv $ marshal [cexp|0|]
+--
+--   parArgs                   = genParArgs 2 (root_priority, root_depth)
+--   (stdoutPrio, stdoutDepth) = head parArgs
+--   (entryPrio , entryDepth ) = parArgs !! 1
+--   enter_stdout = [cexp|$id:stdout_handler_enter(&$exp:top_parent,
+--                                                 $exp:stdoutPrio,
+--                                                 $exp:stdoutDepth,
+--                                                 &ssm_stdout,
+--                                                 NULL)|]
+--
+--   enter_entry = [cexp|$id:(enter_ entry)(&$exp:top_parent,
+--                                          $exp:entryPrio,
+--                                          $exp:entryDepth,
+--                                          std_argv,
+--                                          NULL)|]
 
 
 -- | Generate struct definition for an SSM procedure.
@@ -403,7 +440,8 @@ genStep = do
           default:
             break;
           }
-        *$id:acts->$id:ret_val = $exp:ret_expr;
+        if ($id:acts->$id:ret_val)
+          *$id:acts->$id:ret_val = $exp:ret_expr;
         $id:leave_label:
           $exp:do_leave;
         }
@@ -659,28 +697,32 @@ genPrim I.Par procs _ = do
             $exp:(throw EXHAUSTED_PRIORITY);
         |]
 
-      -- Par expressions must all be parallel applications that don't
-      -- yield/block
-      apply :: (I.Expr I.Type, (C.Exp, C.Exp)) -> GenFn (C.Exp, [C.BlockItem])
-      apply (a@(I.App fn arg ty), (prio, depth)) = do
+      -- FIXME: ideally, par expressions must all be parallel applications that
+      -- don't yield/block. However, that relies on a liftPar pass that isn't
+      -- implemented just yet.
+      -- So, this is currently broken in that side effects inside the arguments
+      -- of function calls will be evaluated sequentially, which is wrong.
+      apply
+        :: (I.Expr I.Type, (C.Exp, C.Exp))
+        -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
+      apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp , fnStms ) <- genExpr fn
         (argExp, argStms) <- genExpr arg
-        unless (null $ fnStms ++ argStms) $ do
-          -- FIXME:
-          fail $ "Cannot compile par with non-pure application: " ++ show a
-        ret <- genTmp ty
+        ret               <- genTmp ty
         let current = [cexp|$id:actg|]
             retp = [cexp|&$exp:ret|]
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
             |]
-        return (ret, appStms)
+        return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
 
-  (_rets, activates) <- second concat . unzip <$> mapM apply (zip procs parArgs)
-  yield              <- genYield
-  return (unit, checkNewDepth ++ activates ++ yield)
+  (_rets, befores, activates) <- unzip3 <$> mapM apply (zip procs parArgs)
+  yield                       <- genYield
+  let parRetVal = unit -- TODO: return tuple of values
+  return
+    (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
@@ -693,15 +735,12 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break  []  _ = return (undef, [citems|break;|])
-genPrim I.Return [e] _ = do
-  (val, stms) <- genExpr e
-  -- Assign to return argument and jump to leave
-  let retBlock = [citems|
-                    *$exp:(acts_ ret_val) = $exp:val;
-                    goto $id:leave_label;
-                 |]
-  return (undef, stms ++ retBlock)
+genPrim I.Break     [] _ = return (undef, [citems|break;|])
+genPrim I.Now       [] _ = return (marshal $ ccall now [], [])
+genPrim (I.CCall s) es _ = do
+  (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
+  -- TODO: obtain return value from call
+  return (unit, argStms ++ [citems|$id:s($args:argExps);|])
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
@@ -775,21 +814,25 @@ genPrimOp I.PrimNot [opr] _ = do
   (val, stms) <- first unmarshal <$> genExpr opr
   return (marshal [cexp|! $exp:val|], stms)
 genPrimOp I.PrimGt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
-genPrimOp I.PrimGe [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
-  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
-genPrimOp I.PrimLt [lhs, rhs] _ = do
-  ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal > $exp:rhsVal|], stms)
-genPrimOp I.PrimLe [lhs, rhs] _ = do
+genPrimOp I.PrimGe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
   ((lhsVal, rhsVal), stms) <-
-    first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
   return (marshal [cexp|$exp:lhsVal >= $exp:rhsVal|], stms)
+genPrimOp I.PrimLt [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal < $exp:rhsVal|], stms)
+genPrimOp I.PrimLe [lhs, rhs] _ = do
+  let unmarshal' = cast_to_signed Size32 . (`shl` cint 1) . unmarshal
+  ((lhsVal, rhsVal), stms) <-
+    first (bimap unmarshal' unmarshal') <$> genBinop lhs rhs
+  return (marshal [cexp|$exp:lhsVal <= $exp:rhsVal|], stms)
 genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
 -- | Helper for sequencing across binary operations.

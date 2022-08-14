@@ -88,6 +88,126 @@ struct ssm_trigger;
 struct ssm_act;
 
 /**
+ * @addtogroup act
+ * @{
+ */
+
+/** @brief Thread priority.
+ *
+ *  Lower numbers execute first in an instant.
+ */
+typedef uint32_t ssm_priority_t;
+
+/** @brief The priority for the entry point of an SSM program. */
+#define SSM_ROOT_PRIORITY 0
+
+/** @brief Index of least significant bit in a group of priorities
+ *
+ *  This only needs to represent the number of bits in the #ssm_priority_t type.
+ */
+typedef uint8_t ssm_depth_t;
+
+/** @brief The depth at the entry point of an SSM program. */
+#define SSM_ROOT_DEPTH (sizeof(ssm_priority_t) * 8)
+
+/** @brief The function that does an instant's work for a routine. */
+typedef void ssm_stepf_t(struct ssm_act *);
+
+/** @brief Activation record for an SSM routine.
+ *
+ *  Routine activation record "base class." A struct for a particular
+ *  routine must start with this type but then may be followed by
+ *  routine-specific fields.
+ */
+typedef struct ssm_act {
+  ssm_stepf_t *step;       /**< C function for running this continuation. */
+  struct ssm_act *caller;  /**< Activation record of caller. */
+  uint16_t pc;             /**< Stored "program counter" for the function. */
+  uint16_t children;       /**< Number of running child threads. */
+  ssm_priority_t priority; /**< Execution priority; lower goes first. */
+  ssm_depth_t depth;       /**< Index of the LSB in our priority. */
+  bool scheduled;          /**< True when in the schedule queue. */
+} ssm_act_t;
+
+/** @brief Indicates a routine should run when a scheduled variable is written.
+ *
+ *  Node in linked list of activation records, maintained by each scheduled
+ *  variable to determine which continuations should be scheduled when the
+ *  variable is updated.
+ */
+typedef struct ssm_trigger {
+  struct ssm_trigger *next;      /**< Next sensitive trigger, if any. */
+  struct ssm_trigger **prev_ptr; /**< Pointer to self in previous element. */
+  struct ssm_act *act;           /**< Routine triggered by this variable. */
+} ssm_trigger_t;
+
+/** @brief Whether an activation record has any children. */
+#define ssm_has_children(act) ((act)->children != 0)
+
+/** @brief Allocate and initialize a routine activation record.
+ *
+ *  Uses the underlying memory allocator to allocate an activation record of
+ *  a given @a size, and initializes it with the rest of the fields. Also
+ *  increments the number of children that @a parent has.
+ *
+ *  This function assumes that the embedded #ssm_act_t is at the beginning of
+ *  the allocated activation record. That is, it has the following layout:
+ *
+ *  ~~~{.c}
+ *  struct {
+ *    ssm_act_t act;
+ *    // Other fields
+ *  };
+ *  ~~~
+ *
+ *  @param size     the size of the routine activation record to allocate.
+ *  @param step     the step function of the routine.
+ *  @param parent   the parent (caller) of the activation record.
+ *  @param priority the priority of the activation record.
+ *  @param depth    the depth of the activation record.
+ *  @returns        the newly initialized activation record.
+ *
+ *  @throws SSM_EXHAUSTED_MEMORY out of memory.
+ */
+ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
+                     ssm_priority_t priority, ssm_depth_t depth);
+
+/** @brief Destroy the activation record of a routine before leaving.
+ *
+ *  Calls the parent if @a act is the last child.
+ *
+ *  @param act  the activation record of the routine to leave.
+ *  @param size the size of activation record.
+ */
+void ssm_leave(ssm_act_t *act, size_t size);
+
+/** @brief Schedule a routine to run in the current instant.
+ *
+ *  This function is idempotent: it may be called multiple times on the same
+ *  activation record within an instant; only the first call has any effect.
+ *
+ *  @param act activation record of the routine to schedule.
+ *
+ *  @throws SSM_EXHAUSTED_ACT_QUEUE the activation record is full.
+ */
+void ssm_activate(ssm_act_t *act);
+
+/** @brief An activation record for the parent of the top-most routine.
+ *
+ *  This activation record should be used as the parent of the entry point.
+ *  For example, if the entry point is named `main`, with activation record type
+ *  `main_act_t` and step function `step_main`:
+ *
+ *  ~~~{.c}
+ *  ssm_enter(sizeof(main_act_t), step_main, &ssm_top_parent,
+ *            SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
+ *  ~~~
+ */
+extern ssm_act_t ssm_top_parent;
+
+/** @} */
+
+/**
  * @addtogroup mem
  * @{
  */
@@ -101,24 +221,53 @@ typedef union {
   ssm_word_t packed_val;   /**< Packed value. */
 } ssm_value_t;
 
-/** @brief The metadata "header" accompanying any heap-allocated object.
+/** @brief The memory management metadata "header" for heap-allocated objects.
  *
- *  This header should be embedded in heap-allocated objects as the first field
- *  (at memory offset 0).
+ *  This header should always be embedded in heap-allocated objects as the first
+ *  field (at memory offset 0); values of type #ssm_value_t will point to this
+ *  header and use its @a kind and other fields to figure out the size and
+ *  memory layout of the rest of the object.
  *
- *  The @a kind field is used to indicate what #ssm_kind an object is, and thus
- *  what its size and memory layout are.
- *
- *  @note The interpretation and usage of the @a ref_count and @a tag fields may
- *  depend on the value of @a kind. For instance, some object kinds don't use
- * one or both of those fields, while others may use them together as a single
- *  16-bit field.
+ *  The interpretation and usage of the latter 16 bits of this header, i.e., the
+ *  @a info field, depends on the value of @a kind. For objects encoding
+ *  variants (e.g., #ssm_adt1), the @a count field counts the number of fields
+ *  in the object payload, while the @a tag records which variant is inhabited
+ *  by the object. Meanwhile, vector-style objects (e.g., #ssm_closure1) also
+ *  use the @a count field to record the number of values present, but use the
+ *  @a cap field to determine the full capacity of the payload. Finally, objects
+ *  like arrays and blobs do not need to record more than their size, and
+ *  benefit from making use of all 16 bits to support up to 65536 sizes.
  */
 struct ssm_mm {
   uint8_t ref_count; /**< The number of references to this object. */
   uint8_t kind;      /**< The #ssm_kind of object this is. */
-  uint8_t val_count; /**< Number of #ssm_value_t values in payload. */
-  uint8_t tag;       /**< Which variant is inhabited by this object. */
+  union {
+    struct {
+      uint8_t count; /**< Number of #ssm_value_t values in payload. */
+      uint8_t tag;   /**< Which variant is inhabited by this object. */
+    } variant;
+    struct {
+      uint8_t count; /**< Number of #ssm_value_t values in payload. */
+      uint8_t cap;   /**< Which variant is inhabited by this object. */
+    } vector;
+    uint16_t size; /**< 16-bit size */
+  } info; /**< Three "flavors" of information embedded in the header. */
+};
+
+/** @brief The different kinds of heap objects, enumerated.
+ *
+ *  Types enumerated here that are not ADTs are chosen because they cannot be
+ *  easily or efficiently expressed as a product of words. For instance, 64-bit
+ *  timestamps cannot be directly stored in the payload of a regular heap
+ *  object, where even-numbered timestamps may be misinterpreted as pointers.
+ */
+enum ssm_kind {
+  SSM_TIME_K = 0, /**< 64-bit timestamps, #ssm_time_t */
+  SSM_ADT_K,      /**< ADT object, e.g., #ssm_adt1 */
+  SSM_SV_K,       /**< Scheduled variables, #ssm_sv_t */
+  SSM_CLOSURE_K,  /**< Closure object, e.g., #ssm_closure1 */
+  SSM_ARRAY_K,    /**< Array of values, e.g., #ssm_array1 */
+  SSM_BLOB_K,     /**< Blob of arbitrary data, e.g., #ssm_blob1 */
 };
 
 /** @brief Construct an #ssm_value_t from a 31-bit integral value.
@@ -295,122 +444,91 @@ ssm_value_t ssm_new_time(ssm_time_t time);
 /** @} */
 
 /**
- * @addtogroup act
+ * @addtogroup adt
  * @{
  */
 
-/** @brief Thread priority.
+/** @brief The struct template of a heap-allocated ADT object.
  *
- *  Lower numbers execute first in an instant.
- */
-typedef uint32_t ssm_priority_t;
-
-/** @brief The priority for the entry point of an SSM program. */
-#define SSM_ROOT_PRIORITY 0
-
-/** @brief Index of least significant bit in a group of priorities
+ *  This ADT struct is meant to be used as a template for performing other
+ *  ADT-related pointer arithmetic; no instance of this should ever be declared.
  *
- *  This only needs to represent the number of bits in the #ssm_priority_t type.
- */
-typedef uint8_t ssm_depth_t;
-
-/** @brief The depth at the entry point of an SSM program. */
-#define SSM_ROOT_DEPTH (sizeof(ssm_priority_t) * 8)
-
-/** @brief The function that does an instant's work for a routine. */
-typedef void ssm_stepf_t(struct ssm_act *);
-
-/** @brief Activation record for an SSM routine.
- *
- *  Routine activation record "base class." A struct for a particular
- *  routine must start with this type but then may be followed by
- *  routine-specific fields.
- */
-typedef struct ssm_act {
-  ssm_stepf_t *step;       /**< C function for running this continuation. */
-  struct ssm_act *caller;  /**< Activation record of caller. */
-  uint16_t pc;             /**< Stored "program counter" for the function. */
-  uint16_t children;       /**< Number of running child threads. */
-  ssm_priority_t priority; /**< Execution priority; lower goes first. */
-  ssm_depth_t depth;       /**< Index of the LSB in our priority. */
-  bool scheduled;          /**< True when in the schedule queue. */
-} ssm_act_t;
-
-/** @brief Indicates a routine should run when a scheduled variable is written.
- *
- *  Node in linked list of activation records, maintained by each scheduled
- *  variable to determine which continuations should be scheduled when the
- *  variable is updated.
- */
-typedef struct ssm_trigger {
-  struct ssm_trigger *next;      /**< Next sensitive trigger, if any. */
-  struct ssm_trigger **prev_ptr; /**< Pointer to self in previous element. */
-  struct ssm_act *act;           /**< Routine triggered by this variable. */
-} ssm_trigger_t;
-
-/** @brief Whether an activation record has any children. */
-#define ssm_has_children(act) ((act)->children != 0)
-
-/** @brief Allocate and initialize a routine activation record.
- *
- *  Uses the underlying memory allocator to allocate an activation record of
- *  a given @a size, and initializes it with the rest of the fields. Also
- *  increments the number of children that @a parent has.
- *
- *  This function assumes that the embedded #ssm_act_t is at the beginning of
- *  the allocated activation record. That is, it has the following layout:
+ *  Though this struct's @a fields is only declared with 1 #ssm_value_t, actual
+ *  heap-allocated ADT objects may have more fields. For instance, an object
+ *  with 3 fields might look like:
  *
  *  ~~~{.c}
- *  struct {
- *    ssm_act_t act;
- *    // Other fields
+ *  struct ssm_adt3 {
+ *    struct ssm_mm mm;
+ *    ssm_value_t fields[3];
  *  };
  *  ~~~
  *
- *  @param size     the size of the routine activation record to allocate.
- *  @param step     the step function of the routine.
- *  @param parent   the parent (caller) of the activation record.
- *  @param priority the priority of the activation record.
- *  @param depth    the depth of the activation record.
- *  @returns        the newly initialized activation record.
- *
- *  @throws SSM_EXHAUSTED_MEMORY out of memory.
+ *  Note that the memory layout of all ADTs is the same save for the length of
+ *  the @a fields, so we use this struct definition as the "base case" of ADT
+ *  object lengths.
  */
-ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
-                     ssm_priority_t priority, ssm_depth_t depth);
+struct ssm_adt1 {
+  struct ssm_mm mm;      /**< Variant-flavored memory management header. */
+  ssm_value_t fields[1]; /**< Array of ADT object fields. */
+};
 
-/** @brief Destroy the activation record of a routine before leaving.
+/** @brief Allocate a new ADT object on the heap.
  *
- *  Calls the parent if @a act is the last child.
+ *  @note This function fully initializes the #ssm_mm header of the ADT object,
+ *        but leaves its fields uninitialized. It is the responsibility of the
+ *        caller to properly <em>all</em> @a val_count fields.
  *
- *  @param act  the activation record of the routine to leave.
- *  @param size the size of activation record.
+ *  @param field_count  the number of fields in the ADT object.
+ *  @param tag          the tag of the ADT object, stored in the #ssm_mm header.
+ *  @returns            #ssm_value_t poining to the ADT object on the heap.
  */
-void ssm_leave(ssm_act_t *act, size_t size);
+ssm_value_t ssm_new_adt(uint8_t field_count, uint8_t tag);
 
-/** @brief Schedule a routine to run in the current instant.
+/** @brief Access the field of an ADT object.
  *
- *  This function is idempotent: it may be called multiple times on the same
- *  activation record within an instant; only the first call has any effect.
- *
- *  @param act activation record of the routine to schedule.
- *
- *  @throws SSM_EXHAUSTED_ACT_QUEUE the activation record is full.
- */
-void ssm_activate(ssm_act_t *act);
-
-/** @brief An activation record for the parent of the top-most routine.
- *
- *  This activation record should be used as the parent of the entry point.
- *  For example, if the entry point is named `main`, with activation record type
- *  `main_act_t` and step function `step_main`:
+ *  The result of this macro can also be used as an l-value, i.e., it may be
+ *  assigned to, e.g.,:
  *
  *  ~~~{.c}
- *  ssm_enter(sizeof(main_act_t), step_main, &ssm_top_parent,
- *            SSM_ROOT_PRIORITY, SSM_ROOT_DEPTH)
+ *  ssm_adt_field(v, 0) = ssm_marshal(1);
  *  ~~~
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that does not
+ *        point to an ADT object of sufficient size (@a val_count greater than
+ *        @a i) is undefined.
+ *
+ *  @param v  the #ssm_value_t pointing to a heap-allocated ADT object.
+ *  @param i  the 0-base index of the field in @a v to be accessed.
+ *  @returns  the @a i'th field of @a v.
  */
-extern ssm_act_t ssm_top_parent;
+#define ssm_adt_field(v, i)                                                    \
+  (&*container_of((v).heap_ptr, struct ssm_adt1, mm)->fields)[i]
+
+/** @brief Retrieve the tag of an ADT object.
+ *
+ *  @note The behavior of using this macro on an #ssm_value_t that points to
+ *        anything other than an ADT object is undefined.
+ *
+ *  @param v  the #ssm_value_t whose tag is being retrieved.
+ *  @returns  the tag of @a v.
+ */
+#define ssm_tag(v)                                                             \
+  (ssm_on_heap(v) ? (v).heap_ptr->info.variant.tag : ssm_unmarshal(v))
+
+/** @brief Obtain number of fields in the ADT pointed by @a v. */
+#define ssm_adt_field_count(v) ((v).heap_ptr->info.variant.count)
+
+/** @brief Compute the size of a heap-allocated ADT.
+ *
+ *  @param val_count  the @a val_count field of the ADT object's #ssm_mm header.
+ *  @returns          the size of the ADT object in the heap.
+ */
+#define ssm_adt_size(val_count)                                                \
+  (sizeof(struct ssm_adt1) + sizeof(ssm_value_t) * ((val_count)-1))
+
+/** @brief Compute the size of an ADT already allocated on the heap. */
+#define ssm_adt_heap_size(v) ssm_adt_size(ssm_adt_field_count(v))
 
 /** @} */
 
@@ -608,80 +726,6 @@ void ssm_sv_desensitize(ssm_trigger_t *trig);
 /** @} */
 
 /**
- * @addtogroup adt
- * @{
- */
-
-/** @brief The struct template of a heap-allocated ADT object.
- *
- *  This ADT struct is meant to be used as a template for performing other
- *  ADT-related pointer arithmetic; no instance of this should ever be declared.
- *
- *  Though this struct's @a fields is only declared with 1 #ssm_value_t, actual
- *  heap-allocated ADT objects may have more fields. For instance, an object
- *  with 3 fields might look like:
- *
- *  ~~~{.c}
- *  struct ssm_adt3 {
- *    struct ssm_mm mm;
- *    ssm_value_t fields[3];
- *  };
- *  ~~~
- *
- *  Note that the memory layout of all ADTs is the same save for the length of
- *  the @a fields, so we use this struct definition as the "base case" of ADT
- *  object lengths.
- */
-struct ssm_adt1 {
-  struct ssm_mm mm;
-  ssm_value_t fields[1];
-};
-
-/** @brief Allocate a new ADT object on the heap.
- *
- *  @note This function fully initializes the #ssm_mm header of the ADT object,
- *        but leaves its fields uninitialized. It is the responsibility of the
- *        caller to properly <em>all</em> @a val_count fields.
- *
- *  @param val_count  the number of fields in the ADT object.
- *  @param tag        the tag of the ADT object, stored in the #ssm_mm header.
- *  @returns          #ssm_value_t poining to the ADT object on the heap.
- */
-ssm_value_t ssm_new_adt(uint8_t val_count, uint8_t tag);
-
-/** @brief Access the field of an ADT object.
- *
- *  The result of this macro can also be used as an l-value, i.e., it may be
- *  assigned to, e.g.,:
- *
- *  ~~~{.c}
- *  ssm_adt_field(v, 0) = ssm_marshal(1);
- *  ~~~
- *
- *  @note The behavior of using this macro on an #ssm_value_t that does not
- *        point to an ADT object of sufficient size (@a val_count greater than
- *        @a i) is undefined.
- *
- *  @param v  the #ssm_value_t pointing to a heap-allocated ADT object.
- *  @param i  the 0-base index of the field in @a v to be accessed.
- *  @returns  the @a i'th field of @a v.
- */
-#define ssm_adt_field(v, i)                                                    \
-  (&*container_of((v).heap_ptr, struct ssm_adt1, mm)->fields)[i]
-
-/** @brief Retrieve the tag of an ADT object.
- *
- *  @note The behavior of using this macro on an #ssm_value_t that points to
- *        anything other than an ADT object is undefined.
- *
- *  @param v  the #ssm_value_t whose tag is being retrieved.
- *  @returns  the tag of @a v.
- */
-#define ssm_tag(v) (ssm_on_heap(v) ? (v).heap_ptr->tag : ssm_unmarshal(v))
-
-/** @} */
-
-/**
  * @addtogroup closure
  * @{
  */
@@ -725,6 +769,18 @@ struct ssm_closure1 {
   ssm_value_t argv[1]; /**< An array of arguments. */
 };
 
+/** @brief Obtain the number of argument values owned by a closure. */
+#define ssm_closure_arg_count(v)                                               \
+  (container_of((v).heap_ptr, struct ssm_closure1, mm)->mm.info.vector.count)
+
+/** @brief Obtain the number of argument values accommodated by a closure. */
+#define ssm_closure_arg_cap(v)                                                 \
+  (container_of((v).heap_ptr, struct ssm_closure1, mm)->mm.info.vector.cap)
+
+/** @brief Obtain the enter function pointer of a closure. */
+#define ssm_closure_func(v)                                                    \
+  (container_of((v).heap_ptr, struct ssm_closure1, mm)->f)
+
 /** @brief Retrieve the argument array of a closure. */
 #define ssm_closure_argv(v)                                                    \
   (&*container_of((v).heap_ptr, struct ssm_closure1, mm)->argv)
@@ -732,17 +788,16 @@ struct ssm_closure1 {
 /** @brief Obtain the ith argument of a closure. */
 #define ssm_closure_arg(v, i) ssm_closure_argv(v)[i]
 
-/** @brief Obtain the enter function pointer of a closure. */
-#define ssm_closure_func(v)                                                    \
-  container_of((v).heap_ptr, struct ssm_closure1, mm)->f
+/** @brief Compute the size of a closure object.
+ *
+ *  @param val_count  the @a val_count field of the closure's #ssm_mm header.
+ *  @returns          the size of the closure object.
+ */
+#define ssm_closure_size(val_count)                                            \
+  (sizeof(struct ssm_closure1) + (sizeof(ssm_value_t) * ((val_count)-1)))
 
-/** @brief Obtain the number of argument values owned by a closure. */
-#define ssm_closure_arg_count(v)                                               \
-  container_of((v).heap_ptr, struct ssm_closure1, mm)->mm.val_count
-
-/** @brief Obtain the number of argument values accommodated by a closure. */
-#define ssm_closure_arg_cap(v)                                                 \
-  container_of((v).heap_ptr, struct ssm_closure1, mm)->mm.tag
+/** @brief Compute the size of a closure already allocated on the heap. */
+#define ssm_closure_heap_size(v) ssm_closure_size(ssm_closure_arg_cap(v))
 
 /** @brief Add an argument to a closure.
  *
@@ -895,6 +950,124 @@ void ssm_closure_apply_final(ssm_value_t closure, ssm_value_t arg,
 #define ssm_closure_free(closure)                                              \
   ssm_mem_free((closure).heap_ptr,                                             \
                ssm_closure_size(ssm_closure_arg_cap(closure)))
+
+/** @} */
+
+/**
+ * @addtogroup array
+ * @{
+ */
+
+/** @brief The struct template of a heap-allocated array of values.
+ *
+ */
+struct ssm_array1 {
+  struct ssm_mm mm;        /**< Size-flavored memory management header. */
+  ssm_value_t elements[1]; /**< Elements of the heap-allocated array. */
+};
+
+/** @brief The length of an array pointed by @a v. */
+#define ssm_array_len(v) ((v).heap_ptr->info.size)
+
+/** @brief Obtain pointer to the array elements payload pointed to by @ a v. */
+#define ssm_array_elements(v)                                                  \
+  (&*(container_of((v).heap_ptr, struct ssm_array1, mm)->elements))
+
+/** @brief Obtain pointer to the ith element of the array pointed by @a v. */
+#define ssm_array_element(v, i) (ssm_array_elements(v)[i])
+
+/** @brief Compute the size of an array with its header.
+ *
+ *  @param count  the number of array elements, i.e., the @a size field.
+ *  @returns      size that a array of @a count elemtns occupies in the heap.
+ */
+#define ssm_array_size(count)                                                  \
+  (sizeof(struct ssm_array1) + sizeof(ssm_value_t) * ((count)-1))
+
+/** @brief Compute the size an array in the heap from an #ssm_value_t.
+ *
+ *  @param v  #ssm_value_t pointing to some blob in the heap.
+ *  @returns  size of the array that @a v points to.
+ */
+#define ssm_array_heap_size(v) ssm_array_size(ssm_array_len(v))
+
+/** @brief Allocate an array on the heap.
+ *
+ *  Note that this function returns an array with all elements uninitialized,
+ *  which must be initialized before ssm_drop() can be called on the array.
+ *
+ *  @param count  number of #ssm_value_t elements to be stored in the array.
+ *  @returns      #ssm_value_t pointing to heap-allocated array.
+ */
+ssm_value_t ssm_new_array(uint16_t count);
+
+/** @} */
+
+/**
+ * @addtogroup blob
+ * @{
+ */
+
+/** @brief The @a size resolution for heap-allocated blobs. */
+#define SSM_BLOB_SIZE_SCALE 4
+
+/** @brief The struct template of a heap-allocated blob.
+ *
+ *  Blobs are just arbitrary chunks of memory in the heap where any kind of
+ * data can be stored, with any layout. Since the memory manager will not scan
+ * blobs for pointers, any resources maintained within blobs must be managed
+ * via other means.
+ *
+ *  Though this struct's @a payload is only declared with 4 bytes, actual
+ *  heap-allocated blobs may have large payloads. For instance, a 48-byte blob
+ *  might look like:
+ *
+ *  ~~~{.c}
+ *  struct ssm_blob48 {
+ *    struct ssm_mm mm;
+ *    char payload[48 / SSM_BLOB_SIZE_SCALE];
+ *  };
+ *  ~~~
+ *
+ *  The memory layout of all blobs is the same save for the size of the
+ *  @a payload, so we use this struct definition as the "base case" of blobs.
+ *
+ *  To allow even larger blobs, the actual size of the payload is divided by
+ *  #SSM_BLOB_SIZE_SCALE while stored in the @a size field.
+ */
+struct ssm_blob1 {
+  struct ssm_mm mm; /**< Size-flavored memory management header. */
+  char payload[SSM_BLOB_SIZE_SCALE]; /**< Payload of heap-allocated blob. */
+};
+
+/** @brief Compute the size of a blob with its header.
+ *
+ *  The @a size parameter should already be scaled, i.e., already multiplied by
+ *  #SSM_BLOB_SIZE_SCALE, before being passed into this macro.
+ *
+ *  @param size   scaled size of the blob's payload.
+ *  @returns      size that a blob of @a size payload occupies in the heap.
+ */
+#define ssm_blob_size(size) (sizeof(struct ssm_blob1) + (size)-SSM_BLOB_SIZE_SCALE)
+
+/** @brief Compute the size a blob in the heap.
+ *
+ *  @param v  #ssm_value_t pointing to some blob in the heap.
+ *  @returns  size of the blob that @a v points to.
+ */
+#define ssm_blob_heap_size(v)                                                  \
+  ssm_blob_size(((v).heap_ptr->info.size) * SSM_BLOB_SIZE_SCALE)
+
+/** @brief Obtain pointer to the payload of a blob from an #ssm_value_t. */
+#define ssm_blob_payload(v)                                                    \
+  (&*(container_of((v).heap_ptr, struct ssm_blob1, mm)->payload))
+
+/** @brief Allocate a blob on the heap.
+ *
+ *  @param size   size of the payload to the allocated.
+ *  @returns      #ssm_value_t pointing to heap-allocated blob.
+ */
+ssm_value_t ssm_new_blob(uint16_t size);
 
 /** @} */
 

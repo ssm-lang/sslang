@@ -1,0 +1,25 @@
+type Digits
+  Digit Int
+  Digits Int Digits
+
+itod x =
+  if x < 10
+    Digit x
+  else
+    Digits (x % 10) (itod (x / 10))
+
+pr putc dd =
+  match dd
+    Digit i = putc (i + 48)
+    Digits i dd_ = pr putc dd_
+                   putc (i + 48)
+
+printi_ putc d = pr putc (itod d)
+
+main cin cout =
+  let putc c =
+       after 1, cout <- c
+       wait cout
+  let printi = printi_ putc
+  printi 123456789
+  putc 10

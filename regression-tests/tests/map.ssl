@@ -33,7 +33,7 @@ map (f: Int -> Int) (l: List) -> List =
 add (a: Int) (b: Int) -> Int =
   a + b
 
-main (out: &Int) -> () =
+main (in: &Int) (out: &Int) -> () =
   let l1 = (Cons 104 (Cons 101 (Cons 108 (Cons 108 (Cons 111 Nil)))))
   print_list out l1
   let l2 = map (add 1) l1

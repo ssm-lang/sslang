@@ -1,0 +1,74 @@
+type List
+    Cons Int List
+    Nil
+
+merge (xlist: List) (ylist: List) -> List = 
+    match xlist
+        Nil = ylist
+        Cons x xs = match ylist
+                        Nil = xlist
+                        Cons y ys = if (x <= y) 
+                                        Cons x (merge xs ylist)
+                                      else
+                                        Cons y (merge xlist ys)
+        
+take (len: Int) (list: List) -> List = 
+    match list
+        Nil = Nil
+        Cons x xs = match (len == 0)
+                        1 = Nil
+                        _ = Cons x (take (len - 1) xs)
+
+drop (len: Int) (list: List) -> List = 
+    match list
+        Nil = Nil
+        Cons x xs = match (len == 0)
+                        1 = list
+                        _ = drop (len - 1) xs
+
+length (list: List) -> Int = 
+    match list
+        Nil = 0
+        Cons x xs = 1 + length xs
+
+mergeSort (list: List) -> List = 
+    let n = (length list) / 2
+    match list
+        Nil = Nil
+        Cons x xs = match xs
+                        Nil = Cons x Nil
+                        _ = merge (mergeSort (take n list)) (mergeSort (drop n list))
+
+
+print_list2 (out: &Int) (l: List) -> () =
+  match l
+    Cons i l0 =
+      after 1, out <- i
+      wait out
+      after 1, out <- 32
+      wait out
+      print_list2 out l0
+    Nil = ()
+
+print_list (out: &Int) (l: List) -> () =
+    after 1, out <- 91
+    wait out
+    after 1, out <- 32
+    wait out
+
+    print_list2 out l
+
+    after 1, out <- 93
+    wait out
+    after 1, out <- 10
+    wait out
+
+main (in: &Int) (out: &Int) -> () =
+  let l1 = (Cons 102 (Cons 101 (Cons 100 (Cons 99 (Cons 98 (Cons 97 Nil))))))
+  print_list out l1
+
+  let l = take 3 l1
+  let r = drop 3 l1
+  let l2 = mergeSort l1
+  print_list out l1
+  print_list out l2

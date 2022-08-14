@@ -30,7 +30,7 @@ map_inc (l: List) -> List =
     Cons i l0 = Cons (i + 1) (map_inc l0)
     Nil = Nil
 
-main (out: &Int) -> () =
+main (in: &Int) (out: &Int) -> () =
   let l1 = (Cons 104 (Cons 101 (Cons 108 (Cons 108 (Cons 111 Nil)))))
   print_list out l1
   let l2 = map_inc l1

@@ -100,5 +100,7 @@ main = do
     $   Front.run frontOpts input
     >>= IR.run irOpts
     >>= Codegen.run codegenOpts
-  hPutStr stderr $ show warnings
+  unless (null warnings) $ do
+    hPutStr stderr "Encountered warnings:"
+    hPutStr stderr $ show warnings
   putStrLn cStr

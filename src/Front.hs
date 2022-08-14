@@ -88,6 +88,7 @@ parseAst opt src = do
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
   scopeProgram ast
+  Pattern.checkAnomaly ast
 
 -- | Front end compiler stage.
 run :: Options -> String -> Pass A.Program

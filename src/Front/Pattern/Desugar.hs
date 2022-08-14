@@ -71,14 +71,10 @@ desugarProgram (A.Program defs) = runDesugarFn
   ctx = buildCtx tds
 
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
-desugarTopDefs []                    = return []
-desugarTopDefs ((A.TopDef d) : tops) = do
-  d'    <- desugarDef d
-  tops' <- desugarTopDefs tops
-  return $ A.TopDef d' : tops'
-desugarTopDefs (tt@(A.TopType _) : tops) = do
-  tops' <- desugarTopDefs tops
-  return $ tt : tops'
+desugarTopDefs = mapM desugarTopDef
+ where
+  desugarTopDef (A.TopDef d) = A.TopDef <$> desugarDef d
+  desugarTopDef d            = return d
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
@@ -126,7 +122,7 @@ desugarExpr (A.Match e arms) = do -- INFO: the only important one
     _      -> do
       v <- freshVar
       singleLet v e <$> desugarMatch [v] armsForDesugar A.NoExpr -- INFO: for now, default expression is NoExpr
-desugarExpr (A.Return e) = A.Return <$> desugarExpr e
+desugarExpr (A.CCall s es) = A.CCall s <$> mapM desugarExpr es
 
 desugarOpRegion :: A.OpRegion -> DesugarFn A.OpRegion
 desugarOpRegion (A.NextOp i e opRegion) =
@@ -338,7 +334,7 @@ substId old new = substExpr
   substExpr (A.Match e arms) =
     let substArm (p, body) = (p, substExpr body)
     in  A.Match (substExpr e) (map substArm arms)
-  substExpr (A.Return e) = A.Return (substExpr e)
+  substExpr (A.CCall s es) = A.CCall s $ map substExpr es
 
 singleLet :: Identifier -> A.Expr -> A.Expr -> A.Expr
 singleLet i e = A.Let [A.DefFn i [] A.TypNone e]
