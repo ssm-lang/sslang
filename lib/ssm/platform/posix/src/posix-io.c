@@ -19,7 +19,6 @@ static void step_stdout_handler(ssm_act_t *act) {
     if (!c)
       break;
     write(1, &c, 1);
-    fsync(1);
     return;
   }
   ssm_leave(&cont->act, sizeof(stdout_handler_act_t));
