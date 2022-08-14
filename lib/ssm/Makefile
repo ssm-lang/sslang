@@ -30,7 +30,7 @@ BUILD_DIR := build
 SRC_DIR := src
 INC_DIR := include
 TEST_DIR := test
-EXE_DIR := examples
+EXE_DIR := examples/$(PLATFORM)
 DOC_DIR := doc
 PLATFORM_DIR := platform/$(PLATFORM)
 GCOVR_CFG := test/gcovr.cfg
@@ -65,20 +65,27 @@ $(info PLATFORM is $(PLATFORM))
 COV_TGT := $(BUILD_DIR)/coverage.xml
 
 CC = $(MAKE_CC)
-CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic -DSSM_TIMER64_PRESENT
+CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic
 
-# # Check whether valgrind is available.
-# ifeq ($(shell which valgrind),)
-# $(info # Valgrind is not available; compiling without it.)
-# else
-# # If available, we try to #include <valgrind/valgrind.h>, which we use to
-# # instrument our memory allocator.
-# #
-# # NOTE: this is just a heuristic that may not be very reliable.
-# # We should probably implement better dependency management.
-# $(info # Valgrind seems to be available; compiling libssm with Valgrind support.)
-# CFLAGS += -DUSE_VALGRIND
-# endif
+ifeq ($(PLATFORM),simulation)
+# enforce c99 for pure testing, but don't enforce it for other platforms
+CFLAGS += -std=c99
+endif
+
+ifeq ($(PLATFORM),simulation)
+# Check whether valgrind is available.
+ifeq ($(shell command -v valgrind),)
+$(info # Valgrind is not available; compiling without it.)
+else
+# If available, we try to #include <valgrind/valgrind.h>, which we use to
+# instrument our memory allocator.
+#
+# NOTE: this is just a heuristic that may not be very reliable.
+# We should probably implement better dependency management.
+$(info # Valgrind seems to be available; compiling libssm with Valgrind support.)
+CFLAGS += -DUSE_VALGRIND
+endif
+endif
 
 TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage
 

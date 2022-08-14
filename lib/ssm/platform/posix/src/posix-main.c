@@ -5,6 +5,8 @@ atomic_size_t rb_r;
 atomic_size_t rb_w;
 pthread_mutex_t rb_lk;
 
+struct ssm_input ssm_input_rb[SSM_INPUT_RB_SIZE];
+
 void ssm_program_init(void);
 void ssm_program_exit(void);
 char **ssm_init_args;
@@ -25,6 +27,23 @@ static void *alloc_page(void) {
 static void *alloc_mem(size_t size) { return malloc(size); }
 
 static void free_mem(void *mem, size_t size) { free(mem); }
+
+size_t ssm_input_consume(size_t r, size_t w) {
+  if (!ssm_input_read_ready(r, w))
+    return r;
+
+  ssm_time_t packet_time = ssm_input_get(r)->time.ssm_time;
+
+  if (ssm_next_event_time() < packet_time)
+    return r;
+
+  do {
+    ssm_sv_later_unsafe(ssm_input_get(r)->sv, packet_time,
+                        ssm_input_get(r)->payload);
+  } while (ssm_input_read_ready(++r, w) &&
+           packet_time == ssm_input_get(r)->time.ssm_time);
+  return r;
+}
 
 static inline void poll_input_queue(size_t *r, size_t *w) {
   static size_t scaled = 0;
@@ -92,7 +111,8 @@ int main(void) {
         struct timespec next_spec = timespec_of(next_time);
         struct timespec sleep_time = timespec_diff(next_spec, wall_spec);
         DBG("Sleeping\n");
-        ret = pselect(ssm_sem_fd[0] + 1, &in_fds, NULL, NULL, &sleep_time, NULL);
+        ret =
+            pselect(ssm_sem_fd[0] + 1, &in_fds, NULL, NULL, &sleep_time, NULL);
         DBG("Woke up from sleeping\n");
         if (ret > 0)
           fd_sem_read(ssm_sem_fd);
@@ -149,29 +169,4 @@ int main(void) {
     free(pages[p]);
 
   return ret;
-}
-
-/****** FIXME: hardcoded entry point, ported from sslc */
-ssm_act_t *__enter_main(ssm_act_t *caller, ssm_priority_t priority, ssm_depth_t depth, ssm_value_t *__argv,
-                        ssm_value_t *__return_val);
-ssm_act_t *__enter_stdout_handler(ssm_act_t *parent, ssm_priority_t priority, ssm_depth_t depth, ssm_value_t *argv,
-                                  ssm_value_t *ret);
-void __spawn_stdin_handler(ssm_sv_t *ssm_stdin);
-void __kill_stdin_handler(void);
-
-void ssm_program_init(void)
-{
-    ssm_value_t ssm_stdin = ssm_new_sv(ssm_marshal((uint32_t) 0));
-    ssm_value_t ssm_stdout = ssm_new_sv(ssm_marshal((uint32_t) 0));
-    ssm_value_t std_argv[2] = {ssm_stdin, ssm_stdout};
-    
-    ssm_activate(__enter_stdout_handler(&ssm_top_parent, SSM_ROOT_PRIORITY + 0 * (1 << SSM_ROOT_DEPTH - 1),
-                                        SSM_ROOT_DEPTH - 1, &ssm_stdout, NULL));
-    ssm_activate(__enter_main(&ssm_top_parent, SSM_ROOT_PRIORITY + 1 * (1 << SSM_ROOT_DEPTH - 1), SSM_ROOT_DEPTH - 1,
-                              std_argv, NULL));
-    __spawn_stdin_handler(ssm_to_sv(ssm_stdin));
-}
-void ssm_program_exit(void)
-{
-    __kill_stdin_handler();
 }

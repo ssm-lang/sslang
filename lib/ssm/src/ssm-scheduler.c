@@ -454,22 +454,3 @@ void ssm_tick(void) {
     to_run->step(to_run);
   }
 }
-
-struct ssm_input ssm_input_rb[SSM_INPUT_RB_SIZE];
-
-size_t ssm_input_consume(size_t r, size_t w) {
-  if (!ssm_input_read_ready(r, w))
-    return r;
-
-  ssm_time_t packet_time = ssm_input_get(r)->time.ssm_time;
-
-  if (ssm_next_event_time() < packet_time)
-    return r;
-
-  do {
-    ssm_sv_later_unsafe(ssm_input_get(r)->sv, packet_time,
-                        ssm_input_get(r)->payload);
-  } while (ssm_input_read_ready(++r, w) &&
-           packet_time == ssm_input_get(r)->time.ssm_time);
-  return r;
-}

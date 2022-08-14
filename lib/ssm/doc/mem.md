@@ -28,15 +28,13 @@ object.
 The #ssm_mm header's @a kind field indicates what #ssm_kind the object is.
 This determines its memory layout in the heap, in particular where the object
 might hold references (pointers) to other heap objects.
-This information is used by ssm_drop_final() to figure out which values (if
-any) to ssm_drop().
+The interpretation and layout of the 16-bit @a info field depends on the
+@a kind, coming in three different "flavors": @a vector, @a variant, and @a size.
+All this information is used by ssm_drop_final() to figure out the number and
+location of values to ssm_drop(), as well as the size of the object to deallocate.
 
-Heap objects are allocated for each #ssm_kind using functions with prefix @a
-ssm_new_:
-
-- ssm_new_adt()
-- ssm_new_time()
-- ssm_new_sv()
+Heap objects are allocated for each #ssm_kind using functions with prefix
+@a ssm_new_, such as ssm_new_adt() or ssm_new_time().
 
 The SSM runtime comes with its own platform-agnostic allocator, parameterized
 by handlers set using ssm_mem_init().
