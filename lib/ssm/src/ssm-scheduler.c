@@ -261,9 +261,12 @@ void act_queue_consistency_check(void) {
 // GCOV_EXCL_STOP
 #endif
 
+/** @brief The program terminates when there are no more processes. */
+static size_t num_processes = 0;
+
 ssm_time_t ssm_now(void) { return now; }
 
-bool ssm_active(void) { return act_queue_len > 0; }
+bool ssm_active(void) { return num_processes > 0; }
 
 ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
                      ssm_priority_t priority, ssm_depth_t depth) {
@@ -278,10 +281,12 @@ ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
       .scheduled = false,
   };
   ++parent->children;
+  num_processes++;
   return act;
 }
 
 void ssm_leave(ssm_act_t *act, size_t size) {
+  num_processes--;
   ssm_act_t *parent = act->caller;
   ssm_mem_free(act, size);
   if (--parent->children == 0)

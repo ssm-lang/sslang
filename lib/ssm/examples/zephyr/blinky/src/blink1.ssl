@@ -1,3 +1,10 @@
+$$
+#include <kernel.h>
+static void blink(ssm_value_t i) {
+    printk("Blinking %d\n", ssm_unmarshal(i));
+}
+$$
+
 ms t = 1000000 * t
 
 blink n led =
@@ -5,8 +12,10 @@ blink n led =
   while deref n_ > 0
     after ms 50, led <- 1
     wait led
+    $blink(deref led)
     after ms 50, led <- 0
     wait led
+    $blink(deref led)
     n_ <- deref n_ - 1
 
 main cin cout =

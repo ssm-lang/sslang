@@ -170,3 +170,30 @@ int main(void) {
 
   return ret;
 }
+
+/***** FIXME: hardcoded entry point for posix, ported from sslc *****/
+
+extern ssm_act_t *__enter_main(ssm_act_t *caller, ssm_priority_t priority,
+                               ssm_depth_t depth, ssm_value_t *__argv,
+                               ssm_value_t *__return_val);
+extern ssm_act_t *__enter_stdout_handler(ssm_act_t *parent,
+                                         ssm_priority_t priority,
+                                         ssm_depth_t depth, ssm_value_t *argv,
+                                         ssm_value_t *ret);
+extern void __spawn_stdin_handler(ssm_sv_t *ssm_stdin);
+extern void __kill_stdin_handler(void);
+
+void ssm_program_init(void) {
+  ssm_value_t ssm_stdin = ssm_new_sv(ssm_marshal((uint32_t)0));
+  ssm_value_t ssm_stdout = ssm_new_sv(ssm_marshal((uint32_t)0));
+  ssm_value_t std_argv[2] = {ssm_stdin, ssm_stdout};
+
+  ssm_activate(__enter_stdout_handler(
+      &ssm_top_parent, SSM_ROOT_PRIORITY + 0 * (1 << (SSM_ROOT_DEPTH - 1)),
+      SSM_ROOT_DEPTH - 1, &ssm_stdout, NULL));
+  ssm_activate(__enter_main(&ssm_top_parent,
+                            SSM_ROOT_PRIORITY + 1 * (1 << (SSM_ROOT_DEPTH - 1)),
+                            SSM_ROOT_DEPTH - 1, std_argv, NULL));
+  __spawn_stdin_handler(ssm_to_sv(ssm_stdin));
+}
+void ssm_program_exit(void) { __kill_stdin_handler(); }

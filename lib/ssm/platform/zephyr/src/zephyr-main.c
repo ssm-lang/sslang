@@ -1,6 +1,6 @@
 #include <ssm-internal.h>
 #include <kernel.h>
 
-void main() {
+__attribute__((weak)) void main(void) {
   ssm_platform_entry();
 }

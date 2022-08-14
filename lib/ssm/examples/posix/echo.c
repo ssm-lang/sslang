@@ -6,13 +6,13 @@ typedef struct {
   ssm_trigger_t trigger1;
 } main_act_t;
 
-ssm_stepf_t step_main;
+ssm_stepf_t __step_main;
 
-ssm_act_t *enter_main(ssm_act_t *parent, ssm_priority_t priority,
+ssm_act_t *__enter_main(ssm_act_t *parent, ssm_priority_t priority,
                       ssm_depth_t depth, ssm_value_t *argv, ssm_value_t *ret) {
 
   main_act_t *cont = container_of(
-      ssm_enter(sizeof(main_act_t), step_main, parent, priority, depth),
+      ssm_enter(sizeof(main_act_t), __step_main, parent, priority, depth),
       main_act_t, act);
   cont->ssm_stdin = argv[0];
   cont->ssm_stdout = argv[1];
@@ -20,7 +20,7 @@ ssm_act_t *enter_main(ssm_act_t *parent, ssm_priority_t priority,
   return &cont->act;
 }
 
-void step_main(ssm_act_t *act) {
+void __step_main(ssm_act_t *act) {
   main_act_t *cont = container_of(act, main_act_t, act);
   switch (act->pc) {
   case 0:
@@ -50,24 +50,4 @@ void step_main(ssm_act_t *act) {
     }
   }
   ssm_leave(act, sizeof(main_act_t));
-}
-
-void ssm_program_init(void) {
-  ssm_value_t ssm_stdin = ssm_new_sv(ssm_marshal(0));
-  ssm_value_t ssm_stdout = ssm_new_sv(ssm_marshal(0));
-
-  ssm_activate(__enter_stdout_handler(&ssm_top_parent, SSM_ROOT_PRIORITY,
-                                      SSM_ROOT_DEPTH - 1, &ssm_stdout, NULL));
-
-  ssm_value_t argv_main[2] = {ssm_stdin, ssm_stdout};
-  ssm_activate(enter_main(&ssm_top_parent,
-                          SSM_ROOT_PRIORITY + (1 << (SSM_ROOT_DEPTH - 1)),
-                          SSM_ROOT_DEPTH - 1, argv_main, NULL));
-
-  __spawn_stdin_handler(ssm_to_sv(ssm_stdin));
-}
-
-void ssm_program_exit(void) {
-  printf("DBG: joining stdin handler\n");
-  __kill_stdin_handler();
 }
