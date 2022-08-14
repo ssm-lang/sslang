@@ -116,9 +116,6 @@ packed_val = "packed_val"
 heap_ptr :: CIdent
 heap_ptr = "heap_ptr"
 
-mm_tag :: CIdent
-mm_tag = "tag"
-
 -- TODO: skip ssm mm
 
 -- | @ssm_marshal@, construct a 'value_t' out of a 31-bit integral value.
@@ -268,7 +265,7 @@ desensitize trig = [cexp|ssm_desensitize($exp:trig)|]
 
 -- | @ssm_new_adt@, allocate a new ADT object on the heap.
 new_adt :: Int -> DConId -> C.Exp
-new_adt val_count tag = [cexp|ssm_new_adt($uint:val_count, $id:tag)|]
+new_adt field_count tag = [cexp|ssm_new_adt($uint:field_count, $id:tag)|]
 
 -- | @ssm_adt_field@, access the @i@th field of an ADT object. Assignable.
 adt_field :: C.Exp -> Int -> C.Exp
@@ -277,10 +274,6 @@ adt_field v i = [cexp|ssm_adt_field($exp:v, $uint:i)|]
 -- | @ssm_tag@, extract the tag of an ADT value.
 adt_tag :: C.Exp -> C.Exp
 adt_tag v = [cexp|ssm_tag($exp:v)|]
-
--- | Extract the tag of a heap-allocated ADT value.
-adt_heap_tag :: C.Exp -> C.Exp
-adt_heap_tag v = [cexp|$exp:v->$id:heap_ptr.$id:mm_tag|]
 
 -- | @ssm_closure1_t@, the (template) type of a closure with a single argument.
 closure1_t :: C.Type
@@ -294,9 +287,13 @@ static_closure :: C.Exp -> Int -> C.Initializer
 static_closure f argc = [cinit|{
     .mm = {
       .ref_count = 1,
-      .kind = 3, // Ugly awful hack
-      .val_count = 0,
-      .tag = $int:argc,
+      .kind = SSM_CLOSURE_K,
+      .info = {
+        .vector = {
+          .count = 0,
+          .cap = $int:argc,
+        },
+      },
     },
     .f = $exp:f,
     .argv = {{0}}, // https://stackoverflow.com/q/13746033/10497710
