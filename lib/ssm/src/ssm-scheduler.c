@@ -266,7 +266,9 @@ static size_t num_processes = 0;
 
 ssm_time_t ssm_now(void) { return now; }
 
-bool ssm_active(void) { return num_processes > 0; }
+// FIXME: Doesn't work well with handlers!
+// bool ssm_active(void) { return num_processes > 0; }
+bool ssm_active(void) { return act_queue_len > 0; }
 
 ssm_act_t *ssm_enter(size_t size, ssm_stepf_t step, ssm_act_t *parent,
                      ssm_priority_t priority, ssm_depth_t depth) {
