@@ -67,6 +67,11 @@ todo = error "Not yet implemented"
 nope :: HasCallStack => a
 nope = error "Not yet supported"
 
+-- | Hack to allow us to splice string literals into C AST
+newtype EscExp = EscExp String
+instance ToExp EscExp where
+  toExp (EscExp e) loc = C.EscExp e loc
+
 {- | State maintained while compiling a top-level SSM function.
 
 The information here is populated while generating the step function, so that
@@ -735,9 +740,10 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break     [] _ = return (undef, [citems|break;|])
-genPrim I.Now       [] _ = return (marshal $ ccall now [], [])
-genPrim (I.CCall s) es _ = do
+genPrim I.Break      [] _ = return (undef, [citems|break;|])
+genPrim I.Now        [] _ = return (marshal $ ccall now [], [])
+genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
+genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
   return (unit, argStms ++ [citems|$id:s($args:argExps);|])

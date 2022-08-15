@@ -63,6 +63,7 @@ import Data.Bifunctor (first)
   op      { Token (_, TOp $$) }
   id      { Token (_, TId $$) }
   cblock  { Token (_, TCBlock $$) }
+  cquote  { Token (_, TCQuote $$) }
   csym    { Token (_, TCSym $$) }
 
 %left ';' -- Helps with if-then-else
@@ -304,6 +305,7 @@ exprApp                               --> Expr
 exprAtom
   : int                                 { Lit (LitInt $1) }
   | string                              { Lit (LitString $1) }
+  | cquote                              { CQuote $1 }
   | id                                  { Id $1 }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }

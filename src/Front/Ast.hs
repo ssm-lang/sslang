@@ -87,6 +87,7 @@ data Expr
   | Seq Expr Expr
   | Break
   | Match Expr [(Pat, Expr)]
+  | CQuote String
   | CCall Identifier [Expr]
   deriving (Eq, Show)
 
@@ -230,6 +231,8 @@ instance Pretty Expr where
   pretty (Id  i      ) = pretty i
   pretty (Lit l      ) = pretty l
   pretty Break         = pretty "break"
+  -- TODO: we should replace every '$$' in s with '$$$$'
+  pretty (CQuote s) = pretty "$$" <> pretty s <> pretty "$$"
   pretty (CCall s as) =
     pretty "$" <> pretty s <+> parens (hsep $ punctuate comma $ map pretty as)
   pretty (Match s as) = parens $ pretty "match" <+> pretty s <+> braces
