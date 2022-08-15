@@ -9,7 +9,7 @@ import           Front.Scanner                  ( scanTokenTypes )
 import           Front.Token                    ( TokenType(..) )
 
 mkBlock :: String -> String
-mkBlock s = "$$" ++ s ++ "$$"
+mkBlock s = "$$$" ++ s ++ "$$$"
 
 groupChunks :: [TokenType] -> [TokenType]
 groupChunks = foldr groupChunks' []
@@ -18,8 +18,8 @@ groupChunks' t            ts                = t : ts
 
 unescapeSigils :: String -> String
 unescapeSigils = foldr unescapeSigils' []
-unescapeSigils' '$' ('$' : '$' : '$' : ss) = '$' : '$' : ss
-unescapeSigils' s   ss                     = s : ss
+unescapeSigils' '$' ('$' : '$' : '$' : '$' : '$' : ss) = '$' : '$' : '$' : ss
+unescapeSigils' s   ss = s : ss
 
 spec :: Spec
 spec = do
@@ -63,7 +63,7 @@ spec = do
     let contents = [here|
             blocks containing
             escaped block end tokens
-            i.e., this: $$$$
+            i.e., this: $$$$$$
             shoudl still be ok
           |]
     (groupChunks <$> scanTokenTypes (mkBlock contents))

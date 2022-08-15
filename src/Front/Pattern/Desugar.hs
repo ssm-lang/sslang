@@ -122,7 +122,8 @@ desugarExpr (A.Match e arms) = do -- INFO: the only important one
     _      -> do
       v <- freshVar
       singleLet v e <$> desugarMatch [v] armsForDesugar A.NoExpr -- INFO: for now, default expression is NoExpr
-desugarExpr (A.CCall s es) = A.CCall s <$> mapM desugarExpr es
+desugarExpr e@(A.CQuote _  ) = return e
+desugarExpr (  A.CCall s es) = A.CCall s <$> mapM desugarExpr es
 
 desugarOpRegion :: A.OpRegion -> DesugarFn A.OpRegion
 desugarOpRegion (A.NextOp i e opRegion) =
@@ -334,7 +335,8 @@ substId old new = substExpr
   substExpr (A.Match e arms) =
     let substArm (p, body) = (p, substExpr body)
     in  A.Match (substExpr e) (map substArm arms)
-  substExpr (A.CCall s es) = A.CCall s $ map substExpr es
+  substExpr e@(A.CQuote _  ) = e
+  substExpr (  A.CCall s es) = A.CCall s $ map substExpr es
 
 singleLet :: Identifier -> A.Expr -> A.Expr -> A.Expr
 singleLet i e = A.Let [A.DefFn i [] A.TypNone e]

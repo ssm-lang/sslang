@@ -60,6 +60,7 @@ data TokenType
   | TId Identifier
   | TOp Identifier
   | TCSym Identifier
+  | TCQuote String
   | TCBlock String
   deriving (Eq, Show)
 
@@ -120,7 +121,8 @@ instance Pretty TokenType where
   pretty (TId      i) = pretty i
   pretty (TOp      o) = pretty o
   pretty (TCSym    s) = pretty $ fromString "$" <> s
-  pretty (TCBlock  b) = pretty $ fromString "$$" <> b <> fromString "$$"
+  pretty (TCQuote  s) = pretty $ fromString "$$" <> s <> fromString "$$"
+  pretty (TCBlock  b) = pretty $ fromString "$$$" <> b <> fromString "$$$"
 
 -- | Pretty print a list of tokens.
 prettyTokens :: [Token] -> String

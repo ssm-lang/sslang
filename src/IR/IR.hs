@@ -123,6 +123,8 @@ data Primitive
   | Now
   {- ^ @Now@ obtains the value of the current instant -}
   | PrimOp PrimOp
+  {- ^ Inlined C expression code. -}
+  | CQuote String
   {- ^ Primitive operator. -}
   | CCall CSym
   deriving (Eq, Show, Typeable, Data)

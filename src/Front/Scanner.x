@@ -53,9 +53,11 @@ $symbolAny          = [$symbolBase\_\:\"\'\*]
 @commentR = \*\/
 
 @cSym = \$
-@cBlockL = \$\$
-@cBlockR = \$\$
-@cBlockChunk = ( [^\$] | @newline )+ | \$
+@cQuoteL = \$\$
+@cQuoteR = \$\$
+@cBlockL = \$\$\$
+@cBlockR = \$\$\$
+@cInlineChunk = ( [^\$] | @newline )+ | \$
 
 $asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}]
 $escapable = [\\ \' \" n r t]
@@ -162,13 +164,20 @@ tokens :-
 
     -- InlineC C code
     @cSym @identifier   { strTok (TCSym . fromString . dropEnds 1 0) }
-    @cBlockL            { cBlockBegin }
+    @cQuoteL            { cInlineBegin cQuoteBody }
+    @cBlockL            { cInlineBegin cBlockBody }
+  }
+
+  <cQuoteBody> {
+    @cQuoteR            { cInlineEnd TCQuote }
+    @cQuoteR @cQuoteR   { cInlineChunk (const "$$") }
+    @cInlineChunk       { cInlineChunk id }
   }
 
   <cBlockBody> {
-    @cBlockR            { cBlockEnd }
-    @cBlockR @cBlockR   { cBlockChunk (const "$$") }
-    @cBlockChunk        { cBlockChunk id }
+    @cBlockR            { cInlineEnd TCBlock }
+    @cBlockR @cBlockR   { cInlineChunk (const "$$$") }
+    @cInlineChunk       { cInlineChunk id }
   }
 {
 -- | Internal compiler error for unreachable code.
@@ -204,7 +213,7 @@ data ScannerContext
   -- | In an implicit block, lines separated by given token.
   | ImplicitBlock Int TokenType
   -- | In a block of inlinec C code, accumulating the inlined C code.
-  | InlineCBlock [String] AlexPosn
+  | InlineC [String] AlexPosn
   deriving (Show)
 
 -- | The 'Int' in 'ScannerContext' is the margin.
@@ -214,7 +223,7 @@ ctxMargin (EndingExplicitBlock m _ _) = m
 ctxMargin (PendingBlock m _         ) = m
 ctxMargin (PendingBlockNL m _       ) = m
 ctxMargin (ImplicitBlock m _        ) = m
-ctxMargin (InlineCBlock _ _         ) = 0
+ctxMargin (InlineC _ _         ) = 0
 
 
 -- | The state attached the 'Alex' monad; scanner maintains a stack of contexts.
@@ -578,39 +587,41 @@ charTok i@(_,_,_,s) len =
           return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
 
 
--- | Start scanning block of inline C code
-cBlockBegin :: AlexAction Token
-cBlockBegin (pos,_,_,_) _ = do
+-- | Start scanning token of inline C code.
+cInlineBegin :: Int -> AlexAction Token
+cInlineBegin code (pos,_,_,_) _ = do
   st <- alexGetUserState
   c <- alexGetStartCode
   alexSetUserState $ st { lastCtxCode = c }
-  alexPushContext $ InlineCBlock [] pos
-  alexSetStartCode cBlockBody
+  alexPushContext $ InlineC [] pos
+  alexSetStartCode code
   alexMonadScan
 
 
-cBlockEnd :: AlexAction Token
-cBlockEnd (AlexPn a' _ _,_,_,_) _ = do
+-- | Consume chunk of inline C cocde, applying some transformer 'f'.
+cInlineChunk :: (String -> String) -> AlexAction Token
+cInlineChunk f (_,_,_,s) len = do
+  ctx <- alexPeekContext
+  case ctx of
+    InlineC ss pos -> do
+      alexPopContext
+      alexPushContext $ InlineC (f (take len s) : ss) pos
+      alexMonadScan
+    _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
+
+
+-- | Complete scanning token of inline C code.
+cInlineEnd :: (String -> TokenType) -> AlexAction Token
+cInlineEnd f (AlexPn a' _ _,_,_,_) _ = do
   st <- alexGetUserState
   ctx <- alexPeekContext
   case ctx of
-    InlineCBlock ss pos@(AlexPn a _ _) -> do
+    InlineC ss pos@(AlexPn a _ _) -> do
       let len = a' - a
           s = foldr (flip (++)) "" ss
       alexSetStartCode $ lastCtxCode st
       alexPopContext
-      return $ Token (alexPosnSpan pos len, TCBlock $ fromString s)
-    _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
-
-
-cBlockChunk :: (String -> String) -> AlexAction Token
-cBlockChunk f (_,_,_,s) len = do
-  ctx <- alexPeekContext
-  case ctx of
-    InlineCBlock ss pos -> do
-      alexPopContext
-      alexPushContext $ InlineCBlock (f (take len s) : ss) pos
-      alexMonadScan
+      return $ Token (alexPosnSpan pos len, f $ fromString s)
     _ -> internalErr $ "unexpected ctx during cBlockEnd: " ++ show ctx
 
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 {- | Lower the representation of a sslang Ast into sslang IR.
 
 This pass expects prior desugaring passes to ensure that:
@@ -170,10 +169,11 @@ lowerExpr (A.IfElse c t e) k = I.Match cond [eArm, tArm] (k I.untyped)
   cond = lowerExpr c id
   tArm = (I.AltDefault Nothing, lowerExpr t id)
   eArm = (I.AltLit (I.LitIntegral 0), lowerExpr e id)
+lowerExpr (A.CQuote s) k = I.Prim (I.CQuote $ fromString s) [] (k I.untyped)
 lowerExpr (A.CCall s es) k =
   I.Prim (I.CCall $ fromId s) (map (`lowerExpr` id) es) (k I.untyped)
 lowerExpr (A.OpRegion _ _) _ = error "Should already be desugared"
-lowerExpr A.NoExpr k = I.Lit I.LitEvent (k I.untyped)
+lowerExpr A.NoExpr         k = I.Lit I.LitEvent (k I.untyped)
 
 -- | Lower an A.Pat into an I.Alt
 lowerAlt :: A.Pat -> I.Alt

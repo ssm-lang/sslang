@@ -496,6 +496,8 @@ initTypeVars (I.Match cond arms annT) = do
       insertBinder a (Forall [] at')
     initTypeVars rhs
   checkArm (_, rhs) = withNewScope $ initTypeVars rhs
+initTypeVars (I.Prim c@(I.CQuote _) [] annT) = do
+  return $ I.Prim c [] $ collapseAnnT annT
 initTypeVars (I.Prim c@(I.CCall _) es annT) = do
   es' <- mapM initTypeVars es
   t <- typeCheck (collapseAnnT annT) unit
@@ -685,6 +687,7 @@ getType (I.Match cond arms _) = do
       let t      = extract h
       -- type of match is type of one of its arms
       return (I.Match cond' arms'' t)
+getType e@(I.Prim (I.CQuote _) [] _) = return e
 getType (I.Prim c@(I.CCall _) es _) = do
   es' <- mapM getType es
   return $ I.Prim c es' unit -- TODO: handle non-unit return value typet

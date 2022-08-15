@@ -261,6 +261,8 @@ inferPrim (I.Prim I.Par es _) = do
   es' <- mapM inferExpr es
   let ts = map extract es'
   return $ I.Prim I.Par es' $ tuple ts
+inferPrim (I.Prim c@(I.CQuote _) [] _) = do
+  return $ I.Prim c [] $ Classes.TVar $ fromString "cquote"
 inferPrim (I.Prim c@(I.CCall _) es _) = do
   es' <- mapM inferExpr es
   return $ I.Prim c es' unit

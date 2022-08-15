@@ -1,0 +1,11 @@
+$$$
+#include <stdio.h>
+
+void printInt(int i, const char *s)
+{
+  printf("Hello, %d, %s!\n", i, s);
+}
+$$$
+
+main _ _ =
+  $printInt($$42$$, $$"world"$$)

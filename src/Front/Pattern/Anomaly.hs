@@ -116,6 +116,7 @@ checkExpr (A.Seq e1 e2       )     = checkExprs [e1, e2]
 checkExpr A.Break                  = return ()
 checkExpr (A.Match e arms) =
   let (ps, es) = unzip arms in checkExpr e >> checkExprs es >> checkPats ps
+checkExpr (A.CQuote _  ) = return ()
 checkExpr (A.CCall _ es) = mapM_ checkExpr es
 
 checkOpRegion :: A.OpRegion -> AnomalyFn ()
