@@ -140,6 +140,7 @@ tokens :-
     type                { layoutNL  TType   TBar }
 
     -- Keywords that just do as they be.
+    extern              { keyword TExtern }
     after               { keyword TAfter }
     \:                  { keyword TColon }
     \|\|                { keyword TDBar }

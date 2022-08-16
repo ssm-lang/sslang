@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 {- | Check scoping rules and naming conventions for identifiers.
 
 Here, we ensure that all identifiers that appear in the AST only appear after
@@ -233,8 +234,9 @@ typeRef i = do
 -- | Check the scoping of a 'A.Program'.
 scopeProgram :: A.Program -> Pass ()
 scopeProgram (A.Program ds) = runScopeFn $ do
-  scopeTypeDefs tds $ scopeDefs dds $ return ()
+  scopeTypeDefs tds $ scopeExterns eds $ scopeDefs dds $ return ()
  where
+  eds = mapMaybe A.getTopExtern ds
   tds = mapMaybe A.getTopTypeDef ds
   dds = mapMaybe A.getTopDataDef ds
 
@@ -271,6 +273,12 @@ scopeDcon (A.VariantUnnamed dcon ts) = do
   ensureCons dcon
   mapM_ scopeType ts
   return (dcon, DataInfo { dataKind = User })
+
+scopeExterns :: [A.ExternDecl] -> ScopeFn () -> ScopeFn ()
+scopeExterns ds k = do
+  mapM_ scopeType xTypes
+  withDataScope (map (, def) xIds) k
+  where (xIds, xTypes) = unzip $ map (\(A.ExternDecl i t) -> (i, t)) ds
 
 -- | Check the scoping of a set of parallel (co-recursive) 'A.Definition'.
 scopeDefs :: [A.Definition] -> ScopeFn () -> ScopeFn ()

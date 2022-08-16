@@ -29,7 +29,6 @@ import           Control.Comonad                ( Comonad(..) )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Maybe                     ( fromJust
                                                 , isJust
-                                                , mapMaybe
                                                 )
 {- | IR type annotation continuation.
 
@@ -59,12 +58,15 @@ lowerType a@(A.TApp _ _) = case A.collectTApp a of
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Type)
 lowerProgram (A.Program ds) = do
-  dds <- mapM lowerDataDef $ mapMaybe A.getTopDataDef ds
-  tds <- mapM lowerTypeDef $ mapMaybe A.getTopTypeDef ds
+  let (tds, cds, xds, dds) = A.getTops ds
+  tds' <- mapM lowerTypeDef tds
+  xds' <- mapM lowerExternDecl xds
+  dds' <- mapM lowerDataDef dds
   return $ I.Program { I.programEntry = fromString "main" -- TODO: don't hardcode
-                     , I.programDefs  = dds
-                     , I.typeDefs     = tds
-                     , I.cDefs        = concat $ mapMaybe A.getTopCDefs ds
+                     , I.programDefs  = dds'
+                     , I.externDecls  = xds'
+                     , I.typeDefs     = tds'
+                     , I.cDefs        = concat cds
                      }
 
 -- | Lower a top-level data definition into IR.
@@ -86,6 +88,10 @@ lowerTypeDef A.TypeDef { A.typeName = tn, A.typeParams = tvs, A.typeVariants = t
  where
   lowerTypeVariant (A.VariantUnnamed vn ts) =
     (fromId vn, I.VariantUnnamed $ map lowerType ts)
+
+-- | Lower an 'A.ExternDecl' into an identifier/type pair.
+lowerExternDecl :: A.ExternDecl -> Compiler.Pass (I.VarId, I.Type)
+lowerExternDecl (A.ExternDecl i t) = return (fromId i, lowerType t)
 
 {- | Lower an 'A.Definition' into a name and bound expression.
 

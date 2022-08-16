@@ -7,6 +7,7 @@ import           Common.Identifiers             ( Identifiable(..)
 import           Common.Pretty
 
 import           Data.List                      ( intersperse )
+import           Data.Maybe                     ( mapMaybe )
 
 -- | A complete program: a list of top-level definitions.
 newtype Program = Program [TopDef]
@@ -17,6 +18,11 @@ data TopDef
   = TopDef Definition     -- ^ Bind a (data) value to a variable
   | TopType TypeDef       -- ^ Define an algebraic data type
   | TopCDefs String       -- ^ Inlined block of C definitions
+  | TopExtern ExternDecl  -- ^ Declare external symbol for FFI
+  deriving (Eq, Show)
+
+-- | Associate a type with a symbol
+data ExternDecl = ExternDecl Identifier Typ
   deriving (Eq, Show)
 
 -- | An algebraic data type definition.
@@ -134,18 +140,36 @@ getTopTypeDef :: TopDef -> Maybe TypeDef
 getTopTypeDef (TopType t) = Just t
 getTopTypeDef _           = Nothing
 
--- | Unwrap a (potential) top-level type definition.
+-- | Unwrap a (potential) top-level C inline block.
 getTopCDefs :: TopDef -> Maybe String
 getTopCDefs (TopCDefs b) = Just b
 getTopCDefs _            = Nothing
+
+-- | Unwrap a (potential) top-level external definition.
+getTopExtern :: TopDef -> Maybe ExternDecl
+getTopExtern (TopExtern d) = Just d
+getTopExtern _             = Nothing
+
+-- | Unzip a list of top-level declarations into their counterparts.
+getTops :: [TopDef] -> ([TypeDef], [String], [ExternDecl], [Definition])
+getTops tds =
+  ( mapMaybe getTopTypeDef tds
+  , mapMaybe getTopCDefs   tds
+  , mapMaybe getTopExtern  tds
+  , mapMaybe getTopDataDef tds
+  )
 
 instance Pretty Program where
   pretty (Program defs) = vsep (intersperse emptyDoc $ map pretty defs)
 
 instance Pretty TopDef where
-  pretty (TopDef   d ) = pretty d
-  pretty (TopType  t ) = pretty t
-  pretty (TopCDefs ds) = pretty "$$" <> pretty ds <> pretty "$$"
+  pretty (TopDef    d ) = pretty d
+  pretty (TopType   t ) = pretty t
+  pretty (TopCDefs  ds) = pretty "$$" <> pretty ds <> pretty "$$"
+  pretty (TopExtern x ) = pretty x
+
+instance Pretty ExternDecl where
+  pretty (ExternDecl i t) = pretty "extern" <+> pretty i <+> colon <+> pretty t
 
 instance Pretty TypeDef where
   pretty TypeDef { typeName = tn, typeParams = tvs, typeVariants = tds } =
@@ -232,7 +256,7 @@ instance Pretty Expr where
   pretty (Lit l      ) = pretty l
   pretty Break         = pretty "break"
   -- TODO: we should replace every '$$' in s with '$$$$'
-  pretty (CQuote s) = pretty "$$" <> pretty s <> pretty "$$"
+  pretty (CQuote s)    = pretty "$$" <> pretty s <> pretty "$$"
   pretty (CCall s as) =
     pretty "$" <> pretty s <+> parens (hsep $ punctuate comma $ map pretty as)
   pretty (Match s as) = parens $ pretty "match" <+> pretty s <+> braces

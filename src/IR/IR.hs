@@ -46,6 +46,7 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 data Program t = Program
   { programEntry :: VarId
   , cDefs        :: String
+  , externDecls  :: [(VarId, t)]
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef t)]
   }
@@ -127,6 +128,9 @@ data Primitive
   | CQuote String
   {- ^ Primitive operator. -}
   | CCall CSym
+  {- ^ Direct call to arbitrary C function (NOTE: HACKY). -}
+  | FfiCall VarId
+  {- ^ Call to well-typed extern symbol. -}
   deriving (Eq, Show, Typeable, Data)
 
 {- | Expressions, based on the let-polymorphic lambda calculus.
@@ -231,6 +235,7 @@ makeLambdaChain args body = foldr chain body args
 instance Functor Program where
   fmap f p = p { programDefs = second (fmap f) <$> programDefs p
                , typeDefs    = second (fmap f) <$> typeDefs p
+               , externDecls = second f <$> externDecls p
                }
 
 instance Functor Expr where
@@ -294,33 +299,34 @@ wellFormed (App    f    a    _) = wellFormed f && wellFormed a
 wellFormed (Match  s    alts _) = wellFormed s && all (wellFormed . snd) alts
 wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
  where
-  wfPrim New                 [_]       = True
-  wfPrim Dup                 [_]       = True
-  wfPrim Drop                [_]       = True
-  wfPrim Deref               [_]       = True
-  wfPrim Assign              [_, _]    = True
-  wfPrim After               [_, _, _] = True
-  wfPrim Par                 (_ : _)   = True
-  wfPrim Wait                (_ : _)   = True
-  wfPrim Break               []        = True
-  wfPrim Now                 [_]       = True
-  wfPrim (CCall  _         ) _         = True
-  wfPrim (PrimOp PrimNeg   ) [_]       = True
-  wfPrim (PrimOp PrimNot   ) [_]       = True
-  wfPrim (PrimOp PrimBitNot) [_]       = True
-  wfPrim (PrimOp PrimAdd   ) [_, _]    = True
-  wfPrim (PrimOp PrimSub   ) [_, _]    = True
-  wfPrim (PrimOp PrimMul   ) [_, _]    = True
-  wfPrim (PrimOp PrimDiv   ) [_, _]    = True
-  wfPrim (PrimOp PrimMod   ) [_, _]    = True
-  wfPrim (PrimOp PrimBitAnd) [_, _]    = True
-  wfPrim (PrimOp PrimBitOr ) [_, _]    = True
-  wfPrim (PrimOp PrimEq    ) [_, _]    = True
-  wfPrim (PrimOp PrimGt    ) [_, _]    = True
-  wfPrim (PrimOp PrimGe    ) [_, _]    = True
-  wfPrim (PrimOp PrimLt    ) [_, _]    = True
-  wfPrim (PrimOp PrimLe    ) [_, _]    = True
-  wfPrim _                   _         = False
+  wfPrim New                  [_]       = True
+  wfPrim Dup                  [_]       = True
+  wfPrim Drop                 [_]       = True
+  wfPrim Deref                [_]       = True
+  wfPrim Assign               [_, _]    = True
+  wfPrim After                [_, _, _] = True
+  wfPrim Par                  (_ : _)   = True
+  wfPrim Wait                 (_ : _)   = True
+  wfPrim Break                []        = True
+  wfPrim Now                  [_]       = True
+  wfPrim (CCall   _         ) _         = True
+  wfPrim (FfiCall _         ) [_]       = True
+  wfPrim (PrimOp  PrimNeg   ) [_]       = True
+  wfPrim (PrimOp  PrimNot   ) [_]       = True
+  wfPrim (PrimOp  PrimBitNot) [_]       = True
+  wfPrim (PrimOp  PrimAdd   ) [_, _]    = True
+  wfPrim (PrimOp  PrimSub   ) [_, _]    = True
+  wfPrim (PrimOp  PrimMul   ) [_, _]    = True
+  wfPrim (PrimOp  PrimDiv   ) [_, _]    = True
+  wfPrim (PrimOp  PrimMod   ) [_, _]    = True
+  wfPrim (PrimOp  PrimBitAnd) [_, _]    = True
+  wfPrim (PrimOp  PrimBitOr ) [_, _]    = True
+  wfPrim (PrimOp  PrimEq    ) [_, _]    = True
+  wfPrim (PrimOp  PrimGt    ) [_, _]    = True
+  wfPrim (PrimOp  PrimGe    ) [_, _]    = True
+  wfPrim (PrimOp  PrimLt    ) [_, _]    = True
+  wfPrim (PrimOp  PrimLe    ) [_, _]    = True
+  wfPrim _                    _         = False
 
 {- | Pretty Typeclass: pretty print the IR
 
@@ -334,12 +340,12 @@ Reverts
 * curried funcs of one arg back to multiple arg funcs
 -}
 instance (Pretty t, TypeSystem t) => Pretty (Program t) where
-  pretty Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
+  pretty Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
+    vsep $ punctuate line tops
    where
-    ds' = case ds of
-      [h] -> prettyFuncDef h
-      _   -> vsep (map ((line <>) . prettyFuncDef) ds)
-    tys' = if null tys then pretty "" else vsep (prettyTypDef <$> tys)
+    tops =
+      map prettyTypDef tys ++ map prettyExternDecl xds ++ map prettyFuncDef ds
+
     -- Generates readable Doc representation of an IR Top Level Function
     prettyFuncDef :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
     prettyFuncDef (v, l@(Lambda _ _ ty)) =
@@ -355,6 +361,11 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
       (argIds, body ) = collectLambda l
       (argTys, retTy) = collectArrow ty
     prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
+
+    prettyExternDecl :: (TypeSystem t, Pretty t) => (VarId, t) -> Doc ann
+    prettyExternDecl (v, t) =
+      pretty "extern" <+> pretty v <+> colon <+> pretty t
+
     -- Generates readable Doc representation of an IR Type Definition
     prettyTypDef :: Pretty t => (TConId, TypeDef t) -> Doc ann
     prettyTypDef (tcon, TypeDef { variants = vars }) =
@@ -372,14 +383,14 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
 
 -- | Pretty prints IR Expr nodes without type annotations
 instance Pretty (Expr ()) where
-  pretty a@App{} = pretty nm <+> hsep (parenz <$> args)
+  pretty a@App{} = pretty nm <+> hsep (parenz . fst <$> args)
    where
     (nm, args) = unzipApp a
     -- insert (usually) necessary parens
-    parenz :: (Expr (), ()) -> Doc ann
-    parenz (v@(Var _ _), _) = pretty v  -- variables
-    parenz (l@(Lit _ _), _) = pretty l  -- literals
-    parenz (e          , _) = parens (pretty e)
+    parenz :: Expr () -> Doc ann
+    parenz v@(Var _ _) = pretty v  -- variables
+    parenz l@(Lit _ _) = pretty l  -- literals
+    parenz e           = parens (pretty e)
     -- TODO: minimum parens algo
   pretty (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
   pretty (Var v _                  ) = pretty v
@@ -411,6 +422,11 @@ instance Pretty (Expr ()) where
   pretty (Prim Deref [r] _         ) = pretty "deref" <+> pretty r
   pretty (Prim Par es _) = pretty "par" <+> block dbar (map pretty es)
   pretty (Prim Break []  _         ) = pretty "break"
+  pretty (Prim (CCall s) es _) =
+    pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
+  pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
+  pretty (Prim (CQuote s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
 
@@ -445,12 +461,12 @@ instance Pretty PrimOp where
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
 instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
-  dumpy Program { programDefs = ds, typeDefs = tys } = tys' <> ds'
+  dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
+    vsep $ punctuate line tops
    where
-    ds' = case ds of
-      [h] -> dumpyFuncDef h
-      _   -> vsep (map ((line <>) . dumpyFuncDef) ds)
-    tys' = if null tys then pretty "" else vsep (dumpyTypDef <$> tys)
+    tops =
+      map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
+
     -- Generates readable Doc representation of an IR Top Level Function
     dumpyFuncDef :: (TypeSystem t, Dumpy t) => (VarId, Expr t) -> Doc ann
     dumpyFuncDef (v, l@(Lambda _ _ ty)) =
@@ -464,6 +480,11 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
       (argIds, body ) = collectLambda l
       (argTys, retTy) = collectArrow ty
     dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
+
+    -- Generates readable Doc representation of an IR Type Definition
+    dumpyExternDecl :: Dumpy t => (VarId, t) -> Doc ann
+    dumpyExternDecl (v, t) = pretty "extern" <+> pretty v <+> colon <+> dumpy t
+
     -- Generates readable Doc representation of an IR Type Definition
     dumpyTypDef :: Dumpy t => (TConId, TypeDef t) -> Doc ann
     dumpyTypDef (tcon, TypeDef { variants = vars }) =
@@ -510,9 +531,13 @@ instance (Dumpy t) => Dumpy (Expr t) where
     typeAnn t $ pretty "par" <+> block dbar (map dumpy es)
   dumpy (Prim Wait es t) =
     typeAnn t $ pretty "wait" <+> block dbar (map dumpy es)
-  dumpy (Prim Loop  [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
-  dumpy (Prim Break []  t) = typeAnn t $ pretty "break"
-  -- dumpy (Prim Return [e] t) = typeAnn t $ pretty "return" <+> braces (dumpy e)
+  dumpy (Prim Loop      [b] t) = typeAnn t $ pretty "loop" <+> braces (dumpy b)
+  dumpy (Prim Break     []  t) = typeAnn t $ pretty "break"
+  dumpy (Prim (CCall s) es  t) = typeAnn t $ pretty "$" <> pretty s <> parens
+    (hsep $ punctuate comma $ map dumpy es)
+  dumpy (Prim (CQuote s) [] t) =
+    typeAnn t $ pretty "$$" <> pretty s <> pretty "$$"
+  dumpy (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . dumpy) es)
   dumpy (Prim (PrimOp po) [l, r] t) =
     typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
   dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p

@@ -105,12 +105,14 @@ runInferFn (InferFn m) = evalStateT
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   typeDefs' <- recordADTs $ I.typeDefs p
+  externDecls' <- recordExterns $ I.externDecls p
   recordFDefs $ I.programDefs p
   defs'     <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs  = defs'
                      , I.typeDefs     = typeDefs'
                      , I.programEntry = I.programEntry p
                      , I.cDefs        = I.cDefs p
+                     , I.externDecls  = externDecls'
                      }
 
 -- | 'recordFDefs' saves information about all the declared functions for future use
@@ -147,6 +149,18 @@ recordDCon tcon tvs (dcon, variant) =
           argTypes = case variant of
               VariantNamed ts -> map snd ts
               VariantUnnamed ts -> ts
+
+-- | Record the types of extern symbols.
+-- NOTE: this does not actually check for arity and probably doesn't do
+-- polymorphism correctly either.
+recordExterns :: [(I.VarId, Ann.Type)] -> InferFn [(I.VarId, Classes.Type)]
+recordExterns = mapM recordExtern
+  where recordExtern (i, t) = do
+          let t' = collapseAnnT t
+          insertVar i $ Classes.Forall [] t'
+          return (i, t')
+
+-- recordExterns
 
 -- | 'inferProgramDefs' @ds@ infers the type of programDefs @ds@ recursively and binds each varibale to its type.
 inferProgramDefs

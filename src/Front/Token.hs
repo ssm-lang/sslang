@@ -37,6 +37,7 @@ data TokenType
   | TAfter
   | TWait
   | TFun
+  | TExtern
   | TEq
   | TLarrow
   | TRarrow
@@ -98,6 +99,7 @@ instance Pretty TokenType where
   pretty TAfter       = pretty "after"
   pretty TWait        = pretty "wait"
   pretty TFun         = pretty "fun"
+  pretty TExtern      = pretty "extern"
   pretty TEq          = pretty "="
   pretty TDRarrow     = pretty "=>"
   pretty TLarrow      = pretty "<-"
