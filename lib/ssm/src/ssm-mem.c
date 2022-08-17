@@ -256,7 +256,7 @@ ssm_value_t ssm_new_array(uint16_t elems) {
 
 ssm_value_t ssm_new_blob(uint16_t size) {
   uint16_t scaled_size = // ceiling(size / SSM_BLOB_SIZE_SCALE)
-      size / SSM_BLOB_SIZE_SCALE + !!(size % SSM_BLOB_SIZE_SCALE);
+      (size + SSM_BLOB_SIZE_SCALE - 1) / SSM_BLOB_SIZE_SCALE;
 
   struct ssm_mm *mm =
       ssm_mem_alloc(ssm_blob_size(scaled_size * SSM_BLOB_SIZE_SCALE));

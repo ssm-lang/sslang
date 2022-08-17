@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(ssm_throw);
 
 /** Override ssm_throw function with some platform-specific logging. */
 void ssm_throw(ssm_error_t reason, const char *file, int line, const char *func) {
-  log_panic();
+  LOG_PANIC();
   LOG_ERR("Threw error code %d at time: %016llx", reason, ssm_now());
   switch (reason) {
   case SSM_INTERNAL_ERROR:
