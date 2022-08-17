@@ -1,5 +1,4 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DerivingVia #-} {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_HADDOCK prune #-}
 -- | Data types and helpers used to compose the compiler pipeline.
 module Common.Compiler
@@ -16,6 +15,7 @@ module Common.Compiler
   , warn
   , passIO
   , liftEither
+  , typeError
   ) where
 
 import           Common.Pretty                  ( Pretty(pretty) )
@@ -104,3 +104,7 @@ passIO p = case runPass p of
   Left  (Dump s) -> putStrLn s >> exitSuccess
   Left  e        -> hPrint stderr e >> exitFailure
   Right a        -> return a
+
+-- | Throw a type error with some String error message.
+typeError :: (MonadError Error m) => String -> m a
+typeError = throwError . TypeError . fromString

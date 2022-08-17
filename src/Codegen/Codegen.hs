@@ -248,7 +248,8 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram p = do
   (tdefs , tinfo ) <- genTypes $ I.typeDefs p
   (cdecls, cdefns) <- cUnpack <$> mapM (genTop tinfo) (I.programDefs p)
-  return $ includes ++ tdefs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
+  externs <- mapM genExtern $ I.externDecls p
+  return $ includes ++ tdefs ++ externs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
     (I.programEntry p)
  where
   genTop
@@ -329,6 +330,13 @@ genInitProgram = const []
 --                                          std_argv,
 --                                          NULL)|]
 
+genExtern :: (I.VarId, I.Type) -> Compiler.Pass C.Definition
+genExtern (v, t) = return [cedecl|
+    extern $ty:value_t $id:v($params:xparams);
+  |]
+ where
+  argNum  = length $ fst $ I.collectArrow t
+  xparams = replicate argNum [cparam|$ty:value_t|]
 
 -- | Generate struct definition for an SSM procedure.
 --
@@ -747,6 +755,10 @@ genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
   return (unit, argStms ++ [citems|$id:s($args:argExps);|])
+genPrim (I.FfiCall s) es ty = do
+  (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
+  ret <- genTmp ty
+  return (ret, argStms ++ [citems|$exp:ret = $id:s($args:argExps);|])
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 

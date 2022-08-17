@@ -14,6 +14,7 @@ import qualified Front.Ast                     as A
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import qualified IR.DropInference              as DropInf
+import           IR.ExternToCall                ( externToCall )
 import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
@@ -71,8 +72,8 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option "" ["only-hm"]  (NoArg $ setHM)    "Only run HM type inference"
-  , Option "" ["only-tc"]  (NoArg $ setTC)    "Only run type checker"
+  , Option "" ["only-hm"]  (NoArg setHM)    "Only run HM type inference"
+  , Option "" ["only-tc"]  (NoArg setTC)    "Only run type checker"
   , Option "" ["dup-drop"] (NoArg setDropInf) "run with drop inference"
   ]
  where
@@ -115,12 +116,11 @@ class2Poly _ = instProgram
 -- | IR compiler sub-stage, performing source-to-source translations.
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
-  dConsGone <- dConToFunc ir
-  irLifted  <- liftProgramLambdas dConsGone
-  irFinal   <- if dupDrop opt then dropInf irLifted else pure irLifted
-  when (mode opt == DumpIRLifted) $ dump irFinal
-  when (mode opt == DumpIRFinal) $ dump irFinal -- (throwError . Dump . show . dumpy) irFinal
-  return irFinal
+  let dd = (if dupDrop opt then dropInf else pure)
+  ir' <- dd =<< liftProgramLambdas =<< externToCall =<< dConToFunc ir
+  when (mode opt == DumpIRLifted) $ dump ir'
+  when (mode opt == DumpIRFinal) $ dump ir' -- (throwError . Dump . show . dumpy) irFinal
+  return ir'
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)

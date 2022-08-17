@@ -1,0 +1,15 @@
+$$$
+#include <stdio.h>
+
+ssm_value_t foo(ssm_value_t i) {
+  printf("%d\n", ssm_unmarshal(i));
+  return ssm_marshal(ssm_unmarshal(i) + 1);
+}
+$$$
+
+extern foo : Int -> Int
+
+main _ _ =
+    let x = foo 42
+    foo x
+    ()

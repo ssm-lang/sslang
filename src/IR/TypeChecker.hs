@@ -84,9 +84,11 @@ lookupDCon d = M.lookup d <$> gets dConMap
 inferProgram :: I.Program Ann.Type -> Compiler.Pass (I.Program Classes.Type)
 inferProgram p = runInferFn $ do
   typeDefs' <- inferADT $ I.typeDefs p
+  externs' <- inferExterns $ I.externDecls p
   defs' <- inferProgramDefs $ I.programDefs p
   return $ I.Program { I.programDefs = defs'
                      , I.typeDefs = typeDefs'
+                     , I.externDecls = externs'
                      , I.programEntry = I.programEntry p
                      , I.cDefs = I.cDefs p 
                      }
@@ -131,6 +133,13 @@ inferADT adts@((tconId, h) : tl) = do
       h4' <- anns2Class h4
       (VariantNamed tl4') <- inferTypeVariant (VariantNamed tl4)
       return (VariantNamed ((varId, h4') : tl4'))
+
+inferExterns :: [(I.VarId, Ann.Type)] -> InferFn [(I.VarId, Classes.Type)]
+inferExterns = mapM inferExtern
+  where inferExtern (i, t) = do
+          t' <- anns2Class t
+          insertVar i t'
+          return (i, t')
 
 -- | Top level inference.
 --

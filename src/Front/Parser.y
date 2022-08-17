@@ -28,43 +28,44 @@ import Data.Bifunctor (first)
 %tokentype { Token }
 
 %token
-  'type'  { Token (_, TType) }
-  'if'    { Token (_, TIf) }
-  'else'  { Token (_, TElse) }
-  'while' { Token (_, TWhile) }
-  'do'    { Token (_, TDo) }
-  'par'   { Token (_, TPar) }
-  'loop'  { Token (_, TLoop) }
-  'let'   { Token (_, TLet) }
-  'after' { Token (_, TAfter) }
-  'wait'  { Token (_, TWait) }
-  'fun'   { Token (_, TFun) }
-  'match' { Token (_, TMatch) }
-  '='     { Token (_, TEq) }
-  '<-'    { Token (_, TLarrow) }
-  '->'    { Token (_, TRarrow) }
-  '=>'    { Token (_, TDRarrow) }
-  '|'     { Token (_, TBar) }
-  '||'    { Token (_, TDBar) }
-  ':'     { Token (_, TColon) }
-  ';'     { Token (_, TSemicolon) }
-  ','     { Token (_, TComma) }
-  '_'     { Token (_, TUnderscore) }
-  '@'     { Token (_, TAt) }
-  '&'     { Token (_, TAmpersand) }
-  '('     { Token (_, TLparen) }
-  ')'     { Token (_, TRparen) }
-  '{'     { Token (_, TLbrace) }
-  '}'     { Token (_, TRbrace) }
-  '['     { Token (_, TLbracket) }
-  ']'     { Token (_, TRbracket) }
-  int     { Token (_, TInteger $$) }
-  string  { Token (_, TString $$) }
-  op      { Token (_, TOp $$) }
-  id      { Token (_, TId $$) }
-  cblock  { Token (_, TCBlock $$) }
-  cquote  { Token (_, TCQuote $$) }
-  csym    { Token (_, TCSym $$) }
+  'type'    { Token (_, TType) }
+  'if'      { Token (_, TIf) }
+  'else'    { Token (_, TElse) }
+  'while'   { Token (_, TWhile) }
+  'do'      { Token (_, TDo) }
+  'par'     { Token (_, TPar) }
+  'loop'    { Token (_, TLoop) }
+  'let'     { Token (_, TLet) }
+  'after'   { Token (_, TAfter) }
+  'wait'    { Token (_, TWait) }
+  'fun'     { Token (_, TFun) }
+  'match'   { Token (_, TMatch) }
+  'extern'  { Token (_, TExtern) }
+  '='       { Token (_, TEq) }
+  '<-'      { Token (_, TLarrow) }
+  '->'      { Token (_, TRarrow) }
+  '=>'      { Token (_, TDRarrow) }
+  '|'       { Token (_, TBar) }
+  '||'      { Token (_, TDBar) }
+  ':'       { Token (_, TColon) }
+  ';'       { Token (_, TSemicolon) }
+  ','       { Token (_, TComma) }
+  '_'       { Token (_, TUnderscore) }
+  '@'       { Token (_, TAt) }
+  '&'       { Token (_, TAmpersand) }
+  '('       { Token (_, TLparen) }
+  ')'       { Token (_, TRparen) }
+  '{'       { Token (_, TLbrace) }
+  '}'       { Token (_, TRbrace) }
+  '['       { Token (_, TLbracket) }
+  ']'       { Token (_, TRbracket) }
+  int       { Token (_, TInteger $$) }
+  string    { Token (_, TString $$) }
+  op        { Token (_, TOp $$) }
+  id        { Token (_, TId $$) }
+  cblock    { Token (_, TCBlock $$) }
+  cquote    { Token (_, TCQuote $$) }
+  csym      { Token (_, TCSym $$) }
 
 %left ';' -- Helps with if-then-else
 %nonassoc NOELSE 'else'
@@ -90,6 +91,7 @@ topDef                                --> TopDef
   : defLet                              { TopDef $1 }
   | defType                             { TopType $1 }
   | defCBlock                           { TopCDefs $1 }
+  | defExtern                           { TopExtern $1 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef
@@ -102,6 +104,9 @@ defType                               --> TypeDef
 -- | Top-level block of C definitions
 defCBlock                             --> String
   : cblock                              { $1 }
+
+defExtern
+  : 'extern' id ':' typ                 { ExternDecl $2 $4 }
 
 -- | List of pipe-separated variants.
 typeVariants                          --> [TypeVariant]

@@ -45,9 +45,8 @@ parseOperators :: Program -> Compiler.Pass Program
 parseOperators (Program decls) = return $ Program $ map (parseTop ops) decls
  where
   ops = defaultOps
-  parseTop fs  (TopDef   d) = TopDef $ parseDef fs d
-  parseTop _fs (TopType  t) = TopType t
-  parseTop _fs (TopCDefs d) = TopCDefs d
+  parseTop fs (TopDef d) = TopDef $ parseDef fs d
+  parseTop _  t          = t
 
   parseDef fs (DefFn v bs t e) = DefFn v bs t $ parseExprOps fs e
   parseDef fs (DefPat b e    ) = DefPat b $ parseExprOps fs e
