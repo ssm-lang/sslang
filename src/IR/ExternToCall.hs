@@ -65,7 +65,12 @@ makeExternFunc (x, t) = do
   let (ats, rt) = I.collectArrow t
       args      = zip (map argName [0 ..]) ats
       body      = I.Prim (I.FfiCall $ fromId x) (map (uncurry I.Var) args) rt
-  return (liftExtern x, I.makeLambdaChain (map (first Just) args) body)
+  if null ats
+    then
+      Compiler.typeError
+      $  "Extern symbol does not have function type: "
+      ++ show x
+    else return (liftExtern x, I.makeLambdaChain (map (first Just) args) body)
  where
   argName :: Int -> I.VarId
   argName i = fromString ("__arg" ++ show i)
