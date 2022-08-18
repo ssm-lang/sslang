@@ -1,0 +1,47 @@
+type Pins
+  P0_11   // Button 1
+  P0_12   // Button 2
+
+type Blob
+  Blob
+
+// output : p -> Blob
+output x = Blob
+
+// input : p1 -> p2 -> ()
+input x y = ()
+
+// init : Pins -> (Int -> p) -> (Int -> p) -> p
+init pin f1 f2 =
+  match pin
+    P0_11 = f1 11
+    P0_12 = f2 12
+
+// run_output : Pins -> (Int -> 't) -> 't
+run_output pin body =
+  let foo = init pin output output
+  body 42
+
+// gpio_input : Pins -> (Int -> 't) -> 't
+run_input pin body =
+ let bar = init pin input input
+ body 42
+
+/*
+
+  Having both calls of init (which use different types since
+  input and output have different types) produces a type error:
+
+  TypeError (ErrorMsg "Single unification error: #Arrow '_i #Unit, Blob")
+
+  '_i -> ()    vs    Blob
+
+  Commenting out either call of init makes the problem go away.
+*/
+
+
+$$$
+#include <stdio.h>
+$$$
+
+main _ = $printf($$"Hello World\n"$$)
