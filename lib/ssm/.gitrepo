@@ -6,7 +6,7 @@
 [subrepo]
 	remote = ssm-runtime
 	branch = main
-	commit = 0f8945e8a2ecd0cd073394954330ade8ea0d6f85
-	parent = e4d8bf2b06d3ee8ecd3793e81198bd85d69d651b
+	commit = a3eb8f36d0989878f3485f47b7913a222552ca78
+	parent = ce89861d65a11ff7f5a94b89bf2cf8ac3f973db8
 	method = merge
 	cmdver = 0.4.3

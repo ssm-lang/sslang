@@ -67,8 +67,9 @@ void counter_alarm_callback(const struct device *dev, uint8_t chan_id,
   //                  "counter_alarm_callback: unexpected chan_id: %u\r\n",
   //                  chan_id);
   // SSM_DEBUG_ASSERT(timer_cb, "counter_alarm_callback: timer_cb not set\r\n");
-  timer_cb(ticks, user_data);
+  ssm_timer_callback_t cb = timer_cb;
   timer_cb = NULL;
+  cb(ticks, user_data);
 }
 
 int ssm_timer_set_alarm(ssm_time_t wake_time, ssm_timer_callback_t cb,
@@ -90,7 +91,10 @@ int ssm_timer_set_alarm(ssm_time_t wake_time, ssm_timer_callback_t cb,
 }
 
 int ssm_timer_cancel(void) {
-  return counter_cancel_channel_alarm(ssm_timer_dev, SSM_TIMER_ALARM_CHANNEL);
+  int ret =
+      counter_cancel_channel_alarm(ssm_timer_dev, SSM_TIMER_ALARM_CHANNEL);
+  timer_cb = NULL;
+  return ret;
 }
 
 ssm_time_t ssm_timer_read(void) {
