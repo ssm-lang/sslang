@@ -62,6 +62,7 @@ ftv mem = go . getType
   go (TVar v) | mem v     = S.empty
               | otherwise = S.singleton v
 
+-- | May appear in type annotations; indicates a fresh free type variable.
 pattern Hole :: Type
 pattern Hole = TVar "_"
 
@@ -76,6 +77,50 @@ pattern Ref a = TCon "&" [a]
 
 pattern List :: Type -> Type
 pattern List a = TCon "[]" [a]
+
+pattern Time :: Type
+pattern Time = TCon "Time" []
+
+pattern I64 :: Type
+pattern I64 = TCon "Int64" []
+
+pattern U64 :: Type
+pattern U64 = TCon "UInt64" []
+
+pattern I32 :: Type
+pattern I32 = TCon "Int32" []
+
+pattern U32 :: Type
+pattern U32 = TCon "UInt32" []
+
+pattern I16 :: Type
+pattern I16 = TCon "Int16" []
+
+pattern U16 :: Type
+pattern U16 = TCon "UInt16" []
+
+pattern I8 :: Type
+pattern I8 = TCon "Int8" []
+
+pattern U8 :: Type
+pattern U8 = TCon "UInt8" []
+
+isInt :: Type -> Bool
+isInt I64 = True
+isInt I32 = True
+isInt I16 = True
+isInt I8 = True
+isInt _ = False
+
+isUInt :: Type -> Bool
+isUInt U64 = True
+isUInt U32 = True
+isUInt U16 = True
+isUInt U8 = True
+isUInt _ = False
+
+isNum :: Type -> Bool
+isNum t = isInt t || isUInt t
 
 -- | More convenient representation of tuple types, for pattern-matching.
 data TupleView
