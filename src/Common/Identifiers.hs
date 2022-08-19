@@ -54,6 +54,8 @@ module Common.Identifiers
   , isVar
   , mangle
   , mangleVars
+  , isGenerated
+  , genId
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
@@ -211,8 +213,20 @@ isCons i | null s    = False
   where s = ident i
 
 -- | Whether an identifier refers to a type or data variable.
+--
+-- Note that internal variables (i.e., 'isIVar') are also considered variables.
 isVar :: Identifiable a => a -> Bool
 isVar = not . isCons
+
+-- | Whether an identifier is an compiler-generated variable name.
+isGenerated :: Identifiable a => a -> Bool
+isGenerated i | null s    = False
+              | otherwise = head s == ','
+  where s = ident i
+
+-- | Generate an internal variable name (prefixed with @,@) from some hint.
+genId :: Identifiable a => a -> a
+genId i = fromString $ "," <> ident i
 
 {- | Mangle all identifiers in some data structure.
 
@@ -236,7 +250,7 @@ mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
       Just i' -> return i'
       Nothing -> do
         let ctr' = ctr + 1
-            i'   = fromString $ "mang" <> show ctr'
+            i'   = genId $ fromString $ show ctr'
         put (ctr', M.insert i i' idMap)
         return i'
 
