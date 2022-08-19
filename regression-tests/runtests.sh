@@ -2,7 +2,15 @@
 
 SSLC="stack exec sslc --"
 pretty="--dump-ir-final"
-SSMDIR="../lib/ssm"
+
+# Run as, e.g.,
+#    SSMDIR=../../ssm-runtime runtests.sh
+# to use the runtime library in non-standard directory
+
+if [ -z ${SSMDIR+x} ]
+then
+    SSMDIR="../lib/ssm"
+fi
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
@@ -108,7 +116,7 @@ Check() {
     NoteGen "${exec} ${result} ${diff}"
     Run $SSLC "$1" ">" "${csource}" && \
     Run $CC -c -o "${obj}" "${csource}" && \
-    Run $LINK -o "${exec}" "${obj}" $platformdir/*.c -lssm -lpthread && \
+    Run $LINK -o "${exec}" "${obj}" -DCONFIG_MEM_STATS $platformdir/*.c -lssm -lpthread && \
     Run "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
@@ -216,7 +224,7 @@ else
     files="tests/*.ssl"
 fi
 
-Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
+Run make -C "$SSMDIR" CONFIGS=CONFIG_MEM_STATS build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do
