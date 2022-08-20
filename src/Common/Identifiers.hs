@@ -146,7 +146,7 @@ newtype TVarId = TVarId Identifier
   deriving Pretty via Identifier
 
 instance Show TVarId where
-  show (TVarId i) = '\'' : show i
+  show (TVarId i) = show i
 
 -- | Identifier for data constructors, e.g., @None@.
 newtype DConId = DConId Identifier
@@ -221,12 +221,14 @@ isVar = not . isCons
 -- | Whether an identifier is an compiler-generated variable name.
 isGenerated :: Identifiable a => a -> Bool
 isGenerated i | null s    = False
-              | otherwise = head s == ','
+              | otherwise = head s == '(' && last s == ')'
   where s = ident i
 
--- | Generate an internal variable name (prefixed with @,@) from some hint.
+-- | Generate an internal variable name (parenthesized) from some hint.
 genId :: Identifiable a => a -> a
-genId i = fromString $ "," <> ident i
+genId i | null s    = fromString "(_)"
+        | otherwise = fromString $ "(" <> s <> ")"
+  where s = ident i
 
 {- | Mangle all identifiers in some data structure.
 

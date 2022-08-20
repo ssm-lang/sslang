@@ -25,7 +25,7 @@ import           Control.Monad.Except           ( Except
                                                 , runExcept
                                                 , throwError
                                                 )
-import           Control.Monad.Writer           ( MonadWriter(..)
+import           Control.Monad.Writer.Strict    ( MonadWriter(..)
                                                 , WriterT(..)
                                                 )
 import           Data.String                    ( IsString(..) )
