@@ -114,7 +114,7 @@ Check() {
     NoteGen "${csource} ${cheader} ${obj}"
 
     NoteGen "${exec} ${result} ${diff}"
-    Run $SSLC "$1" ">" "${csource}" && \
+    Run $SSLC ${SSLCARGS} "$1" ">" "${csource}" && \
     Run $CC -c -o "${obj}" "${csource}" && \
     Run $LINK -o "${exec}" "${obj}" -DCONFIG_MEM_STATS $platformdir/*.c -lssm -lpthread && \
     Run "${exec}" ">" "${result}" && \

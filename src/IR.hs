@@ -74,7 +74,7 @@ options =
            "Print the last IR representation before code generation"
   , Option "" ["only-hm"]  (NoArg setHM)    "Only run HM type inference"
   , Option "" ["only-tc"]  (NoArg setTC)    "Only run type checker"
-  , Option "" ["dup-drop"] (NoArg setDropInf) "run with drop inference"
+  , Option "" ["dup-drop"] (NoArg setDropInf) "Insert dup/drop operations for automatic garbage collection"
   ]
  where
   setMode m o = o { mode = m }
@@ -116,8 +116,8 @@ class2Poly _ = instProgram
 -- | IR compiler sub-stage, performing source-to-source translations.
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
-  let dd = (if dupDrop opt then dropInf else pure)
-  ir' <- dd =<< liftProgramLambdas =<< externToCall =<< dConToFunc ir
+  let dd = if dupDrop opt then dropInf else pure
+  ir' <- liftProgramLambdas =<< dd =<< externToCall =<< dConToFunc ir
   when (mode opt == DumpIRLifted) $ dump ir'
   when (mode opt == DumpIRFinal) $ dump ir' -- (throwError . Dump . show . dumpy) irFinal
   return ir'

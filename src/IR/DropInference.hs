@@ -1,6 +1,8 @@
 {-# LANGUAGE DerivingVia #-}
 
-module IR.DropInference where
+module IR.DropInference
+ ( insertDropsProgram
+ ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
@@ -104,7 +106,7 @@ insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
   return $ I.Let bins expr typ
 
 -- Inserting drops into let bindings.
-insertDropExpr (I.Let bins expr typ) =   do
+{- insertDropExpr (I.Let bins expr typ) =   do
   retVar <- getFresh "_let"
   expr'  <- insertDropExpr expr
   bins'  <- forM bins $ \(v, d) -> do
@@ -118,22 +120,24 @@ insertDropExpr (I.Let bins expr typ) =   do
       retExpr  = I.Var retVar typ
       retExpr' = seqExprs exprBins retExpr
   return $ I.Let bins' retExpr' typ
+-}
 
 -- Inserting drops into lambda functions.
-insertDropExpr (I.Lambda var expr typ) = do
-  retVar <- getFresh "_lambda"
+insertDropExpr exp@(I.Lambda var expr typ) = do
+  retVar <- getFresh "_result"
   expr'  <- insertDropExpr expr
   let typArg (Poly.TBuiltin (Poly.Arrow l _)) = l
       typArg t = t
   let varExpr  = I.Var (fromJust var) (typArg typ)
-      varDup   = makeDup varExpr
+      -- varDup   = makeDup varExpr
       varDrop  = makeDrop varExpr
-      exprBins = varDup : (Just retVar, expr') : [varDrop]
+      exprBins = (Just retVar, expr') : [varDrop]
       retExpr  = I.Var retVar (typArg typ)
       retExpr' = seqExprs exprBins retExpr
   if typArg typ == Poly.TBuiltin Poly.Unit
     then return $ I.Lambda var expr' typ
     else return $ I.Lambda var retExpr' typ
+
 
 -- Inserting drops into pattern-matching.
 insertDropExpr (I.Match expr alts typ) = do

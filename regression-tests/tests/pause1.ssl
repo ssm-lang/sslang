@@ -1,15 +1,15 @@
 ms t = 1000000 * t
 
 main cin cout =
-//  let e = new ()
+  let myevent = new ()
   
   after ms 1, cout <- 48
   wait cout
   after ms 1, cout <- 10
   wait cout
   
-//  after ms 10, e <- ()
-//  wait e
+  after ms 10, myevent <- ()
+  wait myevent
   
   after ms 1, cout <- 49
   wait cout
