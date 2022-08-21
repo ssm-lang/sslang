@@ -98,30 +98,44 @@ insertDropTop (var, expr) = do
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
+-- FIXME: Should we be adding a dup to the argument?
 insertDropExpr (I.App fun arg typ) = do
   arg' <- insertDropExpr arg
   return $ I.App fun arg' typ
 
 -- Skip let bindings that have unit type.
-insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
-  return $ I.Let bins expr typ
+--insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
+--  return $ I.Let bins expr typ
+
+-- Don't bother dropping let-bound value let _ = expr1 in expr2
+-- FIXME: This is naive, and might be better done as an optimization
+{- insertDropExpr (I.Let [(Nothing, expr1)] expr2 typ) = do
+  expr1' <- insertDropExpr expr1
+  expr2' <- insertDropExpr expr2
+  return $ I.Let [(Nothing, expr1')] expr2' typ
+-}
 
 -- Inserting drops into let bindings.
-{- insertDropExpr (I.Let bins expr typ) =   do
+-- FIXME: No point in generating a new variable and returning it if the
+-- body returns unit.  An optimization?
+insertDropExpr (I.Let bins expr typ) = do
   retVar <- getFresh "_let"
   expr'  <- insertDropExpr expr
-  bins'  <- forM bins $ \(v, d) -> do
-    temp <- getFresh "_let_underscore"
-    d'   <- insertDropExpr d
-    return (if isNothing v then Just temp else v, d')
+  bins'  <- forM bins droppedBinder
   let makeFun f = \b -> f $ I.Var (fromJust $ fst b) (I.extract $ snd b)
-      dupBins  = map (makeFun makeDup) bins'
       dropBins = map (makeFun makeDrop) bins'
-      exprBins = dupBins ++ (Just retVar, expr') : dropBins
+      exprBins = (Just retVar, expr') : dropBins
       retExpr  = I.Var retVar typ
       retExpr' = seqExprs exprBins retExpr
   return $ I.Let bins' retExpr' typ
--}
+  where
+    droppedBinder (Nothing, d) = do
+      temp <- getFresh "_underscore"
+      d' <- insertDropExpr d
+      return (Just temp, d')
+    droppedBinder (v, d) = do
+      d' <- insertDropExpr d
+      return (v, d')
 
 -- Handle nested lambdas by collecting them into a single expression
 -- with multiple arguments, adding a local result variable,
@@ -133,6 +147,8 @@ insertDropExpr lam@(I.Lambda _ _ typ) = do
       (argTypes, retType) = collectArrow typ
       typedArgs = zip args argTypes
 
+      -- FIXME: fromJust may fail here: how should that be handled?
+      -- See, e.g., hello10.ssl
       dropExprs = map (\(v, t) -> makeDrop $ I.Var (fromJust v) t) typedArgs
 
   body' <- insertDropExpr body
