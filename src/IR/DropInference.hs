@@ -14,13 +14,14 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
-import           Data.Maybe                     ( isNothing
-                                                , catMaybes
+import           Data.Maybe                     ( catMaybes
                                                 , fromJust
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
 import qualified IR.Types.Poly                 as Poly
+import           IR.Types.TypeSystem            ( collectArrow
+                                                )
 
 -- | Inserting State.
 data InsertState = InsertState
@@ -122,22 +123,25 @@ insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
   return $ I.Let bins' retExpr' typ
 -}
 
--- Inserting drops into lambda functions.
-insertDropExpr exp@(I.Lambda var expr typ) = do
+-- Handle nested lambdas by collecting them into a single expression
+-- with multiple arguments, adding a local result variable,
+-- drops for each of the arguments, and return value
+insertDropExpr lam@(I.Lambda _ _ typ) = do
   retVar <- getFresh "_result"
-  expr'  <- insertDropExpr expr
-  let typArg (Poly.TBuiltin (Poly.Arrow l _)) = l
-      typArg t = t
-  let varExpr  = I.Var (fromJust var) (typArg typ)
-      -- varDup   = makeDup varExpr
-      varDrop  = makeDrop varExpr
-      exprBins = (Just retVar, expr') : [varDrop]
-      retExpr  = I.Var retVar (typArg typ)
-      retExpr' = seqExprs exprBins retExpr
-  if typArg typ == Poly.TBuiltin Poly.Unit
-    then return $ I.Lambda var expr' typ
-    else return $ I.Lambda var retExpr' typ
+  
+  let (args, body) = I.collectLambda lam
+      (argTypes, retType) = collectArrow typ
+      typedArgs = zip args argTypes
 
+      dropExprs = map (\(v, t) -> makeDrop $ I.Var (fromJust v) t) typedArgs
+
+  body' <- insertDropExpr body
+
+  let exprBins = (Just retVar, body') : dropExprs
+      retExpr = I.Var retVar retType
+      retExpr' = seqExprs exprBins retExpr
+  
+  return $ I.makeLambdaChain typedArgs retExpr'
 
 -- Inserting drops into pattern-matching.
 insertDropExpr (I.Match expr alts typ) = do

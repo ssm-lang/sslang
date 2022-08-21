@@ -117,7 +117,7 @@ class2Poly _ = instProgram
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
   let dd = if dupDrop opt then dropInf else pure
-  ir' <- liftProgramLambdas =<< dd =<< externToCall =<< dConToFunc ir
+  ir' <- dd =<< liftProgramLambdas =<< externToCall =<< dConToFunc ir
   when (mode opt == DumpIRLifted) $ dump ir'
   when (mode opt == DumpIRFinal) $ dump ir' -- (throwError . Dump . show . dumpy) irFinal
   return ir'
