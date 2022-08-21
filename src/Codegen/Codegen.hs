@@ -248,9 +248,15 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram p = do
   (tdefs , tinfo ) <- genTypes $ I.typeDefs p
   (cdecls, cdefns) <- cUnpack <$> mapM (genTop tinfo) (I.programDefs p)
-  externs <- mapM genExtern $ I.externDecls p
-  return $ includes ++ tdefs ++ externs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
-    (I.programEntry p)
+  externs          <- mapM genExtern $ I.externDecls p
+  return
+    $  includes
+    ++ tdefs
+    ++ externs
+    ++ cescs
+    ++ cdecls
+    ++ cdefns
+    ++ genInitProgram (I.programEntry p)
  where
   genTop
     :: TypegenInfo
@@ -666,18 +672,18 @@ genPrim
 genPrim I.New [e] refType = do
   (val, stms) <- genExpr e
   tmp         <- genTmp refType
-  return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_sv val);|])
+  return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_sv val); $exp:(drop val);|])
 genPrim I.Dup [e] _ = do
   (val, stms) <- genExpr e
   return (val, stms ++ [citems|$exp:(dup val);|])
 genPrim I.Drop [e, r] _ = do
-  (val, stms) <- genExpr e
+  (val, stms ) <- genExpr e
   (ref, stms') <- genExpr r -- NOTE: this should never really be side-effectful!
   return (val, stms ++ stms' ++ [citems|$exp:(drop ref);|])
 genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   tmp         <- genTmp ty
-  return (tmp, stms ++ [citems|$exp:tmp = $exp:(deref val);|])
+  return (tmp, stms ++ [citems|$exp:tmp = $exp:(deref val); $exp:(drop val);|])
 genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
@@ -686,6 +692,8 @@ genPrim I.Assign [lhs, rhs] _ = do
           $items:lhsStms
           $items:rhsStms
           $exp:(assign lhsVal prio rhsVal);
+          $exp:(drop rhsVal);
+          $exp:(drop lhsVal);
         |]
   return (unit, assignBlock)
 genPrim I.After [time, lhs, rhs] _ = do
@@ -698,6 +706,9 @@ genPrim I.After [time, lhs, rhs] _ = do
           $items:lhsStms
           $items:rhsStms
           $exp:(later lhsVal when rhsVal);
+          $exp:(drop when);
+          $exp:(drop rhsVal);
+          $exp:(drop lhsVal);
         |]
   return (unit, laterBlock)
 genPrim I.Par procs _ = do
@@ -744,8 +755,9 @@ genPrim I.Wait vars _ = do
   let trigs = zip varVals $ map mkTrig [1 :: Int ..]
       mkTrig i = [cexp|&$exp:(acts_ $ trig_ i)|]
       sens (var, trig) = [citem|$exp:(sensitize var trig);|]
-      desens (_, trig) = [citem|$exp:(desensitize trig);|]
-  return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
+      desens (var, trig) = [citems|$exp:(desensitize trig); $exp:(drop var);|]
+  return
+    (unit, concat varStms ++ map sens trigs ++ yield ++ concatMap desens trigs)
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
@@ -755,11 +767,19 @@ genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
 genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
-  return (unit, argStms ++ [citems|$id:s($args:argExps);|])
+  let doDrop arg = [citem|$exp:(drop arg);|]
+  return
+    (unit, argStms ++ [citems|$id:s($args:argExps);|] ++ map doDrop argExps)
 genPrim (I.FfiCall s) es ty = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
-  ret <- genTmp ty
-  return (ret, argStms ++ [citems|$exp:ret = $id:s($args:argExps);|])
+  ret                <- genTmp ty
+  let doDrop arg = [citem|$exp:(drop arg);|]
+  return
+    ( ret
+    , argStms
+    ++ [citems|$exp:ret = $id:s($args:argExps);|]
+    ++ map doDrop argExps
+    )
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
