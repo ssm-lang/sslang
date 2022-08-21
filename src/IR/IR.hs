@@ -100,13 +100,9 @@ data Primitive
   returns a reference to it.
   -}
   | Dup
-  {- ^ @Dup r@ duplicates the reference @r@ (i.e., increments its
-  reference count.)
-  -}
+  {- ^ @Dup r@ dups the reference @r@ and returns @r@. -}
   | Drop
-  {- ^ @Drop r@ brings reference @r@ out of scope, and frees it if it
-  is the last remaining reference to the scheduled variable.
-  -}
+  {- ^ @Drop e r@ evaluates to @e@, but also drops @r@. -}
   | Deref
   {- ^ @Deref r@ dereferences reference @r@ to obtain its value. -}
   | Assign
@@ -301,7 +297,7 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
  where
   wfPrim New                  [_]       = True
   wfPrim Dup                  [_]       = True
-  wfPrim Drop                 [_]       = True
+  wfPrim Drop                 [_, _]    = True
   wfPrim Deref                [_]       = True
   wfPrim Assign               [_, _]    = True
   wfPrim After                [_, _, _] = True
@@ -416,12 +412,13 @@ instance Pretty (Expr ()) where
   pretty (Prim (PrimOp po) [l, r] _) = pretty l <+> pretty po <+> pretty r
   pretty (Data d _                 ) = pretty d
   pretty (Lit  l _                 ) = pretty l
-  pretty (Prim New   [r] _         ) = pretty "new" <+> pretty r
-  pretty (Prim Dup   [r] _         ) = pretty "__dup" <+> pretty r
-  pretty (Prim Drop  [r] _         ) = pretty "__drop" <+> pretty r
-  pretty (Prim Deref [r] _         ) = pretty "deref" <+> pretty r
-  pretty (Prim Par es _) = pretty "par" <+> block dbar (map pretty es)
-  pretty (Prim Break []  _         ) = pretty "break"
+  pretty (Prim New [r] _           ) = pretty "new" <+> pretty r
+  pretty (Prim Dup [r] _           ) = pretty "__dup" <+> parens (pretty r)
+  pretty (Prim Drop [e, r] _) =
+    pretty "__drop" <+> parens (pretty e) <+> pretty r
+  pretty (Prim Deref [r] _) = pretty "deref" <+> pretty r
+  pretty (Prim Par   es  _) = pretty "par" <+> block dbar (map pretty es)
+  pretty (Prim Break []  _) = pretty "break"
   pretty (Prim (CCall s) es _) =
     pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
   pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
@@ -519,7 +516,7 @@ instance (Dumpy t) => Dumpy (Expr t) where
     arm (a, e) = dumpy a <+> pretty "=" <+> braces (dumpy e)
   dumpy (Prim New   [r] t) = typeAnn t $ pretty "new" <+> dumpy r
   dumpy (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> dumpy r
-  dumpy (Prim Drop  [r] t) = typeAnn t $ pretty "__drop" <+> dumpy r
+  dumpy (Prim Drop  [e, r] t) = typeAnn t $ pretty "__drop" <+> parens (dumpy e) <+> parens (dumpy r)
   dumpy (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> dumpy r
   dumpy (Prim Assign [l, r] t) =
     typeAnn t $ parens $ dumpy l <+> larrow <+> braces (dumpy r)

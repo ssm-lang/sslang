@@ -669,10 +669,11 @@ genPrim I.New [e] refType = do
   return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_sv val);|])
 genPrim I.Dup [e] _ = do
   (val, stms) <- genExpr e
-  return (unit, stms ++ [citems|$exp:(dup val);|])
-genPrim I.Drop [e] _ = do
+  return (val, stms ++ [citems|$exp:(dup val);|])
+genPrim I.Drop [e, r] _ = do
   (val, stms) <- genExpr e
-  return (unit, stms ++ [citems|$exp:(drop val);|])
+  (ref, stms') <- genExpr r -- NOTE: this should never really be side-effectful!
+  return (val, stms ++ stms' ++ [citems|$exp:(drop ref);|])
 genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   tmp         <- genTmp ty
