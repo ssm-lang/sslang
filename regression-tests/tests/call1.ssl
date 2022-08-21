@@ -71,9 +71,10 @@ main (cin : _g) (cout : _h) -> () =
   ) cin
 */
 
-
+/*
 let _ = new 5
 add a b
 
 let u1 = new 5
 drop (add (dup a) (dup b)) u1
+*/
