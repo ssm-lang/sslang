@@ -1,0 +1,9 @@
+ignoreme _ a =
+  a
+
+main cin cout =
+  let a = new 5
+  let b = ignoreme (deref a) 3
+  cout <- b + 45
+  after 100, cout <- 10  
+  
