@@ -1,0 +1,79 @@
+
+add ar br =
+    new (deref ar + deref br)
+
+main cin cout =
+    let a = new 40
+        b = new 8
+    cout <- deref (add a b)
+
+
+/*
+add (ar : &Int) (br : &Int) -> &Int =
+  let anon0_result = new (deref ar + deref br)
+  __drop ar
+  __drop br
+  anon0_result
+
+main (cin : _g) (cout : _h) -> () =
+  let anon1_result = let a = new 40
+                         b = new 8
+                     let anon2_let = cout <- deref (add a b)
+                     __drop a
+                     __drop b
+                     anon2_let
+  __drop cin
+  __drop cout
+  anon1_result
+*/
+
+
+/*
+add (ar : &Int) (br : &Int) -> &Int =
+  let anon0_result = let v = deref ar + deref br
+                     let anon1_let = new (dup v)
+                     __drop v
+                     anon1_let
+  __drop ar
+  __drop br
+  anon0_result
+
+main (cin : _g) (cout : _h) -> () =
+  let anon2_result = let a = new 40
+                     b = new 8
+                     let anon3_let = (cout <- deref add a b)
+                     __drop a
+                     __drop b
+                     anon3_let
+  __drop cin
+  __drop cout
+  anon2_result
+*/
+/*
+add (ar : &Int) (br : &Int) -> &Int =
+  drop (
+    drop (
+      new (deref (dup ar) + deref (dup br))
+    ) br
+  ) ar
+
+main (cin : _g) (cout : _h) -> () =
+  drop (
+    drop (
+          let a = new 40
+              b = new 8
+          drop (
+              drop (
+                (dup cout) <- deref (add (dup a) (dup b))
+              ) a
+            ) b
+    ) cout
+  ) cin
+*/
+
+
+let _ = new 5
+add a b
+
+let u1 = new 5
+drop (add (dup a) (dup b)) u1

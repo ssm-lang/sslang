@@ -1,0 +1,3 @@
+  main cin cout =
+    // Should not leak
+    (new (new 1)) <- (new 3)
