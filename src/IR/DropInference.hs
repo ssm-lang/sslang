@@ -18,13 +18,13 @@ import           Data.Maybe                     ( isNothing
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
-import qualified IR.Types.Poly                 as Poly
+import qualified IR.Types                      as I
 
 -- | Inserting State.
 data InsertState = InsertState
   { globScope :: S.Set I.VarId
   , currScope :: S.Set I.VarId
-  , newDrops  :: [(I.VarId, I.Expr Poly.Type)]
+  , newDrops  :: [(I.VarId, I.Expr I.Type)]
   , anonCount :: Int
   }
 
@@ -56,11 +56,11 @@ getFresh str = do
   return $ fromString $ ("anon" <> show curCount) ++ str
 
 -- | Make a drop primitive with unit type.
-makeDrop :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
-makeDrop e = (Nothing, I.Prim I.Drop [e] $ Poly.TBuiltin Poly.Unit)
+makeDrop :: I.Expr I.Type -> (Maybe a, I.Expr I.Type)
+makeDrop e = (Nothing, I.Prim I.Drop [e] I.Unit)
 
 -- | Make a dup primitive with actual type.
-makeDup :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
+makeDup :: I.Expr I.Type -> (Maybe a, I.Expr I.Type)
 makeDup e = (Nothing, I.Prim I.Dup [e] $ I.extract e)
 
 -- | Given @a@ and @b@, construct @a ; b@ (i.e., @let _ = a ; b@). 
@@ -74,7 +74,7 @@ seqExprs as b = foldr seqExpr b as
 
 -- | Entry-point to insert dup/drops.
 insertDropsProgram
-  :: I.Program Poly.Type -> Compiler.Pass (I.Program Poly.Type)
+  :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 insertDropsProgram program = runInsertFn $ do
   let programDefs = I.programDefs program
   defs <- mapM insertDropTop programDefs
@@ -86,13 +86,13 @@ insertDropsProgram program = runInsertFn $ do
 
 -- | Entry point for top-level expressions.
 insertDropTop
-  :: (I.VarId, I.Expr Poly.Type) -> InsertFn (I.VarId, I.Expr Poly.Type)
+  :: (I.VarId, I.Expr I.Type) -> InsertFn (I.VarId, I.Expr I.Type)
 insertDropTop (var, expr) = do
   insertedExpr <- insertDropExpr expr
   return (var, insertedExpr)
 
 -- | Entry-point to inserting into expressions.
-insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
+insertDropExpr :: I.Expr I.Type -> InsertFn (I.Expr I.Type)
 
 -- Inserting dup/drops into function application with arg.
 insertDropExpr (I.App fun arg typ) = do
@@ -100,7 +100,7 @@ insertDropExpr (I.App fun arg typ) = do
   return $ I.App fun arg' typ
 
 -- Skip let bindings that have unit type.
-insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
+insertDropExpr (I.Let bins expr typ@I.Unit) = do
   return $ I.Let bins expr typ
 
 -- Inserting drops into let bindings.
@@ -123,7 +123,7 @@ insertDropExpr (I.Let bins expr typ) =   do
 insertDropExpr (I.Lambda var expr typ) = do
   retVar <- getFresh "_lambda"
   expr'  <- insertDropExpr expr
-  let typArg (Poly.TBuiltin (Poly.Arrow l _)) = l
+  let typArg (I.Arrow l _) = l
       typArg t = t
   let varExpr  = I.Var (fromJust var) (typArg typ)
       varDup   = makeDup varExpr
@@ -131,7 +131,7 @@ insertDropExpr (I.Lambda var expr typ) = do
       exprBins = varDup : (Just retVar, expr') : [varDrop]
       retExpr  = I.Var retVar (typArg typ)
       retExpr' = seqExprs exprBins retExpr
-  if typArg typ == Poly.TBuiltin Poly.Unit
+  if typArg typ == I.Unit
     then return $ I.Lambda var expr' typ
     else return $ I.Lambda var retExpr' typ
 
@@ -152,9 +152,9 @@ insertDropExpr expr = return expr
 
 -- | Entry-point to inserting into pattern-matching arms.
 insertDropAlt
-  :: (I.Alt, I.Expr Poly.Type)
-  -> I.Expr Poly.Type
-  -> InsertFn (I.Alt, I.Expr Poly.Type)
+  :: (I.Alt, I.Expr I.Type)
+  -> I.Expr I.Type
+  -> InsertFn (I.Alt, I.Expr I.Type)
 
 -- Inserting dup/drops into AltDefault arms.
 insertDropAlt (I.AltDefault var, exprReturn) exprMatch = do

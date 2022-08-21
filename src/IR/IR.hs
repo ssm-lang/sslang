@@ -1,8 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
+  , TypeDef(..)
+  , TypeVariant(..)
   , Binder
   , Literal(..)
   , PrimOp(..)
@@ -12,9 +15,11 @@ module IR.IR
   , VarId(..)
   , TConId(..)
   , DConId(..)
+  , Type
+  , variantFields
   , wellFormed
-  , collectLambda
-  , makeLambdaChain
+  , foldLambda
+  , unfoldLambda
   , extract
   , zipApp
   , unzipApp
@@ -23,20 +28,21 @@ import           Common.Identifiers             ( Binder
                                                 , CSym(..)
                                                 , DConId(..)
                                                 , TConId(..)
+                                                , TVarId(..)
                                                 , VarId(..)
                                                 )
 import           Common.Pretty
-import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad                  ( void )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
-import           IR.Types.TypeSystem            ( TypeDef(..)
-                                                , TypeSystem
-                                                , TypeVariant(..)
-                                                , arrow
-                                                , collectArrow
+
+import           IR.Types                       ( pattern Arrow
+                                                , Type
+                                                , TypeAnn
+                                                , unTypeAnn
+                                                , unfoldArrow
                                                 )
 
 {- | Top-level compilation unit.
@@ -46,11 +52,38 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 data Program t = Program
   { programEntry :: VarId
   , cDefs        :: String
-  , externDecls  :: [(VarId, t)]
+  , externDecls  :: [(VarId, Type)]
   , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef t)]
+  , typeDefs     :: [(TConId, TypeDef)]
   }
   deriving (Eq, Show, Typeable, Data)
+
+
+{- | The type definition associated with a type constructor.
+A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
+@
+  TypeDef { targs = [a]
+          , [ ("Cons", VariantUnnamed [TVar a, TCon ("MyList" [TVar a])])
+            , ("Nil", VariantUnnamed [])
+            ]
+          }
+@
+(Data constructors for identifiers are omitted for brevity.)
+Note that for a flat type system, where all type constructors are nullary, targs
+will just be set to [].
+-}
+data TypeDef = TypeDef
+  { variants :: [(DConId, TypeVariant)]
+  , targs    :: [TVarId]
+  }
+  deriving (Show, Eq, Typeable, Data)
+
+-- | Arguments to a data constructor, whose fields may or may not be named
+data TypeVariant
+  = VariantNamed [(VarId, Type)] -- ^ A record with named fields
+  | VariantUnnamed [Type]        -- ^ An algebraic type with unnamed fields
+  deriving (Show, Eq, Typeable, Data)
+
 
 {- | Literal values supported by the language.
 
@@ -190,6 +223,22 @@ data Alt
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
+-- | Extract the type carried by an 'Expr'.
+extract :: Expr t -> t
+extract (Var  _ t    ) = t
+extract (Data _ t    ) = t
+extract (Lit  _ t    ) = t
+extract (Let    _ _ t) = t
+extract (Lambda _ _ t) = t
+extract (App    _ _ t) = t
+extract (Match  _ _ t) = t
+extract (Prim   _ _ t) = t
+
+-- | The number of fields in a 'TypeVariant'.
+variantFields :: TypeVariant -> Int
+variantFields (VariantNamed   fields) = length fields
+variantFields (VariantUnnamed fields) = length fields
+
 {- | Collect a curried application into the function and argument list.
 
 The type accompanying each argument represents type produced by the
@@ -222,20 +271,20 @@ zipApp :: Expr t -> [(Expr t, t)] -> Expr t
 zipApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
-collectLambda :: Expr t -> ([Binder], Expr t)
-collectLambda (Lambda a b _) =
-  let (as, body) = collectLambda b in (a : as, body)
-collectLambda e = ([], e)
+unfoldLambda :: Expr t -> ([Binder], Expr t)
+unfoldLambda (Lambda a b _) =
+  let (as, body) = unfoldLambda b in (a : as, body)
+unfoldLambda e = ([], e)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
-makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
-makeLambdaChain args body = foldr chain body args
-  where chain (v, t) b = Lambda v b $ t `arrow` extract b
+foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
+foldLambda args body = foldr chain body args
+  where chain (v, t) b = Lambda v b $ t `Arrow` extract b
 
 instance Functor Program where
   fmap f p = p { programDefs = second (fmap f) <$> programDefs p
-               , typeDefs    = second (fmap f) <$> typeDefs p
-               , externDecls = second f <$> externDecls p
+               , typeDefs    = typeDefs p
+               , externDecls = externDecls p
                }
 
 instance Functor Expr where
@@ -247,26 +296,6 @@ instance Functor Expr where
   fmap f (Lambda v  b  t) = Lambda v (fmap f b) (f t)
   fmap f (Match  s  as t) = Match (fmap f s) (fmap (second $ fmap f) as) (f t)
   fmap f (Prim   p  as t) = Prim p (fmap (fmap f) as) (f t)
-
-instance Comonad Expr where
-  extract (Var  _ t    ) = t
-  extract (Data _ t    ) = t
-  extract (Lit  _ t    ) = t
-  extract (Let    _ _ t) = t
-  extract (Lambda _ _ t) = t
-  extract (App    _ _ t) = t
-  extract (Match  _ _ t) = t
-  extract (Prim   _ _ t) = t
-  extend f e@(Var  i _) = Var i (f e)
-  extend f e@(Data i _) = Data i (f e)
-  extend f e@(Lit  l _) = Lit l (f e)
-  extend f e@(Let xs b _) =
-    Let (fmap (second $ extend f) xs) (extend f b) (f e)
-  extend f e@(Lambda v b _) = Lambda v (extend f b) (f e)
-  extend f e@(App    l r _) = App (extend f l) (extend f r) (f e)
-  extend f e@(Match s as _) =
-    Match (extend f s) (fmap (second $ extend f) as) (f e)
-  extend f e@(Prim p es _) = Prim p (fmap (extend f) es) (f e)
 
 instance Foldable Expr where
   foldMap f (Var  _ t ) = f t
@@ -339,7 +368,7 @@ Omits
 Reverts
 * curried funcs of one arg back to multiple arg funcs
 -}
-instance (Pretty t, TypeSystem t) => Pretty (Program t) where
+instance Pretty (Program TypeAnn) where
   pretty Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -347,7 +376,7 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
       map prettyTypDef tys ++ map prettyExternDecl xds ++ map prettyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    prettyFuncDef :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
+    prettyFuncDef :: (VarId, Expr TypeAnn) -> Doc ann
     prettyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent
         2
@@ -358,23 +387,23 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
         (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
         argIds
         argTys
-      (argIds, body ) = collectLambda l
-      (argTys, retTy) = collectArrow ty
+      (argIds, body ) = unfoldLambda l
+      (argTys, retTy) = unfoldArrow $ head $ unTypeAnn ty -- FIXME
     prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
 
-    prettyExternDecl :: (TypeSystem t, Pretty t) => (VarId, t) -> Doc ann
+    prettyExternDecl :: (Pretty t) => (VarId, t) -> Doc ann
     prettyExternDecl (v, t) =
       pretty "extern" <+> pretty v <+> colon <+> pretty t
 
     -- Generates readable Doc representation of an IR Type Definition
-    prettyTypDef :: Pretty t => (TConId, TypeDef t) -> Doc ann
+    prettyTypDef :: (TConId, TypeDef) -> Doc ann
     prettyTypDef (tcon, TypeDef { variants = vars }) =
       pretty "type"
         <+> pretty tcon
         <+> line
         <>  indent indentNo (vsep $ map prettyDCon vars)
         <>  line
-    prettyDCon :: (Pretty t) => (DConId, TypeVariant t) -> Doc ann
+    prettyDCon :: (DConId, TypeVariant) -> Doc ann
     prettyDCon (dcon, VariantNamed argz) =
       pretty dcon <+> hsep (pretty . snd <$> argz)
     prettyDCon (dcon, VariantUnnamed argz) =
@@ -460,7 +489,7 @@ instance Pretty PrimOp where
   pretty PrimLe     = pretty "<="
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
-instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
+instance Dumpy (Program TypeAnn) where
   dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -468,7 +497,7 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
       map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    dumpyFuncDef :: (TypeSystem t, Dumpy t) => (VarId, Expr t) -> Doc ann
+    dumpyFuncDef :: (VarId, Expr TypeAnn) -> Doc ann
     dumpyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
      where
@@ -477,8 +506,8 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
         (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
         argIds
         argTys
-      (argIds, body ) = collectLambda l
-      (argTys, retTy) = collectArrow ty
+      (argIds, body ) = unfoldLambda l
+      (argTys, retTy) = unfoldArrow $ head $ unTypeAnn ty
     dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
 
     -- Generates readable Doc representation of an IR Type Definition
@@ -486,21 +515,21 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
     dumpyExternDecl (v, t) = pretty "extern" <+> pretty v <+> colon <+> dumpy t
 
     -- Generates readable Doc representation of an IR Type Definition
-    dumpyTypDef :: Dumpy t => (TConId, TypeDef t) -> Doc ann
+    dumpyTypDef :: (TConId, TypeDef) -> Doc ann
     dumpyTypDef (tcon, TypeDef { variants = vars }) =
       pretty "type"
         <+> pretty tcon
         <+> line
         <>  indent indentNo (vsep $ map dumpyDCon vars)
         <>  line
-    dumpyDCon :: (Dumpy t) => (DConId, TypeVariant t) -> Doc ann
+    dumpyDCon :: (DConId, TypeVariant) -> Doc ann
     dumpyDCon (dcon, VariantNamed argz) =
       pretty dcon <+> hsep (dumpy . snd <$> argz)
     dumpyDCon (dcon, VariantUnnamed argz) =
       pretty dcon <+> hsep (dumpy <$> argz)
   -- TODO: how to represent entry point?
 
-instance (Dumpy t) => Dumpy (Expr t) where
+instance Dumpy (Expr TypeAnn) where
   dumpy (Var  v t  ) = typeAnn t $ pretty v
   dumpy (Data d t  ) = typeAnn t $ pretty d
   dumpy (Lit  l t  ) = typeAnn t $ dumpy l

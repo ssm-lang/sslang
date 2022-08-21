@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances #-}
 module IR.Types.Type where
 
 import           Common.Identifiers             ( TConId(..)
@@ -22,6 +23,14 @@ import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
 import qualified Data.Set                      as S
+
+
+newtype TypeAnn = TypeAnn [Type]
+  deriving (Eq, Show, Typeable, Data)
+
+unTypeAnn :: TypeAnn -> [Type]
+unTypeAnn (TypeAnn ts) = ts
+
 
 {- | The type of sslang types.
 
@@ -72,6 +81,14 @@ pattern Hole = TVar "_"
 
 pattern Arrow :: Type -> Type -> Type
 pattern Arrow a b = TCon "->" [a, b]
+
+unfoldArrow :: Type -> ([Type], Type)
+unfoldArrow (Arrow a b) = let (as, rt) = unfoldArrow b in (a : as, rt)
+unfoldArrow t           = ([], t)
+
+foldArrow :: ([Type], Type) -> Type
+foldArrow (a : as, rt) = a `Arrow` foldArrow (as, rt)
+foldArrow ([]    , t ) = t
 
 pattern Unit :: Type
 pattern Unit = TCon "()" []
@@ -126,6 +143,22 @@ isUInt _   = False
 isNum :: Type -> Bool
 isNum t = isInt t || isUInt t
 
+tuple :: [Type] -> Type
+tuple ts = TCon (tupleName $ length ts) ts
+
+-- | Tests whether a 'Type' is a tuple of some arity.
+isTuple :: Type -> Bool
+isTuple (TCon n ts) | length ts >= 2 = n == tupleName (length ts)
+isTuple _                            = False
+
+-- | Construct the name of the built-in tuple type of given arity.
+--
+-- Fails if arity is less than 2.
+tupleName :: Integral i => i -> TConId
+tupleName i
+  | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
+  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
+
 -- | More convenient representation of tuple types, for pattern-matching.
 data TupleView
  = Tup2 (Type, Type)              -- ^ 2-tuples
@@ -139,28 +172,15 @@ data TupleView
 For example, to match on just 2-tuples;
 
 > foo :: Type -> String
-> foo (tuple -> Tup2 (a, b)) = "2-tuple of " ++ show a ++ " and " ++ show b
-> foo t                      = "Some other kind of type: " ++ show t
+> foo (tupleOf -> Tup2 (a, b)) = "2-tuple of " ++ show a ++ " and " ++ show b
+> foo t                        = "Some other kind of type: " ++ show t
 -}
-tuple :: Type -> TupleView
-tuple (TCon "(,)"   [a, b]      ) = Tup2 (a, b)
-tuple (TCon "(,,)"  [a, b, c]   ) = Tup3 (a, b, c)
-tuple (TCon "(,,,)" [a, b, c, d]) = Tup4 (a, b, c, d)
-tuple t@(TCon _ ts) | isTuple t   = TupN ts
-tuple _                           = NotATuple
-
--- | Tests whether a 'Type' is a tuple of some arity.
-isTuple :: Type -> Bool
-isTuple (TCon n ts) | length ts >= 2 = n == tupName (length ts)
-isTuple _                            = False
-
--- | Construct the name of the built-in tuple type of given arity.
---
--- Fails if arity is less than 2.
-tupName :: Integral i => i -> TConId
-tupName i
-  | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
-  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
+tupleOf :: Type -> TupleView
+tupleOf (TCon "(,)"   [a, b]      ) = Tup2 (a, b)
+tupleOf (TCon "(,,)"  [a, b, c]   ) = Tup3 (a, b, c)
+tupleOf (TCon "(,,,)" [a, b, c, d]) = Tup4 (a, b, c, d)
+tupleOf t@(TCon _ ts) | isTuple t   = TupN ts
+tupleOf _                           = NotATuple
 
 instance Pretty Type where
   pretty (Arrow a b) = parens $ pretty a <+> "->" <+> pretty b
@@ -180,6 +200,13 @@ instance Pretty Scheme where
       <+> pretty t
 
 instance Dumpy Scheme where
+  dumpy = pretty
+
+instance Pretty TypeAnn where
+  pretty (TypeAnn []     ) = mempty
+  pretty (TypeAnn (t : _)) = pretty t
+
+instance Dumpy TypeAnn where
   dumpy = pretty
 
 -- FIXME: convenience for ghci debugging
