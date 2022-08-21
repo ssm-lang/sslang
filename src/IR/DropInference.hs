@@ -102,29 +102,17 @@ insertDropExpr (I.App fun arg typ) = do
   arg' <- insertDropExpr arg
   return $ I.App fun arg' typ
 
--- Skip let bindings that have unit type.
---insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
---  return $ I.Let bins expr typ
-
--- Don't bother dropping let-bound value let _ = expr1 in expr2
--- FIXME: This is naive, and might be better done as an optimization
-{- insertDropExpr (I.Let [(Nothing, expr1)] expr2 typ) = do
-  expr1' <- insertDropExpr expr1
-  expr2' <- insertDropExpr expr2
-  return $ I.Let [(Nothing, expr1')] expr2' typ
--}
-
 -- Inserting drops into let bindings.
--- FIXME: No point in generating a new variable and returning it if the
--- body returns unit.  An optimization?
 insertDropExpr (I.Let bins expr typ) = do
   bins' <- forM bins droppedBinder
 
   expr' <- insertDropExpr expr
 
-  let retExpr' = foldr makeDrop expr' (map (\(v, d) -> I.Var (fromJust v) (I.extract d)) bins')
+  let retExpr' = foldr makeDrop expr' $ map varFromBind bins'
   return $ I.Let bins' retExpr' typ
   where
+    varFromBind (v, d) = I.Var (fromJust v) (I.extract d)
+    
     droppedBinder (Nothing, d) = do
       temp <- getFresh "_underscore"
       d' <- insertDropExpr d
