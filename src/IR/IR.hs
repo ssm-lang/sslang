@@ -415,7 +415,7 @@ instance Pretty (Expr ()) where
   pretty (Prim New [r] _           ) = pretty "new" <+> pretty r
   pretty (Prim Dup [r] _           ) = pretty "__dup" <+> parens (pretty r)
   pretty (Prim Drop [e, r] _) =
-    pretty "__drop" <+> parens (pretty e) <+> pretty r
+    pretty "__drop" <+> parens (line <> indent 2 (pretty e) <> line) <+> pretty r
   pretty (Prim Deref [r] _) = pretty "deref" <+> pretty r
   pretty (Prim Par   es  _) = pretty "par" <+> block dbar (map pretty es)
   pretty (Prim Break []  _) = pretty "break"
