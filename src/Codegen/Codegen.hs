@@ -556,7 +556,8 @@ genExpr e@(I.App _ _ ty) = do
   let (fn, args) = second (map fst) $ I.unzipApp e
   -- args must be non-empty because a is an App
   case fn of
-    (I.Var _ _) -> do
+    I.Var _ _ -> do
+    -- (I.Prim I.Dup [I.Var _ _] _) -> do
       (fnExp, fnStms) <- genExpr fn
       foldM apply (fnExp, fnStms) args
      where
@@ -771,9 +772,7 @@ genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
 genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
-  let doDrop arg = [citem|$exp:(drop arg);|]
-  return
-    (unit, argStms ++ [citems|$id:s($args:argExps);|] ++ map doDrop argExps)
+  return (unit, argStms ++ [citems|$id:s($args:argExps);|])
 genPrim (I.FfiCall s) es ty = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   ret                <- genTmp ty
