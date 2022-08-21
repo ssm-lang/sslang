@@ -536,7 +536,9 @@ genExpr (I.Var n _) = do
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
-genExpr (I.Lit l _              ) = return (genLiteral l, [])
+genExpr (I.Lit l ty             ) = do
+  tmp <- genTmp ty
+  return (tmp, [citems|$exp:tmp = $exp:(genLiteral l);|])
 genExpr (I.Let [(Just n, d)] b _) = do
   (defVal, defStms) <- genExpr d
   withNewLocal (n, extract d) $ do
@@ -697,16 +699,16 @@ genPrim I.Assign [lhs, rhs] _ = do
         |]
   return (unit, assignBlock)
 genPrim I.After [time, lhs, rhs] _ = do
-  (timeVal, timeStms) <- first unmarshal <$> genExpr time
+  (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
-  let when = [cexp|$exp:now() + $exp:timeVal|]
+  let when = [cexp|$exp:now() + $exp:(unmarshal timeVal)|]
       laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
           $exp:(later lhsVal when rhsVal);
-          $exp:(drop when);
+          $exp:(drop timeVal);
           $exp:(drop rhsVal);
           $exp:(drop lhsVal);
         |]
@@ -762,7 +764,9 @@ genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
 genPrim I.Break      [] _ = return (undef, [citems|break;|])
-genPrim I.Now        [] _ = return (marshal $ ccall now [], [])
+genPrim I.Now        [] t = do
+  tmp <- genTmp t
+  return (tmp, [citems|$exp:tmp = $exp:(marshal $ ccall now []);|])
 genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
 genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
@@ -780,7 +784,10 @@ genPrim (I.FfiCall s) es ty = do
     ++ [citems|$exp:ret = $id:s($args:argExps);|]
     ++ map doDrop argExps
     )
-genPrim (I.PrimOp op) es t = genPrimOp op es t
+genPrim (I.PrimOp op) es t = do
+  (opVal, opStms) <- genPrimOp op es t
+  tmp <- genTmp t
+  return (tmp, opStms ++ [citems|$exp:tmp = $exp:opVal;|])
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
 -- | Generate C value for SSM literal, marshalled.
