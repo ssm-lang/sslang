@@ -14,8 +14,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
-import           Data.Maybe                     ( catMaybes
-                                                , fromJust
+import           Data.Maybe                     ( fromJust
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
@@ -66,6 +65,7 @@ makeDrop r e = I.Prim I.Drop [e, r] $ I.extract e
 makeDup :: I.Expr Poly.Type -> I.Expr Poly.Type
 makeDup e = I.Prim I.Dup [e] $ I.extract e
 
+{-
 -- | Given @a@ and @b@, construct @a ; b@ (i.e., @let _ = a ; b@). 
 seqExpr :: (Maybe I.VarId, I.Expr a) -> I.Expr a -> I.Expr a
 seqExpr a b = I.Let [a] b (I.extract b)
@@ -73,7 +73,7 @@ seqExpr a b = I.Let [a] b (I.extract b)
 -- | Given @[a1 .. an]@ and @b@, construct @a1 ; .. ; an ; b@. 
 seqExprs :: [(Maybe I.VarId, I.Expr a)] -> I.Expr a -> I.Expr a
 seqExprs as b = foldr seqExpr b as
-
+-}
 
 -- | Entry-point to insert dup/drops.
 insertDropsProgram
@@ -118,10 +118,12 @@ insertDropExpr (I.App fun arg typ) = do
 -- Inserting drops into let bindings.
 -- FIXME: No point in generating a new variable and returning it if the
 -- body returns unit.  An optimization?
-insertDropExpr lete@(I.Let bins expr typ) = do
+insertDropExpr (I.Let bins expr typ) = do
   bins' <- forM bins droppedBinder
 
-  let retExpr' = foldr makeDrop expr (map (\(v, d) -> I.Var (fromJust v) (I.extract d)) bins')
+  expr' <- insertDropExpr expr
+
+  let retExpr' = foldr makeDrop expr' (map (\(v, d) -> I.Var (fromJust v) (I.extract d)) bins')
   return $ I.Let bins' retExpr' typ
   where
     droppedBinder (Nothing, d) = do
@@ -157,7 +159,7 @@ insertDropExpr lete@(I.Let bins expr typ) = do
 -- drops for each of the arguments, and return value
 insertDropExpr lam@(I.Lambda _ _ typ) = do
   let (args, body) = I.collectLambda lam
-      (argTypes, retType) = collectArrow typ
+      (argTypes, _) = collectArrow typ
   
   args' <- forM args $ maybe (getFresh "_arg") return -- handle _ arguments
   let typedArgs = zipWith (\a b -> (Just a, b)) args' argTypes 
@@ -190,7 +192,8 @@ insertDropExpr lam@(I.Lambda _ _ typ) = do
 -}
 
 -- Inserting drops into pattern-matching.
-insertDropExpr match@(I.Match expr alts typ) = return match
+insertDropExpr match@(I.Match _ _ _) = return match
+{- insertDropExpr match@(I.Match expr alts typ) = return match -}
 
 {- do
   alts' <- forM alts $ \(v, e) -> do
