@@ -99,9 +99,8 @@ insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
 insertDropExpr (I.App fun arg typ) = do
-  fun' <- insertDropExpr fun
   arg' <- insertDropExpr arg
-  return $ I.App fun' arg' typ
+  return $ I.App fun arg' typ
 
 -- Skip let bindings that have unit type.
 --insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
