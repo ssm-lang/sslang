@@ -59,12 +59,12 @@ getFresh str = do
   return $ fromString $ ("anon" <> show curCount) ++ str
 
 -- | Make a drop primitive with unit type.
-makeDrop :: I.Expr Poly.Type -> I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
-makeDrop e r = (Nothing, I.Prim I.Drop [e, r] $ I.extract e)
+makeDrop :: I.Expr Poly.Type -> I.Expr Poly.Type -> I.Expr Poly.Type
+makeDrop r e = I.Prim I.Drop [e, r] $ I.extract e
 
 -- | Make a dup primitive with actual type.
-makeDup :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
-makeDup e = (Nothing, I.Prim I.Dup [e] $ I.extract e)
+makeDup :: I.Expr Poly.Type -> I.Expr Poly.Type
+makeDup e = I.Prim I.Dup [e] $ I.extract e
 
 -- | Given @a@ and @b@, construct @a ; b@ (i.e., @let _ = a ; b@). 
 seqExpr :: (Maybe I.VarId, I.Expr a) -> I.Expr a -> I.Expr a
@@ -98,10 +98,10 @@ insertDropTop (var, expr) = do
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
--- FIXME: Should we be adding a dup to the argument?
 insertDropExpr (I.App fun arg typ) = do
+  fun' <- insertDropExpr fun
   arg' <- insertDropExpr arg
-  return $ I.App fun arg' typ
+  return $ I.App fun' arg' typ
 
 -- Skip let bindings that have unit type.
 --insertDropExpr (I.Let bins expr typ@(Poly.TBuiltin Poly.Unit)) = do
@@ -118,7 +118,10 @@ insertDropExpr (I.App fun arg typ) = do
 -- Inserting drops into let bindings.
 -- FIXME: No point in generating a new variable and returning it if the
 -- body returns unit.  An optimization?
-insertDropExpr (I.Let bins expr typ) = do
+insertDropExpr lete@(I.Let bins expr typ) =
+  return lete
+
+{-                    do
   retVar <- getFresh "_let"
   expr'  <- insertDropExpr expr
   bins'  <- forM bins droppedBinder
@@ -136,11 +139,28 @@ insertDropExpr (I.Let bins expr typ) = do
     droppedBinder (v, d) = do
       d' <- insertDropExpr d
       return (v, d')
+-}
 
 -- Handle nested lambdas by collecting them into a single expression
 -- with multiple arguments, adding a local result variable,
 -- drops for each of the arguments, and return value
 insertDropExpr lam@(I.Lambda _ _ typ) = do
+  let (args, body) = I.collectLambda lam
+      (argTypes, retType) = collectArrow typ
+      typedArgs = zip args argTypes      
+  args' <- forM args $ maybe (getFresh "_arg") return -- handle _ arguments
+
+  let newArgs = zipWith I.Var args' argTypes
+      
+  body' <- insertDropExpr body
+
+  let body'' = foldr makeDrop body' newArgs
+
+  return $ I.makeLambdaChain typedArgs body''
+
+{- args' <- forM args $ maybe (getFresh "_arg") return -}
+
+{-  do
   retVar <- getFresh "_result"
   
   let (args, body) = I.collectLambda lam
@@ -158,21 +178,27 @@ insertDropExpr lam@(I.Lambda _ _ typ) = do
       retExpr' = seqExprs exprBins retExpr
   
   return $ I.makeLambdaChain typedArgs retExpr'
+-}
 
 -- Inserting drops into pattern-matching.
-insertDropExpr (I.Match expr alts typ) = do
+insertDropExpr match@(I.Match expr alts typ) = return match
+
+{- do
   alts' <- forM alts $ \(v, e) -> do
     insertDropAlt (v, e) expr
   return $ I.Match expr alts' typ
+-}
 
 -- Inserting dup/drops into primitive's arguments.
 insertDropExpr (I.Prim p es typ) = do
   es' <- mapM insertDropExpr es
   return $ I.Prim p es' typ
 
--- placeholder for other exprs.
-insertDropExpr expr = return expr
+-- FIXME: catchall
+insertDropExpr e = return e
 
+
+{-
 
 -- | Entry-point to inserting into pattern-matching arms.
 insertDropAlt
@@ -209,3 +235,6 @@ insertDropAlt (I.AltData dcon vars, exprReturn) _ = do
 insertDropAlt (I.AltLit l, exprReturn) _ = do
   exprReturn' <- insertDropExpr exprReturn
   return (I.AltLit l, exprReturn')
+
+
+-}
