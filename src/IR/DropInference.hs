@@ -59,8 +59,8 @@ getFresh str = do
   return $ fromString $ ("anon" <> show curCount) ++ str
 
 -- | Make a drop primitive with unit type.
-makeDrop :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
-makeDrop e = (Nothing, I.Prim I.Drop [e] $ Poly.TBuiltin Poly.Unit)
+makeDrop :: I.Expr Poly.Type -> I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
+makeDrop e r = (Nothing, I.Prim I.Drop [e, r] $ I.extract e)
 
 -- | Make a dup primitive with actual type.
 makeDup :: I.Expr Poly.Type -> (Maybe a, I.Expr Poly.Type)
