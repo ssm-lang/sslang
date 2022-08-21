@@ -118,9 +118,20 @@ insertDropExpr (I.App fun arg typ) = do
 -- Inserting drops into let bindings.
 -- FIXME: No point in generating a new variable and returning it if the
 -- body returns unit.  An optimization?
-insertDropExpr lete@(I.Let bins expr typ) =
-  return lete
+insertDropExpr lete@(I.Let bins expr typ) = do
+  bins' <- forM bins droppedBinder
 
+  let retExpr' = foldr makeDrop expr (map (\(v, d) -> I.Var (fromJust v) (I.extract d)) bins')
+  return $ I.Let bins' retExpr' typ
+  where
+    droppedBinder (Nothing, d) = do
+      temp <- getFresh "_underscore"
+      d' <- insertDropExpr d
+      return (Just temp, d')
+    droppedBinder (v, d) = do
+      d' <- insertDropExpr d
+      return (v, d')
+  
 {-                    do
   retVar <- getFresh "_let"
   expr'  <- insertDropExpr expr
@@ -147,16 +158,14 @@ insertDropExpr lete@(I.Let bins expr typ) =
 insertDropExpr lam@(I.Lambda _ _ typ) = do
   let (args, body) = I.collectLambda lam
       (argTypes, retType) = collectArrow typ
-      typedArgs = zip args argTypes      
+  
   args' <- forM args $ maybe (getFresh "_arg") return -- handle _ arguments
-
-  let newArgs = zipWith I.Var args' argTypes
+  let typedArgs = zipWith (\a b -> (Just a, b)) args' argTypes 
+      argVars = zipWith I.Var args' argTypes
       
   body' <- insertDropExpr body
-
-  let body'' = foldr makeDrop body' newArgs
-
-  return $ I.makeLambdaChain typedArgs body''
+  
+  return $ I.makeLambdaChain typedArgs $ foldr makeDrop body' argVars
 
 {- args' <- forM args $ maybe (getFresh "_arg") return -}
 
@@ -193,6 +202,9 @@ insertDropExpr match@(I.Match expr alts typ) = return match
 insertDropExpr (I.Prim p es typ) = do
   es' <- mapM insertDropExpr es
   return $ I.Prim p es' typ
+
+insertDropExpr var@(I.Var _ _) = do
+  return $ makeDup var
 
 -- FIXME: catchall
 insertDropExpr e = return e
