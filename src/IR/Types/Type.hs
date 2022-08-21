@@ -2,6 +2,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE DeriveTraversable #-}
 module IR.Types.Type where
 
 import           Common.Identifiers             ( TConId(..)
@@ -19,8 +20,6 @@ import           Common.Pretty                  ( (<+>)
 
 import           Data.Generics                  ( Data
                                                 , Typeable
-                                                , everywhereM
-                                                , mkM
                                                 )
 import qualified Data.Set                      as S
 
@@ -45,10 +44,16 @@ For now, we only support trivial constraints.
 data Constraint = CTrue
   deriving (Eq, Show, Typeable, Data)
 
-{- | Type schemes that quantify over some type variables.
+{- | Schemes quantify over 'Type' variables and impose 'Constraint'.
 
+'SchemeOf' is implemented a functor over some kind of type so that we can easily
+substitute in 'Type' vs 'UType' when performing type inference/unification.
 -}
-data Scheme = Scheme (S.Set TVarId) Constraint Type
+data SchemeOf t = Forall (S.Set TVarId) Constraint t
+  deriving (Eq, Show, Functor, Foldable, Traversable, Typeable, Data)
+
+-- | Schemes over 'Type'.
+newtype Scheme = Scheme (SchemeOf Type)
   deriving (Eq, Show, Typeable, Data)
 
 -- | Some data type that contains a sslang 'Type'.
@@ -59,30 +64,7 @@ instance HasType Type where
   getType = id
 
 instance HasType Scheme where
-  getType (Scheme _ _ t) = t
-
--- | Instantiate a 'Scheme' with no quantified type variables.
-trivialScheme :: Type -> Scheme
-trivialScheme = Scheme S.empty CTrue
-
--- | Instantiate a 'Scheme' where all free type variables are quantified.
-quantifiedScheme :: Type -> Scheme
-quantifiedScheme t = Scheme (ftv (const True) t) CTrue t
-
-ftvScheme :: Scheme -> S.Set TVarId
-ftvScheme (Scheme q _ t) = ftv (`S.member` q) t
-
--- | Get free type variables, according to some membership function.
-ftv :: HasType a => (TVarId -> Bool) -> a -> S.Set TVarId
-ftv isBound = go . getType
- where
-  go :: Type -> S.Set TVarId
-  go (TCon _ ts) = S.unions $ map go ts
-  go (TVar v) | isBound v = S.empty
-              | otherwise = S.singleton v
-
-rewriteTVars :: Monad m => (TVarId -> m TVarId) -> Type -> m Type
-rewriteTVars f = everywhereM $ mkM f
+  getType (Scheme (Forall _ _ t)) = t
 
 -- | May appear in type annotations; indicates a fresh free type variable.
 pattern Hole :: Type
@@ -191,7 +173,7 @@ instance Dumpy Type where
   dumpy = pretty
 
 instance Pretty Scheme where
-  pretty (Scheme tvs CTrue t) =
+  pretty (Scheme (Forall tvs CTrue t)) =
     pretty ("forall" :: String)
       <+> hsep (map pretty $ S.toList tvs)
       <>  comma
@@ -200,8 +182,10 @@ instance Pretty Scheme where
 instance Dumpy Scheme where
   dumpy = pretty
 
+-- FIXME: convenience for ghci debugging
 scheme :: [String] -> Constraint -> Type -> Scheme
-scheme vs = Scheme (S.fromList $ map fromString vs)
+scheme vs c t = Scheme $ Forall (S.fromList $ map fromString vs) c t
 
+-- FIXME: convenience for ghci debugging
 tv :: String -> Type
 tv = TVar . fromString
