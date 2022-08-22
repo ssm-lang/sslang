@@ -40,11 +40,9 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 
-import           IR.Types                       ( pattern Arrow
+import           IR.Types.Type                  ( Annotation
+                                                , pattern Arrow
                                                 , Type
-                                                , TypeAnn
-                                                , Annotation
-                                                , unTypeAnn
                                                 , unfoldArrow
                                                 )
 
@@ -382,7 +380,7 @@ Omits
 Reverts
 * curried funcs of one arg back to multiple arg funcs
 -}
-instance Pretty (Program TypeAnn) where
+instance Pretty (Program Type) where
   pretty Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -390,7 +388,7 @@ instance Pretty (Program TypeAnn) where
       map prettyTypDef tys ++ map prettyExternDecl xds ++ map prettyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    prettyFuncDef :: (VarId, Expr TypeAnn) -> Doc ann
+    prettyFuncDef :: (VarId, Expr Type) -> Doc ann
     prettyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent
         2
@@ -402,7 +400,7 @@ instance Pretty (Program TypeAnn) where
         argIds
         argTys
       (argIds, body ) = unfoldLambda l
-      (argTys, retTy) = unfoldArrow $ head $ unTypeAnn ty -- FIXME
+      (argTys, retTy) = unfoldArrow ty -- FIXME
     prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
 
     prettyExternDecl :: (Pretty t) => (VarId, t) -> Doc ann
@@ -503,7 +501,7 @@ instance Pretty PrimOp where
   pretty PrimLe     = pretty "<="
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
-instance Dumpy (Program TypeAnn) where
+instance Dumpy (Program Type) where
   dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -511,7 +509,7 @@ instance Dumpy (Program TypeAnn) where
       map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    dumpyFuncDef :: (VarId, Expr TypeAnn) -> Doc ann
+    dumpyFuncDef :: (VarId, Expr Type) -> Doc ann
     dumpyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
      where
@@ -521,7 +519,7 @@ instance Dumpy (Program TypeAnn) where
         argIds
         argTys
       (argIds, body ) = unfoldLambda l
-      (argTys, retTy) = unfoldArrow $ head $ unTypeAnn ty
+      (argTys, retTy) = unfoldArrow ty
     dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
 
     -- Generates readable Doc representation of an IR Type Definition
@@ -543,7 +541,7 @@ instance Dumpy (Program TypeAnn) where
       pretty dcon <+> hsep (dumpy <$> argz)
   -- TODO: how to represent entry point?
 
-instance Dumpy (Expr TypeAnn) where
+instance Dumpy (Expr Type) where
   dumpy (Var  v t  ) = typeAnn t $ pretty v
   dumpy (Data d t  ) = typeAnn t $ pretty d
   dumpy (Lit  l t  ) = typeAnn t $ dumpy l

@@ -29,19 +29,16 @@ import           Data.Maybe                     ( fromJust
                                                 , isJust
                                                 )
 
--- | Type annotations are maintained as a stack of decreasing specificity.
-type Ann = [I.Annotation]
-
 -- | Unannotated terms appear as an empty stack.
-untyped :: Ann
-untyped = []
+untyped :: I.Annotations
+untyped = mempty
 
 -- | Add a type annotation to an already-annotated term.
-pushAnn :: I.Expr Ann -> I.Annotation -> I.Expr Ann
-pushAnn e t = I.inject (t : I.extract e) e
+pushAnn :: I.Expr I.Annotations -> I.Annotation -> I.Expr I.Annotations
+pushAnn e t = I.inject (I.Annotations [t] <> I.extract e) e
 
 -- | Lower an AST 'Program' into IR.
-lowerProgram :: A.Program -> Compiler.Pass (I.Program Ann)
+lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Annotations)
 lowerProgram (A.Program ds) = do
   let (tds, cds, xds, dds) = A.getTops ds
   tds' <- mapM lowerTypeDef tds
@@ -55,7 +52,7 @@ lowerProgram (A.Program ds) = do
                      }
  where
   -- | Lower a top-level data definition into IR.
-  lowerDataDef :: A.Definition -> Compiler.Pass (I.VarId, I.Expr Ann)
+  lowerDataDef :: A.Definition -> Compiler.Pass (I.VarId, I.Expr I.Annotations)
   lowerDataDef d = lowerDef d >>= \case
     (Just b , e) -> return (b, e)
     (Nothing, _) -> Compiler.unexpected "Missing top-level binding"
@@ -80,7 +77,7 @@ lowerProgram (A.Program ds) = do
   lowerExternDecl (A.ExternDecl i t) = (fromId i, ) <$> lowerType t
 
 -- | Lower an 'A.Definition' into a name and bound expression.
-lowerDef :: A.Definition -> Compiler.Pass (I.Binder, I.Expr Ann)
+lowerDef :: A.Definition -> Compiler.Pass (I.Binder, I.Expr I.Annotations)
 lowerDef (A.DefPat aPat aBody) = do
   n <- lowerPatBinder aPat
   t <- lowerPatType aPat
@@ -101,7 +98,7 @@ lowerDef (A.DefFn aName aPats aTy aBody) = do
   return (Just $ fromId aName, bpt)
 
 -- | Curry and lower a list of arguments to a lambda body.
-lowerCurry :: [A.Pat] -> A.Expr -> Compiler.Pass (I.Expr Ann)
+lowerCurry :: [A.Pat] -> A.Expr -> Compiler.Pass (I.Expr I.Annotations)
 lowerCurry aPats aBody = go aPats
  where
   go []       = lowerExpr aBody
@@ -114,7 +111,7 @@ Performs the following desugaring inline:
 -   Desugars 'A.IfElse' to 'I.Match'
 -   Unrolls 'A.Constraint' to annotate sub-expressions
 -}
-lowerExpr :: A.Expr -> Compiler.Pass (I.Expr Ann)
+lowerExpr :: A.Expr -> Compiler.Pass (I.Expr I.Annotations)
 lowerExpr e | isJust $ lowerPrim e =
   -- Nullary primitives
   return $ I.Prim (fromJust $ lowerPrim e) [] untyped

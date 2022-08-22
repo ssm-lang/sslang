@@ -4,6 +4,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module IR.Types.Type where
 
 import           Common.Identifiers             ( DConId(..)
@@ -25,13 +27,6 @@ import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
 import qualified Data.Set                      as S
-
-
-newtype TypeAnn = TypeAnn [Type]
-  deriving (Eq, Show, Typeable, Data)
-
-unTypeAnn :: TypeAnn -> [Type]
-unTypeAnn (TypeAnn ts) = ts
 
 
 {- | The type of sslang types.
@@ -73,6 +68,19 @@ data Annotation
   | AnnDCon DConId [Annotation]
   | AnnArrows [Annotation] Annotation
   deriving (Eq, Show, Typeable, Data)
+
+newtype Annotations = Annotations [Annotation]
+  deriving (Eq, Show, Typeable, Data, Semigroup, Monoid)
+
+unAnnotations :: Annotations -> [Annotation]
+unAnnotations (Annotations as) = as
+
+fromAnnotations :: Annotations -> Type
+fromAnnotations = go . unAnnotations
+ where
+  go (AnnType t : _   ) = t
+  go (_         : anns) = go anns
+  go []                 = error "TODO: No type annotations"
 
 -- | Some data type that contains a sslang 'Type'.
 class HasType a where
@@ -211,11 +219,18 @@ instance Pretty Scheme where
 instance Dumpy Scheme where
   dumpy = pretty
 
-instance Pretty TypeAnn where
-  pretty (TypeAnn []     ) = mempty
-  pretty (TypeAnn (t : _)) = pretty t
+instance Pretty Annotation where
+  pretty (AnnType t) = pretty t
+  pretty _           = mempty
 
-instance Dumpy TypeAnn where
+instance Dumpy Annotation where
+  dumpy = pretty
+
+instance Pretty Annotations where
+  pretty (unAnnotations -> as) | null as   = mempty
+                               | otherwise = pretty $ head as
+
+instance Dumpy Annotations where
   dumpy = pretty
 
 -- FIXME: convenience for ghci debugging
