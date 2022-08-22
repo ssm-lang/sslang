@@ -28,8 +28,7 @@ import           Codegen.Typegen                ( DConInfo(..)
                                                 )
 
 import qualified IR.IR                         as I
-import qualified IR.Types.Poly                 as I
-import qualified IR.Types.TypeSystem           as I
+import qualified IR.Types                      as I
 
 import           Language.C.Quote.GCC
 import qualified Language.C.Syntax             as C
@@ -38,7 +37,6 @@ import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( fromId
                                                 , fromString
                                                 )
-import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad                  ( foldM
                                                 , unless
                                                 )
@@ -51,10 +49,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( isJust
-                                                , mapMaybe
-                                                )
-import           IR.Types.TypeSystem            ( dearrow )
+import           Data.Maybe                     ( mapMaybe )
 import           Prelude                 hiding ( drop )
 
 import           GHC.Stack                      ( HasCallStack )
@@ -135,8 +130,8 @@ runGenFn name params ret body typeInfo globals (GenFn tra) =
   resolveParam v = (v, acts_ $ fromId v)
 
   genGlobal :: (I.VarId, I.Type) -> (I.VarId, C.Exp)
-  genGlobal (v, t) | isJust $ dearrow t = (v, static_value $ closure_ v)
-                   | otherwise          = todo
+  genGlobal (v, I.Arrow _ _) = (v, static_value $ closure_ v)
+  genGlobal _                = todo
 
 -- | Lookup some information associated with a type constructor.
 getsTCon :: (TConInfo -> a) -> I.TConId -> GenFn a
@@ -248,9 +243,15 @@ genProgram :: I.Program I.Type -> Compiler.Pass [C.Definition]
 genProgram p = do
   (tdefs , tinfo ) <- genTypes $ I.typeDefs p
   (cdecls, cdefns) <- cUnpack <$> mapM (genTop tinfo) (I.programDefs p)
-  externs <- mapM genExtern $ I.externDecls p
-  return $ includes ++ tdefs ++ externs ++ cescs ++ cdecls ++ cdefns ++ genInitProgram
-    (I.programEntry p)
+  externs          <- mapM genExtern $ I.externDecls p
+  return
+    $  includes
+    ++ tdefs
+    ++ externs
+    ++ cescs
+    ++ cdecls
+    ++ cdefns
+    ++ genInitProgram (I.programEntry p)
  where
   genTop
     :: TypegenInfo
@@ -267,9 +268,9 @@ genProgram p = do
         , [enterDefn, closureDefn, stepDefn]
         )
    where
-    tops            = map (second extract) $ I.programDefs p
-    (argIds, body ) = I.collectLambda l
-    (argTys, retTy) = I.collectArrow ty
+    tops            = map (second I.extract) $ I.programDefs p
+    (argIds, body ) = I.unfoldLambda l
+    (argTys, retTy) = I.unfoldArrow ty
   genTop _ (_, I.Lit _ _) = todo
   genTop _ (_, _        ) = nope
 
@@ -335,7 +336,7 @@ genExtern (v, t) = return [cedecl|
     extern $ty:value_t $id:v($params:xparams);
   |]
  where
-  argNum  = length $ fst $ I.collectArrow t
+  argNum  = length $ fst $ I.unfoldArrow t
   xparams = replicate argNum [cparam|$ty:value_t|]
 
 -- | Generate struct definition for an SSM procedure.
@@ -533,7 +534,7 @@ genExpr (I.Data dcon _) = do
 genExpr (I.Lit l _              ) = return (genLiteral l, [])
 genExpr (I.Let [(Just n, d)] b _) = do
   (defVal, defStms) <- genExpr d
-  withNewLocal (n, extract d) $ do
+  withNewLocal (n, I.extract d) $ do
     -- Look up n because withNewLocal may have mangled its name.
     Just n' <- M.lookup n <$> gets fnVars
     let defInit = [citems|$exp:n' = $exp:defVal;|]
@@ -598,7 +599,7 @@ genExpr (I.Match s as t) = do
   -- C's limitation. At the end of each block, we jump to a join statement that
   -- follows the blocks generated for each arm.
   (sExp, sStms) <- genExpr s
-  scrut         <- genTmp $ extract s
+  scrut         <- genTmp $ I.extract s
   val           <- genTmp t
   joinLabel     <- freshLabel
 
@@ -757,7 +758,7 @@ genPrim (I.CCall  s) es _ = do
   return (unit, argStms ++ [citems|$id:s($args:argExps);|])
 genPrim (I.FfiCall s) es ty = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
-  ret <- genTmp ty
+  ret                <- genTmp ty
   return (ret, argStms ++ [citems|$exp:ret = $id:s($args:argExps);|])
 genPrim (I.PrimOp op) es t = genPrimOp op es t
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"

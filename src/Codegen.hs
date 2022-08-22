@@ -9,7 +9,6 @@ import qualified Common.Compiler               as Compiler
 import           Common.Default                 ( Default(..) )
 
 import qualified IR.IR                         as I
-import qualified IR.Types.Poly                 as I
 
 import qualified Text.PrettyPrint.Mainland     as C
 import qualified Text.PrettyPrint.Mainland.Class
