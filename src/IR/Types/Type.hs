@@ -6,7 +6,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module IR.Types.Type where
 
-import           Common.Identifiers             ( TConId(..)
+import           Common.Identifiers             ( DConId(..)
+                                                , Identifiable
+                                                , TConId(..)
                                                 , TVarId(..)
                                                 , fromString
                                                 )
@@ -63,6 +65,13 @@ data SchemeOf t = Forall (S.Set TVarId) Constraint t
 
 -- | Schemes over 'Type'.
 newtype Scheme = Scheme (SchemeOf Type)
+  deriving (Eq, Show, Typeable, Data)
+
+-- | An annotation records the annotated portion of a pattern.
+data Annotation
+  = AnnType Type
+  | AnnDCon DConId [Annotation]
+  | AnnArrows [Annotation] Annotation
   deriving (Eq, Show, Typeable, Data)
 
 -- | Some data type that contains a sslang 'Type'.
@@ -144,18 +153,18 @@ isNum :: Type -> Bool
 isNum t = isInt t || isUInt t
 
 tuple :: [Type] -> Type
-tuple ts = TCon (tupleName $ length ts) ts
+tuple ts = TCon (tupleId $ length ts) ts
 
 -- | Tests whether a 'Type' is a tuple of some arity.
 isTuple :: Type -> Bool
-isTuple (TCon n ts) | length ts >= 2 = n == tupleName (length ts)
+isTuple (TCon n ts) | length ts >= 2 = n == tupleId (length ts)
 isTuple _                            = False
 
 -- | Construct the name of the built-in tuple type of given arity.
 --
 -- Fails if arity is less than 2.
-tupleName :: Integral i => i -> TConId
-tupleName i
+tupleId :: (Integral i, Identifiable v) => i -> v
+tupleId i
   | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
 

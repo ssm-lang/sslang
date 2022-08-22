@@ -16,11 +16,13 @@ module IR.IR
   , TConId(..)
   , DConId(..)
   , Type
+  , Annotation
   , variantFields
   , wellFormed
   , foldLambda
   , unfoldLambda
   , extract
+  , inject
   , zipApp
   , unzipApp
   ) where
@@ -41,6 +43,7 @@ import           Data.Data                      ( Data
 import           IR.Types                       ( pattern Arrow
                                                 , Type
                                                 , TypeAnn
+                                                , Annotation
                                                 , unTypeAnn
                                                 , unfoldArrow
                                                 )
@@ -233,6 +236,17 @@ extract (Lambda _ _ t) = t
 extract (App    _ _ t) = t
 extract (Match  _ _ t) = t
 extract (Prim   _ _ t) = t
+
+-- | Replace the top-level type carried by an 'Expr'.
+inject :: t -> Expr t -> Expr t
+inject t (Var  v _      ) = Var v t
+inject t (Data d _      ) = Data d t
+inject t (Lit  l _      ) = Lit l t
+inject t (Let    ds b  _) = Let ds b t
+inject t (Lambda xs b  _) = Lambda xs b t
+inject t (App    h  a  _) = App h a t
+inject t (Match  s  as _) = Match s as t
+inject t (Prim   p  es _) = Prim p es t
 
 -- | The number of fields in a 'TypeVariant'.
 variantFields :: TypeVariant -> Int

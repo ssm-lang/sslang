@@ -13,6 +13,7 @@ module Common.Compiler
   , dump
   , unexpected
   , warn
+  , todo
   , passIO
   , liftEither
   , typeError
@@ -51,14 +52,15 @@ instance Eq ErrorMsg where
 
 -- | Types of compiler errors that can be thrown during compilation.
 data Error
-  = Dump String               -- ^ Halt compiler to dump output (not an error)
-  | UnexpectedError ErrorMsg  -- ^ Internal error; should be unreachable
-  | TypeError ErrorMsg        -- ^ Round peg in square hole
-  | ScopeError ErrorMsg       -- ^ Identifier is out of scope
-  | NameError ErrorMsg        -- ^ Invalid naming convention at binding
-  | PatternError ErrorMsg     -- ^ Malformed pattern
-  | LexError ErrorMsg         -- ^ Error encountered by scanner
-  | ParseError ErrorMsg       -- ^ Error encountered by parser
+  = Dump String                 -- ^ Halt compiler to dump output (not an error)
+  | UnexpectedError ErrorMsg    -- ^ Internal error; should be unreachable
+  | UnimplementedError ErrorMsg -- ^ "It's a research artifact"
+  | TypeError ErrorMsg          -- ^ Round peg in square hole
+  | ScopeError ErrorMsg         -- ^ Identifier is out of scope
+  | NameError ErrorMsg          -- ^ Invalid naming convention at binding
+  | PatternError ErrorMsg       -- ^ Malformed pattern
+  | LexError ErrorMsg           -- ^ Error encountered by scanner
+  | ParseError ErrorMsg         -- ^ Error encountered by parser
   deriving (Show, Eq)
 
 -- | Types of compiler warnings that can be logged during compilation.
@@ -97,6 +99,10 @@ unexpected = throwError . UnexpectedError . fromString
 -- | Log a compiler warning.
 warn :: MonadWriter [Warning] m => Warning -> m ()
 warn w = pass $ return ((), (++ [w]))
+
+-- | Report unexpected compiler error and halt pipeline.
+todo :: (MonadError Error m) => String -> m a
+todo = throwError . UnimplementedError . fromString
 
 -- | Execute compiler pass in I/O monad, exiting upon exception.
 passIO :: Pass a -> IO (a, [Warning])

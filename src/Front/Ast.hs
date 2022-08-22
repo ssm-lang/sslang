@@ -130,6 +130,11 @@ collectApp :: Expr -> (Expr, [Expr])
 collectApp (Apply lhs rhs) = (lf, la ++ [rhs]) where (lf, la) = collectApp lhs
 collectApp t               = (t, [])
 
+-- | Collect a pattern application into the destructor and arguments.
+collectPApp :: Pat -> (Pat, [Pat])
+collectPApp (PatApp (p:ps)) = (p, ps)
+collectPApp p = (p, []) -- Note that @PatApp []@ is probably malformed!
+
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
 getTopDataDef (TopDef d) = Just d
