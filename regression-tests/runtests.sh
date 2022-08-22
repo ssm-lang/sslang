@@ -32,6 +32,7 @@ Usage() {
     echo "Usage: runtests.sh [options] [files]"
     echo "-c    Clean up any existing generated files"
     echo "-k    Keep intermediate files"
+    echo "-t    Enable memory tracing"
     echo "-h    Print this help"
     exit 1
 }
@@ -115,8 +116,8 @@ Check() {
 
     NoteGen "${exec} ${result} ${diff}"
     Run $SSLC ${SSLCARGS} "$1" ">" "${csource}" && \
-    Run $CC -c -o "${obj}" "${csource}" && \
-    Run $LINK -o "${exec}" "${obj}" -DCONFIG_MEM_STATS $platformdir/*.c -lssm -lpthread && \
+    Run $CC -c -o "${obj}" $d_memory_trace -DCONFIG_MEM_STATS "${csource}" && \
+    Run $LINK -o "${exec}" "${obj}" $d_memory_trace -DCONFIG_MEM_STATS $platformdir/*.c -lssm -lpthread && \
     Run "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
@@ -199,8 +200,10 @@ CheckFail() {
     fi
 }
 
+d_memory_trace=
+c_memory_trace=
 
-while getopts kch c; do
+while getopts kcth c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -208,6 +211,10 @@ while getopts kch c; do
 	c) # Clean up any generated files
 	    rm -f *.scanner-out *.scanner-diff $globallog
 	    exit 0
+	    ;;
+	t) # Enable memory tracing
+	    d_memory_trace="-DCONFIG_MEM_TRACE"
+	    c_memory_trace="CONFIG_MEM_TRACE"
 	    ;;
 	h) # Help
 	    Usage
@@ -224,7 +231,7 @@ else
     files="tests/*.ssl"
 fi
 
-Run make -C "$SSMDIR" CONFIGS=CONFIG_MEM_STATS build/libssm.a "1>&2" 2>> $globallog
+Run make -C "$SSMDIR" CONFIGS=\"CONFIG_MEM_STATS $c_memory_trace\" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do
