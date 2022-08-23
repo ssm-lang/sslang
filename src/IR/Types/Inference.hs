@@ -11,37 +11,80 @@ import qualified IR.Types.Unification          as U
 import           IR.Types.Unification           ( (=:=) )
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( TVarId )
+import           Common.Identifiers             ( IsString(..)
+                                                , TVarId
+                                                , showId
+                                                )
+
 import           Control.Monad                  ( (<=<)
                                                 , forM
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( catMaybes )
+import qualified Data.Map                      as M
+import           Data.Maybe                     ( catMaybes
+                                                , fromJust
+                                                , mapMaybe
+                                                )
+import qualified Data.Set                      as S
+
+
+data InferCtx = InferCtx
+  { varMap  :: M.Map VarId U.Scheme
+  , dconMap :: M.Map DConId U.Scheme
+  }
+
+instance U.HasFreeVars InferCtx where
+  freeVars = fmap S.unions . mapM U.freeVars . M.elems . varMap
+
+type Infer = U.InferM InferCtx
+
+lookupBinding :: VarId -> Infer U.Scheme
+lookupBinding x =
+  U.ask >>= maybe (U.throwError unbound) return . M.lookup x . varMap
+ where
+  unbound = Compiler.TypeError $ fromString $ "Unbound variable: " <> show x
+
+withBindings :: [(Binder, U.Scheme)] -> Infer a -> Infer a
+withBindings bs = U.local
+  $ \s -> s { varMap = foldr (uncurry M.insert) (varMap s) vs }
+ where
+  vs = mapMaybe unBind bs
+  unBind (Just v, s) = Just (v, s)
+  unBind _           = Nothing
+
+lookupDCon :: DConId -> Infer U.Scheme
+lookupDCon x =
+  U.ask >>= maybe (U.throwError unbound) return . M.lookup x . dconMap
+ where
+  unbound =
+    Compiler.TypeError $ fromString $ "Unbound data constructor: " <> show x
 
 inferProgram :: Program [Type] -> Compiler.Pass (Program Type)
-inferProgram p = U.runInfer $ do
-  (bs, ds) <- unzip <$> inferDefs (map (first Just) $ programDefs p)
-  bs'      <- mapM (maybe undefined return) bs
+inferProgram p = U.runInfer emptyCtx $ do
+  (bs, ds) <- unzip . fromBinders <$> inferDefs (toBinders $ programDefs p)
   ds'      <- mapM (mapM $ U.freeze <=< U.applyBindings . T.unScheme) ds
-  return $ p { programDefs = zip bs' ds' }
+  return $ p { programDefs = zip bs ds' }
+ where
+  emptyCtx    = InferCtx M.empty M.empty
+  toBinders   = map $ first Just
+  fromBinders = map $ first fromJust
 
-checkAgainst :: [Type] -> U.Type -> U.Infer U.Type
+checkAgainst :: [Type] -> U.Type -> Infer U.Type
 checkAgainst _ = return
 
-inferDefs :: [(Binder, Expr [Type])] -> U.Infer [(Binder, Expr U.Scheme)]
+inferDefs :: [(Binder, Expr [Type])] -> Infer [(Binder, Expr U.Scheme)]
 inferDefs (unzip -> (bs, ds)) = do
-  let bs' = catMaybes bs
-  ts'  <- map T.trivialScheme <$> mapM (const U.fresh) bs'
-  ds'  <- U.withBindings (zip bs' ts') $ mapM inferExpr ds
+  ts'  <- map T.trivialScheme <$> mapM (const U.fresh) (catMaybes bs)
+  ds'  <- withBindings (zip bs ts') $ mapM inferExpr ds
   ds'' <- mapM (mapM U.generalize) ds'
   return $ zip bs ds''
 
-inferExpr :: Expr [Type] -> U.Infer (Expr U.Type)
+inferExpr :: Expr [Type] -> Infer (Expr U.Type)
 inferExpr (Var v ts) = do
-  t <- U.instantiate =<< U.lookupBinding v
+  t <- U.instantiate =<< lookupBinding v
   Var v <$> checkAgainst ts t
 inferExpr (Data v ts) = do
-  t <- U.instantiate =<< U.lookupBinding v
+  t <- U.instantiate =<< lookupDCon v
   Data v <$> checkAgainst ts t
 inferExpr (Lit l ts) = do
   t <- U.instantiate =<< lookupLit l
@@ -53,12 +96,12 @@ inferExpr (App f a ts) = do
   extract f' =:= extract a' -:> rt
   App f' a' <$> checkAgainst ts rt
 inferExpr (Let ds b ts) = do
-  _ds' <- inferDefs ds
-  b'   <- inferExpr b
-  Let undefined b' <$> checkAgainst ts (extract b')
+  ds' <- inferDefs ds
+  b'  <- withBindings (map (second extract) ds') $ inferExpr b
+  Let (fmap (second $ fmap T.unScheme) ds') b' <$> checkAgainst ts (extract b')
 inferExpr (Lambda a b ts) = do
   at <- U.fresh
-  U.withBindings ((, T.trivialScheme at) <$> catMaybes [a]) $ do
+  withBindings [(a, T.trivialScheme at)] $ do
     b' <- inferExpr b
     Lambda a b' <$> checkAgainst ts (at -:> extract b')
 inferExpr (Match s as ts) = do
@@ -73,32 +116,41 @@ inferExpr (Match s as ts) = do
 inferExpr (Prim p es ts) = do
   es' <- mapM inferExpr es
   rt  <- U.fresh
-  t   <- U.instantiate =<< lookupPrim p
+  t   <- U.instantiate =<< lookupPrim (length es) p
   t =:= U.foldArrow (map extract es', rt)
   Prim p es' <$> checkAgainst ts rt
 
-lookupPrim :: Primitive -> U.Infer U.Scheme
-lookupPrim New   = return $ T.forall ["a"] $ var "a" -:> U.Ref (var "a")
-lookupPrim Dup   = return $ T.forall ["a"] $ var "a" -:> var "a"
-lookupPrim Drop  = return $ T.forall ["a"] $ var "a" -:> U.Unit
-lookupPrim Deref = return $ T.forall ["a"] $ U.Ref (var "a") -:> var "a"
-lookupPrim Assign =
+lookupPrim :: Int -> Primitive -> Infer U.Scheme
+lookupPrim _ New   = return $ T.forall ["a"] $ var "a" -:> U.Ref (var "a")
+lookupPrim _ Dup   = return $ T.forall ["a"] $ var "a" -:> var "a"
+lookupPrim _ Drop  = return $ T.forall ["a"] $ var "a" -:> U.Unit
+lookupPrim _ Deref = return $ T.forall ["a"] $ U.Ref (var "a") -:> var "a"
+lookupPrim _ Assign =
   return $ T.forall ["a"] $ U.Ref (var "a") -:> var "a" -:> U.Unit
-lookupPrim After =
+lookupPrim _ After =
   return $ T.forall ["a"] $ U.Time -:> U.Ref (var "a") -:> var "a" -:> U.Unit
-lookupPrim (CQuote _) = return $ T.forall ["a"] $ var "a"
-lookupPrim Loop       = return $ T.forall ["a"] $ var "a" -:> U.Unit
-lookupPrim Break      = return $ T.trivialScheme U.Unit -- TODO: this is should be void?
-lookupPrim Now        = return $ T.trivialScheme $ U.Unit -:> U.Time
-lookupPrim (PrimOp _) = return $ T.trivialScheme $ U.I32 -:> U.I32 -:> U.I32
+lookupPrim _   (CQuote _) = return $ T.forall ["a"] $ var "a"
+lookupPrim _   Loop       = return $ T.forall ["a"] $ var "a" -:> U.Unit
+lookupPrim _   Break      = return $ T.trivialScheme U.Unit -- TODO: this is should be void?
+lookupPrim _   Now        = return $ T.trivialScheme $ U.Unit -:> U.Time
+lookupPrim _   (PrimOp _) = return $ T.trivialScheme $ U.I32 -:> U.I32 -:> U.I32
 -- TODO: ^ this should actually be returning bool for some ops
-lookupPrim _          = undefined
--- lookupPrim Par = _wv
--- lookupPrim Wait = _ww
--- lookupPrim (CCall cs) = _wC
--- lookupPrim (FfiCall vi) = _wD
+lookupPrim len Par        = return $ T.forall tvs $ U.foldArrow (args, ret)
+ where
+  tvs  = take len $ map (("a" <>) . showId) [(1 :: Int) ..]
+  args = map var tvs
+  ret  = U.tuple args
+lookupPrim len Wait = return $ T.forall tvs $ U.foldArrow (args, ret)
+ where
+  tvs  = take len $ map (("a" <>) . showId) [(1 :: Int) ..]
+  args = map var tvs
+  ret  = U.Unit
+lookupPrim _ p =
+  Compiler.unexpected $ "lookupPrim could not handle: " ++ show p
+-- lookupPrim (CCall cs) = _wC TODO:
+-- lookupPrim (FfiCall vi) = _wD TODO:
 
-lookupLit :: Literal -> U.Infer U.Scheme
+lookupLit :: Literal -> Infer U.Scheme
 lookupLit (LitIntegral _) = return $ T.trivialScheme U.I32
 -- TODO: ^ integral typeclasses
 lookupLit LitEvent        = return $ T.trivialScheme U.Unit

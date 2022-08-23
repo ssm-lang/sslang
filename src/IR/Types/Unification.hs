@@ -22,10 +22,10 @@ module IR.Types.Unification
   , unfreeze
   , freezeScheme
   , unfreezeScheme
-  , Infer
-  , Ctx
-  , lookupBinding
-  , withBindings
+  , HasFreeVars(..)
+  , InferM
+  , MonadReader(..)
+  , MonadError(..)
   , (=:=)
   , fresh
   , generalize
@@ -46,15 +46,13 @@ module IR.Types.Unification
   , pattern Arrow
   , foldArrow
   , unfoldArrow
-  , pattern TVar) where
-
+  , pattern TVar
+  ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( Identifiable(..)
-                                                , Identifier(..)
                                                 , TConId(..)
                                                 , TVarId(..)
-                                                , fromId
                                                 , fromString
                                                 , genId
                                                 )
@@ -82,7 +80,6 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 )
 import           Control.Monad.Trans            ( MonadTrans(..) )
-import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Function                  ( (&) )
 import           Data.Functor                   ( (<&>) )
 import qualified Data.Map                      as M
@@ -115,7 +112,7 @@ unfreeze (T.TVar v    ) = UTerm $ TVarF v
 --
 -- Fails if the unification type contains more than just contructors and
 -- variables.
-freeze :: Type -> Infer T.Type
+freeze :: Type -> InferM ctx T.Type
 freeze (UTCon tc ts) = mapM freeze ts <&> T.TCon tc
 freeze (UTVar v    ) = return $ T.TVar v
 freeze t =
@@ -128,7 +125,7 @@ freeze t =
 unfreezeScheme :: T.Scheme -> Scheme
 unfreezeScheme (T.Scheme s) = fmap unfreeze s
 
-freezeScheme :: Scheme -> Infer T.Scheme
+freezeScheme :: Scheme -> InferM ctx T.Scheme
 freezeScheme s = T.Scheme <$> mapM freeze s
 
 -- | Catamorphism over unification types; useful for term rewriting.
@@ -160,7 +157,7 @@ instance Fallible TypeF IntVar Compiler.Error where
       <> show t2
 
 class HasFreeVars a where
-   freeVars :: a -> Infer (S.Set IntVar)
+   freeVars :: a -> InferM ctx (S.Set IntVar)
 
 instance HasFreeVars Type where
   freeVars = fmap S.fromList . lift . lift . getFreeVars
@@ -168,44 +165,28 @@ instance HasFreeVars Type where
 instance HasFreeVars Scheme where
   freeVars (Forall _ _ t) = freeVars t
 
-instance HasFreeVars Ctx where
-  freeVars = fmap S.unions . mapM freeVars . M.elems
-
--- | Maps data constructors and
-type Ctx = M.Map Identifier Scheme
-
-lookupBinding :: Identifiable i => i -> Infer Scheme
-lookupBinding (fromId -> x) =
-  ask >>= maybe (throwError unbound) return . M.lookup x
- where
-  unbound = Compiler.TypeError $ fromString $ "Unbound variable: " <> show x
-
-withBindings
-  :: (MonadReader Ctx m, Identifiable i) => [(i, Scheme)] -> m a -> m a
-withBindings bs = local $ \s -> foldr (uncurry M.insert . first fromId) s bs
-
 -- | Inference monad, build on top of the unification algorithm.
-type Infer
-  = ReaderT Ctx (ExceptT Compiler.Error (IntBindingT TypeF Compiler.Pass))
+type InferM ctx
+  = ReaderT ctx (ExceptT Compiler.Error (IntBindingT TypeF Compiler.Pass))
 
-fresh :: Infer Type
+fresh :: InferM ctx Type
 fresh = UVar <$> lift (lift freeVar)
 
 infix 4 =:=
-(=:=) :: Type -> Type -> Infer ()
+(=:=) :: Type -> Type -> InferM ctx ()
 s =:= t = lift $ s U.=:= t >> return ()
 
-applyBindings :: Type -> Infer Type
+applyBindings :: Type -> InferM ctx Type
 applyBindings = lift . U.applyBindings
 
-instantiate :: Scheme -> Infer Type
+instantiate :: Scheme -> InferM ctx Type
 instantiate (Forall (S.toList -> xs) _ uty) = do
   subs <- forM xs $ \v -> do
     fv <- fresh
     return (Left v, fv)
   return $ substU (M.fromList subs) uty
 
-generalize :: Type -> Infer Scheme
+generalize :: HasFreeVars ctx => Type -> InferM ctx Scheme
 generalize uty = do
   uty'   <- applyBindings uty
   ctx    <- ask
@@ -220,9 +201,9 @@ generalize uty = do
 mkVarName :: String -> IntVar -> TVarId
 mkVarName nm (IntVar v) = genId $ fromString $ nm ++ show v
 
-runInfer :: Infer a -> Compiler.Pass a
-runInfer m =
-  m & (`runReaderT` M.empty) & runExceptT & evalIntBindingT >>= \case
+runInfer :: ctx -> InferM ctx a -> Compiler.Pass a
+runInfer ctx m =
+  m & (`runReaderT` ctx) & runExceptT & evalIntBindingT >>= \case
     Left  err -> Compiler.throwError err
     Right res -> return res
 

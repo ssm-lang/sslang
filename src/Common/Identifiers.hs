@@ -42,6 +42,7 @@ module Common.Identifiers
   ( Identifiable(..)
   , IsString(..)
   , fromId
+  , showId
   , TConId(..)
   , TVarId(..)
   , DConId(..)
@@ -84,6 +85,10 @@ class (IsString i, Ord i) => Identifiable i where
 -- | Explicitly convert between two types of identifiers.
 fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
+
+-- | Convert a showable instance to some kind of identifier.
+showId :: (Show a, Identifiable b) => a -> b
+showId = fromString . show
 
 {- | A generic Sslang identifier.
 
