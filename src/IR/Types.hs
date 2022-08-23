@@ -1,7 +1,7 @@
 module IR.Types
   ( module IR.Types.Type
-  , inferProgram
+  , typecheckProgram
   ) where
 
-import           IR.Types.Inference             ( inferProgram )
 import           IR.Types.Type
+import           IR.Types.Typechecking          ( typecheckProgram )

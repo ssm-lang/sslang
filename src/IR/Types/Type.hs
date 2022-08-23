@@ -12,6 +12,7 @@ import           Common.Identifiers             ( DConId(..)
                                                 , Identifiable
                                                 , TConId(..)
                                                 , TVarId(..)
+                                                , fromId
                                                 , fromString
                                                 )
 import           Common.Pretty                  ( (<+>)
@@ -23,6 +24,7 @@ import           Common.Pretty                  ( (<+>)
                                                 , parens
                                                 )
 
+import           Data.Foldable                  ( toList )
 import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
@@ -57,6 +59,17 @@ substitute in 'Type' vs 'UType' when performing type inference/unification.
 -}
 data SchemeOf t = Forall (S.Set TVarId) Constraint t
   deriving (Eq, Show, Functor, Foldable, Traversable, Typeable, Data)
+
+-- | Unwrap a scheme and obtain the underlying type.
+unScheme :: SchemeOf t -> t
+unScheme (Forall _ _ t) = t
+
+-- | Construct a trivial scheme of the underlying type.
+trivialScheme :: t -> SchemeOf t
+trivialScheme = forall []
+
+forall :: (Functor l, Foldable l) => l TVarId -> t -> SchemeOf t
+forall vs = Forall (S.fromList $ toList $ fmap fromId vs) CTrue
 
 -- | Schemes over 'Type'.
 newtype Scheme = Scheme (SchemeOf Type)

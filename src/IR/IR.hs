@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DeriveTraversable #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
@@ -35,7 +36,6 @@ import           Common.Identifiers             ( Binder
                                                 )
 import           Common.Pretty
 import           Control.Monad                  ( void )
-import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
@@ -57,7 +57,7 @@ data Program t = Program
   , programDefs  :: [(VarId, Expr t)]
   , typeDefs     :: [(TConId, TypeDef)]
   }
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor)
 
 
 {- | The type definition associated with a type constructor.
@@ -92,7 +92,6 @@ Note that these don't carry any connotation of type: @1@ just means @1@,
 -}
 data Literal
   = LitIntegral Integer
-  | LitBool Bool
   | LitEvent
   deriving (Eq, Show, Typeable, Data)
 
@@ -212,7 +211,7 @@ data Expr t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -292,34 +291,6 @@ unfoldLambda e = ([], e)
 foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
 foldLambda args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `Arrow` extract b
-
-instance Functor Program where
-  fmap f p = p { programDefs = second (fmap f) <$> programDefs p
-               , typeDefs    = typeDefs p
-               , externDecls = externDecls p
-               }
-
-instance Functor Expr where
-  fmap f (Var  v t      ) = Var v (f t)
-  fmap f (Data d t      ) = Data d (f t)
-  fmap f (Lit  l t      ) = Lit l (f t)
-  fmap f (App    l  r  t) = App (fmap f l) (fmap f r) (f t)
-  fmap f (Let    xs b  t) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
-  fmap f (Lambda v  b  t) = Lambda v (fmap f b) (f t)
-  fmap f (Match  s  as t) = Match (fmap f s) (fmap (second $ fmap f) as) (f t)
-  fmap f (Prim   p  as t) = Prim p (fmap (fmap f) as) (f t)
-
-instance Foldable Expr where
-  foldMap f (Var  _ t ) = f t
-  foldMap f (Data _ t ) = f t
-  foldMap f (Lit  _ t ) = f t
-  foldMap f (App l r t) = foldMap f l <> foldMap f r <> f t
-  foldMap f (Let xs b t) =
-    mconcat (map (foldMap f . snd) xs) <> foldMap f b <> f t
-  foldMap f (Lambda _ b t) = foldMap f b <> f t
-  foldMap f (Match s as t) =
-    foldMap f s <> mconcat (map (foldMap f . snd) as) <> f t
-  foldMap f (Prim _ es t) = mconcat (map (foldMap f) es) <> f t
 
 {- | Predicate of whether an expression "looks about right".
 
@@ -479,7 +450,6 @@ instance Pretty Alt where
 
 instance Pretty Literal where
   pretty (LitIntegral i) = pretty $ show i
-  pretty (LitBool     b) = pretty $ show b
   pretty LitEvent        = pretty "()"
 
 instance Pretty PrimOp where
@@ -591,7 +561,6 @@ instance Dumpy Alt where
 
 instance Dumpy Literal where
   dumpy (LitIntegral i) = pretty $ show i
-  dumpy (LitBool     b) = pretty $ show b
   dumpy LitEvent        = pretty "()"
 
 instance Dumpy PrimOp where

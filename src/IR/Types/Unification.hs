@@ -1,5 +1,4 @@
 {-# LANGUAGE StandaloneDeriving #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -10,54 +9,82 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module IR.Types.Unification
-  ( UType
-  , UScheme
+  ( Type
+  , Scheme
   , pattern UTCon
   , pattern UTVar
+  , applyBindings
   , freeze
   , unfreeze
   , freezeScheme
   , unfreezeScheme
   , Infer
   , Ctx
-  , lookupType
-  , withBinding
+  , lookupBinding
+  , withBindings
   , (=:=)
+  , fresh
   , generalize
   , instantiate
   , runInfer
-  ) where
+  , isTuple
+  , tuple
+  , pattern U8
+  , pattern I8
+  , pattern U32
+  , pattern I32
+  , pattern U64
+  , pattern I64
+  , pattern Time
+  , pattern List
+  , pattern Ref
+  , pattern Unit
+  , pattern Arrow
+  , foldArrow
+  , unfoldArrow
+  , pattern TVar) where
 
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( TConId(..)
+import           Common.Identifiers             ( Identifiable(..)
+                                                , Identifier(..)
+                                                , TConId(..)
                                                 , TVarId(..)
+                                                , fromId
                                                 , fromString
                                                 , genId
                                                 )
 import qualified IR.Types.Type                 as T
 import           IR.Types.Type                  ( SchemeOf(Forall) )
 
-import           Control.Unification     hiding ( (=:=)
-                                                , applyBindings
-                                                , freeze
-                                                , unfreeze
+import           Control.Unification            ( BindingMonad(freeVar)
+                                                , Fallible(..)
+                                                , UTerm(..)
+                                                , Unifiable
+                                                , getFreeVars
                                                 )
 import qualified Control.Unification           as U
-import           Control.Unification.IntVar
+import           Control.Unification.IntVar     ( IntBindingT
+                                                , IntVar(..)
+                                                , evalIntBindingT
+                                                )
 
-import           Control.Arrow                  ( (>>>) )
 import           Control.Monad                  ( forM )
 import           Control.Monad.Except           ( ExceptT
                                                 , MonadError(..)
                                                 , runExceptT
                                                 )
-import           Control.Monad.Identity         ( Identity(runIdentity) )
 import           Control.Monad.Reader           ( MonadReader(..)
-                                                , ReaderT(runReaderT)
+                                                , ReaderT(..)
                                                 )
 import           Control.Monad.Trans            ( MonadTrans(..) )
+import           Data.Bifunctor                 ( Bifunctor(..) )
+import           Data.Function                  ( (&) )
+import           Data.Functor                   ( (<&>) )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( fromMaybe )
 import qualified Data.Set                      as S
@@ -70,33 +97,38 @@ deriving instance Unifiable []
 data TypeF a = TConF TConId [a] | TVarF TVarId
   deriving (Show, Eq, Functor, Foldable, Traversable, Generic1, Unifiable)
 
-type UType = UTerm TypeF IntVar
-type UScheme = T.SchemeOf UType
+type Type = UTerm TypeF IntVar
+type Scheme = T.SchemeOf Type
 
-pattern UTCon :: TConId -> [UType] -> UType
+pattern UTCon :: TConId -> [Type] -> Type
 pattern UTCon tc ts = UTerm (TConF tc ts)
 
-pattern UTVar :: TVarId -> UType
+pattern UTVar :: TVarId -> Type
 pattern UTVar v = UTerm (TVarF v)
 
--- | Promote a 'T.Type' to a 'UType'.
-unfreeze :: T.Type -> UType
+-- | Promote a 'T.Type' to a 'Type'.
+unfreeze :: T.Type -> Type
 unfreeze (T.TCon tc ts) = UTerm $ TConF tc $ fmap unfreeze ts
 unfreeze (T.TVar v    ) = UTerm $ TVarF v
 
--- | Demote a 'UType' to a regular 'T.Type'.
+-- | Demote a 'Type' to a regular 'T.Type'.
 --
--- Fails (i.e., returns 'Nothing') if the unification type contains more than
--- just contructors and variables.
-freeze :: UType -> Maybe T.Type
-freeze (UTCon tc ts) = mapM freeze ts >>= Just . T.TCon tc
-freeze (UTVar v    ) = Just $ T.TVar v
-freeze _             = Nothing
+-- Fails if the unification type contains more than just contructors and
+-- variables.
+freeze :: Type -> Infer T.Type
+freeze (UTCon tc ts) = mapM freeze ts <&> T.TCon tc
+freeze (UTVar v    ) = return $ T.TVar v
+freeze t =
+  throwError
+    $  Compiler.UnexpectedError
+    $  fromString
+    $  "Could not freeze: "
+    ++ show t
 
-unfreezeScheme :: T.Scheme -> UScheme
+unfreezeScheme :: T.Scheme -> Scheme
 unfreezeScheme (T.Scheme s) = fmap unfreeze s
 
-freezeScheme :: UScheme -> Maybe T.Scheme
+freezeScheme :: Scheme -> Infer T.Scheme
 freezeScheme s = T.Scheme <$> mapM freeze s
 
 -- | Catamorphism over unification types; useful for term rewriting.
@@ -104,7 +136,7 @@ ucata :: Functor t => (v -> a) -> (t a -> a) -> UTerm t v -> a
 ucata f _ (UVar  v) = f v
 ucata f g (UTerm t) = g (fmap (ucata f g) t)
 
-substU :: M.Map (Either TVarId IntVar) UType -> UType -> UType
+substU :: M.Map (Either TVarId IntVar) Type -> Type -> Type
 substU m = ucata f g
  where
   f v = fromMaybe (UVar v) $ M.lookup (Right v) m
@@ -130,45 +162,50 @@ instance Fallible TypeF IntVar Compiler.Error where
 class HasFreeVars a where
    freeVars :: a -> Infer (S.Set IntVar)
 
-instance HasFreeVars UType where
+instance HasFreeVars Type where
   freeVars = fmap S.fromList . lift . lift . getFreeVars
 
-instance HasFreeVars UScheme where
+instance HasFreeVars Scheme where
   freeVars (Forall _ _ t) = freeVars t
 
 instance HasFreeVars Ctx where
   freeVars = fmap S.unions . mapM freeVars . M.elems
 
-type Ctx = M.Map TVarId UScheme
+-- | Maps data constructors and
+type Ctx = M.Map Identifier Scheme
 
-lookupType :: TVarId -> Infer UType
-lookupType x = ask >>= maybe (throwError unbound) instantiate . M.lookup x
+lookupBinding :: Identifiable i => i -> Infer Scheme
+lookupBinding (fromId -> x) =
+  ask >>= maybe (throwError unbound) return . M.lookup x
  where
   unbound = Compiler.TypeError $ fromString $ "Unbound variable: " <> show x
 
-withBinding :: MonadReader Ctx m => TVarId -> UScheme -> m a -> m a
-withBinding x ty = local (M.insert x ty)
+withBindings
+  :: (MonadReader Ctx m, Identifiable i) => [(i, Scheme)] -> m a -> m a
+withBindings bs = local $ \s -> foldr (uncurry M.insert . first fromId) s bs
 
 -- | Inference monad, build on top of the unification algorithm.
-type Infer = ReaderT Ctx (ExceptT Compiler.Error (IntBindingT TypeF Identity))
+type Infer
+  = ReaderT Ctx (ExceptT Compiler.Error (IntBindingT TypeF Compiler.Pass))
 
-fresh :: Infer UType
+fresh :: Infer Type
 fresh = UVar <$> lift (lift freeVar)
 
-(=:=) :: UType -> UType -> Infer UType
-s =:= t = lift $ s U.=:= t
+infix 4 =:=
+(=:=) :: Type -> Type -> Infer ()
+s =:= t = lift $ s U.=:= t >> return ()
 
-applyBindings :: UType -> Infer UType
+applyBindings :: Type -> Infer Type
 applyBindings = lift . U.applyBindings
 
-instantiate :: UScheme -> Infer UType
+instantiate :: Scheme -> Infer Type
 instantiate (Forall (S.toList -> xs) _ uty) = do
   subs <- forM xs $ \v -> do
     fv <- fresh
     return (Left v, fv)
   return $ substU (M.fromList subs) uty
 
-generalize :: UType -> Infer UScheme
+generalize :: Type -> Infer Scheme
 generalize uty = do
   uty'   <- applyBindings uty
   ctx    <- ask
@@ -183,19 +220,68 @@ generalize uty = do
 mkVarName :: String -> IntVar -> TVarId
 mkVarName nm (IntVar v) = genId $ fromString $ nm ++ show v
 
-runInfer :: Infer UType -> Either Compiler.Error T.Scheme
-runInfer =
-  (>>= applyBindings)
-    >>> (>>= (generalize >>> fmap freezeScheme))
-    >>> flip runReaderT M.empty
-    >>> runExceptT
-    >>> evalIntBindingT
-    >>> runIdentity
-    >>> ensureJust
- where
-  ensureJust
-    :: Either Compiler.Error (Maybe T.Scheme) -> Either Compiler.Error T.Scheme
-  ensureJust (Right (Just s)) = Right s
-  ensureJust (Right Nothing) =
-    Left $ Compiler.UnexpectedError $ fromString "Could not unfreeze scheme."
-  ensureJust (Left e) = Left e
+runInfer :: Infer a -> Compiler.Pass a
+runInfer m =
+  m & (`runReaderT` M.empty) & runExceptT & evalIntBindingT >>= \case
+    Left  err -> Compiler.throwError err
+    Right res -> return res
+
+pattern Arrow :: Type -> Type -> Type
+pattern Arrow a b = UTerm (TConF "->" [a, b])
+
+unfoldArrow :: Type -> ([Type], Type)
+unfoldArrow (Arrow a b) = let (as, rt) = unfoldArrow b in (a : as, rt)
+unfoldArrow t           = ([], t)
+
+foldArrow :: ([Type], Type) -> Type
+foldArrow (a : as, rt) = a `Arrow` foldArrow (as, rt)
+foldArrow ([]    , t ) = t
+
+pattern TVar :: TVarId -> Type
+pattern TVar v = UTerm (TVarF v)
+
+pattern Unit :: Type
+pattern Unit = UTerm (TConF "()" [])
+
+pattern Ref :: Type -> Type
+pattern Ref a = UTerm (TConF "&" [a])
+
+pattern List :: Type -> Type
+pattern List a = UTerm (TConF "[]" [a])
+
+pattern Time :: Type
+pattern Time = UTerm (TConF "Time" [])
+
+pattern I64 :: Type
+pattern I64 = UTerm (TConF "Int64" [])
+
+pattern U64 :: Type
+pattern U64 = UTerm (TConF "UInt64" [])
+
+pattern I32 :: Type
+pattern I32 = UTerm (TConF "Int32" [])
+
+pattern U32 :: Type
+pattern U32 = UTerm (TConF "UInt32" [])
+
+pattern I8 :: Type
+pattern I8 = UTerm (TConF "Int8" [])
+
+pattern U8 :: Type
+pattern U8 = UTerm (TConF "UInt8" [])
+
+tuple :: [Type] -> Type
+tuple ts = UTerm $ TConF (tupleId $ length ts) ts
+
+-- | Tests whether a 'Type' is a tuple of some arity.
+isTuple :: Type -> Bool
+isTuple (UTerm (TConF n ts)) | length ts >= 2 = n == tupleId (length ts)
+isTuple _ = False
+
+-- | Construct the name of the built-in tuple type of given arity.
+--
+-- Fails if arity is less than 2.
+tupleId :: (Integral i, Identifiable v) => i -> v
+tupleId i
+  | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
+  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)

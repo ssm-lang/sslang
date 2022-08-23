@@ -770,8 +770,6 @@ genLiteral = marshal . genLiteralRaw
 -- | Generate C value for SSM literal, unmarshalled.
 genLiteralRaw :: I.Literal -> C.Exp
 genLiteralRaw (I.LitIntegral i    ) = [cexp|$int:i|]
-genLiteralRaw (I.LitBool     True ) = [cexp|true|]
-genLiteralRaw (I.LitBool     False) = [cexp|false|]
 genLiteralRaw I.LitEvent            = [cexp|1|]
 
 

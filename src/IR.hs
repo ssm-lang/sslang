@@ -19,7 +19,7 @@ import           IR.ExternToCall                ( externToCall )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.Types                       ( fromAnnotations
-                                                , inferProgram
+                                                , typecheckProgram
                                                 )
 
 import           Control.Monad                  ( when )
@@ -76,7 +76,7 @@ run :: Options -> A.Program -> Pass (I.Program I.Type)
 run opt p = do
   p <- lowerProgram p
   when (mode opt == DumpIR) $ dump $ fmap fromAnnotations p
-  p <- inferProgram p
+  p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
   p <- instProgram p
   p <- dConToFunc p
