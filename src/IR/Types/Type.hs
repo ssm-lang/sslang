@@ -29,6 +29,7 @@ import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
 import qualified Data.Set                      as S
+import           Data.Set                       ( (\\) )
 
 
 {- | The type of sslang types.
@@ -64,10 +65,7 @@ data SchemeOf t = Forall (S.Set TVarId) Constraint t
 unScheme :: SchemeOf t -> t
 unScheme (Forall _ _ t) = t
 
--- | Construct a trivial scheme of the underlying type.
-trivialScheme :: t -> SchemeOf t
-trivialScheme = forall []
-
+-- | Construct a scheme with quantified type variables and a trivial constraint
 forall :: (Functor l, Foldable l) => l TVarId -> t -> SchemeOf t
 forall vs = Forall (S.fromList $ toList $ fmap fromId vs) CTrue
 
@@ -94,6 +92,19 @@ fromAnnotations = go . unAnnotations
   go (AnnType t : _   ) = t
   go (_         : anns) = go anns
   go []                 = error "TODO: No type annotations"
+
+class HasFreeVars a where
+  freeVars :: a -> S.Set TVarId
+
+instance HasFreeVars Type where
+  freeVars (TCon _ ts) = S.unions $ map freeVars ts
+  freeVars (TVar v   ) = S.singleton v
+
+instance HasFreeVars Scheme where
+  freeVars (Scheme (Forall s _ t)) = freeVars t \\ s
+
+schemeOf :: Type -> Scheme
+schemeOf t = Scheme $ Forall (freeVars t) CTrue t
 
 -- | Some data type that contains a sslang 'Type'.
 class HasType a where

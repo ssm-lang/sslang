@@ -15,8 +15,8 @@
 module IR.Types.Unification
   ( Type
   , Scheme
-  , pattern UTCon
-  , pattern UTVar
+  , pattern TVar
+  , pattern TCon
   , applyBindings
   , freeze
   , unfreeze
@@ -46,7 +46,6 @@ module IR.Types.Unification
   , pattern Arrow
   , foldArrow
   , unfoldArrow
-  , pattern TVar
   ) where
 
 import qualified Common.Compiler               as Compiler
@@ -54,7 +53,7 @@ import           Common.Identifiers             ( Identifiable(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , fromString
-                                                , genId
+                                                , showId
                                                 )
 import qualified IR.Types.Type                 as T
 import           IR.Types.Type                  ( SchemeOf(Forall) )
@@ -97,11 +96,11 @@ data TypeF a = TConF TConId [a] | TVarF TVarId
 type Type = UTerm TypeF IntVar
 type Scheme = T.SchemeOf Type
 
-pattern UTCon :: TConId -> [Type] -> Type
-pattern UTCon tc ts = UTerm (TConF tc ts)
+pattern TVar :: TVarId -> Type
+pattern TVar v = UTerm (TVarF v)
 
-pattern UTVar :: TVarId -> Type
-pattern UTVar v = UTerm (TVarF v)
+pattern TCon :: TConId -> [Type] -> Type
+pattern TCon tc ts = UTerm (TConF tc ts)
 
 -- | Promote a 'T.Type' to a 'Type'.
 unfreeze :: T.Type -> Type
@@ -113,8 +112,8 @@ unfreeze (T.TVar v    ) = UTerm $ TVarF v
 -- Fails if the unification type contains more than just contructors and
 -- variables.
 freeze :: Type -> InferM ctx T.Type
-freeze (UTCon tc ts) = mapM freeze ts <&> T.TCon tc
-freeze (UTVar v    ) = return $ T.TVar v
+freeze (TCon tc ts) = mapM freeze ts <&> T.TCon tc
+freeze (TVar v    ) = return $ T.TVar v
 freeze t =
   throwError
     $  Compiler.UnexpectedError
@@ -137,7 +136,7 @@ substU :: M.Map (Either TVarId IntVar) Type -> Type -> Type
 substU m = ucata f g
  where
   f v = fromMaybe (UVar v) $ M.lookup (Right v) m
-  g (TVarF v) = fromMaybe (UTVar v) (M.lookup (Left v) m)
+  g (TVarF v) = fromMaybe (TVar v) (M.lookup (Left v) m)
   g t         = UTerm t
 
 instance Fallible TypeF IntVar Compiler.Error where
@@ -193,13 +192,14 @@ generalize uty = do
   tmfvs  <- freeVars uty'
   ctxfvs <- freeVars ctx
   let fvs  = S.toList $ tmfvs \\ ctxfvs
-      xs   = map (mkVarName "a") fvs
-      subs = zip (map Right fvs) (map UTVar xs)
+      xs   = take (length fvs) tvarNames
+      subs = zip (map Right fvs) (map TVar xs)
       bty  = substU (M.fromList subs) uty'
   return $ Forall (S.fromList xs) T.CTrue bty
-
-mkVarName :: String -> IntVar -> TVarId
-mkVarName nm (IntVar v) = genId $ fromString $ nm ++ show v
+ where
+  -- TODO: generate prettier names
+  tvarNames :: [TVarId]
+  tvarNames = map (("a" <>) . showId) [(1 :: Int) ..]
 
 runInfer :: ctx -> InferM ctx a -> Compiler.Pass a
 runInfer ctx m =
@@ -217,9 +217,6 @@ unfoldArrow t           = ([], t)
 foldArrow :: ([Type], Type) -> Type
 foldArrow (a : as, rt) = a `Arrow` foldArrow (as, rt)
 foldArrow ([]    , t ) = t
-
-pattern TVar :: TVarId -> Type
-pattern TVar v = UTerm (TVarF v)
 
 pattern Unit :: Type
 pattern Unit = UTerm (TConF "()" [])

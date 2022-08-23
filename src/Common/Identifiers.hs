@@ -79,7 +79,7 @@ import           Language.C                     ( Id(..) )
 import           Language.C.Quote               ( ToIdent(..) )
 
 -- | A type that may be used as a Sslang identifier.
-class (IsString i, Ord i) => Identifiable i where
+class (IsString i, Ord i, Show i) => Identifiable i where
   ident :: i -> String -- ^ Obtain its underlying 'String' representation.
 
 -- | Explicitly convert between two types of identifiers.
