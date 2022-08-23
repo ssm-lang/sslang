@@ -33,6 +33,7 @@ Usage() {
     echo "-c    Clean up any existing generated files"
     echo "-k    Keep intermediate files"
     echo "-t    Enable memory tracing"
+    echo "-m    Use malloc only for the heap"
     echo "-h    Print this help"
     exit 1
 }
@@ -116,8 +117,8 @@ Check() {
 
     NoteGen "${exec} ${result} ${diff}"
     Run $SSLC ${SSLCARGS} "$1" ">" "${csource}" && \
-    Run $CC -c -o "${obj}" $d_memory_trace -DCONFIG_MEM_STATS "${csource}" && \
-    Run $LINK -o "${exec}" "${obj}" $d_memory_trace -DCONFIG_MEM_STATS $platformdir/*.c -lssm -lpthread && \
+    Run $CC -c -o "${obj}" $EXTRA_CFLAGS "${csource}" && \
+    Run $LINK -o "${exec}" "${obj}" $EXTRA_CFLAGS $platformdir/*.c -lssm -lpthread && \
     Run "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
@@ -200,10 +201,9 @@ CheckFail() {
     fi
 }
 
-d_memory_trace=
-c_memory_trace=
+EXTRA_CFLAGS=-DCONFIG_MEM_STATS
 
-while getopts kcth c; do
+while getopts kctmh c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -213,8 +213,10 @@ while getopts kcth c; do
 	    exit 0
 	    ;;
 	t) # Enable memory tracing
-	    d_memory_trace="-DCONFIG_MEM_TRACE"
-	    c_memory_trace="CONFIG_MEM_TRACE"
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MEM_TRACE"
+	    ;;
+	m) # Enable using malloc-only
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
 	    ;;
 	h) # Help
 	    Usage
@@ -231,7 +233,7 @@ else
     files="tests/*.ssl"
 fi
 
-Run make -C "$SSMDIR" CONFIGS=\"CONFIG_MEM_STATS $c_memory_trace\" build/libssm.a "1>&2" 2>> $globallog
+Run make -C "$SSMDIR" EXTRA_CFLAGS=\"$EXTRA_CFLAGS\" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do
