@@ -1,8 +1,9 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TupleSections #-}
 
 module IR.DropInference
- ( insertDropsProgram
- ) where
+  ( insertDropsProgram
+  ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
@@ -14,13 +15,12 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
-import           Data.Maybe                     ( fromJust
-                                                )
+import           Data.Functor                   ( (<&>) )
+import           Data.Maybe                     ( fromJust )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
 import qualified IR.Types.Poly                 as Poly
-import           IR.Types.TypeSystem            ( collectArrow
-                                                )
+import           IR.Types.TypeSystem            ( collectArrow )
 
 -- | Inserting State.
 data InsertState = InsertState
@@ -98,20 +98,17 @@ insertDropTop (var, expr) = do
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
-insertDropExpr app@(I.App _ _ _ ) = do
+insertDropExpr app@I.App{} = do
   let (fun, args) = I.unzipApp app
-  args' <- mapM insertDropTypedExpr args
-  fun' <- insertDropLeft fun
+  args' <- forM args $ \(e, t) -> (, t) <$> insertDropExpr e
+  fun'  <- insertDropLeft fun
   return $ I.zipApp fun' args'
-  where
-     insertDropTypedExpr (e, t) = do
-       e' <- insertDropExpr e
-       return (e', t)
-     insertDropLeft e@(I.Prim {})  = return e
-     insertDropLeft e@(I.Var{})    = return e  -- Don't dup f in (f e1 e2)
-     insertDropLeft e@(I.Data{})   = return e
-     insertDropLeft e@(I.Lambda{}) = return e
-     insertDropLeft e = insertDropExpr e
+ where
+  insertDropLeft e@I.Prim{}   = return e
+  insertDropLeft e@I.Var{}    = return e  -- Don't dup f in (f e1 e2)
+  insertDropLeft e@I.Data{}   = return e
+  insertDropLeft e@I.Lambda{} = return e
+  insertDropLeft e            = insertDropExpr e
 
 -- Inserting drops into let bindings.
 insertDropExpr (I.Let bins expr typ) = do
@@ -119,32 +116,32 @@ insertDropExpr (I.Let bins expr typ) = do
 
   expr' <- insertDropExpr expr
 
-  let retExpr' = foldr makeDrop expr' $ map varFromBind bins'
+  let retExpr' = foldr (makeDrop . varFromBind) expr' bins'
   return $ I.Let bins' retExpr' typ
-  where
-    varFromBind (v, d) = I.Var (fromJust v) (I.extract d)
-    
-    droppedBinder (Nothing, d) = do
-      temp <- getFresh "_underscore"
-      d' <- insertDropExpr d
-      return (Just temp, d')
-    droppedBinder (v, d) = do
-      d' <- insertDropExpr d
-      return (v, d')
-  
+ where
+  varFromBind (v, d) = I.Var (fromJust v) (I.extract d)
+
+  droppedBinder (Nothing, d) = do
+    temp <- getFresh "_underscore"
+    d'   <- insertDropExpr d
+    return (Just temp, d')
+  droppedBinder (v, d) = do
+    d' <- insertDropExpr d
+    return (v, d')
+
 -- Handle nested lambdas by collecting them into a single expression
 -- with multiple arguments, adding a local result variable,
 -- drops for each of the arguments, and return value
 insertDropExpr lam@(I.Lambda _ _ typ) = do
-  let (args, body) = I.collectLambda lam
-      (argTypes, _) = collectArrow typ
-  
+  let (args    , body) = I.collectLambda lam
+      (argTypes, _   ) = collectArrow typ
+
   args' <- forM args $ maybe (getFresh "_arg") return -- handle _ arguments
-  let typedArgs = zipWith (\a b -> (Just a, b)) args' argTypes 
-      argVars = zipWith I.Var args' argTypes
-      
+  let typedArgs = zipWith (\a b -> (Just a, b)) args' argTypes
+      argVars   = zipWith I.Var args' argTypes
+
   body' <- insertDropExpr body
-  
+
   return $ I.makeLambdaChain typedArgs $ foldr makeDrop body' argVars
 
 -- Inserting drops into pattern-matching.
@@ -157,10 +154,10 @@ insertDropExpr match@(I.Match expr alts typ) = do
 -}
 
 insertDropExpr (I.Match expr alts typ) = do
-   expr' <- insertDropExpr expr
-   alts' <- forM alts insertDropAlt
-   return $ I.Match expr' alts' typ
-   
+  expr' <- insertDropExpr expr
+  alts' <- forM alts insertDropAlt
+  return $ I.Match expr' alts' typ
+
 
 -- Inserting dup/drops into primitive's arguments.
 insertDropExpr (I.Prim p es typ) = do
@@ -177,7 +174,8 @@ insertDropExpr dcon@(I.Data _ _) = do
 insertDropExpr e = return e
 
 -- | Rewrite an arm of a Match construct
-insertDropAlt :: (I.Alt, I.Expr Poly.Type) -> InsertFn (I.Alt, I.Expr Poly.Type)
+insertDropAlt
+  :: (I.Alt, I.Expr Poly.Type) -> InsertFn (I.Alt, I.Expr Poly.Type)
 
 insertDropAlt (I.AltDefault v, e) = do
   e' <- insertDropExpr e
