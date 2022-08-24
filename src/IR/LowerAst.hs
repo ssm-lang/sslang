@@ -2,6 +2,8 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE ViewPatterns #-}
 {- | Lower the representation of a sslang Ast into sslang IR.
 
 This pass expects prior desugaring passes to ensure that:
@@ -25,9 +27,6 @@ import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Maybe                     ( fromJust
-                                                , isJust
-                                                )
 
 -- | Unannotated terms appear as an empty stack.
 untyped :: I.Annotations
@@ -84,18 +83,25 @@ lowerDef (A.DefPat aPat aBody) = do
   b <- lowerExpr aBody
   return (n, pushAnn b t)
 lowerDef (A.DefFn aName aPats aTy aBody) = do
-  pts <- mapM lowerPatType aPats
-  b   <- lowerCurry aPats aBody
-  brt <- case aTy of
+  -- Lower body
+  b <- lowerCurry aPats aBody
+
+  -- Push proper type annotation, if there is one
+  b <- case aTy of
     A.TypProper ty -> pushAnn b . I.AnnType <$> lowerType ty
     _              -> return b
-  bpt <- if all (== I.AnnType I.Hole) pts
-    then return brt
-    else case aTy of
-      A.TypReturn ty ->
-        pushAnn brt . I.AnnArrows pts . I.AnnType <$> lowerType ty
-      _ -> return $ pushAnn brt $ I.AnnArrows pts $ I.AnnType I.Hole
-  return (Just $ fromId aName, bpt)
+
+  -- Push argument + return type annotations, if there are any
+  b <- do
+    pts <- mapM lowerPatType aPats
+    rt  <- I.AnnType <$> case aTy of
+      A.TypReturn ty -> lowerType ty
+      _              -> return I.Hole
+    return $ if all (== I.AnnType I.Hole) (rt : pts)
+      then b
+      else pushAnn b $ I.AnnArrows pts rt
+
+  return (Just $ fromId aName, b)
 
 -- | Curry and lower a list of arguments to a lambda body.
 lowerCurry :: [A.Pat] -> A.Expr -> Compiler.Pass (I.Expr I.Annotations)
@@ -112,9 +118,7 @@ Performs the following desugaring inline:
 -   Unrolls 'A.Constraint' to annotate sub-expressions
 -}
 lowerExpr :: A.Expr -> Compiler.Pass (I.Expr I.Annotations)
-lowerExpr e | isJust $ lowerPrim e =
-  -- Nullary primitives
-  return $ I.Prim (fromJust $ lowerPrim e) [] untyped
+lowerExpr (lowerPrim -> Just p) = return $ I.Prim p [] untyped
 lowerExpr (A.Id v) | isCons v  = return $ I.Data (fromId v) untyped
                    | otherwise = return $ I.Var (fromId v) untyped
 lowerExpr (  A.Lit l    ) = I.Lit <$> lowerLit l <*> pure untyped
@@ -178,11 +182,13 @@ lowerPatAlt (A.PatAs _ _) =
 
 -- | Lower an AST literal into an IR literal.
 lowerLit :: A.Literal -> Compiler.Pass I.Literal
-lowerLit (A.LitInt i)     = return $ I.LitIntegral i
-lowerLit A.LitEvent       = return I.LitEvent
-lowerLit (A.LitChar   _c) = Compiler.todo "Char literals are not yet implemented"
-lowerLit (A.LitString _s) = Compiler.todo "String literals are not yet implemented"
-lowerLit (A.LitRat    _r) = Compiler.todo "Rational literals are not yet implemented"
+lowerLit (A.LitInt i)   = return $ I.LitIntegral i
+lowerLit A.LitEvent     = return I.LitEvent
+lowerLit (A.LitChar _c) = Compiler.todo "Char literals are not yet implemented"
+lowerLit (A.LitString _s) =
+  Compiler.todo "String literals are not yet implemented"
+lowerLit (A.LitRat _r) =
+  Compiler.todo "Rational literals are not yet implemented"
 
 -- | Translate an AST identifier into the corresponding IR primitive, if any.
 lowerPrim :: A.Expr -> Maybe I.Primitive
