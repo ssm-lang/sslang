@@ -34,6 +34,7 @@ Usage() {
     echo "-k    Keep intermediate files"
     echo "-t    Enable memory tracing"
     echo "-m    Use malloc only for the heap"
+    echo "-v    Run valgrind on the generated executable (implies -m)"
     echo "-h    Print this help"
     exit 1
 }
@@ -119,7 +120,7 @@ Check() {
     Run $SSLC ${SSLCARGS} "$1" ">" "${csource}" && \
     Run $CC -c -o "${obj}" $EXTRA_CFLAGS "${csource}" && \
     Run $LINK -o "${exec}" "${obj}" $EXTRA_CFLAGS $platformdir/*.c -lssm -lpthread && \
-    Run "${exec}" ">" "${result}" && \
+    Run $valgrind "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
  #    # Pretty Printer Tests
@@ -202,8 +203,9 @@ CheckFail() {
 }
 
 EXTRA_CFLAGS=-DCONFIG_MEM_STATS
+valgrind=""
 
-while getopts kctmh c; do
+while getopts kctmvh c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -217,6 +219,11 @@ while getopts kctmh c; do
 	    ;;
 	m) # Enable using malloc-only
 	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
+	    ;;
+	v) # Enable running valgrind
+	    # Turn on malloc-only
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
+	    valgrind="valgrind"
 	    ;;
 	h) # Help
 	    Usage
@@ -233,6 +240,8 @@ else
     files="tests/*.ssl"
 fi
 
+# Rebuild the runtime library because the flags may have changed
+Run make -C "$SSMDIR" clean "1>&2" 2>> $globallog
 Run make -C "$SSMDIR" EXTRA_CFLAGS=\"$EXTRA_CFLAGS\" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
