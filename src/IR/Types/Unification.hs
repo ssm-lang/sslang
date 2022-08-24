@@ -108,6 +108,7 @@ instance Show a => Show (TypeF a) where
   show (TConF "->" [a, b]) = show a <> " -> " <> show b
   show (TConF "[]" [a]   ) = "[" <> show a <> "]"
   show (TConF "&"  [a]   ) = "&" <> show a
+  show (TConF tc   []    ) = show tc
   show (TConF tc   ts    ) = unwords (show tc : map show ts)
   show (TVarF v          ) = show v
 

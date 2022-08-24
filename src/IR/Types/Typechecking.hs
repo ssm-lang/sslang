@@ -22,7 +22,7 @@ typecheckProgram p = do
 
   -- | Unravel each 'Annotation' in the list into a 'Type'.
   unravelAnns :: [(a, Expr [Annotation])] -> Compiler.Pass [(a, Expr [Type])]
-  unravelAnns (unzip -> (bs, es)) =
+  unravelAnns (unzip -> (bs, es)) = do
     -- TODO: add more context to support annotations deep inside patterns
     zip bs <$> mapM (mapM $ mapM unravelAnnotation) es
 

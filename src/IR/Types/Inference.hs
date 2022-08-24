@@ -22,14 +22,14 @@ import           Common.Identifiers             ( Identifiable(..)
 
 import           Control.Monad                  ( (<=<)
                                                 , forM
+                                                , forM_
                                                 , unless
                                                 , when
                                                 , zipWithM
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( catMaybes
-                                                , fromJust
+import           Data.Maybe                     ( fromJust
                                                 , mapMaybe
                                                 )
 import qualified Data.Set                      as S
@@ -53,7 +53,7 @@ checkAgainst anns = check (reverse anns)
   check []            t = return t
   check (T.Hole : as) t = checkAgainst as t
   check (a      : as) t = do
-    t'        <- U.instantiate =<< U.unfreezeAnn t a
+    t' <- U.instantiate =<< U.unfreezeAnn t a
     checksOut <- t <:= t'
     unless checksOut $ do
       Compiler.typeError $ unlines
@@ -70,7 +70,9 @@ inferProgram p = U.runInfer (InferCtx M.empty) $ do
   dbs <- concat <$> mapM typedefBindings (typeDefs p)
   withBindings (ebs ++ dbs) $ do
     (bs, ds) <- unzip . fromBinders <$> inferDefs (toBinders $ programDefs p)
-    ds'      <- mapM (mapM $ U.freeze <=< U.applyBindings . T.unScheme) ds
+    ds'      <- mapM
+      (mapM $ U.freeze <=< U.applyBindings . T.unScheme <=< U.generalize)
+      ds
     return $ p { programDefs = zip bs ds' }
  where
   toBinders   = map $ first Just
@@ -103,12 +105,22 @@ typedefBindings (tc, TypeDef { variants = vs, targs = tvs }) =
 
     return (Just $ fromId dc, s)
 
-inferDefs :: [(Binder, Expr [Type])] -> Infer [(Binder, Expr U.Scheme)]
+inferDefs :: [(Binder, Expr [Type])] -> Infer [(Binder, Expr U.Type)]
 inferDefs (unzip -> (bs, ds)) = do
-  ts'  <- map (T.forall []) <$> mapM (const U.fresh) (catMaybes bs)
-  ds'  <- withBindings (zip bs ts') $ mapM inferExpr ds
-  ds'' <- mapM (mapM U.generalize) ds'
-  return $ zip bs ds''
+  -- Create fresh unification variable for each binder
+  ts <- mapM (const U.fresh) bs
+
+  -- Create empty scheme for each binder's unification variable
+  let ss = T.forall [] <$> ts
+
+  -- Infer definitions with those schemes in scope
+  ds' <- withBindings (zip bs ss) $ mapM inferExpr ds
+
+  -- Unify unification variables with the inferred type of each definition
+  forM_ (zip ts ds') $ \(t, extract -> t') -> t =:= t'
+
+  -- ds'' <- mapM (mapM U.generalize) ds'
+  return $ zip bs ds'
 
 inferExpr :: Expr [Type] -> Infer (Expr U.Type)
 inferExpr (Var v ts) = do
@@ -126,10 +138,13 @@ inferExpr (App f a ts) = do
   rt <- U.fresh
   extract f' =:= extract a' -:> rt
   App f' a' <$> checkAgainst ts rt
-inferExpr (Let ds b ts) = do
+inferExpr (Let ds e ts) = do
   ds' <- inferDefs ds
-  b'  <- withBindings (map (second extract) ds') $ inferExpr b
-  Let (fmap (second $ fmap T.unScheme) ds') b' <$> checkAgainst ts (extract b')
+  bs  <- forM ds' $ \(b, d) -> do
+    s <- U.generalize $ extract d
+    return (b, s)
+  e' <- withBindings bs $ inferExpr e
+  Let ds' e' <$> checkAgainst ts (extract e')
 inferExpr (Lambda a b ts) = do
   at <- U.fresh
   withBindings [(a, T.forall [] at)] $ do
