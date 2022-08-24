@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Single unification error: #Arrow #Ref #Integral 32 #Unit, #Unit")
+TypeError (ErrorMsg "Cannot unify: () ~ &Int32 -> IntVar (-9223372036854775793)")
