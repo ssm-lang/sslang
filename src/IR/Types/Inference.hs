@@ -7,7 +7,9 @@ module IR.Types.Inference
 import           IR.IR
 import qualified IR.Types.Type                 as T
 import qualified IR.Types.Unification          as U
-import           IR.Types.Unification           ( (=:=) )
+import           IR.Types.Unification           ( (<:=)
+                                                , (=:=)
+                                                )
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( Identifiable(..)
@@ -46,7 +48,21 @@ newtype InferCtx = InferCtx
 type Infer = U.InferM InferCtx
 
 checkAgainst :: [Type] -> U.Type -> Infer U.Type
-checkAgainst _ = return
+checkAgainst anns = check (reverse anns)
+ where
+  check []            t = return t
+  check (T.Hole : as) t = checkAgainst as t
+  check (a      : as) t = do
+    t'        <- U.instantiate =<< U.unfreezeAnn t a
+    checksOut <- t <:= t'
+    unless checksOut $ do
+      Compiler.typeError $ unlines
+        [ "Type annotation is too general:"
+        , "Annotation: " ++ show a
+        , "Actual type: " ++ show t
+        , "Instantiated ann: " ++ show t'
+        ]
+    checkAgainst as t'
 
 inferProgram :: Program [Type] -> Compiler.Pass (Program Type)
 inferProgram p = U.runInfer (InferCtx M.empty) $ do

@@ -20,13 +20,13 @@ module IR.Types.Unification
   , applyBindings
   , freeze
   , unfreeze
-  , freezeScheme
-  , unfreezeScheme
+  , unfreezeAnn
   , HasFreeVars(..)
   , InferM
   , MonadReader(..)
   , MonadError(..)
   , (=:=)
+  , (<:=)
   , fresh
   , generalize
   , instantiate
@@ -70,7 +70,9 @@ import           Control.Unification.IntVar     ( IntBindingT
                                                 , evalIntBindingT
                                                 )
 
-import           Control.Monad                  ( forM )
+import           Control.Monad                  ( forM
+                                                , zipWithM
+                                                )
 import           Control.Monad.Except           ( ExceptT
                                                 , MonadError(..)
                                                 , runExceptT
@@ -104,10 +106,10 @@ pattern TCon tc ts = UTerm (TConF tc ts)
 
 instance Show a => Show (TypeF a) where
   show (TConF "->" [a, b]) = show a <> " -> " <> show b
-  show (TConF "[]" [a]) = "[" <> show a <> "]"
-  show (TConF "&" [a]) = "&" <> show a
-  show (TConF tc ts) = unwords (show tc : map show ts)
-  show (TVarF v) = show v
+  show (TConF "[]" [a]   ) = "[" <> show a <> "]"
+  show (TConF "&"  [a]   ) = "&" <> show a
+  show (TConF tc   ts    ) = unwords (show tc : map show ts)
+  show (TVarF v          ) = show v
 
 -- | Promote a 'T.Type' to a 'Type'.
 unfreeze :: T.Type -> Type
@@ -128,11 +130,22 @@ freeze t =
     $  "Could not freeze: "
     ++ show t
 
-unfreezeScheme :: T.Scheme -> Scheme
-unfreezeScheme (T.Scheme s) = fmap unfreeze s
-
-freezeScheme :: Scheme -> InferM ctx T.Scheme
-freezeScheme s = T.Scheme <$> mapM freeze s
+unfreezeAnn :: Type -> T.Type -> InferM ctx Scheme
+unfreezeAnn ut tt = Forall (T.ftv tt) T.CTrue <$> rewriteHoles ut (unfreeze tt)
+ where
+  rewriteHoles u Hole = return u
+  rewriteHoles (UTerm (TConF ud us)) (UTerm (TConF td ts))
+    | ud == td = UTerm . TConF ud <$> zipWithM rewriteHoles us ts
+    | otherwise = Compiler.typeError $ unlines
+      [ "Type constructor mismatch in annotation: "
+      , "Annotated: " <> show td
+      , "Actual: " <> show ud
+      ]
+  rewriteHoles _ u@(UTerm _) = return u
+  rewriteHoles _ (UVar _) =
+    Compiler.unexpected
+      $  "Unexpected uvar in freshly unfrozen type: "
+      ++ show tt
 
 -- | Catamorphism over unification types; useful for term rewriting.
 ucata :: Functor t => (v -> a) -> (t a -> a) -> UTerm t v -> a
@@ -182,6 +195,10 @@ infix 4 =:=
 (=:=) :: Type -> Type -> InferM ctx ()
 s =:= t = lift $ s U.=:= t >> return ()
 
+infix 4 <:=
+(<:=) :: Type -> Type -> InferM ctx Bool
+s <:= t = lift $ s U.<:= t
+
 applyBindings :: Type -> InferM ctx Type
 applyBindings = lift . U.applyBindings
 
@@ -224,6 +241,9 @@ unfoldArrow t           = ([], t)
 foldArrow :: ([Type], Type) -> Type
 foldArrow (a : as, rt) = a `Arrow` foldArrow (as, rt)
 foldArrow ([]    , t ) = t
+
+pattern Hole :: Type
+pattern Hole = UTerm (TVarF "_")
 
 pattern Unit :: Type
 pattern Unit = UTerm (TConF "()" [])
