@@ -223,7 +223,7 @@ while getopts kctmvh c; do
 	v) # Enable running valgrind
 	    # Turn on malloc-only
 	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
-	    valgrind="valgrind"
+	    valgrind="valgrind --leak-check=full"
 	    ;;
 	h) # Help
 	    Usage

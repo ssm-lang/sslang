@@ -585,7 +585,8 @@ genExpr e@(I.App _ _ ty) = do
       destruct  <- getsDCon dconDestruct dcon
       tmp       <- genTmp dty
       let alloc = [[citem|$exp:tmp = $exp:construct;|]]
-          initField y i = [citem|$exp:(destruct i tmp) = $exp:y;|]
+          -- FIXME: Duplicate the arguments $expr:(dup y) ?
+          initField y i = [citem|$exp:(destruct i tmp) = $exp:(dup y);|]
           initFields = zipWith initField argVals [0 ..]
       return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn

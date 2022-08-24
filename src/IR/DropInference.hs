@@ -99,6 +99,7 @@ insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
 insertDropExpr (I.App fun arg typ) = do
+--  fun' <- insertDropExpr fun  -- FIXME: Not recusing screws up calls to functions with multiple arguments
   arg' <- insertDropExpr arg
   return $ I.App fun arg' typ
 
@@ -195,6 +196,9 @@ insertDropExpr (I.Prim p es typ) = do
 
 insertDropExpr var@(I.Var _ _) = do
   return $ makeDup var
+
+insertDropExpr dcon@(I.Data _ _) = do
+  return dcon
 
 -- FIXME: catchall
 insertDropExpr e = return e
