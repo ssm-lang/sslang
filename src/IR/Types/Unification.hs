@@ -49,7 +49,8 @@ module IR.Types.Unification
   ) where
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( Identifiable(..)
+import           Common.Identifiers             ( HasFreeVars(..)
+                                                , Identifiable(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , fromString
@@ -132,7 +133,8 @@ freeze t =
     ++ show t
 
 unfreezeAnn :: Type -> T.Type -> InferM ctx Scheme
-unfreezeAnn ut tt = Forall (T.ftv tt) T.CTrue <$> rewriteHoles ut (unfreeze tt)
+unfreezeAnn ut tt = Forall (freeVars tt) T.CTrue
+  <$> rewriteHoles ut (unfreeze tt)
  where
   rewriteHoles u Hole = return u
   rewriteHoles (UTerm (TConF ud us)) (UTerm (TConF td ts))
