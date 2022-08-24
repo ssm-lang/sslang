@@ -99,9 +99,9 @@ insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
 insertDropExpr (I.App fun arg typ) = do
---  fun' <- insertDropExpr fun  -- FIXME: Not recusing screws up calls to functions with multiple arguments
+  fun' <- insertDropExpr fun
   arg' <- insertDropExpr arg
-  return $ I.App fun arg' typ
+  return $ I.App fun' arg' typ
 
 -- Inserting drops into let bindings.
 insertDropExpr (I.Let bins expr typ) = do
