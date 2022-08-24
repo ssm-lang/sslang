@@ -1,0 +1,10 @@
+type List t
+    Cons t (List t)
+    Nil
+
+main _ =
+    let r = new Nil
+    r <- Cons 1 Nil
+    // This should not work; otherwise references would be unsound!
+    r <- Cons () Nil
+    ()
