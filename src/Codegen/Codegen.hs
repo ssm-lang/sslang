@@ -749,10 +749,10 @@ genPrim I.Wait vars _ = do
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break      [] _ = return (undef, [citems|break;|])
-genPrim I.Now        [] _ = return (marshal $ ccall now [], [])
-genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
-genPrim (I.CCall  s) es _ = do
+genPrim I.Break      []  _ = return (undef, [citems|break;|])
+genPrim I.Now        [_] _ = return (marshal $ ccall now [], [])
+genPrim (I.CQuote e) []  _ = return ([cexp|$exp:(EscExp e)|], [])
+genPrim (I.CCall  s) es  _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
   return (unit, argStms ++ [citems|$id:s($args:argExps);|])
@@ -769,8 +769,8 @@ genLiteral = marshal . genLiteralRaw
 
 -- | Generate C value for SSM literal, unmarshalled.
 genLiteralRaw :: I.Literal -> C.Exp
-genLiteralRaw (I.LitIntegral i    ) = [cexp|$int:i|]
-genLiteralRaw I.LitEvent            = [cexp|1|]
+genLiteralRaw (I.LitIntegral i) = [cexp|$int:i|]
+genLiteralRaw I.LitEvent        = [cexp|1|]
 
 
 -- | Generate C expression for SSM primitive operation.

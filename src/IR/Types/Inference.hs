@@ -138,9 +138,8 @@ inferExpr (Prim p es ts) = do
 
 inferAlt :: U.Type -> Alt -> Infer [(Binder, U.Scheme)]
 inferAlt t (AltData d as) = do
-  t' <- U.instantiate =<< lookupBinding d
+  (ats, t') <- U.unfoldArrow <$> (U.instantiate =<< lookupBinding d)
   t =:= t'
-  let (ats, _) = U.unfoldArrow t'
   when (length ats /= length as) $ do
     Compiler.typeError $ unlines
       [ "Wrong number of arguments for data constructor: " <> show d
@@ -166,10 +165,12 @@ lookupPrim _ After =
   -- return $ T.forall ["a"] $ U.Time -:> U.Ref (var "a") -:> var "a" -:> U.Unit
   -- TODO: ^ use this one
   return $ T.forall ["a"] $ U.I32 -:> U.Ref (var "a") -:> var "a" -:> U.Unit
+-- lookupPrim _   Now         = return $ T.forall [] $ U.Unit -:> U.Time
+  -- TODO: ^ use this one
+lookupPrim _   Now         = return $ T.forall [] $ U.Unit -:> U.I32
 lookupPrim _   (CQuote _)  = return $ T.forall ["a"] $ var "a"
 lookupPrim _   Loop        = return $ T.forall ["a"] $ var "a" -:> U.Unit
 lookupPrim _   Break       = return $ T.forall [] U.Unit -- TODO: this is should be void?
-lookupPrim _   Now         = return $ T.forall [] $ U.Unit -:> U.Time
 lookupPrim _   (FfiCall f) = lookupBinding f
 lookupPrim _   (CCall   _) = return $ T.forall ["a"] $ var "a" -- Any type
 lookupPrim _   (PrimOp  _) = return $ T.forall [] $ U.I32 -:> U.I32 -:> U.I32

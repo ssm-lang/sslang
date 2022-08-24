@@ -91,7 +91,7 @@ deriving instance Ord IntVar
 deriving instance Unifiable []
 
 data TypeF a = TConF TConId [a] | TVarF TVarId
-  deriving (Show, Eq, Functor, Foldable, Traversable, Generic1, Unifiable)
+  deriving (Eq, Functor, Foldable, Traversable, Generic1, Unifiable)
 
 type Type = UTerm TypeF IntVar
 type Scheme = T.SchemeOf Type
@@ -101,6 +101,13 @@ pattern TVar v = UTerm (TVarF v)
 
 pattern TCon :: TConId -> [Type] -> Type
 pattern TCon tc ts = UTerm (TConF tc ts)
+
+instance Show a => Show (TypeF a) where
+  show (TConF "->" [a, b]) = show a <> " -> " <> show b
+  show (TConF "[]" [a]) = "[" <> show a <> "]"
+  show (TConF "&" [a]) = "&" <> show a
+  show (TConF tc ts) = unwords (show tc : map show ts)
+  show (TVarF v) = show v
 
 -- | Promote a 'T.Type' to a 'Type'.
 unfreeze :: T.Type -> Type

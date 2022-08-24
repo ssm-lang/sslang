@@ -28,6 +28,10 @@ typecheckProgram p = do
 
 unravelAnnotation :: Annotation -> Compiler.Pass Type
 unravelAnnotation (AnnType t) = return t
+unravelAnnotation (AnnArrows ats rt) = do
+  ats' <- mapM unravelAnnotation ats
+  rt' <- unravelAnnotation rt
+  return $ foldArrow (ats', rt')
 unravelAnnotation a =
   Compiler.todo
     $  "unravelAnnotation not yet able to handle non-trivial types: "
