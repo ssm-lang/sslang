@@ -15,7 +15,6 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
-import           Data.Functor                   ( (<&>) )
 import           Data.Maybe                     ( fromJust )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
@@ -104,11 +103,11 @@ insertDropExpr app@I.App{} = do
   fun'  <- insertDropLeft fun
   return $ I.zipApp fun' args'
  where
-  insertDropLeft e@I.Prim{}   = return e
-  insertDropLeft e@I.Var{}    = return e  -- Don't dup f in (f e1 e2)
-  insertDropLeft e@I.Data{}   = return e
-  insertDropLeft e@I.Lambda{} = return e
-  insertDropLeft e            = insertDropExpr e
+  insertDropLeft e@I.Prim {}   = return e
+  insertDropLeft e@I.Var {}    = return e  -- Don't dup f in (f e1 e2)
+  insertDropLeft e@I.Data {}   = return e
+  insertDropLeft e@I.Lambda {} = return e
+  insertDropLeft e             = insertDropExpr e
 
 -- Inserting drops into let bindings.
 insertDropExpr (I.Let bins expr typ) = do
@@ -144,34 +143,45 @@ insertDropExpr lam@(I.Lambda _ _ typ) = do
 
   return $ I.makeLambdaChain typedArgs $ foldr makeDrop body' argVars
 
--- Inserting drops into pattern-matching.
-
-{-
-insertDropExpr match@(I.Match expr alts typ) = do
-  alts' <- forM alts $ \(v, e) -> do
-    insertDropAlt (v, e) expr
-  return $ I.Match expr' alts' typ
--}
-
-insertDropExpr (I.Match expr alts typ) = do
-  expr' <- insertDropExpr expr
+-- match v
+--   alt1 =
+--   alt2 =
+insertDropExpr (I.Match (v@I.Var {}) alts typ) = do
   alts' <- forM alts insertDropAlt
-  return $ I.Match expr' alts' typ
+  return $ I.Match v alts' typ
 
+-- Desugar scrutinee into a variable so we can duplicate it as appropriate
+--
+-- match e
+--   alt1 =
+--   alt2 =
+--
+-- let s = e
+-- match s
+--   alt1 =
+--   alt2 =
+insertDropExpr (I.Match scrutExpr alts typ) = do
+  scrutVar <- getFresh "_scrutinee"
+  let scrutType = I.extract scrutExpr
+  insertDropExpr $ I.Let [(Just scrutVar, scrutExpr)]
+                   (I.Match (I.Var scrutVar scrutType) alts typ)
+                   typ
 
 -- Inserting dup/drops into primitive's arguments.
 insertDropExpr (I.Prim p es typ) = do
   es' <- mapM insertDropExpr es
   return $ I.Prim p es' typ
 
-insertDropExpr var@(I.Var _ _) = do
+insertDropExpr var@I.Var {} = do
   return $ makeDup var
 
-insertDropExpr dcon@(I.Data _ _) = do
+insertDropExpr dcon@I.Data {} = do
   return dcon
 
 -- FIXME: catchall
 insertDropExpr e = return e
+
+
 
 -- | Rewrite an arm of a Match construct
 insertDropAlt
@@ -185,9 +195,16 @@ insertDropAlt (I.AltLit l, e) = do
   e' <- insertDropExpr e
   return (I.AltLit l, e')
 
-insertDropAlt (I.AltData dcon binds, e) = do
-  e' <- insertDropExpr e
-  return (I.AltData dcon binds, e')
+insertDropAlt (I.AltData dcon binds, body) = do
+  body' <- insertDropExpr body
+  let body'' = foldr dropDupLet body' binds
+  return (I.AltData dcon binds, body'')
+  where
+      dropDupLet Nothing e = e
+      dropDupLet (Just v) e =        
+        makeDrop varExpr (I.Let [(Nothing, makeDup varExpr)] e (I.extract e))
+        where
+           varExpr = I.Var v (Poly.TBuiltin Poly.Unit) -- FIXME: how do I get its type?
 
 
 {-
