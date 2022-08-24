@@ -573,6 +573,8 @@ genExpr e@(I.App _ _ ty) = do
               $exp:(closure_apply f aVal current prio depth retp);
               if ($exp:(has_children current)) {
                 $items:yield;
+              } else {
+                $exp:(dup f);
               }
             |]
         return (ret, stms ++ aStms ++ appStms)
