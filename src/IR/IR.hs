@@ -26,6 +26,7 @@ module IR.IR
   , inject
   , zipApp
   , unzipApp
+  , isValue
   ) where
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
@@ -223,6 +224,11 @@ data Alt
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
+-- | The number of fields in a 'TypeVariant'.
+variantFields :: TypeVariant -> Int
+variantFields (VariantNamed   fields) = length fields
+variantFields (VariantUnnamed fields) = length fields
+
 -- | Extract the type carried by an 'Expr'.
 extract :: Expr t -> t
 extract (Var  _ t    ) = t
@@ -244,11 +250,6 @@ inject t (Lambda xs b  _) = Lambda xs b t
 inject t (App    h  a  _) = App h a t
 inject t (Match  s  as _) = Match s as t
 inject t (Prim   p  es _) = Prim p es t
-
--- | The number of fields in a 'TypeVariant'.
-variantFields :: TypeVariant -> Int
-variantFields (VariantNamed   fields) = length fields
-variantFields (VariantUnnamed fields) = length fields
 
 {- | Collect a curried application into the function and argument list.
 
@@ -291,6 +292,14 @@ unfoldLambda e = ([], e)
 foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
 foldLambda args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `Arrow` extract b
+
+-- | Whether an expression is a value.
+isValue :: Expr t -> Bool
+isValue Var{}    = True
+isValue Data{}   = True
+isValue Lit{}    = True
+isValue Lambda{} = True
+isValue _        = False
 
 {- | Predicate of whether an expression "looks about right".
 

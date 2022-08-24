@@ -53,7 +53,7 @@ checkAgainst anns = check (reverse anns)
   check []            t = return t
   check (T.Hole : as) t = checkAgainst as t
   check (a      : as) t = do
-    t' <- U.instantiate =<< U.unfreezeAnn t a
+    t'        <- U.instantiate =<< U.unfreezeAnn t a
     checksOut <- t <:= t'
     unless checksOut $ do
       Compiler.typeError $ unlines
@@ -118,8 +118,6 @@ inferDefs (unzip -> (bs, ds)) = do
 
   -- Unify unification variables with the inferred type of each definition
   forM_ (zip ts ds') $ \(t, extract -> t') -> t =:= t'
-
-  -- ds'' <- mapM (mapM U.generalize) ds'
   return $ zip bs ds'
 
 inferExpr :: Expr [Type] -> Infer (Expr U.Type)
@@ -141,7 +139,10 @@ inferExpr (App f a ts) = do
 inferExpr (Let ds e ts) = do
   ds' <- inferDefs ds
   bs  <- forM ds' $ \(b, d) -> do
-    s <- U.generalize $ extract d
+    s <- if isValue d
+      then U.generalize $ extract d
+      -- Value restriction: only generalize values
+      else return $ T.forall [] $ extract d
     return (b, s)
   e' <- withBindings bs $ inferExpr e
   Let ds' e' <$> checkAgainst ts (extract e')
