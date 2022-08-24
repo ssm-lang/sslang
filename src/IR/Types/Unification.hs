@@ -21,7 +21,7 @@ module IR.Types.Unification
   , freeze
   , unfreeze
   , unfreezeAnn
-  , HasFreeVars(..)
+  , HasFreeUVars(..)
   , InferM
   , MonadReader(..)
   , MonadError(..)
@@ -176,14 +176,14 @@ instance Fallible TypeF IntVar Compiler.Error where
       <> " ~ "
       <> show t2
 
-class HasFreeVars a where
-   freeVars :: a -> InferM ctx (S.Set IntVar)
+class HasFreeUVars a where
+  fuvs :: a -> InferM ctx (S.Set IntVar)
 
-instance HasFreeVars Type where
-  freeVars = fmap S.fromList . lift . lift . getFreeVars
+instance HasFreeUVars Type where
+  fuvs = fmap S.fromList . lift . lift . getFreeVars
 
-instance HasFreeVars Scheme where
-  freeVars (Forall _ _ t) = freeVars t
+instance HasFreeUVars Scheme where
+  fuvs (Forall _ _ t) = fuvs t
 
 -- | Inference monad, build on top of the unification algorithm.
 type InferM ctx
@@ -210,12 +210,12 @@ instantiate (Forall (S.toList -> xs) _ uty) = do
     return (Left v, fv)
   return $ substU (M.fromList subs) uty
 
-generalize :: HasFreeVars ctx => Type -> InferM ctx Scheme
+generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
 generalize uty = do
   uty'   <- applyBindings uty
   ctx    <- ask
-  tmfvs  <- freeVars uty'
-  ctxfvs <- freeVars ctx
+  tmfvs  <- fuvs uty'
+  ctxfvs <- fuvs ctx
   let fvs  = S.toList $ tmfvs \\ ctxfvs
       xs   = take (length fvs) tvarNames
       subs = zip (map Right fvs) (map TVar xs)

@@ -94,7 +94,7 @@ typedefBindings (tc, TypeDef { variants = vs, targs = tvs }) =
     let t = U.TCon tc $ map U.TVar tvs
         s = T.forall tvs $ U.foldArrow (ts, t)
 
-    ftvs <- U.freeVars s
+    ftvs <- U.fuvs s
     unless (S.empty == ftvs) $ do
       Compiler.typeError $ unlines
         [ "Type definition contains unbound type variables:"

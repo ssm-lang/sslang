@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {- | The types of identifiers used across the compiler.
 
 The types 'VarId', 'TVarId', 'DConId', and 'TConId' are used in the IR for data
@@ -49,6 +50,7 @@ module Common.Identifiers
   , VarId(..)
   , TVarIdx(..)
   , CSym(..)
+  , HasFreeVars(..)
   , Binder
   , Identifier(..)
   , isCons
@@ -73,6 +75,7 @@ import           Data.Generics                  ( Data
                                                 , mkM
                                                 )
 import qualified Data.Map                      as M
+import qualified Data.Set                      as S
 import           Data.String                    ( IsString(..) )
 
 import           Language.C                     ( Id(..) )
@@ -207,6 +210,10 @@ instance Show TVarIdx where
 
 instance Pretty TVarIdx where
   pretty = pretty . show
+
+-- | Terms @t@ that have free variables @i@
+class Identifiable i => HasFreeVars t i | t -> i where
+  freeVars :: t -> S.Set i
 
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
 type Binder = Maybe VarId
