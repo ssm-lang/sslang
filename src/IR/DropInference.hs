@@ -107,9 +107,9 @@ insertDropExpr app@(I.App _ _ _ ) = do
      insertDropTypedExpr (e, t) = do
        e' <- insertDropExpr e
        return (e', t)
-     insertDropLeft e@(I.Prim {}) = return e
-     insertDropLeft e@(I.Var{}) = return e
-     insertDropLeft e@(I.Data{}) = return e
+     insertDropLeft e@(I.Prim {})  = return e
+     insertDropLeft e@(I.Var{})    = return e  -- Don't dup f in (f e1 e2)
+     insertDropLeft e@(I.Data{})   = return e
      insertDropLeft e@(I.Lambda{}) = return e
      insertDropLeft e = insertDropExpr e
 
@@ -132,26 +132,6 @@ insertDropExpr (I.Let bins expr typ) = do
       d' <- insertDropExpr d
       return (v, d')
   
-{-                    do
-  retVar <- getFresh "_let"
-  expr'  <- insertDropExpr expr
-  bins'  <- forM bins droppedBinder
-  let makeFun f = \b -> f $ I.Var (fromJust $ fst b) (I.extract $ snd b)
-      dropBins = map (makeFun makeDrop) bins'
-      exprBins = (Just retVar, expr') : dropBins
-      retExpr  = I.Var retVar typ
-      retExpr' = seqExprs exprBins retExpr
-  return $ I.Let bins' retExpr' typ
-  where
-    droppedBinder (Nothing, d) = do
-      temp <- getFresh "_underscore"
-      d' <- insertDropExpr d
-      return (Just temp, d')
-    droppedBinder (v, d) = do
-      d' <- insertDropExpr d
-      return (v, d')
--}
-
 -- Handle nested lambdas by collecting them into a single expression
 -- with multiple arguments, adding a local result variable,
 -- drops for each of the arguments, and return value
@@ -167,37 +147,20 @@ insertDropExpr lam@(I.Lambda _ _ typ) = do
   
   return $ I.makeLambdaChain typedArgs $ foldr makeDrop body' argVars
 
-{- args' <- forM args $ maybe (getFresh "_arg") return -}
-
-{-  do
-  retVar <- getFresh "_result"
-  
-  let (args, body) = I.collectLambda lam
-      (argTypes, retType) = collectArrow typ
-      typedArgs = zip args argTypes
-
-      -- FIXME: fromJust may fail here: how should that be handled?
-      -- See, e.g., hello10.ssl
-      dropExprs = map (\(v, t) -> makeDrop $ I.Var (fromJust v) t) typedArgs
-
-  body' <- insertDropExpr body
-
-  let exprBins = (Just retVar, body') : dropExprs
-      retExpr = I.Var retVar retType
-      retExpr' = seqExprs exprBins retExpr
-  
-  return $ I.makeLambdaChain typedArgs retExpr'
--}
-
 -- Inserting drops into pattern-matching.
-insertDropExpr match@(I.Match _ _ _) = return match
-{- insertDropExpr match@(I.Match expr alts typ) = return match -}
 
-{- do
+{-
+insertDropExpr match@(I.Match expr alts typ) = do
   alts' <- forM alts $ \(v, e) -> do
     insertDropAlt (v, e) expr
-  return $ I.Match expr alts' typ
+  return $ I.Match expr' alts' typ
 -}
+
+insertDropExpr (I.Match expr alts typ) = do
+   expr' <- insertDropExpr expr
+   alts' <- forM alts insertDropAlt
+   return $ I.Match expr' alts' typ
+   
 
 -- Inserting dup/drops into primitive's arguments.
 insertDropExpr (I.Prim p es typ) = do
@@ -213,9 +176,23 @@ insertDropExpr dcon@(I.Data _ _) = do
 -- FIXME: catchall
 insertDropExpr e = return e
 
+-- | Rewrite an arm of a Match construct
+insertDropAlt :: (I.Alt, I.Expr Poly.Type) -> InsertFn (I.Alt, I.Expr Poly.Type)
+
+insertDropAlt (I.AltDefault v, e) = do
+  e' <- insertDropExpr e
+  return (I.AltDefault v, e')
+
+insertDropAlt (I.AltLit l, e) = do
+  e' <- insertDropExpr e
+  return (I.AltLit l, e')
+
+insertDropAlt (I.AltData dcon binds, e) = do
+  e' <- insertDropExpr e
+  return (I.AltData dcon binds, e')
+
 
 {-
-
 -- | Entry-point to inserting into pattern-matching arms.
 insertDropAlt
   :: (I.Alt, I.Expr Poly.Type)
@@ -251,6 +228,5 @@ insertDropAlt (I.AltData dcon vars, exprReturn) _ = do
 insertDropAlt (I.AltLit l, exprReturn) _ = do
   exprReturn' <- insertDropExpr exprReturn
   return (I.AltLit l, exprReturn')
-
 
 -}
