@@ -35,6 +35,7 @@ Usage() {
     echo "-t    Enable memory tracing"
     echo "-m    Use malloc only for the heap"
     echo "-v    Run valgrind on the generated executable (implies -m)"
+    echo "-q    Suppress printing detailed log"
     echo "-h    Print this help"
     exit 1
 }
@@ -204,8 +205,9 @@ CheckFail() {
 
 EXTRA_CFLAGS=-DCONFIG_MEM_STATS
 valgrind=""
+quiet=0
 
-while getopts kctmvh c; do
+while getopts kctmvqh c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -224,6 +226,9 @@ while getopts kctmvh c; do
 	    # Turn on malloc-only
 	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
 	    valgrind="valgrind --leak-check=full"
+	    ;;
+	q) # Turn off dumping runtests.log
+	    quiet=1
 	    ;;
 	h) # Help
 	    Usage
@@ -256,7 +261,7 @@ do
   esac    
 done
 
-if [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
+if [ "$quiet" -ne 1 ] && [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
   cat "$globallog"
 fi
 

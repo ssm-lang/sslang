@@ -101,7 +101,7 @@ insertDropExpr app@I.App{} = do
   let (fun, args) = I.unzipApp app
   args' <- forM args $ \(e, t) -> (, t) <$> insertDropExpr e
   fun'  <- insertDropLeft fun
-  return $ I.zipApp fun' args'
+  return $ I.zipApp fun' (reverse args') -- FIXME: reverse?
  where
   insertDropLeft e@I.Prim {}   = return e
   insertDropLeft e@I.Var {}    = return e  -- Don't dup f in (f e1 e2)

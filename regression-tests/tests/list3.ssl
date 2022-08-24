@@ -7,7 +7,7 @@ puts cout s =
     Cons c ss =
       after 1, cout <- c
       wait cout
-      puts cout ss
+//      puts cout ss
     Nil = ()
 
 main cin cout =

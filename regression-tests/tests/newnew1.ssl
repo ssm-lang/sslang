@@ -1,3 +1,8 @@
-  main cin cout =
-    // Should not leak
-    (new (new 1)) <- (new 3)
+main cin cout =
+  // Should not leak
+  (new (new 1)) <- (new 3)
+  
+  after 1, cout <- 48 // 0
+  wait cout
+  after 1, cout <- 10 // \n
+  wait cout
