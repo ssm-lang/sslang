@@ -97,9 +97,7 @@ lowerDef (A.DefFn aName aPats aTy aBody) = do
     rt  <- I.AnnType <$> case aTy of
       A.TypReturn ty -> lowerType ty
       _              -> return I.Hole
-    return $ if all (== I.AnnType I.Hole) (rt : pts)
-      then b
-      else pushAnn b $ I.AnnArrows pts rt
+    return $ pushAnn b $ I.AnnArrows pts rt
 
   return (Just $ fromId aName, b)
 
