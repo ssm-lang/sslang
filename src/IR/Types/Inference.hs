@@ -94,7 +94,7 @@ typedefBindings (tc, TypeDef { variants = vs, targs = tvs }) =
     let t = U.TCon tc $ map U.TVar tvs
         s = T.forall tvs $ U.foldArrow (ts, t)
 
-    ftvs <- U.fuvs s
+    ftvs <- U.freeUVars s
     unless (S.empty == ftvs) $ do
       Compiler.typeError $ unlines
         [ "Type definition contains unbound type variables:"
@@ -223,8 +223,8 @@ lookupLit (LitIntegral _) = return $ T.forall [] U.I32
 -- TODO: ^ integral typeclasses
 lookupLit LitEvent        = return $ T.forall [] U.Unit
 
-instance U.HasFreeVars InferCtx where
-  freeVars = fmap S.unions . mapM U.freeVars . M.elems . varMap
+instance U.HasFreeUVars InferCtx where
+  freeUVars = fmap S.unions . mapM U.freeUVars . M.elems . varMap
 
 withBindings :: [(Binder, U.Scheme)] -> Infer a -> Infer a
 withBindings bs = U.local

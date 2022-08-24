@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ViewPatterns #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
@@ -31,6 +33,7 @@ module IR.IR
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
                                                 , DConId(..)
+                                                , HasFreeVars(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , VarId(..)
@@ -41,6 +44,11 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 
+import           Data.Maybe                     ( catMaybes
+                                                , maybeToList
+                                                )
+import qualified Data.Set                      as S
+import           Data.Set                       ( (\\) )
 import           IR.Types.Type                  ( Annotation
                                                 , pattern Arrow
                                                 , Type
@@ -300,6 +308,23 @@ isValue Data{}   = True
 isValue Lit{}    = True
 isValue Lambda{} = True
 isValue _        = False
+
+instance HasFreeVars (Expr t) VarId where
+  freeVars (Var v _)                        = S.singleton v
+  freeVars Data{}                           = S.empty
+  freeVars Lit{}                            = S.empty
+  freeVars (App    l                  r  _) = freeVars l `S.union` freeVars r
+  freeVars (Lambda (maybeToList -> v) b  _) = freeVars b \\ S.fromList v
+  freeVars (Prim   _                  es _) = S.unions $ map freeVars es
+  freeVars (Let (unzip ->(bs, ds)) b _) =
+    S.unions (map freeVars $ b : ds) \\ S.fromList (catMaybes bs)
+  freeVars (Match s as _) = S.unions (freeVars s : map freeAltVars as)
+   where
+    freeAltVars :: (Alt, Expr t) -> S.Set VarId
+    freeAltVars (a, e) = freeVars e \\ altBinders a
+    altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
+    altBinders (AltLit     _                 ) = S.empty
+    altBinders (AltDefault (maybeToList -> v)) = S.fromList v
 
 {- | Predicate of whether an expression "looks about right".
 

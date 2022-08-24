@@ -177,13 +177,13 @@ instance Fallible TypeF IntVar Compiler.Error where
       <> show t2
 
 class HasFreeUVars a where
-  fuvs :: a -> InferM ctx (S.Set IntVar)
+  freeUVars :: a -> InferM ctx (S.Set IntVar)
 
 instance HasFreeUVars Type where
-  fuvs = fmap S.fromList . lift . lift . getFreeVars
+  freeUVars = fmap S.fromList . lift . lift . getFreeVars
 
 instance HasFreeUVars Scheme where
-  fuvs (Forall _ _ t) = fuvs t
+  freeUVars (Forall _ _ t) = freeUVars t
 
 -- | Inference monad, build on top of the unification algorithm.
 type InferM ctx
@@ -214,8 +214,8 @@ generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
 generalize uty = do
   uty'   <- applyBindings uty
   ctx    <- ask
-  tmfvs  <- fuvs uty'
-  ctxfvs <- fuvs ctx
+  tmfvs  <- freeUVars uty'
+  ctxfvs <- freeUVars ctx
   let fvs  = S.toList $ tmfvs \\ ctxfvs
       xs   = take (length fvs) tvarNames
       subs = zip (map Right fvs) (map TVar xs)

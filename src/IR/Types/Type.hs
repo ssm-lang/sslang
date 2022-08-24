@@ -6,9 +6,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module IR.Types.Type where
 
 import           Common.Identifiers             ( DConId(..)
+                                                , HasFreeVars(..)
                                                 , Identifiable
                                                 , TConId(..)
                                                 , TVarId(..)
@@ -93,19 +95,16 @@ fromAnnotations = go . unAnnotations
   go (_         : anns) = go anns
   go []                 = error "TODO: No type annotations"
 
-class HasTVars a where
-  ftv :: a -> S.Set TVarId
+instance HasFreeVars Type TVarId where
+  freeVars (TCon _ ts) = S.unions $ map freeVars ts
+  freeVars Hole        = S.empty
+  freeVars (TVar v)    = S.singleton v
 
-instance HasTVars Type where
-  ftv (TCon _ ts) = S.unions $ map ftv ts
-  ftv Hole        = S.empty
-  ftv (TVar v)    = S.singleton v
-
-instance HasTVars Scheme where
-  ftv (Scheme (Forall s _ t)) = ftv t \\ s
+instance HasFreeVars Scheme TVarId where
+  freeVars (Scheme (Forall s _ t)) = freeVars t \\ s
 
 schemeOf :: Type -> Scheme
-schemeOf t = Scheme $ Forall (ftv t) CTrue t
+schemeOf t = Scheme $ Forall (freeVars t) CTrue t
 
 -- | Some data type that contains a sslang 'Type'.
 class HasType a where
