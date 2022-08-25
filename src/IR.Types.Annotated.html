@@ -1,0 +1,519 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingVia #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- | Type annotations, as collected from the Ast.</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">IR.Types.Annotated</span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#Builtin"><span class="hs-identifier">Builtin</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier">Type</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier">TypeAnnote</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#untyped"><span class="hs-identifier">untyped</span></a></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Common.Identifiers.html"><span class="hs-identifier">Common.Identifiers</span></a></span><span>             </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier">TConId</span></a></span><span>
+</span><span id="line-11"></span><span>                                                </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarId"><span class="hs-identifier">TVarId</span></a></span><span>
+</span><span id="line-12"></span><span>                                                </span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Common.Pretty.html"><span class="hs-identifier">Common.Pretty</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span>                      </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Data</span></span><span>
+</span><span id="line-15"></span><span>                                                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Typeable</span></span><span>
+</span><span id="line-16"></span><span>                                                </span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="IR.Types.TypeSystem.html"><span class="hs-identifier">IR.Types.TypeSystem</span></a></span><span>            </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#Builtin"><span class="hs-identifier">Builtin</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>                                                </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier">TypeSystem</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>                                                </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-comment">{- | A single term may be annotated by zero or more types.
+
+When multiple exist, it should be assumed that they are equivalent, in the
+sense that they can be unified.
+
+Type annotations can be added using '&lt;&gt;' (from 'Semigroup'), while 'mempty'
+represents no type annotation.
+-}</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">newtype</span><span> </span><span id="Type"><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Type"><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679470634"><span id="local-6989586621679470636"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+(Type -&gt; Type -&gt; Bool) -&gt; (Type -&gt; Type -&gt; Bool) -&gt; Eq Type
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Type -&gt; Type -&gt; Bool
+$c/= :: Type -&gt; Type -&gt; Bool
+== :: Type -&gt; Type -&gt; Bool
+$c== :: Type -&gt; Type -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679470627"><span id="local-6989586621679470629"><span id="local-6989586621679470631"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
+[Type] -&gt; ShowS
+Type -&gt; String
+(Int -&gt; Type -&gt; ShowS)
+-&gt; (Type -&gt; String) -&gt; ([Type] -&gt; ShowS) -&gt; Show Type
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Type] -&gt; ShowS
+$cshowList :: [Type] -&gt; ShowS
+show :: Type -&gt; String
+$cshow :: Type -&gt; String
+showsPrec :: Int -&gt; Type -&gt; ShowS
+$cshowsPrec :: Int -&gt; Type -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="%24cType"><span id="%24tType"><span id="local-6989586621679470597"><span id="local-6989586621679470599"><span id="local-6989586621679470601"><span id="local-6989586621679470603"><span id="local-6989586621679470605"><span id="local-6989586621679470607"><span id="local-6989586621679470609"><span id="local-6989586621679470611"><span id="local-6989586621679470613"><span id="local-6989586621679470615"><span id="local-6989586621679470617"><span id="local-6989586621679470619"><span id="local-6989586621679470621"><span id="local-6989586621679470623"><span class="annot"><span class="annottext">Typeable Type
+DataType
+Constr
+Typeable Type
+-&gt; (forall (c :: * -&gt; *).
+    (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+    -&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c Type)
+-&gt; (Type -&gt; Constr)
+-&gt; (Type -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c Type))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c Type))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; Type -&gt; Type)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type)
+-&gt; Data Type
+Type -&gt; DataType
+Type -&gt; Constr
+(forall b. Data b =&gt; b -&gt; b) -&gt; Type -&gt; Type
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c Type
+forall a.
+Typeable a
+-&gt; (forall (c :: * -&gt; *).
+    (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+    -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c Type
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c Type)
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c Type)
+$cType :: Constr
+$tType :: DataType
+gmapMo :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+$cgmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+gmapMp :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+$cgmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+gmapM :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+$cgmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
+gmapQi :: Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; u
+$cgmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; u
+gmapQ :: (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; [u]
+$cgmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Type -&gt; [u]
+gmapQr :: (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+$cgmapQr :: forall r r'.
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+gmapQl :: (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+$cgmapQl :: forall r r'.
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Type -&gt; r
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Type -&gt; Type
+$cgmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Type -&gt; Type
+dataCast2 :: (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c Type)
+$cdataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c Type)
+dataCast1 :: (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c Type)
+$cdataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c Type)
+dataTypeOf :: Type -&gt; DataType
+$cdataTypeOf :: Type -&gt; DataType
+toConstr :: Type -&gt; Constr
+$ctoConstr :: Type -&gt; Constr
+gunfold :: (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c Type
+$cgunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c Type
+gfoldl :: (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type
+$cgfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Type -&gt; c Type
+$cp1Data :: Typeable Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679470588"><span id="local-6989586621679470590"><span id="local-6989586621679470592"><span class="annot"><span class="annottext">b -&gt; Type -&gt; Type
+NonEmpty Type -&gt; Type
+Type -&gt; Type -&gt; Type
+(Type -&gt; Type -&gt; Type)
+-&gt; (NonEmpty Type -&gt; Type)
+-&gt; (forall b. Integral b =&gt; b -&gt; Type -&gt; Type)
+-&gt; Semigroup Type
+forall b. Integral b =&gt; b -&gt; Type -&gt; Type
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+stimes :: b -&gt; Type -&gt; Type
+$cstimes :: forall b. Integral b =&gt; b -&gt; Type -&gt; Type
+sconcat :: NonEmpty Type -&gt; Type
+$csconcat :: NonEmpty Type -&gt; Type
+&lt;&gt; :: Type -&gt; Type -&gt; Type
+$c&lt;&gt; :: Type -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span>  </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679470580"><span id="local-6989586621679470582"><span id="local-6989586621679470584"><span class="annot"><span class="annottext">Semigroup Type
+Type
+Semigroup Type
+-&gt; Type
+-&gt; (Type -&gt; Type -&gt; Type)
+-&gt; ([Type] -&gt; Type)
+-&gt; Monoid Type
+[Type] -&gt; Type
+Type -&gt; Type -&gt; Type
+forall a.
+Semigroup a -&gt; a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+mconcat :: [Type] -&gt; Type
+$cmconcat :: [Type] -&gt; Type
+mappend :: Type -&gt; Type -&gt; Type
+$cmappend :: Type -&gt; Type -&gt; Type
+mempty :: Type
+$cmempty :: Type
+$cp1Monoid :: Semigroup Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span>     </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- | A type annotation.</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">data</span><span> </span><span id="TypeAnnote"><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-var">TypeAnnote</span></a></span></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TBuiltin"><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-var">TBuiltin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.TypeSystem.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span>         </span><span class="hs-comment">-- ^ Builtin types</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TCon"><span class="annot"><a href="IR.Types.Annotated.html#TCon"><span class="hs-identifier hs-var">TCon</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span>              </span><span class="hs-comment">-- ^ Type constructor, e.g., Option '0</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TVar"><span class="annot"><a href="IR.Types.Annotated.html#TVar"><span class="hs-identifier hs-var">TVar</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TVarId"><span class="hs-identifier hs-type">TVarId</span></a></span><span>                     </span><span class="hs-comment">-- ^ Type variables, e.g., '0</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679470570"><span id="local-6989586621679470572"><span id="local-6989586621679470574"><span class="annot"><span class="annottext">Int -&gt; TypeAnnote -&gt; ShowS
+[TypeAnnote] -&gt; ShowS
+TypeAnnote -&gt; String
+(Int -&gt; TypeAnnote -&gt; ShowS)
+-&gt; (TypeAnnote -&gt; String)
+-&gt; ([TypeAnnote] -&gt; ShowS)
+-&gt; Show TypeAnnote
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TypeAnnote] -&gt; ShowS
+$cshowList :: [TypeAnnote] -&gt; ShowS
+show :: TypeAnnote -&gt; String
+$cshow :: TypeAnnote -&gt; String
+showsPrec :: Int -&gt; TypeAnnote -&gt; ShowS
+$cshowsPrec :: Int -&gt; TypeAnnote -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679470566"><span id="local-6989586621679470568"><span class="annot"><span class="annottext">TypeAnnote -&gt; TypeAnnote -&gt; Bool
+(TypeAnnote -&gt; TypeAnnote -&gt; Bool)
+-&gt; (TypeAnnote -&gt; TypeAnnote -&gt; Bool) -&gt; Eq TypeAnnote
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
+$c/= :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
+== :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
+$c== :: TypeAnnote -&gt; TypeAnnote -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="%24cTVar"><span id="%24cTCon"><span id="%24cTBuiltin"><span id="%24tTypeAnnote"><span id="local-6989586621679470537"><span id="local-6989586621679470539"><span id="local-6989586621679470541"><span id="local-6989586621679470543"><span id="local-6989586621679470545"><span id="local-6989586621679470547"><span id="local-6989586621679470549"><span id="local-6989586621679470551"><span id="local-6989586621679470553"><span id="local-6989586621679470555"><span id="local-6989586621679470557"><span id="local-6989586621679470559"><span id="local-6989586621679470561"><span id="local-6989586621679470563"><span class="annot"><span class="annottext">Typeable TypeAnnote
+DataType
+Constr
+Typeable TypeAnnote
+-&gt; (forall (c :: * -&gt; *).
+    (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+    -&gt; (forall g. g -&gt; c g) -&gt; TypeAnnote -&gt; c TypeAnnote)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c TypeAnnote)
+-&gt; (TypeAnnote -&gt; Constr)
+-&gt; (TypeAnnote -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c TypeAnnote))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e))
+    -&gt; Maybe (c TypeAnnote))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; TypeAnnote -&gt; TypeAnnote)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; [u])
+-&gt; (forall u.
+    Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote)
+-&gt; Data TypeAnnote
+TypeAnnote -&gt; DataType
+TypeAnnote -&gt; Constr
+(forall b. Data b =&gt; b -&gt; b) -&gt; TypeAnnote -&gt; TypeAnnote
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; TypeAnnote -&gt; c TypeAnnote
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c TypeAnnote
+forall a.
+Typeable a
+-&gt; (forall (c :: * -&gt; *).
+    (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+    -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c TypeAnnote
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; TypeAnnote -&gt; c TypeAnnote
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c TypeAnnote)
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c TypeAnnote)
+$cTVar :: Constr
+$cTCon :: Constr
+$cTBuiltin :: Constr
+$tTypeAnnote :: DataType
+gmapMo :: (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+$cgmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+gmapMp :: (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+$cgmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+gmapM :: (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+$cgmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; TypeAnnote -&gt; m TypeAnnote
+gmapQi :: Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; u
+$cgmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; u
+gmapQ :: (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; [u]
+$cgmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; TypeAnnote -&gt; [u]
+gmapQr :: (r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+$cgmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+gmapQl :: (r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+$cgmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; TypeAnnote -&gt; r
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; TypeAnnote -&gt; TypeAnnote
+$cgmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; TypeAnnote -&gt; TypeAnnote
+dataCast2 :: (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c TypeAnnote)
+$cdataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c TypeAnnote)
+dataCast1 :: (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c TypeAnnote)
+$cdataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c TypeAnnote)
+dataTypeOf :: TypeAnnote -&gt; DataType
+$cdataTypeOf :: TypeAnnote -&gt; DataType
+toConstr :: TypeAnnote -&gt; Constr
+$ctoConstr :: TypeAnnote -&gt; Constr
+gunfold :: (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c TypeAnnote
+$cgunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c TypeAnnote
+gfoldl :: (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; TypeAnnote -&gt; c TypeAnnote
+$cgfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; TypeAnnote -&gt; c TypeAnnote
+$cp1Data :: Typeable TypeAnnote
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- | 'Type' is a type system.</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier hs-type">TypeSystem</span></a></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-46"></span><span>  </span><span id="local-6989586621679470529"><span class="annot"><span class="annottext">projectBuiltin :: Builtin Type -&gt; Type
+</span><a href="IR.Types.TypeSystem.html#projectBuiltin"><span class="hs-identifier hs-var hs-var hs-var hs-var">projectBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TypeAnnote] -&gt; Type
+</span><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span><span> </span><span class="annot"><span class="annottext">([TypeAnnote] -&gt; Type)
+-&gt; (Builtin Type -&gt; [TypeAnnote]) -&gt; Builtin Type -&gt; Type
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeAnnote -&gt; [TypeAnnote] -&gt; [TypeAnnote]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeAnnote -&gt; [TypeAnnote])
+-&gt; (Builtin Type -&gt; TypeAnnote) -&gt; Builtin Type -&gt; [TypeAnnote]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; TypeAnnote
+</span><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-var">TBuiltin</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-comment">-- | Unwrap the first TBuiltin annotation, if any.</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679470526"><span class="annot"><span class="annottext">injectBuiltin :: Type -&gt; Maybe (Builtin Type)
+</span><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var hs-var hs-var hs-var">injectBuiltin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679470524"><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679470524"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Maybe (Builtin Type)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679470524"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeAnnote
+</span><span class="hs-identifier">_</span></span><span>          </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679470523"><span class="annot"><span class="annottext">[TypeAnnote]
+</span><a href="#local-6989586621679470523"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Maybe (Builtin Type)
+forall t. TypeSystem t =&gt; t -&gt; Maybe (Builtin t)
+</span><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Maybe (Builtin Type)) -&gt; Type -&gt; Maybe (Builtin Type)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote] -&gt; Type
+</span><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-var">Type</span></a></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
+</span><a href="#local-6989586621679470523"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><a href="IR.Types.TypeSystem.html#injectBuiltin"><span class="hs-identifier hs-var">injectBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>               </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Builtin Type)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- | Convenience helper for no type annotations.</span><span>
+</span><span id="line-54"></span><span class="annot"><a href="IR.Types.Annotated.html#untyped"><span class="hs-identifier hs-type">untyped</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-55"></span><span id="untyped"><span class="annot"><span class="annottext">untyped :: Type
+</span><a href="IR.Types.Annotated.html#untyped"><span class="hs-identifier hs-var hs-var">untyped</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679470520"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-58"></span><span>  </span><span id="local-6989586621679470518"><span class="annot"><span class="annottext">pretty :: Type -&gt; Doc ann
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679470516"><span class="annot"><span class="annottext">TypeAnnote
+</span><a href="#local-6989586621679470516"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[TypeAnnote]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeAnnote -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TypeAnnote
+</span><a href="#local-6989586621679470516"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-comment">-- TODO: this only prints the outer-most ann</span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>     </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;_&quot;</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679470513"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="IR.Types.Annotated.html#TypeAnnote"><span class="hs-identifier hs-type">TypeAnnote</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-62"></span><span>  </span><span id="local-6989586621679470512"><span class="annot"><span class="annottext">pretty :: TypeAnnote -&gt; Doc ann
+</span><a href="#local-6989586621679470512"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TBuiltin"><span class="hs-identifier hs-type">TBuiltin</span></a></span><span> </span><span id="local-6989586621679470511"><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679470511"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builtin Type -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Builtin Type
+</span><a href="#local-6989586621679470511"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TCon"><span class="hs-identifier hs-type">TCon</span></a></span><span> </span><span id="local-6989586621679470510"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679470510"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679470509"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679470509"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann) -&gt; Doc ann -&gt; Doc ann
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Doc ann] -&gt; Doc ann
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">hsep</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TConId -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679470510"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; [Doc ann] -&gt; [Doc ann]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Doc ann) -&gt; [Type] -&gt; [Doc ann]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679470509"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Annotated.html#TVar"><span class="hs-identifier hs-type">TVar</span></a></span><span> </span><span id="local-6989586621679470506"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679470506"><span class="hs-identifier hs-var">v</span></a></span></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679470506"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-65"></span></pre></body></html>

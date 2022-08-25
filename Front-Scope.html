@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Front.Scope</title><link href="linuwial.css" rel="stylesheet" type="text/css" title="Linuwial" /><link rel="stylesheet" type="text/css" href="quick-jump.css" /><link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700" /><script src="haddock-bundle.min.js" async="async" type="text/javascript"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { processClass: "mathjax", ignoreClass: ".*" } });</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script></head><body><div id="package-header"><span class="caption">sslang-0.1.0.0</span><ul class="links" id="page-menu"><li><a href="src/Front.Scope.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul></div><div id="content"><div id="module-header"><table class="info"><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Front.Scope</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Check scoping rules and naming conventions for identifiers.</p><p>Here, we ensure that all identifiers that appear in the AST only appear after
+they are previously declared or defined.</p><p>Identifiers can be segregated into two categories: data identifiers, which
+produce expressions, and type identifiers, which produce types (more accurately,
+type expressions). These inhabit separate namespaces and are distinguished by
+the different contexts in which they are used.</p><p>Of each category, there are two kinds of identifiers: constructors and
+variables. Constructors must begin with an upper case letter or a colon (<code>:</code>);
+all other identifiers are variables (see <code><a href="Common-Identifiers.html#v:isCons" title="Common.Identifiers">isCons</a></code> and <code><a href="Common-Identifiers.html#v:isVar" title="Common.Identifiers">isVar</a></code>). For instance,
+data constructors name the variants of an algebraic data type, while data
+variables name values bound by a let-binding, a pattern-match, or a lambda.
+Meanwhile, type constructors are points in the type system defined by the user,
+while type variables are universally quantified in each type expression.</p><p>Consider the following example:</p><p>@@
+type Bool =
+  True
+  False</p><p>type Either t u =
+  Left t
+  Right u</p><p>liftEither b x y: Bool -&gt; a -&gt; b -&gt; Either a b =
+  match b
+    True  = Left x
+    False = Right y
+@@</p><p>Data variables are <code>switch</code>, <code>b</code>, <code>x</code>, and <code>y</code>; data constructors are <code>True</code>,
+<code>False</code>, <code>Left</code>, and <code>Right</code>. Type variables are <code>t</code>, <code>u</code>, <code>a</code>, and <code>b</code>; type
+constructors are <code>Bool</code> and <code>Either</code>.</p><p>The grammar as it appears in the parser does not actually distinguish between
+any of these kinds of identifiers, so it is the responsibility of this module to
+check that, a data constructor does not appear where a data variable is
+expected, e.g., <code>let F x = e</code>, or vice versa, e.g., <code>let f (x Y) = e</code>.</p></div></div><div id="synopsis"><details id="syn"><summary>Synopsis</summary><ul class="details-toggle" data-details-id="syn"><li class="src short"><a href="#v:scopeProgram">scopeProgram</a> :: <a href="Front-Ast.html#t:Program" title="Front.Ast">Program</a> -&gt; <a href="Common-Compiler.html#t:Pass" title="Common.Compiler">Pass</a> ()</li></ul></details></div><div id="interface"><h1>Documentation</h1><div class="top"><p class="src"><a id="v:scopeProgram" class="def">scopeProgram</a> :: <a href="Front-Ast.html#t:Program" title="Front.Ast">Program</a> -&gt; <a href="Common-Compiler.html#t:Pass" title="Common.Compiler">Pass</a> () <a href="src/Front.Scope.html#scopeProgram" class="link">Source</a> <a href="#v:scopeProgram" class="selflink">#</a></p><div class="doc"><p>Check the scoping of a <code><a href="Front-Ast.html#t:Program" title="Front.Ast">Program</a></code>.</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.24.2</p></div></body></html>

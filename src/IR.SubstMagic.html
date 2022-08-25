@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- | Substitute AST nodes with magical primitives.</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">IR.SubstMagic</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="IR.SubstMagic.html#substMagic"><span class="hs-identifier">substMagic</span></a></span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.IR.html"><span class="hs-identifier">IR.IR</span></a></span><span>                         </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">I</span></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span>                      </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Proxy</span></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Data.Generics</span></span><span>                  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>                                                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">everywhere</span></span><span>
+</span><span id="line-12"></span><span>                                                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">mkT</span></span><span>
+</span><span id="line-13"></span><span>                                                </span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="IR.Types.TypeSystem.html"><span class="hs-identifier">IR.Types.TypeSystem</span></a></span><span>            </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier">TypeSystem</span></a></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-comment">{- | Substitute AST nodes with magical primitives.
+
+Implemented as a syb-style generic tree traversal.
+
+Example usage:
+
+@@
+-- Given:
+myExpr :: Expr Poly.Type
+
+-- Do:
+substMagic (Proxy :: Proxy Poly.Type) myExpr
+
+-- Given:
+myProm :: Program Annotated.Type
+
+-- Do:
+substMagic (Proxy :: Proxy Annotated.Type) myProg
+@@
+-}</span><span>
+</span><span id="line-37"></span><span id="local-6989586621679472394"><span id="local-6989586621679472395"><span class="annot"><a href="IR.SubstMagic.html#substMagic"><span class="hs-identifier hs-type">substMagic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier hs-type">TypeSystem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679472395"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679472395"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Data</span></span><span> </span><span class="annot"><a href="#local-6989586621679472394"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679472395"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679472394"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679472394"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-38"></span><span id="substMagic"><span class="annot"><span class="annottext">substMagic :: Proxy t -&gt; a -&gt; a
+</span><a href="IR.SubstMagic.html#substMagic"><span class="hs-identifier hs-var hs-var">substMagic</span></a></span></span><span> </span><span id="local-6989586621679472393"><span class="annot"><span class="annottext">Proxy t
+</span><a href="#local-6989586621679472393"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall a. Data a =&gt; a -&gt; a) -&gt; forall a. Data a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">everywhere</span></span><span> </span><span class="annot"><span class="annottext">((forall a. Data a =&gt; a -&gt; a) -&gt; forall a. Data a =&gt; a -&gt; a)
+-&gt; (forall a. Data a =&gt; a -&gt; a) -&gt; forall a. Data a =&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Expr t -&gt; Expr t) -&gt; a -&gt; a
+forall a b. (Typeable a, Typeable b) =&gt; (b -&gt; b) -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">mkT</span></span><span> </span><span class="annot"><span class="annottext">((Expr t -&gt; Expr t) -&gt; a -&gt; a) -&gt; (Expr t -&gt; Expr t) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Proxy t -&gt; Expr t -&gt; Expr t
+forall t. TypeSystem t =&gt; Proxy t -&gt; Expr t -&gt; Expr t
+</span><a href="IR.SubstMagic.html#substMagicExpr"><span class="hs-identifier hs-var">substMagicExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy t
+</span><a href="#local-6989586621679472393"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- | Replace applications to built-in names with corresponding primitives.</span><span>
+</span><span id="line-41"></span><span id="local-6989586621679472406"><span class="annot"><a href="IR.SubstMagic.html#substMagicExpr"><span class="hs-identifier hs-type">substMagicExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Types.TypeSystem.html#TypeSystem"><span class="hs-identifier hs-type">TypeSystem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679472406"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679472406"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679472406"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679472406"><span class="hs-identifier hs-type">t</span></a></span></span><span>
+</span><span id="line-42"></span><span id="substMagicExpr"><span class="annot"><span class="annottext">substMagicExpr :: Proxy t -&gt; Expr t -&gt; Expr t
+</span><a href="IR.SubstMagic.html#substMagicExpr"><span class="hs-identifier hs-var hs-var">substMagicExpr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy t
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679472391"><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472391"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; (Expr t, [(Expr t, t)])
+forall t. Expr t -&gt; (Expr t, [(Expr t, t)])
+</span><a href="IR.IR.html#unzipApp"><span class="hs-identifier hs-var">I.unzipApp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472391"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
+</span><span class="hs-string">&quot;new&quot;</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679472388"><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472388"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679472387"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472387"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679472386"><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472386"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
+</span><a href="IR.IR.html#New"><span class="hs-identifier hs-var">I.New</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472388"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472387"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472386"><span class="hs-identifier hs-var">ats</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
+</span><span class="hs-string">&quot;dup&quot;</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679472382"><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472382"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679472381"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472381"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679472380"><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472380"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
+</span><a href="IR.IR.html#Dup"><span class="hs-identifier hs-var">I.Dup</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472382"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472381"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472380"><span class="hs-identifier hs-var">ats</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
+</span><span class="hs-string">&quot;drop&quot;</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679472378"><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472378"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679472377"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472377"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679472376"><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472376"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679472375"><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472375"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
+</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
+</span><a href="IR.IR.html#Drop"><span class="hs-identifier hs-var">I.Drop</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472378"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472376"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679472377"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Expr t, t)]
+</span><a href="#local-6989586621679472375"><span class="hs-identifier hs-var">ats</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><span class="annottext">(Expr t, [(Expr t, t)])
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t
+</span><a href="#local-6989586621679472391"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-48"></span></pre></body></html>
