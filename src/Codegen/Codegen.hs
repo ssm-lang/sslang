@@ -556,8 +556,8 @@ genExpr e@(I.App _ _ ty) = do
   let (fn, args) = second (map fst) $ I.unzipApp e
   -- args must be non-empty because a is an App
   case fn of
-    I.Var _ _ -> do
-    -- (I.Prim I.Dup [I.Var _ _] _) -> do
+    -- I.Var _ _ -> do
+    (I.Prim I.Dup [I.Var _ _] _) -> do
       (fnExp, fnStms) <- genExpr fn
       foldM apply (fnExp, fnStms) args
      where
@@ -573,9 +573,8 @@ genExpr e@(I.App _ _ ty) = do
               $exp:(closure_apply f aVal current prio depth retp);
               if ($exp:(has_children current)) {
                 $items:yield;
-              } else {
-                $exp:(dup f);
               }
+              $exp:(drop f);
             |]
         return (ret, stms ++ aStms ++ appStms)
     (I.Data dcon dty) -> do
@@ -587,8 +586,7 @@ genExpr e@(I.App _ _ ty) = do
       destruct  <- getsDCon dconDestruct dcon
       tmp       <- genTmp dty
       let alloc = [[citem|$exp:tmp = $exp:construct;|]]
-          -- FIXME: Duplicate the arguments $expr:(dup y) ?
-          initField y i = [citem|$exp:(destruct i tmp) = $exp:(dup y);|]
+          initField y i = [citem|$exp:(destruct i tmp) = $exp:y;|]
           initFields = zipWith initField argVals [0 ..]
       return (tmp, concat evalStms ++ alloc ++ initFields)
     _ -> fail $ "Cannot apply this expression: " ++ show fn
@@ -744,6 +742,7 @@ genPrim I.Par procs _ = do
             retp = [cexp|&$exp:ret|]
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
+              $exp:(drop fnExp);
             |]
         return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do

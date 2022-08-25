@@ -97,17 +97,8 @@ insertDropTop (var, expr) = do
 insertDropExpr :: I.Expr Poly.Type -> InsertFn (I.Expr Poly.Type)
 
 -- Inserting dup/drops into function application with arg.
-insertDropExpr app@I.App{} = do
-  let (fun, args) = I.unzipApp app
-  args' <- forM args $ \(e, t) -> (, t) <$> insertDropExpr e
-  fun'  <- insertDropLeft fun
-  return $ I.zipApp fun' (reverse args') -- FIXME: reverse?
- where
-  insertDropLeft e@I.Prim {}   = return e
-  insertDropLeft e@I.Var {}    = return e  -- Don't dup f in (f e1 e2)
-  insertDropLeft e@I.Data {}   = return e
-  insertDropLeft e@I.Lambda {} = return e
-  insertDropLeft e             = insertDropExpr e
+insertDropExpr (I.App f x t) =
+  I.App <$> insertDropExpr f <*> insertDropExpr x <*> pure t
 
 -- Inserting drops into let bindings.
 insertDropExpr (I.Let bins expr typ) = do
