@@ -7,19 +7,17 @@ module IR.SegmentLets
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( HasFreeVars(..) )
 import qualified IR.IR                         as I
-import qualified IR.Types                      as I
+import qualified IR.Types.Type                 as I
 
 import           Data.Generics.Aliases          ( mkT )
 import           Data.Generics.Schemes          ( everywhere )
 import qualified Data.Set                      as S
 
-import           Debug.Trace
-
 type T = I.Annotations
 
 segmentLets :: I.Program T -> Compiler.Pass (I.Program T)
-segmentLets p = return
-  $ p { I.programDefs = everywhere (mkT segmentLetExpr) $ I.programDefs p }
+segmentLets p =
+  return p { I.programDefs = everywhere (mkT segmentLetExpr) $ I.programDefs p }
 
 segmentLetExpr :: I.Expr T -> I.Expr T
 segmentLetExpr (I.Let ds b t) = foldr ilet b $ segmentDefs ds
@@ -29,7 +27,8 @@ segmentLetExpr e = e
 segmentDefs :: [(I.Binder, I.Expr t)] -> [[(I.Binder, I.Expr t)]]
 segmentDefs = segment [] . reverse
  where
-  segment acc [] = acc
+  segment acc []       = acc
+  segment []  (d : ds) = segment [[d]] ds
   segment acc (d@(Just v, _) : ds)
     | v `S.member` precedingFreeVars ds = pushSegment acc d `segment` ds
     | otherwise                         = newSegment acc d `segment` ds

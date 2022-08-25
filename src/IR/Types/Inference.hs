@@ -10,6 +10,7 @@ import qualified IR.Types.Unification          as U
 import           IR.Types.Unification           ( (<:=)
                                                 , (=:=)
                                                 )
+import           IR.SegmentLets                 ( segmentDefs )
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( Identifiable(..)
@@ -69,14 +70,14 @@ inferProgram p = U.runInfer (InferCtx M.empty) $ do
   ebs <- mapM externBindings $ externDecls p
   dbs <- concat <$> mapM typedefBindings (typeDefs p)
   withBindings (ebs ++ dbs) $ do
-    (bs, ds) <- unzip . fromBinders <$> inferDefs (toBinders $ programDefs p)
+    (bs, ds) <- unzip . fromDefs <$> mapM inferDefs (toDefs $ programDefs p)
     ds'      <- mapM
       (mapM $ U.freeze <=< U.applyBindings . T.unScheme <=< U.generalize)
       ds
     return $ p { programDefs = zip bs ds' }
  where
-  toBinders   = map $ first Just
-  fromBinders = map $ first fromJust
+  toDefs = segmentDefs . map (first Just)
+  fromDefs = map (first fromJust ) . concat
 
 externBindings :: (VarId, Type) -> Infer (Binder, U.Scheme)
 externBindings (v, t) = do
