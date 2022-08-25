@@ -2,6 +2,7 @@
  *  @brief SSM runtime memory management and allocation.
  *
  *  @author John Hui (j-hui)
+ *  @author Stephen Edwards (sedwards-lab)
  *  @author Daniel Scanteianu (Scanteianu)
  */
 #include <assert.h>
@@ -73,7 +74,7 @@ static void (*free_mem)(void *mem, size_t size);
  */
 static inline size_t find_pool_size(size_t size) {
   for (size_t pool_idx = 0; pool_idx < SSM_MEM_POOL_COUNT; pool_idx++)
-    if (size < SSM_MEM_POOL_SIZE(pool_idx))
+    if (size <= SSM_MEM_POOL_SIZE(pool_idx))
       return pool_idx;
   return SSM_MEM_POOL_COUNT;
 }
@@ -85,6 +86,19 @@ static inline block_t *find_next_block(block_t *block, size_t pool_size) {
     return block->free_list_next;
 }
 
+#ifdef CONFIG_MEM_STATS
+/** @brief Tracks how many pages have been allocated by alloc_pool().
+ *
+ *  @note Define CONFIG_MEM_STATS to enable this.
+ */
+static size_t num_pages_allocated = 0;
+static size_t live_objects = 0;
+static size_t pages_allocated[SSM_MEM_POOL_COUNT] = {0};
+static size_t objects_allocated = 0;
+static size_t objects_freed = 0;
+#endif
+
+#ifndef CONFIG_MALLOC_HEAP
 /** @brief Allocate a new block for a memory pool.
  *
  *  Calls alloc_page() to allocate a new zero-initialized page for the memory
@@ -98,6 +112,12 @@ static inline block_t *find_next_block(block_t *block, size_t pool_size) {
 static inline void alloc_pool(size_t p) {
   block_t *new_page = alloc_page();
   SSM_ASSERT(END_OF_FREELIST < new_page);
+
+#ifdef CONFIG_MEM_STATS
+  num_pages_allocated++;
+  pages_allocated[p]++;
+#endif
+
   struct mem_pool *pool = &mem_pools[p];
   size_t last_block = BLOCKS_PER_PAGE - SSM_MEM_POOL_SIZE(p) / sizeof(block_t);
   new_page[last_block].free_list_next = pool->free_list_head;
@@ -111,6 +131,7 @@ static inline void alloc_pool(size_t p) {
   VALGRIND_CREATE_BLOCK(new_page, SSM_MEM_PAGE_SIZE, "SSM memory pool page");
 #endif
 }
+#endif /* ifndef CONFIG_MALLOC_HEAP */
 
 void ssm_mem_init(void *(*alloc_page_handler)(void),
                   void *(*alloc_mem_handler)(size_t),
@@ -149,6 +170,7 @@ void ssm_mem_destroy(void (*free_page_handler)(void *)) {
 #endif
 }
 
+#ifndef CONFIG_MALLOC_HEAP
 void ssm_mem_prealloc(size_t size, size_t num_pages) {
   size_t p = find_pool_size(size);
   if (p >= SSM_MEM_POOL_COUNT)
@@ -156,39 +178,72 @@ void ssm_mem_prealloc(size_t size, size_t num_pages) {
   for (size_t i = 0; i < num_pages; i++)
     alloc_pool(p);
 }
-
-void *ssm_mem_alloc(size_t size) {
-  size_t p = find_pool_size(size);
-  if (p >= SSM_MEM_POOL_COUNT)
-    return alloc_mem(size);
-
-  struct mem_pool *pool = &mem_pools[p];
-
-  if (pool->free_list_head == END_OF_FREELIST)
-    alloc_pool(p);
-
-  void *m = pool->free_list_head->block_buf;
-
-#ifdef USE_VALGRIND
-  // Tell Valgrind that we have allocated m as a chunk of pool.
-  //
-  // The memory range [m..m+size] is now considered DEFINED.
-  VALGRIND_MALLOCLIKE_BLOCK(m, size, 0, 1);
 #endif
 
-  pool->free_list_head =
-      find_next_block(pool->free_list_head, SSM_MEM_POOL_SIZE(p));
+void *ssm_mem_alloc(size_t size) {
+
+#ifdef CONFIG_MEM_STATS
+  objects_allocated++;
+  live_objects++;
+#endif
+
+  void *m;
+
+#ifdef CONFIG_MALLOC_HEAP
+  m = malloc(size);
+#else
+
+  size_t p = find_pool_size(size);
+  if (p >= SSM_MEM_POOL_COUNT) {
+    m = alloc_mem(size);
+  } else {
+    struct mem_pool *pool = &mem_pools[p];
+
+    if (pool->free_list_head == END_OF_FREELIST)
+      alloc_pool(p);
+
+    m = pool->free_list_head->block_buf;
 
 #ifdef USE_VALGRIND
-  // Make the memory range [m..m+size] undefined, because the caller should
-  // not rely on allocated chunks being defined.
-  VALGRIND_MAKE_MEM_UNDEFINED(m, size);
+    // Tell Valgrind that we have allocated m as a chunk of pool.
+    //
+    // The memory range [m..m+size] is now considered DEFINED.
+    VALGRIND_MALLOCLIKE_BLOCK(m, size, 0, 1);
+#endif
+
+    pool->free_list_head =
+        find_next_block(pool->free_list_head, SSM_MEM_POOL_SIZE(p));
+
+#ifdef USE_VALGRIND
+    // Make the memory range [m..m+size] undefined, because the caller should
+    // not rely on allocated chunks being defined.
+    VALGRIND_MAKE_MEM_UNDEFINED(m, size);
+#endif
+  }
+
+#endif /* CONFIG_MALLOC_HEAP */
+
+#ifdef CONFIG_MEM_TRACE
+  fprintf(stderr, "%p = ssm_mem_alloc(%lu)\n", m, size);
 #endif
 
   return m;
 }
 
 void ssm_mem_free(void *m, size_t size) {
+
+#ifdef CONFIG_MEM_TRACE
+  fprintf(stderr, "%p ssm_mem_free(%lu)\n", m, size);
+#endif
+
+#ifdef CONFIG_MEM_STATS
+  live_objects--;
+  objects_freed++;
+#endif
+
+#ifdef CONFIG_MALLOC_HEAP
+  free(m);
+#else
   size_t p = find_pool_size(size);
   if (p >= SSM_MEM_POOL_COUNT) {
     free_mem(m, size);
@@ -205,9 +260,10 @@ void ssm_mem_free(void *m, size_t size) {
   // Tell Valgrind that we have freed m.
   VALGRIND_FREELIKE_BLOCK(m, 0);
 #endif
+#endif /* CONFIG_MALLOC_HEAP */
 }
 
-ssm_value_t ssm_new_time(ssm_time_t time) {
+ssm_value_t ssm_new_time_int(ssm_time_t time) {
   struct ssm_time *t = ssm_mem_alloc(sizeof(struct ssm_sv));
   t->mm.ref_count = 1;
   t->mm.kind = SSM_TIME_K;
@@ -215,7 +271,7 @@ ssm_value_t ssm_new_time(ssm_time_t time) {
   return (ssm_value_t){.heap_ptr = &t->mm};
 }
 
-ssm_value_t ssm_new_adt(uint8_t field_count, uint8_t tag) {
+ssm_value_t ssm_new_adt_int(uint8_t field_count, uint8_t tag) {
   struct ssm_mm *mm = ssm_mem_alloc(ssm_adt_size(field_count));
   mm->ref_count = 1;
   mm->kind = SSM_ADT_K;
@@ -224,7 +280,7 @@ ssm_value_t ssm_new_adt(uint8_t field_count, uint8_t tag) {
   return (ssm_value_t){.heap_ptr = mm};
 }
 
-ssm_value_t ssm_new_sv(ssm_value_t val) {
+ssm_value_t ssm_new_sv_int(ssm_value_t val) {
   struct ssm_sv *sv = ssm_mem_alloc(sizeof(struct ssm_sv));
   sv->mm.ref_count = 1;
   sv->mm.kind = SSM_SV_K;
@@ -235,7 +291,7 @@ ssm_value_t ssm_new_sv(ssm_value_t val) {
   return (ssm_value_t){.heap_ptr = &sv->mm};
 }
 
-ssm_value_t ssm_new_closure(ssm_func_t f, uint8_t arg_cap) {
+ssm_value_t ssm_new_closure_int(ssm_func_t f, uint8_t arg_cap) {
   struct ssm_closure1 *closure = container_of(
       ssm_mem_alloc(ssm_closure_size(arg_cap)), struct ssm_closure1, mm);
   closure->mm.ref_count = 1;
@@ -246,7 +302,7 @@ ssm_value_t ssm_new_closure(ssm_func_t f, uint8_t arg_cap) {
   return (ssm_value_t){.heap_ptr = &closure->mm};
 }
 
-ssm_value_t ssm_new_array(uint16_t elems) {
+ssm_value_t ssm_new_array_int(uint16_t elems) {
   struct ssm_mm *mm = ssm_mem_alloc(ssm_array_size(elems));
   mm->ref_count = 1;
   mm->kind = SSM_ARRAY_K;
@@ -254,7 +310,7 @@ ssm_value_t ssm_new_array(uint16_t elems) {
   return (ssm_value_t){.heap_ptr = mm};
 }
 
-ssm_value_t ssm_new_blob(uint16_t size) {
+ssm_value_t ssm_new_blob_int(uint16_t size) {
   uint16_t scaled_size = // ceiling(size / SSM_BLOB_SIZE_SCALE)
       (size + SSM_BLOB_SIZE_SCALE - 1) / SSM_BLOB_SIZE_SCALE;
 
@@ -317,3 +373,31 @@ void ssm_drops(size_t cnt, ssm_value_t *arr) {
   for (size_t i = 0; i < cnt; i++)
     ssm_drop(arr[i]);
 }
+
+#ifdef CONFIG_MEM_STATS
+void ssm_mem_statistics_collect(ssm_mem_statistics_t *stats) {
+  SSM_ASSERT(stats != NULL);
+
+  stats->sizeof_ssm_mm = sizeof(struct ssm_mm);
+  stats->page_size = SSM_MEM_PAGE_SIZE;
+  stats->pages_allocated = num_pages_allocated;
+  stats->objects_allocated = objects_allocated;
+  stats->objects_freed = objects_freed;
+  stats->live_objects = live_objects;
+
+  stats->pool_count = SSM_MEM_POOL_COUNT;
+
+  for (size_t i = 0; i < SSM_MEM_POOL_COUNT; i++) {
+    size_t pool_size = SSM_MEM_POOL_SIZE(i);
+    stats->pool[i].block_size = pool_size;
+    stats->pool[i].pages_allocated = pages_allocated[i];
+    size_t n = 0;
+    block_t *block = mem_pools[i].free_list_head;
+    while (block != END_OF_FREELIST) {
+      n++;
+      block = find_next_block(block, pool_size);
+    }
+    stats->pool[i].free_list_length = n;
+  }
+}
+#endif /* CONFIG_MEM_STATS */

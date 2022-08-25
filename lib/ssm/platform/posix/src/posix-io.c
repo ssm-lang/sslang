@@ -17,10 +17,16 @@ static void step_stdout_handler(ssm_act_t *act) {
   case 1:;
     char c = ssm_unmarshal(ssm_deref(cont->ssm_stdout));
     if (!c)
-      break;
+      return;
     write(1, &c, 1);
     return;
+  case 2:; // Magical "terminate self" code
+    break;
   }
+
+  ssm_desensitize(
+      &cont->trigger); // sensitize added a pointer to the activation record
+  ssm_drop(cont->ssm_stdout); // Caller drop this argument
   ssm_leave(&cont->act, sizeof(stdout_handler_act_t));
 }
 

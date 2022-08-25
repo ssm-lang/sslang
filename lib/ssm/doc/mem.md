@@ -50,3 +50,12 @@ The allocator's memory pools may be configured using the #SSM_MEM_POOL_MIN,
 preprocessor constants.
 The default values produce 4 memory pools, of sizes 16B, 64B, 256B, and 1024B,
 and a memory page size of 4096B.
+
+The runtime recognizes several compile time configuration macros that help with
+profiling and debugging. They are:
+
+-   CONFIG_MEM_TRACE: log information any time something is allocated or freed.
+-   CONFIG_MEM_STATS: collect statistics and report about memory pool usage.
+-   CONFIG_MALLOC_HEAP: bypass the allocator entirely and allocate everything
+    using malloc(), so that memory accesses can be tracked with Valgrind.
+

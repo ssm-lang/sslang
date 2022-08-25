@@ -1,0 +1,145 @@
+./build/test_test-mem
+# --- Initial state: no live objects or pages allocated
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 0
+# objects allocated 0
+# objects freed 0
+# live objects 0
+# 4 pools
+# pool   0: pages   0  block-size    16  free-blocks     0
+# pool   1: pages   0  block-size    64  free-blocks     0
+# pool   2: pages   0  block-size   256  free-blocks     0
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- One blob of size 1 allocated
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 1
+# objects allocated 1
+# objects freed 0
+# live objects 1
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   255
+# pool   1: pages   0  block-size    64  free-blocks     0
+# pool   2: pages   0  block-size   256  free-blocks     0
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- Back to no objects
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 1
+# objects allocated 1
+# objects freed 1
+# live objects 0
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   256
+# pool   1: pages   0  block-size    64  free-blocks     0
+# pool   2: pages   0  block-size   256  free-blocks     0
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- Three objects in pool 0
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 1
+# objects allocated 4
+# objects freed 1
+# live objects 3
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   0  block-size    64  free-blocks     0
+# pool   2: pages   0  block-size   256  free-blocks     0
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- Three new objects in pool 1
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 2
+# objects allocated 7
+# objects freed 1
+# live objects 6
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   0  block-size   256  free-blocks     0
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- Three new objects in pool 2
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 3
+# objects allocated 10
+# objects freed 1
+# live objects 9
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   1  block-size   256  free-blocks    13
+# pool   3: pages   0  block-size  1024  free-blocks     0
+# 
+# --- One new object in pool 3
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 4
+# objects allocated 11
+# objects freed 1
+# live objects 10
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   1  block-size   256  free-blocks    13
+# pool   3: pages   1  block-size  1024  free-blocks     3
+# 
+# --- Pool 3 empty
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 4
+# objects allocated 11
+# objects freed 2
+# live objects 9
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   1  block-size   256  free-blocks    13
+# pool   3: pages   1  block-size  1024  free-blocks     4
+# 
+# --- Pool 2 empty
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 4
+# objects allocated 11
+# objects freed 5
+# live objects 6
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   253
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   1  block-size   256  free-blocks    16
+# pool   3: pages   1  block-size  1024  free-blocks     4
+# 
+# --- Pool 0 empty
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 4
+# objects allocated 11
+# objects freed 8
+# live objects 3
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   256
+# pool   1: pages   1  block-size    64  free-blocks    61
+# pool   2: pages   1  block-size   256  free-blocks    16
+# pool   3: pages   1  block-size  1024  free-blocks     4
+# 
+# --- Pool 1 empty
+# sizeof(struct ssm_mm) = 4
+# page size 4096
+# pages allocated 4
+# objects allocated 11
+# objects freed 11
+# live objects 0
+# 4 pools
+# pool   0: pages   1  block-size    16  free-blocks   256
+# pool   1: pages   1  block-size    64  free-blocks    64
+# pool   2: pages   1  block-size   256  free-blocks    16
+# pool   3: pages   1  block-size  1024  free-blocks     4
+# 
+# PASSED

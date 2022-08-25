@@ -241,6 +241,46 @@ void ssm_mem_destroy(void (*free_page_handler)(void *));
 #define SSM_MEM_PAGE_SIZE SSM_MEM_POOL_SIZE(SSM_MEM_POOL_COUNT)
 #endif
 
+#ifdef CONFIG_MEM_STATS
+
+/** @brief Statistics for a heap page pool; used in #ssm_mem_statistics_t.
+ *
+ *  @note Define CONFIG_MEM_STATS to enable this.
+ */
+typedef struct ssm_mem_statistics_pool {
+  size_t block_size;       /**< Size of this pool's blocks */
+  size_t pages_allocated;  /**< Number of pages allocated to this pool */
+  size_t free_list_length; /**< Length of the free list */
+} ssm_mem_statistics_pool_t;
+
+/** @brief Statistics for the heap; filled with #ssm_mem_statistics_collect().
+ *
+ *  A collection of satistics collected by #ssm_mem_statistics_collect()
+ *  and designed to be printed by a function you supply.
+ *
+ *  @note Define CONFIG_MEM_STATS to enable this.
+ */
+typedef struct ssm_mem_statistics {
+  size_t sizeof_ssm_mm;     /**< Size of per-object memory management header */
+  size_t page_size;         /**< Bytes in a memory page */
+  size_t pages_allocated;   /**< Number of pages that have been allocated */
+  size_t objects_allocated; /**< Total number of allocated objects */
+  size_t objects_freed;     /**< Total number of object free events */
+  size_t live_objects;      /**< Number of live objects **/
+  size_t pool_count;        /**< Number of memory pools */
+  ssm_mem_statistics_pool_t pool[32]; /**< Size of the blocks in each pool */
+} ssm_mem_statistics_t;
+
+/** @brief Collect and return statistics about the heap.
+ *
+ *  @note Define CONFIG_MEM_STATS to enable this.
+ *
+ *  @param stats   non-NULL pointer to a #ssm_mem_statistics_t to be filled in
+ */
+void ssm_mem_statistics_collect(ssm_mem_statistics_t *stats);
+
+#endif /* CONFIG_MEM_STATS */
+
 /** @} */
 
 #ifdef USE_VALGRIND

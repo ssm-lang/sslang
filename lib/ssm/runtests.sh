@@ -85,23 +85,36 @@ else
   exit 1
 fi
 
-rm -f "$BUILD_DIR/tests.out"
+rm -f "$BUILD_DIR/test-scheduler.out"
 {
   run test_test-scheduler
-} >> "$BUILD_DIR/tests.out"
+} >> "$BUILD_DIR/test-scheduler.out"
 
-if diff "$BUILD_DIR/tests.out" test/tests.out &> "$BUILD_DIR/tests.diff" ; then
-  say "Test output matches expected."
+if diff "$BUILD_DIR/test-scheduler.out" test/test-scheduler.out &> "$BUILD_DIR/test-scheduler.diff" ; then
+  say "Test-scheduler output matches expected."
 else
-  say "Test output differs from expected:"
-  cat "$BUILD_DIR/tests.diff"
+  say "Test-scheduler output differs from expected:"
+  cat "$BUILD_DIR/test-scheduler.diff"
+  exit 1
+fi
+
+rm -f "$BUILD_DIR/test-mem.out"
+{
+  run test_test-mem
+} >> "$BUILD_DIR/test-mem.out"
+
+if diff "$BUILD_DIR/test-mem.out" test/test-mem.out &> "$BUILD_DIR/test-mem.diff" ; then
+  say "Test-mem output matches expected."
+else
+  say "Test-mem output differs from expected:"
+  cat "$BUILD_DIR/test-mem.diff"
   exit 1
 fi
 
 make clean
 make exes tests
 
-if command -v valgrind >/dev/null ; then
+if which valgrind >/dev/null ; then
   rm -f "$BUILD_DIR/examples.vg-out"
   {
     vg fib

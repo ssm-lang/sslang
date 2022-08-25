@@ -65,7 +65,7 @@ $(info PLATFORM is $(PLATFORM))
 COV_TGT := $(BUILD_DIR)/coverage.xml
 
 CC = $(MAKE_CC)
-CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic
+CFLAGS += -g -I$(INC_DIR) -O -Wall -pedantic $(EXTRA_CFLAGS)
 
 ifeq ($(PLATFORM),simulation)
 # enforce c99 for pure testing, but don't enforce it for other platforms
@@ -74,7 +74,8 @@ endif
 
 ifeq ($(PLATFORM),simulation)
 # Check whether valgrind is available.
-ifeq ($(shell command -v valgrind),)
+# ifeq (0,0)
+ifeq ($(shell which valgrind),)
 $(info # Valgrind is not available; compiling without it.)
 else
 # If available, we try to #include <valgrind/valgrind.h>, which we use to
@@ -87,7 +88,7 @@ CFLAGS += -DUSE_VALGRIND
 endif
 endif
 
-TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage
+TEST_CFLAGS = $(CFLAGS) -g -DSSM_DEBUG --coverage -DCONFIG_MEM_STATS
 
 LD = $(MAKE_LD)
 LDFLAGS = -L$(BUILD_DIR)
@@ -164,5 +165,7 @@ help:
 	@echo
 	@echo "Available example targets:" $(EXE_TGT)
 	@echo "Available test targets:" $(TEST_TGT)
+	@echo
+	@echo "Specify, e.g., CONFIGS=\"CONFIG_MEM_STATS SSM_DEBUG\" to define additional compilation flags"
 
 .PHONY: $(PHONY)
