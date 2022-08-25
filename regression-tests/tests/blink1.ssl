@@ -13,12 +13,13 @@ main cin cout =
   let putc c =
        after 1, cout <- c
        wait cout
-  let display led =
-       loop
+  let display n led =
+       let n_ = new n
+       while deref n_ > 0
          wait led
          putc (deref led + 48)
-	 putc 10
-  let led = new 0       
+         putc 10
+         n_ <- deref n_ - 1
+  let led = new 0
   par blink 10 led
-      display led
-  
+      display 20 led

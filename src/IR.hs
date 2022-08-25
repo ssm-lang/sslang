@@ -8,21 +8,21 @@ module IR where
 
 import           Common.Compiler
 import           Common.Default                 ( Default(..) )
-
-import           Control.Monad                  ( when )
 import qualified Front.Ast                     as A
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
-import qualified IR.DropInference              as DropInf
 import           IR.ExternToCall                ( externToCall )
 import qualified IR.HM                         as HM
 import qualified IR.IR                         as I
+import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import qualified IR.TypeChecker                as TC
 import qualified IR.Types.Annotated            as Ann
 import qualified IR.Types.Classes              as Cls
 import qualified IR.Types.Poly                 as Poly
+
+import           Control.Monad                  ( when )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -44,14 +44,13 @@ data TIType
 
 -- | Compiler options for the IR compiler stage.
 data Options = Options
-  { mode    :: Mode
-  , tiType  :: TIType
-  , dupDrop :: Bool
+  { mode   :: Mode
+  , tiType :: TIType
   }
   deriving (Eq, Show)
 
 instance Default Options where
-  def = Options { mode = Continue, tiType = Both, dupDrop = False }
+  def = Options { mode = Continue, tiType = Both }
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
@@ -72,13 +71,10 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option "" ["only-hm"]  (NoArg setHM)    "Only run HM type inference"
-  , Option "" ["only-tc"]  (NoArg setTC)    "Only run type checker"
-  , Option "" ["dup-drop"] (NoArg setDropInf) "run with drop inference"
+  , Option "" ["only-hm"] (NoArg setHM) "Only run HM type inference"
+  , Option "" ["only-tc"] (NoArg setTC) "Only run type checker"
   ]
- where
-  setMode m o = o { mode = m }
-  setDropInf o = o { dupDrop = True }
+  where setMode m o = o { mode = m }
 
 -- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
 lower :: Options -> A.Program -> Pass (I.Program Ann.Type)
@@ -116,11 +112,11 @@ class2Poly _ = instProgram
 -- | IR compiler sub-stage, performing source-to-source translations.
 poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
 poly2Poly opt ir = do
-  let dd = (if dupDrop opt then dropInf else pure)
-  ir' <- dd =<< liftProgramLambdas =<< externToCall =<< dConToFunc ir
+  ir' <- liftProgramLambdas =<< externToCall =<< dConToFunc ir
   when (mode opt == DumpIRLifted) $ dump ir'
-  when (mode opt == DumpIRFinal) $ dump ir' -- (throwError . Dump . show . dumpy) irFinal
-  return ir'
+  ir'' <- insertRefCounting ir'
+  when (mode opt == DumpIRFinal) $ dump ir''
+  return ir''
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program Poly.Type)
@@ -134,7 +130,3 @@ setHM o = o { tiType = HMOnly }
 -- | Helper function to set ti type to TC-only
 setTC :: Options -> Options
 setTC o = o { tiType = TCOnly }
-
--- | Drop inference stage.
-dropInf :: I.Program Poly.Type -> Pass (I.Program Poly.Type)
-dropInf = DropInf.insertDropsProgram

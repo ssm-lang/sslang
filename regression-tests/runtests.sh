@@ -2,7 +2,15 @@
 
 SSLC="stack exec sslc --"
 pretty="--dump-ir-final"
-SSMDIR="../lib/ssm"
+
+# Run as, e.g.,
+#    SSMDIR=../../ssm-runtime runtests.sh
+# to use the runtime library in non-standard directory
+
+if [ -z ${SSMDIR+x} ]
+then
+    SSMDIR="../lib/ssm"
+fi
 SSMLIBDIR="${SSMDIR}/build"
 SSMINC="${SSMDIR}/include"
 
@@ -24,6 +32,10 @@ Usage() {
     echo "Usage: runtests.sh [options] [files]"
     echo "-c    Clean up any existing generated files"
     echo "-k    Keep intermediate files"
+    echo "-t    Enable memory tracing"
+    echo "-m    Use malloc only for the heap"
+    echo "-v    Run valgrind on the generated executable (implies -m)"
+    echo "-q    Suppress printing detailed log"
     echo "-h    Print this help"
     exit 1
 }
@@ -106,10 +118,10 @@ Check() {
     NoteGen "${csource} ${cheader} ${obj}"
 
     NoteGen "${exec} ${result} ${diff}"
-    Run $SSLC "$1" ">" "${csource}" && \
-    Run $CC -c -o "${obj}" "${csource}" && \
-    Run $LINK -o "${exec}" "${obj}" $platformdir/*.c -lssm -lpthread && \
-    Run "${exec}" ">" "${result}" && \
+    Run $SSLC ${SSLCARGS} "$1" ">" "${csource}" && \
+    Run $CC -c -o "${obj}" $EXTRA_CFLAGS "${csource}" && \
+    Run $LINK -o "${exec}" "${obj}" $EXTRA_CFLAGS $platformdir/*.c -lssm -lpthread && \
+    Run $valgrind "${exec}" ">" "${result}" && \
     Compare "${result}" "${reference}" "${diff}"
 
  #    # Pretty Printer Tests
@@ -191,8 +203,11 @@ CheckFail() {
     fi
 }
 
+EXTRA_CFLAGS=-DCONFIG_MEM_STATS
+valgrind=""
+quiet=0
 
-while getopts kch c; do
+while getopts kctmvqh c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -200,6 +215,20 @@ while getopts kch c; do
 	c) # Clean up any generated files
 	    rm -f *.scanner-out *.scanner-diff $globallog
 	    exit 0
+	    ;;
+	t) # Enable memory tracing
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MEM_TRACE"
+	    ;;
+	m) # Enable using malloc-only
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
+	    ;;
+	v) # Enable running valgrind
+	    # Turn on malloc-only
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DCONFIG_MALLOC_HEAP"
+	    valgrind="valgrind --leak-check=full"
+	    ;;
+	q) # Turn off dumping runtests.log
+	    quiet=1
 	    ;;
 	h) # Help
 	    Usage
@@ -216,7 +245,9 @@ else
     files="tests/*.ssl"
 fi
 
-Run make -C "$SSMDIR" build/libssm.a "1>&2" 2>> $globallog
+# Rebuild the runtime library because the flags may have changed
+Run make -C "$SSMDIR" clean "1>&2" 2>> $globallog
+Run make -C "$SSMDIR" EXTRA_CFLAGS=\"$EXTRA_CFLAGS\" build/libssm.a "1>&2" 2>> $globallog
 
 for file in $files
 do
@@ -230,7 +261,7 @@ do
   esac    
 done
 
-if [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
+if [ "$quiet" -ne 1 ] && [ -n "$globalerror" ] && [ "$globalerror" -ne 0 ]; then
   cat "$globallog"
 fi
 

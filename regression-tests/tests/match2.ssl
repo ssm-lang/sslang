@@ -1,0 +1,25 @@
+type String
+  Cons Int String
+  Nil
+
+main cin cout =
+  let n = Nil
+  match n
+    Cons c ss =
+      after 1, cout <- 48   // 0
+      wait cout
+    Nil =
+      after 1, cout <- 49   // 1
+      wait cout
+  after 1, cout <- 10       // /n
+  wait cout
+
+  let l = Cons 42 Nil
+  match l
+    Cons c ss =
+      after 1, cout <- 48   // 0
+      wait cout
+    Nil =
+      after 1, cout <- 49   // 1
+      wait cout
+  after 1, cout <- 10       // /n

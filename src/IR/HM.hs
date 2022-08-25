@@ -428,11 +428,12 @@ initTypeVars (I.Prim I.Dup [e] annT) = do
   e' <- initTypeVars e
   t  <- typeCheck annT' (extract e')
   return $ I.Prim I.Dup [e'] t
-initTypeVars (I.Prim I.Drop es annT) = do
+initTypeVars (I.Prim I.Drop [e, r] annT) = do
   let annT' = collapseAnnT annT
-  t   <- typeCheck annT' unit
-  es' <- mapM initTypeVars es
-  return $ I.Prim I.Drop es' t
+  e' <- initTypeVars e
+  r' <- initTypeVars r
+  t  <- typeCheck annT' (extract e')
+  return $ I.Prim I.Drop [e', r'] t
 initTypeVars (I.Prim I.Assign [lhs, rhs] annT) = do
   let annT' = collapseAnnT annT
   t    <- typeCheck annT' unit
@@ -654,10 +655,11 @@ getType (I.Prim I.Dup [e] t) = do
   e' <- getType e
   t' <- solveType t
   return $ I.Prim I.Dup [e'] t'
-getType (I.Prim I.Drop [e] t) = do
+getType (I.Prim I.Drop [e, r] t) = do
   e' <- getType e
+  r' <- getType r
   t' <- solveType t
-  return $ I.Prim I.Drop [e'] t'
+  return $ I.Prim I.Drop [e', r'] t'
 getType (I.Prim I.Assign [lhs, rhs] _) = do
   lhs' <- getType lhs
   rhs' <- getType rhs
