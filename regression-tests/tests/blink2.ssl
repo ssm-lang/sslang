@@ -1,0 +1,8 @@
+main cin (led : & Int) -> () =
+  let n = new 10
+  while deref n > 0
+    after 50 , led <- (1 + 48)
+    wait led
+    after 50 , led <- (0 + 48)
+    wait led
+    n <- deref n - 1

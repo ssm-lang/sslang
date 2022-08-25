@@ -14,15 +14,20 @@ main cin cout =
   let putc c =
        after 1, cout <- c
        wait cout
-  let display led =
-       loop
-         wait led
+  let display kill led =
+       wait led
+            kill
+       while deref kill == 0
          putc (deref led + 48)
-	 putc 10
+         putc 10
+         wait led
+              kill
   let led = new 0
-  par blink 30 (ms 50) led
-      blink 50 (ms 30) led
-      blink 75 (ms 20) led
-      display led
-
-  
+  let kill = new 0
+  let blinkers _ =
+          par blink 30 (ms 50) led
+              blink 50 (ms 30) led
+              blink 75 (ms 20) led
+          kill <- 1
+  par blinkers ()
+      display kill led
