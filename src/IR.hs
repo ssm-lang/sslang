@@ -18,6 +18,7 @@ import           IR.DropInference               ( insertDropsProgram )
 import           IR.ExternToCall                ( externToCall )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
+import           IR.SegmentLets                 ( segmentLets )
 import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
                                                 )
@@ -28,12 +29,15 @@ import           System.Console.GetOpt          ( ArgDescr(..)
                                                 )
 
 -- | Operation modes for the IR compiler stage.
+--
+-- By default, 'Continue' completes the pipeline end-to-end.
 data Mode
-  = Continue          -- ^ Compile end-to-end (default).
-  | DumpIR            -- ^ Print the IR immediately after lowering.
-  | DumpIRTyped       -- ^ Print the fully-typed IR after type inference.
-  | DumpIRLifted      -- ^ Print the IR after lambda lifting.
-  | DumpIRFinal       -- ^ Print the final IR representation before codegen.
+  = Continue
+  | DumpIR
+  | DumpIRAnnotated
+  | DumpIRTyped
+  | DumpIRLifted
+  | DumpIRFinal
   deriving (Eq, Show)
 
 -- | Compiler options for the IR compiler stage.
@@ -53,6 +57,10 @@ options =
            ["dump-ir"]
            (NoArg $ setMode DumpIR)
            "Print the IR immediately after lowering"
+  , Option ""
+           ["dump-ir-annotated"]
+           (NoArg $ setMode DumpIRTyped)
+           "Print the fully-typed IR just before type inference"
   , Option ""
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
@@ -76,6 +84,8 @@ run :: Options -> A.Program -> Pass (I.Program I.Type)
 run opt p = do
   p <- lowerProgram p
   when (mode opt == DumpIR) $ dump $ fmap fromAnnotations p
+  p <- segmentLets p
+  when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
   p <- instProgram p

@@ -93,7 +93,7 @@ fromAnnotations = go . unAnnotations
  where
   go (AnnType t : _   ) = t
   go (_         : anns) = go anns
-  go []                 = error "TODO: No type annotations"
+  go []                 = Hole -- TODO: properly unroll
 
 instance HasFreeVars Type TVarId where
   freeVars (TCon _ ts) = S.unions $ map freeVars ts
