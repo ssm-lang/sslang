@@ -59,6 +59,7 @@ module Common.Identifiers
   , mangleVars
   , isGenerated
   , genId
+  , ungenId
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
@@ -241,6 +242,11 @@ genId :: Identifiable a => a -> a
 genId i | null s    = fromString "(_)"
         | otherwise = fromString $ "(" <> s <> ")"
   where s = ident i
+
+-- | Filter out generated identifiers.
+ungenId :: Identifiable a => a -> Maybe a
+ungenId i | isGenerated i = Nothing
+          | otherwise     = Just i
 
 {- | Mangle all identifiers in some data structure.
 

@@ -1,18 +1,33 @@
 -- | Unroll let-def blocks to break apart non-mutually recursive definitions.
+{-# LANGUAGE OverloadedStrings #-}
 module IR.SegmentLets
   ( segmentLets
   , segmentDefs
   ) where
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( HasFreeVars(..) )
+import           Common.Identifiers             ( HasFreeVars(..)
+                                                , genId
+                                                , showId
+                                                , ungenId
+                                                )
 import qualified IR.IR                         as I
 
+import           Control.Monad.State            ( State
+                                                , evalState
+                                                , gets
+                                                , modify
+                                                )
+import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Generics.Aliases          ( mkT )
 import           Data.Generics.Schemes          ( everywhere )
+import           Data.Graph                     ( SCC(..)
+                                                , stronglyConnComp
+                                                )
 import qualified Data.Set                      as S
 
 type T = I.Type
+type Def t = (I.Binder, I.Expr t)
 
 segmentLets :: I.Program T -> Compiler.Pass (I.Program T)
 segmentLets p =
@@ -23,16 +38,23 @@ segmentLetExpr (I.Let ds b t) = foldr ilet b $ segmentDefs ds
   where ilet d' b' = I.Let d' b' t
 segmentLetExpr e = e
 
-segmentDefs :: [(I.Binder, I.Expr t)] -> [[(I.Binder, I.Expr t)]]
-segmentDefs = segment [] . reverse
+segmentDefs :: Show t => [Def t] -> [[Def t]]
+segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
  where
-  segment acc []       = acc
-  segment []  (d : ds) = segment [[d]] ds
-  segment acc (d@(Just v, _) : ds)
-    | v `S.member` precedingFreeVars ds = pushSegment acc d `segment` ds
-    | otherwise                         = newSegment acc d `segment` ds
-  segment acc (d : ds) = segment (pushSegment acc d) ds
+  toGraph :: Def t -> State Int (Def t, I.VarId, [I.VarId])
+  toGraph d@(b, e) = do
+    v <- maybe (modify (+ 1) >> gets genVar) return b
+    return (d, v, S.toList $ freeVars e)
 
-  precedingFreeVars = S.unions . fmap (freeVars . snd)
-  newSegment xs x = [x] : xs
-  pushSegment xs x = (x : head xs) : tail xs
+  fromSCC :: SCC (Def t) -> [Def t]
+  fromSCC = map (first ungenVar) . from
+   where
+    from (AcyclicSCC d ) = [d]
+    from (CyclicSCC  ds) = ds
+
+  genVar :: Int -> I.VarId
+  genVar = genId . ("_wild" <>) . showId
+
+  ungenVar :: I.Binder -> I.Binder
+  ungenVar (Just v) = ungenId v
+  ungenVar Nothing  = Nothing
