@@ -7,13 +7,12 @@ module IR.SegmentLets
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( HasFreeVars(..) )
 import qualified IR.IR                         as I
-import qualified IR.Types.Type                 as I
 
 import           Data.Generics.Aliases          ( mkT )
 import           Data.Generics.Schemes          ( everywhere )
 import qualified Data.Set                      as S
 
-type T = I.Annotations
+type T = I.Type
 
 segmentLets :: I.Program T -> Compiler.Pass (I.Program T)
 segmentLets p =

@@ -73,11 +73,11 @@ run :: Options -> A.Program -> Pass (I.Program I.Type)
 run opt p = do
   p <- lowerProgram p
   when (mode opt == DumpIR) $ dump $ fmap fromAnnotations p
-  p <- segmentLets p
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
   p <- instProgram p
+  p <- segmentLets p
   p <- dConToFunc p
   p <- externToCall p
   p <- liftProgramLambdas p

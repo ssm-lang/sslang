@@ -1,16 +1,19 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 module IR.Types.Inference
   ( inferProgram
   ) where
 
 import           IR.IR
+import           IR.SegmentLets                 ( segmentDefs )
 import qualified IR.Types.Type                 as T
 import qualified IR.Types.Unification          as U
 import           IR.Types.Unification           ( (<:=)
                                                 , (=:=)
                                                 )
-import           IR.SegmentLets                 ( segmentDefs )
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( Identifiable(..)
@@ -70,14 +73,13 @@ inferProgram p = U.runInfer (InferCtx M.empty) $ do
   ebs <- mapM externBindings $ externDecls p
   dbs <- concat <$> mapM typedefBindings (typeDefs p)
   withBindings (ebs ++ dbs) $ do
-    (bs, ds) <- unzip . fromDefs <$> mapM inferDefs (toDefs $ programDefs p)
-    ds'      <- mapM
+    (bs, ds) <- unzip . map (first fromJust) . fst <$> withDefs
+      (map (first Just) $ programDefs p)
+      (return ())
+    ds' <- mapM
       (mapM $ U.freeze <=< U.applyBindings . T.unScheme <=< U.generalize)
       ds
     return $ p { programDefs = zip bs ds' }
- where
-  toDefs = segmentDefs . map (first Just)
-  fromDefs = map (first fromJust ) . concat
 
 externBindings :: (VarId, Type) -> Infer (Binder, U.Scheme)
 externBindings (v, t) = do
@@ -106,20 +108,30 @@ typedefBindings (tc, TypeDef { variants = vs, targs = tvs }) =
 
     return (Just $ fromId dc, s)
 
-inferDefs :: [(Binder, Expr [Type])] -> Infer [(Binder, Expr U.Type)]
-inferDefs (unzip -> (bs, ds)) = do
-  -- Create fresh unification variable for each binder
-  ts <- mapM (const U.fresh) bs
+withDefs
+  :: [(Binder, Expr [Type])] -> Infer a -> Infer ([(Binder, Expr U.Type)], a)
+withDefs defs m = go $ segmentDefs defs
+ where
+  go :: [[(Binder, Expr [Type])]] -> Infer ([(Binder, Expr U.Type)], _)
+  go ((unzip -> (bs, es)) : dss) = do
+    -- Create fresh unification variable for each binder
+    ts <- mapM (const U.fresh) bs
 
-  -- Create empty scheme for each binder's unification variable
-  let ss = T.forall [] <$> ts
+    -- Create empty scheme for each binder's unification variable
+    let ss = T.forall [] <$> ts
 
-  -- Infer definitions with those schemes in scope
-  ds' <- withBindings (zip bs ss) $ mapM inferExpr ds
+    -- Infer definitions with those schemes in scope
+    es' <- withBindings (zip bs ss) $ mapM inferExpr es
 
-  -- Unify unification variables with the inferred type of each definition
-  forM_ (zip ts ds') $ \(t, extract -> t') -> t =:= t'
-  return $ zip bs ds'
+    -- Unify unification variables with the inferred type of each definition
+    forM_ (zip ts es') $ \(t, extract -> t') -> t =:= t'
+
+    ss' <- forM es' $ \e -> if isValue e
+      then U.generalize $ extract e
+      else return $ T.forall [] $ extract e
+
+    first (zip bs es' ++) <$> withBindings (zip bs ss') (go dss)
+  go _ = ([], ) <$> m
 
 inferExpr :: Expr [Type] -> Infer (Expr U.Type)
 inferExpr (Var v ts) = do
@@ -138,14 +150,7 @@ inferExpr (App f a ts) = do
   extract f' =:= extract a' -:> rt
   App f' a' <$> checkAgainst ts rt
 inferExpr (Let ds e ts) = do
-  ds' <- inferDefs ds
-  bs  <- forM ds' $ \(b, d) -> do
-    s <- if isValue d
-      then U.generalize $ extract d
-      -- Value restriction: only generalize values
-      else return $ T.forall [] $ extract d
-    return (b, s)
-  e' <- withBindings bs $ inferExpr e
+  (ds', e') <- withDefs ds $ inferExpr e
   Let ds' e' <$> checkAgainst ts (extract e')
 inferExpr (Lambda a b ts) = do
   at <- U.fresh
