@@ -39,7 +39,8 @@ substMagic p = everywhere $ mkT $ substMagicExpr p
 -- | Replace applications to built-in names with corresponding primitives.
 substMagicExpr :: Proxy t -> I.Expr t -> I.Expr t
 substMagicExpr _ e = case I.unzipApp e of
-  (I.Var "new"  _, (a, t) : ats) -> I.zipApp (I.Prim I.New [a] t) ats
-  (I.Var "dup"  _, (a, t) : ats) -> I.zipApp (I.Prim I.Dup [a] t) ats
-  (I.Var "drop" _, (a, t) : ats) -> I.zipApp (I.Prim I.Drop [a] t) ats
-  _                              -> e
+  (I.Var "new" _, (a, t) : ats) -> I.zipApp (I.Prim I.New [a] t) ats
+  (I.Var "dup" _, (a, t) : ats) -> I.zipApp (I.Prim I.Dup [a] t) ats
+  (I.Var "drop" _, (a, t) : (b, _) : ats) ->
+    I.zipApp (I.Prim I.Drop [a, b] t) ats
+  _ -> e

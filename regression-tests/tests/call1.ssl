@@ -1,0 +1,10 @@
+add ar br =
+    new (deref ar + deref br)
+
+main cin cout =
+    let a = new 42
+    let b = new 8
+    after 1, cout <- deref (add a b)
+    wait cout
+    after 1, cout <- 10
+    wait cout

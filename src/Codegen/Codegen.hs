@@ -531,7 +531,9 @@ genExpr (I.Var n _) = do
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
-genExpr (I.Lit l _              ) = return (genLiteral l, [])
+genExpr (I.Lit l ty) = do
+  tmp <- genTmp ty
+  return (tmp, [citems|$exp:tmp = $exp:(genLiteral l);|])
 genExpr (I.Let [(Just n, d)] b _) = do
   (defVal, defStms) <- genExpr d
   withNewLocal (n, I.extract d) $ do
@@ -549,7 +551,8 @@ genExpr e@(I.App _ _ ty) = do
   let (fn, args) = second (map fst) $ I.unzipApp e
   -- args must be non-empty because a is an App
   case fn of
-    (I.Var _ _) -> do
+    -- I.Var _ _ -> do
+    (I.Prim I.Dup [I.Var _ _] _) -> do
       (fnExp, fnStms) <- genExpr fn
       foldM apply (fnExp, fnStms) args
      where
@@ -566,6 +569,7 @@ genExpr e@(I.App _ _ ty) = do
               if ($exp:(has_children current)) {
                 $items:yield;
               }
+              $exp:(drop f);
             |]
         return (ret, stms ++ aStms ++ appStms)
     (I.Data dcon dty) -> do
@@ -667,17 +671,18 @@ genPrim
 genPrim I.New [e] refType = do
   (val, stms) <- genExpr e
   tmp         <- genTmp refType
-  return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_sv val);|])
+  return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_sv val); $exp:(drop val);|])
 genPrim I.Dup [e] _ = do
   (val, stms) <- genExpr e
-  return (unit, stms ++ [citems|$exp:(dup val);|])
-genPrim I.Drop [e] _ = do
-  (val, stms) <- genExpr e
-  return (unit, stms ++ [citems|$exp:(drop val);|])
+  return (val, stms ++ [citems|$exp:(dup val);|])
+genPrim I.Drop [e, r] _ = do
+  (val, stms ) <- genExpr e
+  (ref, stms') <- genExpr r -- NOTE: this should never really be side-effectful!
+  return (val, stms ++ stms' ++ [citems|$exp:(drop ref);|])
 genPrim I.Deref [a] ty = do
   (val, stms) <- genExpr a
   tmp         <- genTmp ty
-  return (tmp, stms ++ [citems|$exp:tmp = $exp:(deref val);|])
+  return (tmp, stms ++ [citems|$exp:tmp = $exp:(deref val); $exp:(drop val);|])
 genPrim I.Assign [lhs, rhs] _ = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
@@ -686,18 +691,23 @@ genPrim I.Assign [lhs, rhs] _ = do
           $items:lhsStms
           $items:rhsStms
           $exp:(assign lhsVal prio rhsVal);
+          $exp:(drop rhsVal);
+          $exp:(drop lhsVal);
         |]
   return (unit, assignBlock)
 genPrim I.After [time, lhs, rhs] _ = do
-  (timeVal, timeStms) <- first unmarshal <$> genExpr time
+  (timeVal, timeStms) <- genExpr time
   (lhsVal , lhsStms ) <- genExpr lhs
   (rhsVal , rhsStms ) <- genExpr rhs
-  let when = [cexp|$exp:now() + $exp:timeVal|]
+  let when = [cexp|$exp:now() + $exp:(unmarshal timeVal)|]
       laterBlock = [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
           $exp:(later lhsVal when rhsVal);
+          $exp:(drop timeVal);
+          $exp:(drop rhsVal);
+          $exp:(drop lhsVal);
         |]
   return (unit, laterBlock)
 genPrim I.Par procs _ = do
@@ -727,6 +737,7 @@ genPrim I.Par procs _ = do
             retp = [cexp|&$exp:ret|]
             appStms = [citems|
               $exp:(closure_apply fnExp argExp current prio depth retp);
+              $exp:(drop fnExp);
             |]
         return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do
@@ -744,23 +755,35 @@ genPrim I.Wait vars _ = do
   let trigs = zip varVals $ map mkTrig [1 :: Int ..]
       mkTrig i = [cexp|&$exp:(acts_ $ trig_ i)|]
       sens (var, trig) = [citem|$exp:(sensitize var trig);|]
-      desens (_, trig) = [citem|$exp:(desensitize trig);|]
-  return (unit, concat varStms ++ map sens trigs ++ yield ++ map desens trigs)
+      desens (var, trig) = [citems|$exp:(desensitize trig); $exp:(drop var);|]
+  return
+    (unit, concat varStms ++ map sens trigs ++ yield ++ concatMap desens trigs)
 genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
-genPrim I.Break      []  _ = return (undef, [citems|break;|])
-genPrim I.Now        [_] _ = return (marshal $ ccall now [], [])
-genPrim (I.CQuote e) []  _ = return ([cexp|$exp:(EscExp e)|], [])
-genPrim (I.CCall  s) es  _ = do
+genPrim I.Break []  _ = return (undef, [citems|break;|])
+genPrim I.Now   [_] t = do
+  tmp <- genTmp t
+  return (tmp, [citems|$exp:tmp = $exp:(marshal $ ccall now []);|])
+genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
+genPrim (I.CCall  s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   -- TODO: obtain return value from call
   return (unit, argStms ++ [citems|$id:s($args:argExps);|])
 genPrim (I.FfiCall s) es ty = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es
   ret                <- genTmp ty
-  return (ret, argStms ++ [citems|$exp:ret = $id:s($args:argExps);|])
-genPrim (I.PrimOp op) es t = genPrimOp op es t
+  let doDrop arg = [citem|$exp:(drop arg);|]
+  return
+    ( ret
+    , argStms
+    ++ [citems|$exp:ret = $id:s($args:argExps);|]
+    ++ map doDrop argExps
+    )
+genPrim (I.PrimOp op) es t = do
+  (opVal, opStms) <- genPrimOp op es t
+  tmp             <- genTmp t
+  return (tmp, opStms ++ [citems|$exp:tmp = $exp:opVal;|])
 genPrim _ _ _ = fail "Unsupported Primitive or wrong number of arguments"
 
 -- | Generate C value for SSM literal, marshalled.

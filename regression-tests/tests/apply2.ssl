@@ -1,0 +1,8 @@
+f cin cout =
+    after 1, cout <- 10
+    wait cout
+
+main cin cout =
+    let g = f
+    let h = g cin
+    h cout
