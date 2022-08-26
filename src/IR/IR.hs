@@ -20,6 +20,7 @@ module IR.IR
   , DConId(..)
   , Type
   , Annotation
+  , Annotations
   , variantFields
   , wellFormed
   , foldLambda
@@ -50,6 +51,7 @@ import           Data.Maybe                     ( catMaybes
 import qualified Data.Set                      as S
 import           Data.Set                       ( (\\) )
 import           IR.Types.Type                  ( Annotation
+  , Annotations
                                                 , pattern Arrow
                                                 , Type
                                                 , unfoldArrow

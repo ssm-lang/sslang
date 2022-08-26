@@ -7,14 +7,12 @@ import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
-import           IR.Types.Poly                 as Poly
 
-parseLift :: String -> Pass (I.Program Poly.Type)
+parseLift :: String -> Pass (I.Program I.Type)
 parseLift s =
   Front.run def s
     >>= IR.lower def
-    >>= IR.ann2Class def
-    >>= IR.class2Poly def
+    >>= IR.typecheck def
     >>= liftProgramLambdas
 
 spec :: Spec

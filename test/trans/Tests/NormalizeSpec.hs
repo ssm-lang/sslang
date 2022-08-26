@@ -9,9 +9,8 @@ import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
-import           IR.Types.Annotated            as I
 
-parseIR :: String -> Pass (I.Program I.Type)
+parseIR :: String -> Pass (I.Program I.Annotations)
 parseIR s = Front.run def s >>= IR.lower def
 
 spec :: Spec

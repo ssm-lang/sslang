@@ -18,7 +18,9 @@ import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
                                                 )
 
-import           Control.Monad                  ( when )
+import           Control.Monad                  ( (>=>)
+                                                , when
+                                                )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -68,14 +70,26 @@ options =
   ]
   where setMode m o = o { mode = m }
 
--- | IR compiler stage.
-run :: Options -> A.Program -> Pass (I.Program I.Type)
-run opt p = do
+-- | Lower from AST to IR (with annotations).
+lower :: Options -> A.Program -> Pass (I.Program I.Annotations)
+lower opt p = do
   p <- lowerProgram p
   when (mode opt == DumpIR) $ dump $ fmap fromAnnotations p
+  return p
+
+-- | Type inference + check against type annotations.
+--
+-- After this stage, no compiler errors should be thrown.
+typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
+typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
+  return p
+
+-- | IR transformations to prepare for codegen.
+transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
+transform opt p = do
   p <- instProgram p
   p <- segmentLets p
   p <- dConToFunc p
@@ -85,3 +99,7 @@ run opt p = do
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p
+
+-- | IR compiler stage.
+run :: Options -> A.Program -> Pass (I.Program I.Type)
+run opt = lower opt >=> typecheck opt >=> transform opt

@@ -6,15 +6,10 @@ import           Sslang.Test
 import qualified Front
 import qualified IR
 import qualified IR.IR                         as I
-import           IR.HM                         ( inferProgram )
-import qualified IR.Types.Classes              as Cls
 import qualified Common.Compiler               as Compiler
 
-parseInfer :: String -> Pass (I.Program Cls.Type)
-parseInfer s = parseInferWOptions s def
-
-parseInferWOptions :: String -> IR.Options -> Pass (I.Program Cls.Type)
-parseInferWOptions s opt = Front.run def s >>= IR.lower def >>= IR.ann2Class opt
+parseInfer :: String -> Pass (I.Program I.Type)
+parseInfer s = Front.run def s >>= IR.lower def >>= IR.typecheck def
 
 spec :: Spec
 spec = do
@@ -230,16 +225,6 @@ spec = do
             g
           |]
     tricky8a `shouldPassAs` tricky8b
-
-  it "support choosing type inference algorithm using command line options" $ do
-    let recFn = parseInferWOptions [here|
-          f x =
-            x
-          |]
-        expectedError = Compiler.TypeError $ fromString "Cannot change empty Ann type to Classes type"
-    shouldPass (recFn def)
-    shouldPass (recFn (IR.setHM def))
-    shouldFailWith (recFn (IR.setTC def)) expectedError
 
   it "can correctly infer terminated direct recursion" $ do
     let rec1 = parseInfer [here|
