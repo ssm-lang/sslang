@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Cannot unify: Int32 ~ IntVar (-9223372036854775766) -> IntVar (-9223372036854775762)")
+TypeError (ErrorMsg "Cannot unify: Int32 ~ IntVar (-9223372036854775805) -> IntVar (-9223372036854775777)")
