@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Single unification error: #Arrow #Ref #Integral 32 #Unit, #Unit")
+TypeError (ErrorMsg "Type constructor mismatch in annotation: \nAnnotated: ()\nActual: ->\n")

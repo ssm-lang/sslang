@@ -1,8 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ViewPatterns #-}
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
+  , TypeDef(..)
+  , TypeVariant(..)
   , Binder
   , Literal(..)
   , PrimOp(..)
@@ -12,31 +18,43 @@ module IR.IR
   , VarId(..)
   , TConId(..)
   , DConId(..)
+  , Type
+  , Annotation
+  , Annotations
+  , variantFields
   , wellFormed
-  , collectLambda
-  , makeLambdaChain
+  , foldLambda
+  , unfoldLambda
   , extract
+  , inject
   , zipApp
   , unzipApp
+  , isValue
   ) where
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
                                                 , DConId(..)
+                                                , HasFreeVars(..)
                                                 , TConId(..)
+                                                , TVarId(..)
                                                 , VarId(..)
                                                 )
 import           Common.Pretty
-import           Control.Comonad                ( Comonad(..) )
 import           Control.Monad                  ( void )
-import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
-import           IR.Types.TypeSystem            ( TypeDef(..)
-                                                , TypeSystem
-                                                , TypeVariant(..)
-                                                , arrow
-                                                , collectArrow
+
+import           Data.Maybe                     ( catMaybes
+                                                , maybeToList
+                                                )
+import qualified Data.Set                      as S
+import           Data.Set                       ( (\\) )
+import           IR.Types.Type                  ( Annotation
+  , Annotations
+                                                , pattern Arrow
+                                                , Type
+                                                , unfoldArrow
                                                 )
 
 {- | Top-level compilation unit.
@@ -46,11 +64,38 @@ import           IR.Types.TypeSystem            ( TypeDef(..)
 data Program t = Program
   { programEntry :: VarId
   , cDefs        :: String
-  , externDecls  :: [(VarId, t)]
+  , externDecls  :: [(VarId, Type)]
   , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef t)]
+  , typeDefs     :: [(TConId, TypeDef)]
   }
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor)
+
+
+{- | The type definition associated with a type constructor.
+A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
+@
+  TypeDef { targs = [a]
+          , [ ("Cons", VariantUnnamed [TVar a, TCon ("MyList" [TVar a])])
+            , ("Nil", VariantUnnamed [])
+            ]
+          }
+@
+(Data constructors for identifiers are omitted for brevity.)
+Note that for a flat type system, where all type constructors are nullary, targs
+will just be set to [].
+-}
+data TypeDef = TypeDef
+  { variants :: [(DConId, TypeVariant)]
+  , targs    :: [TVarId]
+  }
+  deriving (Show, Eq, Typeable, Data)
+
+-- | Arguments to a data constructor, whose fields may or may not be named
+data TypeVariant
+  = VariantNamed [(VarId, Type)] -- ^ A record with named fields
+  | VariantUnnamed [Type]        -- ^ An algebraic type with unnamed fields
+  deriving (Show, Eq, Typeable, Data)
+
 
 {- | Literal values supported by the language.
 
@@ -58,7 +103,6 @@ Note that these don't carry any connotation of type: @1@ just means @1@,
 -}
 data Literal
   = LitIntegral Integer
-  | LitBool Bool
   | LitEvent
   deriving (Eq, Show, Typeable, Data)
 
@@ -174,7 +218,7 @@ data Expr t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 -- | An alternative in a pattern-match.
 data Alt
@@ -185,6 +229,33 @@ data Alt
   | AltDefault Binder
   -- ^ @AltDefault v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
+
+-- | The number of fields in a 'TypeVariant'.
+variantFields :: TypeVariant -> Int
+variantFields (VariantNamed   fields) = length fields
+variantFields (VariantUnnamed fields) = length fields
+
+-- | Extract the type carried by an 'Expr'.
+extract :: Expr t -> t
+extract (Var  _ t    ) = t
+extract (Data _ t    ) = t
+extract (Lit  _ t    ) = t
+extract (Let    _ _ t) = t
+extract (Lambda _ _ t) = t
+extract (App    _ _ t) = t
+extract (Match  _ _ t) = t
+extract (Prim   _ _ t) = t
+
+-- | Replace the top-level type carried by an 'Expr'.
+inject :: t -> Expr t -> Expr t
+inject t (Var  v _      ) = Var v t
+inject t (Data d _      ) = Data d t
+inject t (Lit  l _      ) = Lit l t
+inject t (Let    ds b  _) = Let ds b t
+inject t (Lambda xs b  _) = Lambda xs b t
+inject t (App    h  a  _) = App h a t
+inject t (Match  s  as _) = Match s as t
+inject t (Prim   p  es _) = Prim p es t
 
 {- | Collect a curried application into the function and argument list.
 
@@ -218,63 +289,40 @@ zipApp :: Expr t -> [(Expr t, t)] -> Expr t
 zipApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
-collectLambda :: Expr t -> ([Binder], Expr t)
-collectLambda (Lambda a b _) =
-  let (as, body) = collectLambda b in (a : as, body)
-collectLambda e = ([], e)
+unfoldLambda :: Expr t -> ([Binder], Expr t)
+unfoldLambda (Lambda a b _) =
+  let (as, body) = unfoldLambda b in (a : as, body)
+unfoldLambda e = ([], e)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
-makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
-makeLambdaChain args body = foldr chain body args
-  where chain (v, t) b = Lambda v b $ t `arrow` extract b
+foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
+foldLambda args body = foldr chain body args
+  where chain (v, t) b = Lambda v b $ t `Arrow` extract b
 
-instance Functor Program where
-  fmap f p = p { programDefs = second (fmap f) <$> programDefs p
-               , typeDefs    = second (fmap f) <$> typeDefs p
-               , externDecls = second f <$> externDecls p
-               }
+-- | Whether an expression is a value.
+isValue :: Expr t -> Bool
+isValue Var{}    = True
+isValue Data{}   = True
+isValue Lit{}    = True
+isValue Lambda{} = True
+isValue _        = False
 
-instance Functor Expr where
-  fmap f (Var  v t      ) = Var v (f t)
-  fmap f (Data d t      ) = Data d (f t)
-  fmap f (Lit  l t      ) = Lit l (f t)
-  fmap f (App    l  r  t) = App (fmap f l) (fmap f r) (f t)
-  fmap f (Let    xs b  t) = Let (fmap (second $ fmap f) xs) (fmap f b) (f t)
-  fmap f (Lambda v  b  t) = Lambda v (fmap f b) (f t)
-  fmap f (Match  s  as t) = Match (fmap f s) (fmap (second $ fmap f) as) (f t)
-  fmap f (Prim   p  as t) = Prim p (fmap (fmap f) as) (f t)
-
-instance Comonad Expr where
-  extract (Var  _ t    ) = t
-  extract (Data _ t    ) = t
-  extract (Lit  _ t    ) = t
-  extract (Let    _ _ t) = t
-  extract (Lambda _ _ t) = t
-  extract (App    _ _ t) = t
-  extract (Match  _ _ t) = t
-  extract (Prim   _ _ t) = t
-  extend f e@(Var  i _) = Var i (f e)
-  extend f e@(Data i _) = Data i (f e)
-  extend f e@(Lit  l _) = Lit l (f e)
-  extend f e@(Let xs b _) =
-    Let (fmap (second $ extend f) xs) (extend f b) (f e)
-  extend f e@(Lambda v b _) = Lambda v (extend f b) (f e)
-  extend f e@(App    l r _) = App (extend f l) (extend f r) (f e)
-  extend f e@(Match s as _) =
-    Match (extend f s) (fmap (second $ extend f) as) (f e)
-  extend f e@(Prim p es _) = Prim p (fmap (extend f) es) (f e)
-
-instance Foldable Expr where
-  foldMap f (Var  _ t ) = f t
-  foldMap f (Data _ t ) = f t
-  foldMap f (Lit  _ t ) = f t
-  foldMap f (App l r t) = foldMap f l <> foldMap f r <> f t
-  foldMap f (Let xs b t) =
-    mconcat (map (foldMap f . snd) xs) <> foldMap f b <> f t
-  foldMap f (Lambda _ b t) = foldMap f b <> f t
-  foldMap f (Match s as t) =
-    foldMap f s <> mconcat (map (foldMap f . snd) as) <> f t
-  foldMap f (Prim _ es t) = mconcat (map (foldMap f) es) <> f t
+instance HasFreeVars (Expr t) VarId where
+  freeVars (Var v _)                        = S.singleton v
+  freeVars Data{}                           = S.empty
+  freeVars Lit{}                            = S.empty
+  freeVars (App    l                  r  _) = freeVars l `S.union` freeVars r
+  freeVars (Lambda (maybeToList -> v) b  _) = freeVars b \\ S.fromList v
+  freeVars (Prim   _                  es _) = S.unions $ map freeVars es
+  freeVars (Let (unzip ->(bs, ds)) b _) =
+    S.unions (map freeVars $ b : ds) \\ S.fromList (catMaybes bs)
+  freeVars (Match s as _) = S.unions (freeVars s : map freeAltVars as)
+   where
+    freeAltVars :: (Alt, Expr t) -> S.Set VarId
+    freeAltVars (a, e) = freeVars e \\ altBinders a
+    altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
+    altBinders (AltLit     _                 ) = S.empty
+    altBinders (AltDefault (maybeToList -> v)) = S.fromList v
 
 {- | Predicate of whether an expression "looks about right".
 
@@ -335,7 +383,7 @@ Omits
 Reverts
 * curried funcs of one arg back to multiple arg funcs
 -}
-instance (Pretty t, TypeSystem t) => Pretty (Program t) where
+instance Pretty (Program Type) where
   pretty Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -343,7 +391,7 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
       map prettyTypDef tys ++ map prettyExternDecl xds ++ map prettyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    prettyFuncDef :: (TypeSystem t, Pretty t) => (VarId, Expr t) -> Doc ann
+    prettyFuncDef :: (VarId, Expr Type) -> Doc ann
     prettyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent
         2
@@ -354,23 +402,23 @@ instance (Pretty t, TypeSystem t) => Pretty (Program t) where
         (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
         argIds
         argTys
-      (argIds, body ) = collectLambda l
-      (argTys, retTy) = collectArrow ty
+      (argIds, body ) = unfoldLambda l
+      (argTys, retTy) = unfoldArrow ty -- FIXME
     prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
 
-    prettyExternDecl :: (TypeSystem t, Pretty t) => (VarId, t) -> Doc ann
+    prettyExternDecl :: (Pretty t) => (VarId, t) -> Doc ann
     prettyExternDecl (v, t) =
       pretty "extern" <+> pretty v <+> colon <+> pretty t
 
     -- Generates readable Doc representation of an IR Type Definition
-    prettyTypDef :: Pretty t => (TConId, TypeDef t) -> Doc ann
+    prettyTypDef :: (TConId, TypeDef) -> Doc ann
     prettyTypDef (tcon, TypeDef { variants = vars }) =
       pretty "type"
         <+> pretty tcon
         <+> line
         <>  indent indentNo (vsep $ map prettyDCon vars)
         <>  line
-    prettyDCon :: (Pretty t) => (DConId, TypeVariant t) -> Doc ann
+    prettyDCon :: (DConId, TypeVariant) -> Doc ann
     prettyDCon (dcon, VariantNamed argz) =
       pretty dcon <+> hsep (pretty . snd <$> argz)
     prettyDCon (dcon, VariantUnnamed argz) =
@@ -435,7 +483,6 @@ instance Pretty Alt where
 
 instance Pretty Literal where
   pretty (LitIntegral i) = pretty $ show i
-  pretty (LitBool     b) = pretty $ show b
   pretty LitEvent        = pretty "()"
 
 instance Pretty PrimOp where
@@ -457,7 +504,7 @@ instance Pretty PrimOp where
   pretty PrimLe     = pretty "<="
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
-instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
+instance Dumpy (Program Type) where
   dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
     vsep $ punctuate line tops
    where
@@ -465,7 +512,7 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
       map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
 
     -- Generates readable Doc representation of an IR Top Level Function
-    dumpyFuncDef :: (TypeSystem t, Dumpy t) => (VarId, Expr t) -> Doc ann
+    dumpyFuncDef :: (VarId, Expr Type) -> Doc ann
     dumpyFuncDef (v, l@(Lambda _ _ ty)) =
       pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
      where
@@ -474,8 +521,8 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
         (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
         argIds
         argTys
-      (argIds, body ) = collectLambda l
-      (argTys, retTy) = collectArrow ty
+      (argIds, body ) = unfoldLambda l
+      (argTys, retTy) = unfoldArrow ty
     dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
 
     -- Generates readable Doc representation of an IR Type Definition
@@ -483,21 +530,21 @@ instance (Dumpy t, TypeSystem t) => Dumpy (Program t) where
     dumpyExternDecl (v, t) = pretty "extern" <+> pretty v <+> colon <+> dumpy t
 
     -- Generates readable Doc representation of an IR Type Definition
-    dumpyTypDef :: Dumpy t => (TConId, TypeDef t) -> Doc ann
+    dumpyTypDef :: (TConId, TypeDef) -> Doc ann
     dumpyTypDef (tcon, TypeDef { variants = vars }) =
       pretty "type"
         <+> pretty tcon
         <+> line
         <>  indent indentNo (vsep $ map dumpyDCon vars)
         <>  line
-    dumpyDCon :: (Dumpy t) => (DConId, TypeVariant t) -> Doc ann
+    dumpyDCon :: (DConId, TypeVariant) -> Doc ann
     dumpyDCon (dcon, VariantNamed argz) =
       pretty dcon <+> hsep (dumpy . snd <$> argz)
     dumpyDCon (dcon, VariantUnnamed argz) =
       pretty dcon <+> hsep (dumpy <$> argz)
   -- TODO: how to represent entry point?
 
-instance (Dumpy t) => Dumpy (Expr t) where
+instance Dumpy (Expr Type) where
   dumpy (Var  v t  ) = typeAnn t $ pretty v
   dumpy (Data d t  ) = typeAnn t $ pretty d
   dumpy (Lit  l t  ) = typeAnn t $ dumpy l
@@ -547,7 +594,6 @@ instance Dumpy Alt where
 
 instance Dumpy Literal where
   dumpy (LitIntegral i) = pretty $ show i
-  dumpy (LitBool     b) = pretty $ show b
   dumpy LitEvent        = pretty "()"
 
 instance Dumpy PrimOp where

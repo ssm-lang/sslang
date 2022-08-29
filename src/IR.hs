@@ -1,56 +1,48 @@
-{- | Intermediate representation (IR) stage of the compiler pipeline.
-
-The IR stage is organized into 4 distinct substages: 'lower', 'ann2Class',
-'class2Poly', and 'poly2Flat', delineated by each type system used in the
-compiler.
--}
+-- | Intermediate representation (IR) stages of the compiler pipeline.
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module IR where
 
 import           Common.Compiler
 import           Common.Default                 ( Default(..) )
 import qualified Front.Ast                     as A
+import qualified IR.IR                         as I
+
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import           IR.ExternToCall                ( externToCall )
-import qualified IR.HM                         as HM
-import qualified IR.IR                         as I
 import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
-import qualified IR.TypeChecker                as TC
-import qualified IR.Types.Annotated            as Ann
-import qualified IR.Types.Classes              as Cls
-import qualified IR.Types.Poly                 as Poly
+import           IR.SegmentLets                 ( segmentLets )
+import           IR.Types                       ( fromAnnotations
+                                                , typecheckProgram
+                                                )
 
-import           Control.Monad                  ( when )
+import           Control.Monad                  ( (>=>)
+                                                , when
+                                                )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
 
 -- | Operation modes for the IR compiler stage.
+--
+-- By default, 'Continue' completes the pipeline end-to-end.
 data Mode
-  = Continue          -- ^ Compile end-to-end (default).
-  | DumpIR            -- ^ Print the IR immediately after lowering.
-  | DumpIRTyped       -- ^ Print the fully-typed IR after type inference.
-  | DumpIRLifted      -- ^ Print the IR after lambda lifting.
-  | DumpIRFinal       -- ^ Print the final IR representation before codegen.
+  = Continue
+  | DumpIR
+  | DumpIRAnnotated
+  | DumpIRTyped
+  | DumpIRLifted
+  | DumpIRFinal
   deriving (Eq, Show)
 
-data TIType
- = HMOnly             -- ^ Only run HM type inference
- | TCOnly             -- ^ Only run type checker
- | Both               -- ^ Run both HM type Inference and type checker
- deriving (Eq, Show)
-
 -- | Compiler options for the IR compiler stage.
-data Options = Options
-  { mode   :: Mode
-  , tiType :: TIType
-  }
+newtype Options = Options { mode :: Mode }
   deriving (Eq, Show)
 
 instance Default Options where
-  def = Options { mode = Continue, tiType = Both }
+  def = Options { mode = Continue }
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
@@ -59,6 +51,10 @@ options =
            ["dump-ir"]
            (NoArg $ setMode DumpIR)
            "Print the IR immediately after lowering"
+  , Option ""
+           ["dump-ir-annotated"]
+           (NoArg $ setMode DumpIRTyped)
+           "Print the fully-typed IR just before type inference"
   , Option ""
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
@@ -71,62 +67,39 @@ options =
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
-  , Option "" ["only-hm"] (NoArg setHM) "Only run HM type inference"
-  , Option "" ["only-tc"] (NoArg setTC) "Only run type checker"
   ]
   where setMode m o = o { mode = m }
 
--- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
-lower :: Options -> A.Program -> Pass (I.Program Ann.Type)
-lower opt prg = do
-  ir <- lowerProgram prg
-  when (mode opt == DumpIR) $ dump ir
-  return ir
+-- | Lower from AST to IR (with annotations).
+lower :: Options -> A.Program -> Pass (I.Program I.Annotations)
+lower opt p = do
+  p <- lowerProgram p
+  when (mode opt == DumpIR) $ dump $ fmap fromAnnotations p
+  return p
 
-{- | IR compiler sub-stage, ultimately producing a fully-typed IR.
+-- | Type inference + check against type annotations.
+--
+-- After this stage, no compiler errors should be thrown.
+typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
+typecheck opt p = do
+  when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
+  p <- typecheckProgram p
+  when (mode opt == DumpIRTyped) $ dump p
+  return p
 
-Runs HM inference, type checker, or both (default) based on the CLI option.
-
-When both algorithms are run, the program fails type check iff both algorithms
-throw an error.
--}
-ann2Class :: Options -> I.Program Ann.Type -> Pass (I.Program Cls.Type)
-ann2Class opt ir = do
-  irInferred <- do
-    let irHMInferred = HM.inferProgram ir
-        irTCInferred = TC.inferProgram ir
-    case tiType opt of
-      HMOnly -> irHMInferred
-      TCOnly -> irTCInferred
-      _      -> case (runPass irHMInferred, runPass irTCInferred) of
-        (Left  e, Left _) -> throwError e
-        (Right _, _     ) -> irHMInferred
-        _                 -> irTCInferred
-  when (mode opt == DumpIRTyped) $ dump irInferred
-  return irInferred
-
--- | IR compiler sub-stage, ultimately instantiating all type classes.
-class2Poly :: Options -> I.Program Cls.Type -> Pass (I.Program Poly.Type)
-class2Poly _ = instProgram
-
--- | IR compiler sub-stage, performing source-to-source translations.
-poly2Poly :: Options -> I.Program Poly.Type -> Pass (I.Program Poly.Type)
-poly2Poly opt ir = do
-  ir' <- liftProgramLambdas =<< externToCall =<< dConToFunc ir
-  when (mode opt == DumpIRLifted) $ dump ir'
-  ir'' <- insertRefCounting ir'
-  when (mode opt == DumpIRFinal) $ dump ir''
-  return ir''
+-- | IR transformations to prepare for codegen.
+transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
+transform opt p = do
+  p <- instProgram p
+  p <- segmentLets p
+  p <- dConToFunc p
+  p <- externToCall p
+  p <- liftProgramLambdas p
+  when (mode opt == DumpIRLifted) $ dump p
+  p <- insertRefCounting p
+  when (mode opt == DumpIRFinal) $ dump p
+  return p
 
 -- | IR compiler stage.
-run :: Options -> A.Program -> Pass (I.Program Poly.Type)
-run opt prg =
-  lower opt prg >>= ann2Class opt >>= class2Poly opt >>= poly2Poly opt
-
--- | Helper function to set ti type to HM-only
-setHM :: Options -> Options
-setHM o = o { tiType = HMOnly }
-
--- | Helper function to set ti type to TC-only
-setTC :: Options -> Options
-setTC o = o { tiType = TCOnly }
+run :: Options -> A.Program -> Pass (I.Program I.Type)
+run opt = lower opt >=> typecheck opt >=> transform opt

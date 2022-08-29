@@ -1,8 +1,5 @@
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 {-# LANGUAGE DerivingVia #-}
-
-{- | Turns non-nullary data constructors into calls to constructor functions.
--}
+-- | Turns non-nullary data constructors into calls to constructor functions.
 module IR.ExternToCall
   ( externToCall
   ) where
@@ -15,10 +12,12 @@ import           Common.Identifiers             ( fromId
                                                 , ident
                                                 )
 import qualified IR.IR                         as I
-import qualified IR.Types.Poly                 as I
-import qualified IR.Types.TypeSystem           as I
+import qualified IR.Types                      as I
 
-import           Control.Monad.Reader
+import           Control.Monad.Reader           ( MonadReader(..)
+                                                , ReaderT(..)
+                                                , asks
+                                                )
 import           Data.Bifunctor                 ( first )
 import           Data.Generics.Aliases          ( mkM )
 import           Data.Generics.Schemes          ( everywhereM )
@@ -62,16 +61,14 @@ dataToApp a = pure a
 
 makeExternFunc :: (I.VarId, I.Type) -> ExternFn (I.VarId, I.Expr I.Type)
 makeExternFunc (x, t) = do
-  let (ats, rt) = I.collectArrow t
+  let (ats, rt) = I.unfoldArrow t
       args      = zip (map argName [0 ..]) ats
       body      = I.Prim (I.FfiCall $ fromId x) (map (uncurry I.Var) args) rt
   if null ats
-    then
-      Compiler.typeError
-      $  "Extern symbol does not have function type: "
-      ++ show x
-    else return (liftExtern x, I.makeLambdaChain (map (first Just) args) body)
+    then Compiler.typeError errMsg
+    else return (liftExtern x, I.foldLambda (map (first Just) args) body)
  where
+  errMsg = "Extern symbol does not have function type: " ++ show x
   argName :: Int -> I.VarId
   argName i = fromString ("__arg" ++ show i)
 

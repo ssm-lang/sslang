@@ -27,6 +27,7 @@ import qualified Language.C.Syntax             as C
 newtype CIdent = CIdent Identifier
   deriving (Eq)
   deriving (Ord)
+  deriving (Show) via Identifier
   deriving (IsString) via Identifier
   deriving (Identifiable) via Identifier
   deriving (ToIdent) via Identifier

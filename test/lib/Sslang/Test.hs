@@ -81,7 +81,8 @@ shouldPassAs
 shouldPassAs actual expected = do
   e <- produce "expected case" expected
   a <- produce "actual case" actual
-  unless (mangleVars a == mangleVars e) $ assertDifference "" (show a) (show e)
+  unless (mangleVars a == mangleVars e) $ do
+    assertDifference "" (show a) (show e)
 
 -- | Expect that some 'Pass' successfully produces the same value as another.
 shouldPassExactlyAs

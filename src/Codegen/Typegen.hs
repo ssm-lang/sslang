@@ -2,22 +2,22 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 -- | Extract and encapsulate the type information needed during codegen.
-module Codegen.Typegen where
+module Codegen.Typegen
+  ( DConInfo(..)
+  , TConInfo(..)
+  , TypegenInfo(..)
+  , genTypes
+  ) where
+
+import           Codegen.LibSSM
+import qualified IR.IR                         as I
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( DConId(..)
                                                 , TConId(..)
                                                 )
 
-import           Codegen.LibSSM
-import qualified IR.Types.Poly                 as L
-import qualified IR.Types.TypeSystem           as L
-
-
-import           Language.C.Quote.GCC           ( cedecl
-                                                , cenum
-                                                , cexp
-                                                )
+import qualified Language.C.Quote.GCC          as C
 import qualified Language.C.Syntax             as C
 
 import           Control.Monad                  ( forM )
@@ -46,35 +46,36 @@ data TConInfo = TConInfo
   }
 
 -- | How a data type may be encoded, i.e., heap-allocated, by value, or both.
-data TypeEncoding = TypePacked | TypeHeap | TypeMixed
+data TypeEncoding = TypePacked | TypeMixed -- TODO: | TypeHeap
 
 -- | Create codegen definitions and helpers for sslang type definitions.
 genTypes
-  :: [(TConId, L.TypeDef L.Type)] -> Compiler.Pass ([C.Definition], TypegenInfo)
+  :: [(TConId, I.TypeDef)] -> Compiler.Pass ([C.Definition], TypegenInfo)
 genTypes tdefs = do
   cdefs    <- mapM genTypeDef tdefs
   typeInfo <- genTypeInfo tdefs
   return (cdefs, typeInfo)
 
 -- | Generate C enums for sslang type definitions, enumerating tags.
-genTypeDef :: (TConId, L.TypeDef L.Type) -> Compiler.Pass C.Definition
-genTypeDef (tcon, tdef) = return [cedecl|enum $id:tcon { $enums:tags };|]
+genTypeDef :: (TConId, I.TypeDef) -> Compiler.Pass C.Definition
+genTypeDef (tcon, tdef) = return [C.cedecl|enum $id:tcon { $enums:tags };|]
  where
   tags = case tdef of
-    L.TypeDef []                  _ -> []
-    L.TypeDef ((dcon, _) : dcons) _ -> [cenum|$id:dcon = 0|] : map mkEnum dcons
-  mkEnum (dcon, _) = [cenum|$id:dcon|]
+    I.TypeDef [] _ -> []
+    I.TypeDef ((dcon, _) : dcons) _ ->
+      [C.cenum|$id:dcon = 0|] : map mkEnum dcons
+  mkEnum (dcon, _) = [C.cenum|$id:dcon|]
 
 -- | Compute codgen helpers for each sslang type definition.
-genTypeInfo :: [(TConId, L.TypeDef L.Type)] -> Compiler.Pass TypegenInfo
+genTypeInfo :: [(TConId, I.TypeDef)] -> Compiler.Pass TypegenInfo
 genTypeInfo tdefs = do
-  dInfos <- forM tdefs $ \(tcon, L.TypeDef tvars _) -> do
+  dInfos <- forM tdefs $ \(tcon, I.TypeDef tvars _) -> do
     forM tvars $ \(dcon, dvari) -> do
-      let fields  = L.variantFields dvari
+      let fields  = I.variantFields dvari
           onHeap  = fields > 0
-          caseExp = [cexp|$id:dcon|]
+          caseExp = [C.cexp|$id:dcon|]
           construct | onHeap    = new_adt fields dcon
-                    | otherwise = marshal [cexp|$id:dcon|]
+                    | otherwise = marshal [C.cexp|$id:dcon|]
           destruct = flip adt_field
           -- TODO: does not handle packed ADTs
       return
@@ -90,7 +91,7 @@ genTypeInfo tdefs = do
 
   let dInfoLookup = flip M.lookup $ M.fromList $ concat dInfos
 
-  tInfos <- forM tdefs $ \(tcon, L.TypeDef tvars _) -> do
+  tInfos <- forM tdefs $ \(tcon, I.TypeDef tvars _) -> do
 
     -- Extract info for each dcon associated with this tcon
     tvarsInfo <- forM tvars $ \(dcon, _) -> do

@@ -29,6 +29,7 @@ library:
   - composition
   - comonad
   - syb
+  - unification-fd
 
 executables:
   sslc:

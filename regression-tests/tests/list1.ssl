@@ -56,10 +56,7 @@ tl l = match l
 nth_aux l n =
   match l
     Nil       = Nothing
-    Cons c ll = if n == 0
-    	          Just c
-	        else
-	          nth_aux ll (n-1)
+    Cons c ll = if n == 0 { Just c } else { nth_aux ll (n-1) }
 
 nth l n = if n < 0 { Nothing } else { nth_aux l n }
 
@@ -73,20 +70,23 @@ reverse l = rev_append l Nil
 append l1 l2 = rev_append (reverse l1) l2
 
 
-concat l = match l
-              Nil       = Nil
-	      Cons x xx = append x (concat xx)
+concat l =
+    match l
+        Nil       = Nil
+        Cons x xx = append x (concat xx)
 
 
-map f l = match l
-            Nil       = Nil
-	    Cons x xx = let r = f x
-	                Cons r (map f xx)
+map f l =
+    match l
+        Nil       = Nil
+        Cons x xx = let r = f x
+                    Cons r (map f xx)
 
-mapi_aux i f l = match l
-                  Nil       = Nil
-		  Cons x xx = let r = f i x
-		              Cons r (mapi_aux (i + 1) f xx)
+mapi_aux i f l =
+    match l
+        Nil       = Nil
+        Cons x xx = let r = f i x
+                    Cons r (mapi_aux (i + 1) f xx)
 
 mapi f l = mapi_aux 0 f l
 
@@ -99,14 +99,14 @@ main cin cout =
   let putnl _ = putc 10
   let puti = puti_ putc
   let printl l = printl_ puti putc l
-  
+
   let zero = Nil                             // []
   let one = Cons 57 Nil                      // 57
   let two = Cons 21 one                      // 21 57
   let three = Cons 42 (Cons 17 (Cons 8 Nil)) // 42 17 8
 
   putc 65 // A
-  putc 10 // nl  
+  putc 10 // nl
   printl one   // 57
   printl two   // 21 57
   printl three  // 42 17 8
@@ -118,14 +118,14 @@ main cin cout =
   putnl ()
   puti (length three)  // 3
   putnl ()
-  
+
   puti (match (hd three)
          Just i  = i     // 42
          Nothing = 0)
   putnl ()
   match (tl three)
    Just l =
-     match l
+     match hd l
          Just ll = puti ll // 17
          Nothing = putc 68
    Nothing = putc 66
@@ -179,9 +179,8 @@ main cin cout =
 
 
   printl (append zero three) // 42 21 57
-  
-  printl (append two three) // 21 57 42 17 8
 
+  printl (append two three) // 21 57 42 17 8
 
   printl (concat (Cons Nil (Cons one (Cons three Nil)))) // 57 42 17 8
 
@@ -190,4 +189,3 @@ main cin cout =
   printl (map (fun x { x + 1 }) three) // 43 18 9
 
   printl (mapi (fun i x { x - i}) three) // 42 16 6
-

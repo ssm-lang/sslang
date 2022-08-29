@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {- | The types of identifiers used across the compiler.
 
 The types 'VarId', 'TVarId', 'DConId', and 'TConId' are used in the IR for data
@@ -42,18 +43,23 @@ module Common.Identifiers
   ( Identifiable(..)
   , IsString(..)
   , fromId
+  , showId
   , TConId(..)
   , TVarId(..)
   , DConId(..)
   , VarId(..)
   , TVarIdx(..)
   , CSym(..)
+  , HasFreeVars(..)
   , Binder
   , Identifier(..)
   , isCons
   , isVar
   , mangle
   , mangleVars
+  , isGenerated
+  , genId
+  , ungenId
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
@@ -70,18 +76,23 @@ import           Data.Generics                  ( Data
                                                 , mkM
                                                 )
 import qualified Data.Map                      as M
+import qualified Data.Set                      as S
 import           Data.String                    ( IsString(..) )
 
 import           Language.C                     ( Id(..) )
 import           Language.C.Quote               ( ToIdent(..) )
 
 -- | A type that may be used as a Sslang identifier.
-class (IsString i, Ord i) => Identifiable i where
+class (IsString i, Ord i, Show i) => Identifiable i where
   ident :: i -> String -- ^ Obtain its underlying 'String' representation.
 
 -- | Explicitly convert between two types of identifiers.
 fromId :: (Identifiable a, Identifiable b) => a -> b
 fromId = fromString . ident
+
+-- | Convert a showable instance to some kind of identifier.
+showId :: (Show a, Identifiable b) => a -> b
+showId = fromString . show
 
 {- | A generic Sslang identifier.
 
@@ -144,7 +155,7 @@ newtype TVarId = TVarId Identifier
   deriving Pretty via Identifier
 
 instance Show TVarId where
-  show (TVarId i) = '\'' : show i
+  show (TVarId i) = show i
 
 -- | Identifier for data constructors, e.g., @None@.
 newtype DConId = DConId Identifier
@@ -201,6 +212,10 @@ instance Show TVarIdx where
 instance Pretty TVarIdx where
   pretty = pretty . show
 
+-- | Terms @t@ that have free variables @i@
+class Identifiable i => HasFreeVars t i | t -> i where
+  freeVars :: t -> S.Set i
+
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
 type Binder = Maybe VarId
 
@@ -211,8 +226,27 @@ isCons i | null s    = False
   where s = ident i
 
 -- | Whether an identifier refers to a type or data variable.
+--
+-- Note that internal variables (i.e., 'isIVar') are also considered variables.
 isVar :: Identifiable a => a -> Bool
 isVar = not . isCons
+
+-- | Whether an identifier is an compiler-generated variable name.
+isGenerated :: Identifiable a => a -> Bool
+isGenerated i | null s    = False
+              | otherwise = head s == '(' && last s == ')'
+  where s = ident i
+
+-- | Generate an internal variable name (parenthesized) from some hint.
+genId :: Identifiable a => a -> a
+genId i | null s    = fromString "(_)"
+        | otherwise = fromString $ "(" <> s <> ")"
+  where s = ident i
+
+-- | Filter out generated identifiers.
+ungenId :: Identifiable a => a -> Maybe a
+ungenId i | isGenerated i = Nothing
+          | otherwise     = Just i
 
 {- | Mangle all identifiers in some data structure.
 
@@ -236,7 +270,7 @@ mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
       Just i' -> return i'
       Nothing -> do
         let ctr' = ctr + 1
-            i'   = fromString $ "mang" <> show ctr'
+            i'   = genId $ fromString $ show ctr'
         put (ctr', M.insert i i' idMap)
         return i'
 

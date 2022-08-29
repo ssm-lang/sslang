@@ -1,5 +1,5 @@
 us t = 1000 * t
-now_us _ = now / 1000
+now_us _ = now () / 1000
 
 logger n period current_time start_time kill =
   let n_ = new n
