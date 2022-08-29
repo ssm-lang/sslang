@@ -14,7 +14,7 @@
 </span><span id="line-12"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="toList"><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Front.Pattern.Vector.html#PatVec"><span class="hs-identifier hs-type">PV.PatVec</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-comment">-- list of PV</span><span>
 </span><span id="line-13"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-14"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679452595"><span id="local-6989586621679452597"><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; Bool
+</span><span id="line-14"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679498810"><span id="local-6989586621679498812"><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; Bool
 (PatMat -&gt; PatMat -&gt; Bool)
 -&gt; (PatMat -&gt; PatMat -&gt; Bool) -&gt; Eq PatMat
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -22,7 +22,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: PatMat -&gt; PatMat -&gt; Bool
 == :: PatMat -&gt; PatMat -&gt; Bool
 $c== :: PatMat -&gt; PatMat -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679452588"><span id="local-6989586621679452590"><span id="local-6989586621679452592"><span class="annot"><span class="annottext">Int -&gt; PatMat -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679498803"><span id="local-6989586621679498805"><span id="local-6989586621679498807"><span class="annot"><span class="annottext">Int -&gt; PatMat -&gt; ShowS
 [PatMat] -&gt; ShowS
 PatMat -&gt; String
 (Int -&gt; PatMat -&gt; ShowS)
@@ -39,72 +39,72 @@ $cshowsPrec :: Int -&gt; PatMat -&gt; ShowS
 </span><span id="line-15"></span><span>
 </span><span id="line-16"></span><span class="annot"><a href="Front.Pattern.Matrix.html#singleCol"><span class="hs-identifier hs-type">singleCol</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Front.Ast.html#Pat"><span class="hs-identifier hs-type">A.Pat</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-17"></span><span id="singleCol"><span class="annot"><span class="annottext">singleCol :: [Pat] -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#singleCol"><span class="hs-identifier hs-var hs-var">singleCol</span></a></span></span><span> </span><span id="local-6989586621679452585"><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452585"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-18"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452584"><span class="annot"><span class="annottext">m :: Int
-</span><a href="#local-6989586621679452584"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; Int
+</span><a href="Front.Pattern.Matrix.html#singleCol"><span class="hs-identifier hs-var hs-var">singleCol</span></a></span></span><span> </span><span id="local-6989586621679498800"><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679498800"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498799"><span class="annot"><span class="annottext">m :: Int
+</span><a href="#local-6989586621679498799"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452585"><span class="hs-identifier hs-var">ps</span></a></span><span>
-</span><span id="line-19"></span><span>      </span><span id="local-6989586621679452582"><span class="annot"><span class="annottext">pvs :: [PatVec]
-</span><a href="#local-6989586621679452582"><span class="hs-identifier hs-var hs-var">pvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec
+</span><a href="#local-6989586621679498800"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-19"></span><span>      </span><span id="local-6989586621679498797"><span class="annot"><span class="annottext">pvs :: [PatVec]
+</span><a href="#local-6989586621679498797"><span class="hs-identifier hs-var hs-var">pvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#singleton"><span class="hs-identifier hs-var">PV.singleton</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452580"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679452580"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452580"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452585"><span class="hs-identifier hs-var">ps</span></a></span><span> </span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679498795"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679498795"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498795"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679498800"><span class="hs-identifier hs-var">ps</span></a></span><span> </span><span class="hs-special">]</span><span>
 </span><span id="line-20"></span><span>  </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452584"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
+</span><a href="#local-6989586621679498799"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[PatVec]
-</span><a href="#local-6989586621679452582"><span class="hs-identifier hs-var">pvs</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498797"><span class="hs-identifier hs-var">pvs</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-21"></span><span>
 </span><span id="line-22"></span><span class="annot"><a href="Front.Pattern.Matrix.html#singleRow"><span class="hs-identifier hs-type">singleRow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Front.Ast.html#Pat"><span class="hs-identifier hs-type">A.Pat</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-23"></span><span id="singleRow"><span class="annot"><span class="annottext">singleRow :: [Pat] -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#singleRow"><span class="hs-identifier hs-var hs-var">singleRow</span></a></span></span><span> </span><span id="local-6989586621679452578"><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452578"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-24"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452577"><span class="annot"><span class="annottext">n :: Int
-</span><a href="#local-6989586621679452577"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; Int
+</span><a href="Front.Pattern.Matrix.html#singleRow"><span class="hs-identifier hs-var hs-var">singleRow</span></a></span></span><span> </span><span id="local-6989586621679498793"><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679498793"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498792"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679498792"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452578"><span class="hs-identifier hs-var">ps</span></a></span><span>
-</span><span id="line-25"></span><span>      </span><span id="local-6989586621679452576"><span class="annot"><span class="annottext">pvs :: [PatVec]
-</span><a href="#local-6989586621679452576"><span class="hs-identifier hs-var hs-var">pvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
+</span><a href="#local-6989586621679498793"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-25"></span><span>      </span><span id="local-6989586621679498791"><span class="annot"><span class="annottext">pvs :: [PatVec]
+</span><a href="#local-6989586621679498791"><span class="hs-identifier hs-var hs-var">pvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#fromList"><span class="hs-identifier hs-var">PV.fromList</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452578"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679498793"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-26"></span><span>  </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452577"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498792"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[PatVec]
-</span><a href="#local-6989586621679452576"><span class="hs-identifier hs-var">pvs</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498791"><span class="hs-identifier hs-var">pvs</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="annot"><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-type">fromPatVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Vector.html#PatVec"><span class="hs-identifier hs-type">PV.PatVec</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-29"></span><span id="fromPatVec"><span class="annot"><span class="annottext">fromPatVec :: PatVec -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var hs-var">fromPatVec</span></a></span></span><span> </span><span id="local-6989586621679452573"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452573"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
+</span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var hs-var">fromPatVec</span></a></span></span><span> </span><span id="local-6989586621679498788"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498788"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; Int
 </span><a href="Front.Pattern.Vector.html#ncol"><span class="hs-identifier hs-var hs-var">PV.ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452573"><span class="hs-identifier hs-var">pv</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498788"><span class="hs-identifier hs-var">pv</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452573"><span class="hs-identifier hs-var">pv</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498788"><span class="hs-identifier hs-var">pv</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-30"></span><span>
 </span><span id="line-31"></span><span class="annot"><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-type">emptyWithCols</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-32"></span><span id="emptyWithCols"><span class="annot"><span class="annottext">emptyWithCols :: Int -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var hs-var">emptyWithCols</span></a></span></span><span> </span><span id="local-6989586621679452570"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452570"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
+</span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var hs-var">emptyWithCols</span></a></span></span><span> </span><span id="local-6989586621679498785"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679498785"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452570"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498785"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="annot"><a href="Front.Pattern.Matrix.html#hd"><span class="hs-identifier hs-type">hd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Vector.html#PatVec"><span class="hs-identifier hs-type">PV.PatVec</span></a></span><span>
@@ -118,427 +118,427 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="annot"><a href="Front.Pattern.Matrix.html#tl"><span class="hs-identifier hs-type">tl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-38"></span><span id="tl"><span class="annot"><span class="annottext">tl :: PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#tl"><span class="hs-identifier hs-var hs-var">tl</span></a></span></span><span> </span><span id="local-6989586621679452565"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452565"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Front.Pattern.Matrix.html#tl"><span class="hs-identifier hs-var hs-var">tl</span></a></span></span><span> </span><span id="local-6989586621679498780"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498780"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var hs-var">nrow</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452565"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498780"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452565"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498780"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[PatVec] -&gt; [PatVec]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">tail</span></span><span> </span><span class="annot"><span class="annottext">([PatVec] -&gt; [PatVec]) -&gt; [PatVec] -&gt; [PatVec]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452565"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498780"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-40"></span><span>
 </span><span id="line-41"></span><span class="annot"><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-type">extend</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-42"></span><span id="extend"><span class="annot"><span class="annottext">extend :: PatMat -&gt; PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var hs-var">extend</span></a></span></span><span> </span><span id="local-6989586621679452562"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452562"><span class="hs-identifier hs-var">pm1</span></a></span></span><span> </span><span id="local-6989586621679452561"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452561"><span class="hs-identifier hs-var">pm2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-43"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452560"><span class="annot"><span class="annottext">m' :: Int
-</span><a href="#local-6989586621679452560"><span class="hs-identifier hs-var hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
+</span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var hs-var">extend</span></a></span></span><span> </span><span id="local-6989586621679498777"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498777"><span class="hs-identifier hs-var">pm1</span></a></span></span><span> </span><span id="local-6989586621679498776"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498776"><span class="hs-identifier hs-var">pm2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498775"><span class="annot"><span class="annottext">m' :: Int
+</span><a href="#local-6989586621679498775"><span class="hs-identifier hs-var hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var hs-var">nrow</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452562"><span class="hs-identifier hs-var">pm1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498777"><span class="hs-identifier hs-var">pm1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var hs-var">nrow</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452561"><span class="hs-identifier hs-var">pm2</span></a></span><span>
-</span><span id="line-44"></span><span>      </span><span id="local-6989586621679452558"><span class="annot"><span class="annottext">n' :: Int
-</span><a href="#local-6989586621679452558"><span class="hs-identifier hs-var hs-var">n'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
+</span><a href="#local-6989586621679498776"><span class="hs-identifier hs-var">pm2</span></a></span><span>
+</span><span id="line-44"></span><span>      </span><span id="local-6989586621679498773"><span class="annot"><span class="annottext">n' :: Int
+</span><a href="#local-6989586621679498773"><span class="hs-identifier hs-var hs-var">n'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452562"><span class="hs-identifier hs-var">pm1</span></a></span><span>
-</span><span id="line-45"></span><span>      </span><span id="local-6989586621679452557"><span class="annot"><span class="annottext">l' :: [PatVec]
-</span><a href="#local-6989586621679452557"><span class="hs-identifier hs-var hs-var">l'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
+</span><a href="#local-6989586621679498777"><span class="hs-identifier hs-var">pm1</span></a></span><span>
+</span><span id="line-45"></span><span>      </span><span id="local-6989586621679498772"><span class="annot"><span class="annottext">l' :: [PatVec]
+</span><a href="#local-6989586621679498772"><span class="hs-identifier hs-var hs-var">l'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452562"><span class="hs-identifier hs-var">pm1</span></a></span><span> </span><span class="annot"><span class="annottext">[PatVec] -&gt; [PatVec] -&gt; [PatVec]
+</span><a href="#local-6989586621679498777"><span class="hs-identifier hs-var">pm1</span></a></span><span> </span><span class="annot"><span class="annottext">[PatVec] -&gt; [PatVec] -&gt; [PatVec]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452561"><span class="hs-identifier hs-var">pm2</span></a></span><span>
+</span><a href="#local-6989586621679498776"><span class="hs-identifier hs-var">pm2</span></a></span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452560"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
+</span><a href="#local-6989586621679498775"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452558"><span class="hs-identifier hs-var">n'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498773"><span class="hs-identifier hs-var">n'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[PatVec]
-</span><a href="#local-6989586621679452557"><span class="hs-identifier hs-var">l'</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498772"><span class="hs-identifier hs-var">l'</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-47"></span><span>
 </span><span id="line-48"></span><span class="annot"><a href="Front.Pattern.Matrix.html#prepend"><span class="hs-identifier hs-type">prepend</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Vector.html#PatVec"><span class="hs-identifier hs-type">PV.PatVec</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-49"></span><span id="prepend"><span class="annot"><span class="annottext">prepend :: PatVec -&gt; PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#prepend"><span class="hs-identifier hs-var hs-var">prepend</span></a></span></span><span> </span><span id="local-6989586621679452555"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452555"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span id="local-6989586621679452554"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452554"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-50"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452553"><span class="annot"><span class="annottext">m' :: Int
-</span><a href="#local-6989586621679452553"><span class="hs-identifier hs-var hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="Front.Pattern.Matrix.html#prepend"><span class="hs-identifier hs-var hs-var">prepend</span></a></span></span><span> </span><span id="local-6989586621679498770"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498770"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span id="local-6989586621679498769"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498769"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498768"><span class="annot"><span class="annottext">m' :: Int
+</span><a href="#local-6989586621679498768"><span class="hs-identifier hs-var hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var hs-var">nrow</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452554"><span class="hs-identifier hs-var">pm</span></a></span><span>
-</span><span id="line-51"></span><span>      </span><span id="local-6989586621679452552"><span class="annot"><span class="annottext">n' :: Int
-</span><a href="#local-6989586621679452552"><span class="hs-identifier hs-var hs-var">n'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
+</span><a href="#local-6989586621679498769"><span class="hs-identifier hs-var">pm</span></a></span><span>
+</span><span id="line-51"></span><span>      </span><span id="local-6989586621679498767"><span class="annot"><span class="annottext">n' :: Int
+</span><a href="#local-6989586621679498767"><span class="hs-identifier hs-var hs-var">n'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452554"><span class="hs-identifier hs-var">pm</span></a></span><span>
-</span><span id="line-52"></span><span>      </span><span id="local-6989586621679452551"><span class="annot"><span class="annottext">l' :: [PatVec]
-</span><a href="#local-6989586621679452551"><span class="hs-identifier hs-var hs-var">l'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452555"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; [PatVec] -&gt; [PatVec]
+</span><a href="#local-6989586621679498769"><span class="hs-identifier hs-var">pm</span></a></span><span>
+</span><span id="line-52"></span><span>      </span><span id="local-6989586621679498766"><span class="annot"><span class="annottext">l' :: [PatVec]
+</span><a href="#local-6989586621679498766"><span class="hs-identifier hs-var hs-var">l'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498770"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; [PatVec] -&gt; [PatVec]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452554"><span class="hs-identifier hs-var">pm</span></a></span><span>
+</span><a href="#local-6989586621679498769"><span class="hs-identifier hs-var">pm</span></a></span><span>
 </span><span id="line-53"></span><span>  </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatMat :: Int -&gt; Int -&gt; [PatVec] -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">nrow :: Int
 </span><a href="Front.Pattern.Matrix.html#nrow"><span class="hs-identifier hs-var">nrow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452553"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
+</span><a href="#local-6989586621679498768"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ncol :: Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var">ncol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452552"><span class="hs-identifier hs-var">n'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
+</span><a href="#local-6989586621679498767"><span class="hs-identifier hs-var">n'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">toList :: [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[PatVec]
-</span><a href="#local-6989586621679452551"><span class="hs-identifier hs-var">l'</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679498766"><span class="hs-identifier hs-var">l'</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-54"></span><span>
 </span><span id="line-55"></span><span class="annot"><a href="Front.Pattern.Matrix.html#specializeLit"><span class="hs-identifier hs-type">specializeLit</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Ast.html#Literal"><span class="hs-identifier hs-type">A.Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-56"></span><span id="specializeLit"><span class="annot"><span class="annottext">specializeLit :: Literal -&gt; PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#specializeLit"><span class="hs-identifier hs-var hs-var">specializeLit</span></a></span></span><span> </span><span id="local-6989586621679452549"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679452549"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span id="local-6989586621679452548"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452548"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-57"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452547"><span class="annot"><span class="annottext">pms :: [PatMat]
-</span><a href="#local-6989586621679452547"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
+</span><a href="Front.Pattern.Matrix.html#specializeLit"><span class="hs-identifier hs-var hs-var">specializeLit</span></a></span></span><span> </span><span id="local-6989586621679498764"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679498764"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span id="local-6989586621679498763"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498763"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498762"><span class="annot"><span class="annottext">pms :: [PatMat]
+</span><a href="#local-6989586621679498762"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452546"><span class="hs-identifier hs-var">specializeLit'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
+</span><a href="#local-6989586621679498761"><span class="hs-identifier hs-var">specializeLit'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452548"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
+</span><a href="#local-6989586621679498763"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var">extend</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
-</span><a href="#local-6989586621679452547"><span class="hs-identifier hs-var">pms</span></a></span><span>
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
+</span><a href="#local-6989586621679498762"><span class="hs-identifier hs-var">pms</span></a></span><span>
 </span><span id="line-58"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-59"></span><span>  </span><span id="local-6989586621679452544"><span class="annot"><span class="annottext">noRow :: PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679498759"><span class="annot"><span class="annottext">noRow :: PatMat
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var">emptyWithCols</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452548"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498763"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
-</span><span id="line-60"></span><span>  </span><span id="local-6989586621679452546"><span class="annot"><span class="annottext">specializeLit' :: PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452546"><span class="hs-identifier hs-var hs-var">specializeLit'</span></a></span></span><span> </span><span id="local-6989586621679452543"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452543"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-61"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452542"><span class="annot"><span class="annottext">wildCase :: PatMat
-</span><a href="#local-6989586621679452542"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><span id="line-60"></span><span>  </span><span id="local-6989586621679498761"><span class="annot"><span class="annottext">specializeLit' :: PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498761"><span class="hs-identifier hs-var hs-var">specializeLit'</span></a></span></span><span> </span><span id="local-6989586621679498758"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498758"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498757"><span class="annot"><span class="annottext">wildCase :: PatMat
+</span><a href="#local-6989586621679498757"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452543"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-62"></span><span>        </span><span id="local-6989586621679452540"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
-</span><a href="#local-6989586621679452540"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679452539"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452539"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-63"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452538"><span class="annot"><span class="annottext">pv' :: PatVec
-</span><a href="#local-6989586621679452538"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452539"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498758"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-62"></span><span>        </span><span id="local-6989586621679498755"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
+</span><a href="#local-6989586621679498755"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679498754"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498754"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-63"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498753"><span class="annot"><span class="annottext">pv' :: PatVec
+</span><a href="#local-6989586621679498753"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498754"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#append"><span class="hs-operator hs-var">`PV.append`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452543"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-64"></span><span>              </span><span id="local-6989586621679452536"><span class="annot"><span class="annottext">pm' :: PatMat
-</span><a href="#local-6989586621679452536"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498758"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-64"></span><span>              </span><span id="local-6989586621679498751"><span class="annot"><span class="annottext">pm' :: PatMat
+</span><a href="#local-6989586621679498751"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452538"><span class="hs-identifier hs-var">pv'</span></a></span><span>
+</span><a href="#local-6989586621679498753"><span class="hs-identifier hs-var">pv'</span></a></span><span>
 </span><span id="line-65"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">Literal -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#specializeLit"><span class="hs-identifier hs-var">specializeLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679452549"><span class="hs-identifier hs-var">lit</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452536"><span class="hs-identifier hs-var">pm'</span></a></span><span>
+</span><a href="#local-6989586621679498764"><span class="hs-identifier hs-var">lit</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498751"><span class="hs-identifier hs-var">pm'</span></a></span><span>
 </span><span id="line-66"></span><span>    </span><span class="hs-keyword">in</span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; Pat
 </span><a href="Front.Pattern.Vector.html#hd"><span class="hs-identifier hs-var">PV.hd</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452543"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-67"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatLit"><span class="hs-identifier hs-type">A.PatLit</span></a></span><span> </span><span id="local-6989586621679452533"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679452533"><span class="hs-identifier hs-var">lit'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679452533"><span class="hs-identifier hs-var">lit'</span></a></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
+</span><a href="#local-6989586621679498758"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-67"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatLit"><span class="hs-identifier hs-type">A.PatLit</span></a></span><span> </span><span id="local-6989586621679498748"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679498748"><span class="hs-identifier hs-var">lit'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679498748"><span class="hs-identifier hs-var">lit'</span></a></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679452549"><span class="hs-identifier hs-var">lit</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498764"><span class="hs-identifier hs-var">lit</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452543"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var">noRow</span></a></span><span>
-</span><span id="line-68"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span>  </span><span id="local-6989586621679452531"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452531"><span class="hs-identifier hs-var">i</span></a></span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
+</span><a href="#local-6989586621679498758"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><span id="line-68"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span>  </span><span id="local-6989586621679498746"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498746"><span class="hs-identifier hs-var">i</span></a></span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
 forall a. Identifiable a =&gt; a -&gt; Bool
 </span><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-var">isVar</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452531"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452542"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498746"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498757"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-69"></span><span>          </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452542"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
+</span><a href="#local-6989586621679498757"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
 </span><span id="line-70"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAs"><span class="hs-identifier hs-type">A.PatAs</span></a></span><span>  </span><span class="annot"><span class="annottext">Identifier
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452528"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452528"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452540"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452528"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498743"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498743"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498755"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498743"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-71"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAnn"><span class="hs-identifier hs-type">A.PatAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Typ
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452526"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452526"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452540"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452526"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498741"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498741"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498755"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498741"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-72"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatTup"><span class="hs-identifier hs-type">A.PatTup</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-73"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452544"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498759"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-74"></span><span>
 </span><span id="line-75"></span><span class="annot"><a href="Front.Pattern.Matrix.html#specializeTup"><span class="hs-identifier hs-type">specializeTup</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-76"></span><span id="specializeTup"><span class="annot"><span class="annottext">specializeTup :: Int -&gt; PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#specializeTup"><span class="hs-identifier hs-var hs-var">specializeTup</span></a></span></span><span> </span><span id="local-6989586621679452522"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452522"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679452521"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452521"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-77"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452520"><span class="annot"><span class="annottext">pms :: [PatMat]
-</span><a href="#local-6989586621679452520"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
+</span><a href="Front.Pattern.Matrix.html#specializeTup"><span class="hs-identifier hs-var hs-var">specializeTup</span></a></span></span><span> </span><span id="local-6989586621679498737"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679498737"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679498736"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498736"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498735"><span class="annot"><span class="annottext">pms :: [PatMat]
+</span><a href="#local-6989586621679498735"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452519"><span class="hs-identifier hs-var">specializeTup'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
+</span><a href="#local-6989586621679498734"><span class="hs-identifier hs-var">specializeTup'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452521"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
+</span><a href="#local-6989586621679498736"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var">extend</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452518"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
-</span><a href="#local-6989586621679452520"><span class="hs-identifier hs-var">pms</span></a></span><span>
+</span><a href="#local-6989586621679498733"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
+</span><a href="#local-6989586621679498735"><span class="hs-identifier hs-var">pms</span></a></span><span>
 </span><span id="line-78"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-79"></span><span>  </span><span id="local-6989586621679452518"><span class="annot"><span class="annottext">noRow :: PatMat
-</span><a href="#local-6989586621679452518"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679498733"><span class="annot"><span class="annottext">noRow :: PatMat
+</span><a href="#local-6989586621679498733"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var">emptyWithCols</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452522"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498737"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452521"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498736"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
-</span><span id="line-80"></span><span>  </span><span id="local-6989586621679452519"><span class="annot"><span class="annottext">specializeTup' :: PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452519"><span class="hs-identifier hs-var hs-var">specializeTup'</span></a></span></span><span> </span><span id="local-6989586621679452517"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452517"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-81"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452516"><span class="annot"><span class="annottext">wildCase :: PatMat
-</span><a href="#local-6989586621679452516"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-82"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452515"><span class="annot"><span class="annottext">pv1 :: PatVec
-</span><a href="#local-6989586621679452515"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679498734"><span class="annot"><span class="annottext">specializeTup' :: PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498734"><span class="hs-identifier hs-var hs-var">specializeTup'</span></a></span></span><span> </span><span id="local-6989586621679498732"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498732"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498731"><span class="annot"><span class="annottext">wildCase :: PatMat
+</span><a href="#local-6989586621679498731"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-82"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498730"><span class="annot"><span class="annottext">pv1 :: PatVec
+</span><a href="#local-6989586621679498730"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#fromList"><span class="hs-identifier hs-var">PV.fromList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Pat -&gt; [Pat]
 forall a. Int -&gt; a -&gt; [a]
 </span><span class="hs-identifier hs-var">replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452522"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498737"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-83"></span><span>              </span><span id="local-6989586621679452513"><span class="annot"><span class="annottext">pv2 :: PatVec
-</span><a href="#local-6989586621679452513"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
+</span><span id="line-83"></span><span>              </span><span id="local-6989586621679498728"><span class="annot"><span class="annottext">pv2 :: PatVec
+</span><a href="#local-6989586621679498728"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452517"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><a href="#local-6989586621679498732"><span class="hs-identifier hs-var">pv</span></a></span><span>
 </span><span id="line-84"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452515"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498730"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#extend"><span class="hs-operator hs-var">`PV.extend`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452513"><span class="hs-identifier hs-var">pv2</span></a></span><span>
-</span><span id="line-85"></span><span>        </span><span id="local-6989586621679452511"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
-</span><a href="#local-6989586621679452511"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679452510"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452510"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-86"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452509"><span class="annot"><span class="annottext">pv' :: PatVec
-</span><a href="#local-6989586621679452509"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452510"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498728"><span class="hs-identifier hs-var">pv2</span></a></span><span>
+</span><span id="line-85"></span><span>        </span><span id="local-6989586621679498726"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
+</span><a href="#local-6989586621679498726"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679498725"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498725"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-86"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498724"><span class="annot"><span class="annottext">pv' :: PatVec
+</span><a href="#local-6989586621679498724"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498725"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#append"><span class="hs-operator hs-var">`PV.append`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452517"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-87"></span><span>              </span><span id="local-6989586621679452508"><span class="annot"><span class="annottext">pm' :: PatMat
-</span><a href="#local-6989586621679452508"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498732"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-87"></span><span>              </span><span id="local-6989586621679498723"><span class="annot"><span class="annottext">pm' :: PatMat
+</span><a href="#local-6989586621679498723"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452509"><span class="hs-identifier hs-var">pv'</span></a></span><span>
+</span><a href="#local-6989586621679498724"><span class="hs-identifier hs-var">pv'</span></a></span><span>
 </span><span id="line-88"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">Int -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#specializeTup"><span class="hs-identifier hs-var">specializeTup</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452522"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452508"><span class="hs-identifier hs-var">pm'</span></a></span><span>
+</span><a href="#local-6989586621679498737"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498723"><span class="hs-identifier hs-var">pm'</span></a></span><span>
 </span><span id="line-89"></span><span>    </span><span class="hs-keyword">in</span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; Pat
 </span><a href="Front.Pattern.Vector.html#hd"><span class="hs-identifier hs-var">PV.hd</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452517"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-90"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatTup"><span class="hs-identifier hs-type">A.PatTup</span></a></span><span> </span><span id="local-6989586621679452507"><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452507"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-91"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452506"><span class="annot"><span class="annottext">pv1 :: PatVec
-</span><a href="#local-6989586621679452506"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
+</span><a href="#local-6989586621679498732"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-90"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatTup"><span class="hs-identifier hs-type">A.PatTup</span></a></span><span> </span><span id="local-6989586621679498722"><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679498722"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-91"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498721"><span class="annot"><span class="annottext">pv1 :: PatVec
+</span><a href="#local-6989586621679498721"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#fromList"><span class="hs-identifier hs-var">PV.fromList</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452507"><span class="hs-identifier hs-var">ps</span></a></span><span>
-</span><span id="line-92"></span><span>                </span><span id="local-6989586621679452505"><span class="annot"><span class="annottext">pv2 :: PatVec
-</span><a href="#local-6989586621679452505"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498722"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-92"></span><span>                </span><span id="local-6989586621679498720"><span class="annot"><span class="annottext">pv2 :: PatVec
+</span><a href="#local-6989586621679498720"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452517"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><a href="#local-6989586621679498732"><span class="hs-identifier hs-var">pv</span></a></span><span>
 </span><span id="line-93"></span><span>            </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452506"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498721"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#extend"><span class="hs-operator hs-var">`PV.extend`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452505"><span class="hs-identifier hs-var">pv2</span></a></span><span>
-</span><span id="line-94"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679452504"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452504"><span class="hs-identifier hs-var">i</span></a></span></span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
+</span><a href="#local-6989586621679498720"><span class="hs-identifier hs-var">pv2</span></a></span><span>
+</span><span id="line-94"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679498719"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498719"><span class="hs-identifier hs-var">i</span></a></span></span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
 forall a. Identifiable a =&gt; a -&gt; Bool
 </span><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-var">isVar</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452504"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452516"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452518"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498719"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498731"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498733"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-95"></span><span>          </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452516"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
+</span><a href="#local-6989586621679498731"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
 </span><span id="line-96"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAs"><span class="hs-identifier hs-type">A.PatAs</span></a></span><span>  </span><span class="annot"><span class="annottext">Identifier
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452503"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452503"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452511"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452503"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498718"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498718"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498726"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498718"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-97"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAnn"><span class="hs-identifier hs-type">A.PatAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Typ
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452502"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452502"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452511"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452502"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498717"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498717"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498726"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498717"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-98"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452518"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498733"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-99"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatLit"><span class="hs-identifier hs-type">A.PatLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452518"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498733"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-100"></span><span>
 </span><span id="line-101"></span><span class="annot"><a href="Front.Pattern.Matrix.html#specializeCons"><span class="hs-identifier hs-type">specializeCons</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-102"></span><span id="specializeCons"><span class="annot"><span class="annottext">specializeCons :: Int -&gt; Identifier -&gt; PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#specializeCons"><span class="hs-identifier hs-var hs-var">specializeCons</span></a></span></span><span> </span><span id="local-6989586621679452500"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452500"><span class="hs-identifier hs-var">arity</span></a></span></span><span> </span><span id="local-6989586621679452499"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452499"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679452498"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452498"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-103"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452497"><span class="annot"><span class="annottext">pms :: [PatMat]
-</span><a href="#local-6989586621679452497"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
+</span><a href="Front.Pattern.Matrix.html#specializeCons"><span class="hs-identifier hs-var hs-var">specializeCons</span></a></span></span><span> </span><span id="local-6989586621679498715"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679498715"><span class="hs-identifier hs-var">arity</span></a></span></span><span> </span><span id="local-6989586621679498714"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498714"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679498713"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498713"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-103"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498712"><span class="annot"><span class="annottext">pms :: [PatMat]
+</span><a href="#local-6989586621679498712"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452496"><span class="hs-identifier hs-var">specializeTup'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
+</span><a href="#local-6989586621679498711"><span class="hs-identifier hs-var">specializeTup'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452498"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
+</span><a href="#local-6989586621679498713"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var">extend</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
-</span><a href="#local-6989586621679452497"><span class="hs-identifier hs-var">pms</span></a></span><span>
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
+</span><a href="#local-6989586621679498712"><span class="hs-identifier hs-var">pms</span></a></span><span>
 </span><span id="line-104"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-105"></span><span>  </span><span id="local-6989586621679452495"><span class="annot"><span class="annottext">noRow :: PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679498710"><span class="annot"><span class="annottext">noRow :: PatMat
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var">emptyWithCols</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452500"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498715"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452498"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498713"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
-</span><span id="line-106"></span><span>  </span><span id="local-6989586621679452496"><span class="annot"><span class="annottext">specializeTup' :: PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452496"><span class="hs-identifier hs-var hs-var">specializeTup'</span></a></span></span><span> </span><span id="local-6989586621679452494"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-107"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452493"><span class="annot"><span class="annottext">wildCase :: PatMat
-</span><a href="#local-6989586621679452493"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-108"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452492"><span class="annot"><span class="annottext">pv1 :: PatVec
-</span><a href="#local-6989586621679452492"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
+</span><span id="line-106"></span><span>  </span><span id="local-6989586621679498711"><span class="annot"><span class="annottext">specializeTup' :: PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498711"><span class="hs-identifier hs-var hs-var">specializeTup'</span></a></span></span><span> </span><span id="local-6989586621679498709"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-107"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498708"><span class="annot"><span class="annottext">wildCase :: PatMat
+</span><a href="#local-6989586621679498708"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-108"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498707"><span class="annot"><span class="annottext">pv1 :: PatVec
+</span><a href="#local-6989586621679498707"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#fromList"><span class="hs-identifier hs-var">PV.fromList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Pat -&gt; [Pat]
 forall a. Int -&gt; a -&gt; [a]
 </span><span class="hs-identifier hs-var">replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452500"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498715"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-109"></span><span>              </span><span id="local-6989586621679452491"><span class="annot"><span class="annottext">pv2 :: PatVec
-</span><a href="#local-6989586621679452491"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
+</span><span id="line-109"></span><span>              </span><span id="local-6989586621679498706"><span class="annot"><span class="annottext">pv2 :: PatVec
+</span><a href="#local-6989586621679498706"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span><span>
 </span><span id="line-110"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452492"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498707"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#extend"><span class="hs-operator hs-var">`PV.extend`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452491"><span class="hs-identifier hs-var">pv2</span></a></span><span>
-</span><span id="line-111"></span><span>        </span><span id="local-6989586621679452490"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
-</span><a href="#local-6989586621679452490"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679452489"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452489"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-112"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452488"><span class="annot"><span class="annottext">pv' :: PatVec
-</span><a href="#local-6989586621679452488"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452489"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498706"><span class="hs-identifier hs-var">pv2</span></a></span><span>
+</span><span id="line-111"></span><span>        </span><span id="local-6989586621679498705"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
+</span><a href="#local-6989586621679498705"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679498704"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498704"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498703"><span class="annot"><span class="annottext">pv' :: PatVec
+</span><a href="#local-6989586621679498703"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498704"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#append"><span class="hs-operator hs-var">`PV.append`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-113"></span><span>              </span><span id="local-6989586621679452487"><span class="annot"><span class="annottext">pm' :: PatMat
-</span><a href="#local-6989586621679452487"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-113"></span><span>              </span><span id="local-6989586621679498702"><span class="annot"><span class="annottext">pm' :: PatMat
+</span><a href="#local-6989586621679498702"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452488"><span class="hs-identifier hs-var">pv'</span></a></span><span>
+</span><a href="#local-6989586621679498703"><span class="hs-identifier hs-var">pv'</span></a></span><span>
 </span><span id="line-114"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">Int -&gt; Identifier -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#specializeCons"><span class="hs-identifier hs-var">specializeCons</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679452500"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452499"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452487"><span class="hs-identifier hs-var">pm'</span></a></span><span>
+</span><a href="#local-6989586621679498715"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498714"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498702"><span class="hs-identifier hs-var">pm'</span></a></span><span>
 </span><span id="line-115"></span><span>    </span><span class="hs-keyword">in</span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; Pat
 </span><a href="Front.Pattern.Vector.html#hd"><span class="hs-identifier hs-var">PV.hd</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-116"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679452486"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452486"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-116"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679498701"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498701"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
 forall a. Identifiable a =&gt; a -&gt; Bool
 </span><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-var">isVar</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452499"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679498714"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-117"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452493"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
+</span><a href="#local-6989586621679498708"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
 </span><span id="line-118"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452486"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
+</span><a href="#local-6989586621679498701"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452499"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498714"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var">noRow</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-119"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679452485"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452485"><span class="hs-identifier hs-var">i'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679452484"><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452484"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452485"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var">noRow</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-119"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679498700"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498700"><span class="hs-identifier hs-var">i'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679498699"><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679498699"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498700"><span class="hs-identifier hs-var">i'</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452499"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679498714"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-120"></span><span>            </span><span class="hs-keyword">then</span><span>
-</span><span id="line-121"></span><span>              </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452483"><span class="annot"><span class="annottext">pv1 :: PatVec
-</span><a href="#local-6989586621679452483"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
+</span><span id="line-121"></span><span>              </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498698"><span class="annot"><span class="annottext">pv1 :: PatVec
+</span><a href="#local-6989586621679498698"><span class="hs-identifier hs-var hs-var">pv1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pat] -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#fromList"><span class="hs-identifier hs-var">PV.fromList</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679452484"><span class="hs-identifier hs-var">ps</span></a></span><span>
-</span><span id="line-122"></span><span>                  </span><span id="local-6989586621679452482"><span class="annot"><span class="annottext">pv2 :: PatVec
-</span><a href="#local-6989586621679452482"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498699"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-122"></span><span>                  </span><span id="local-6989586621679498697"><span class="annot"><span class="annottext">pv2 :: PatVec
+</span><a href="#local-6989586621679498697"><span class="hs-identifier hs-var hs-var">pv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452494"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><a href="#local-6989586621679498709"><span class="hs-identifier hs-var">pv</span></a></span><span>
 </span><span id="line-123"></span><span>              </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452483"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498698"><span class="hs-identifier hs-var">pv1</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#extend"><span class="hs-operator hs-var">`PV.extend`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452482"><span class="hs-identifier hs-var">pv2</span></a></span><span>
+</span><a href="#local-6989586621679498697"><span class="hs-identifier hs-var">pv2</span></a></span><span>
 </span><span id="line-124"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-125"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; PatMat
 forall a. HasCallStack =&gt; String -&gt; a
@@ -546,108 +546,108 @@ forall a. HasCallStack =&gt; String -&gt; a
 </span><span class="hs-string">&quot;can't happen&quot;</span></span><span>
 </span><span id="line-126"></span><span>          </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452493"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
+</span><a href="#local-6989586621679498708"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
 </span><span id="line-127"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAs"><span class="hs-identifier hs-type">A.PatAs</span></a></span><span>  </span><span class="annot"><span class="annottext">Identifier
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452480"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452480"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452490"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452480"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498695"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498695"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498705"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498695"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-128"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAnn"><span class="hs-identifier hs-type">A.PatAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Typ
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452479"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452479"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452490"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452479"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498694"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498694"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498705"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498694"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-129"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatLit"><span class="hs-identifier hs-type">A.PatLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-130"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatTup"><span class="hs-identifier hs-type">A.PatTup</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452495"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498710"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-131"></span><span>
 </span><span id="line-132"></span><span>
 </span><span id="line-133"></span><span class="annot"><a href="Front.Pattern.Matrix.html#defaultize"><span class="hs-identifier hs-type">defaultize</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Pattern.Matrix.html#PatMat"><span class="hs-identifier hs-type">PatMat</span></a></span><span>
 </span><span id="line-134"></span><span id="defaultize"><span class="annot"><span class="annottext">defaultize :: PatMat -&gt; PatMat
-</span><a href="Front.Pattern.Matrix.html#defaultize"><span class="hs-identifier hs-var hs-var">defaultize</span></a></span></span><span> </span><span id="local-6989586621679452477"><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452477"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-135"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452476"><span class="annot"><span class="annottext">pms :: [PatMat]
-</span><a href="#local-6989586621679452476"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
+</span><a href="Front.Pattern.Matrix.html#defaultize"><span class="hs-identifier hs-var hs-var">defaultize</span></a></span></span><span> </span><span id="local-6989586621679498692"><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498692"><span class="hs-identifier hs-var">pm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-135"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498691"><span class="annot"><span class="annottext">pms :: [PatMat]
+</span><a href="#local-6989586621679498691"><span class="hs-identifier hs-var hs-var">pms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; [PatVec] -&gt; [PatMat]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452475"><span class="hs-identifier hs-var">defaultize'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
+</span><a href="#local-6989586621679498690"><span class="hs-identifier hs-var">defaultize'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; [PatVec]
 </span><a href="Front.Pattern.Matrix.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452477"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
+</span><a href="#local-6989586621679498692"><span class="hs-identifier hs-var">pm</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PatMat -&gt; PatMat -&gt; PatMat) -&gt; PatMat -&gt; [PatMat] -&gt; PatMat
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">PatMat -&gt; PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#extend"><span class="hs-identifier hs-var">extend</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
-</span><a href="#local-6989586621679452476"><span class="hs-identifier hs-var">pms</span></a></span><span>
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var">noRow</span></a></span><span> </span><span class="annot"><span class="annottext">[PatMat]
+</span><a href="#local-6989586621679498691"><span class="hs-identifier hs-var">pms</span></a></span><span>
 </span><span id="line-136"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-137"></span><span>  </span><span id="local-6989586621679452474"><span class="annot"><span class="annottext">noRow :: PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
+</span><span id="line-137"></span><span>  </span><span id="local-6989586621679498689"><span class="annot"><span class="annottext">noRow :: PatMat
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var hs-var">noRow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#emptyWithCols"><span class="hs-identifier hs-var">emptyWithCols</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PatMat -&gt; Int
 </span><a href="Front.Pattern.Matrix.html#ncol"><span class="hs-identifier hs-var hs-var">ncol</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452477"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679498692"><span class="hs-identifier hs-var">pm</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
-</span><span id="line-138"></span><span>  </span><span id="local-6989586621679452475"><span class="annot"><span class="annottext">defaultize' :: PatVec -&gt; PatMat
-</span><a href="#local-6989586621679452475"><span class="hs-identifier hs-var hs-var">defaultize'</span></a></span></span><span> </span><span id="local-6989586621679452473"><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452473"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-139"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452472"><span class="annot"><span class="annottext">wildCase :: PatMat
-</span><a href="#local-6989586621679452472"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><span id="line-138"></span><span>  </span><span id="local-6989586621679498690"><span class="annot"><span class="annottext">defaultize' :: PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498690"><span class="hs-identifier hs-var hs-var">defaultize'</span></a></span></span><span> </span><span id="local-6989586621679498688"><span class="annot"><span class="annottext">PatVec
+</span><a href="#local-6989586621679498688"><span class="hs-identifier hs-var">pv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498687"><span class="annot"><span class="annottext">wildCase :: PatMat
+</span><a href="#local-6989586621679498687"><span class="hs-identifier hs-var hs-var">wildCase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">(PatVec -&gt; PatMat) -&gt; PatVec -&gt; PatMat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452473"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-140"></span><span>        </span><span id="local-6989586621679452471"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
-</span><a href="#local-6989586621679452471"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679452470"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452470"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-141"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679452469"><span class="annot"><span class="annottext">pv' :: PatVec
-</span><a href="#local-6989586621679452469"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452470"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
+</span><a href="#local-6989586621679498688"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-140"></span><span>        </span><span id="local-6989586621679498686"><span class="annot"><span class="annottext">passThrough :: Pat -&gt; PatMat
+</span><a href="#local-6989586621679498686"><span class="hs-identifier hs-var hs-var">passThrough</span></a></span></span><span> </span><span id="local-6989586621679498685"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498685"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-141"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679498684"><span class="annot"><span class="annottext">pv' :: PatVec
+</span><a href="#local-6989586621679498684"><span class="hs-identifier hs-var hs-var">pv'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498685"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#append"><span class="hs-operator hs-var">`PV.append`</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatVec
 </span><a href="Front.Pattern.Vector.html#tl"><span class="hs-identifier hs-var">PV.tl</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452473"><span class="hs-identifier hs-var">pv</span></a></span><span>
-</span><span id="line-142"></span><span>              </span><span id="local-6989586621679452468"><span class="annot"><span class="annottext">pm' :: PatMat
-</span><a href="#local-6989586621679452468"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
+</span><a href="#local-6989586621679498688"><span class="hs-identifier hs-var">pv</span></a></span><span>
+</span><span id="line-142"></span><span>              </span><span id="local-6989586621679498683"><span class="annot"><span class="annottext">pm' :: PatMat
+</span><a href="#local-6989586621679498683"><span class="hs-identifier hs-var hs-var">pm'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#fromPatVec"><span class="hs-identifier hs-var">fromPatVec</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452469"><span class="hs-identifier hs-var">pv'</span></a></span><span>
+</span><a href="#local-6989586621679498684"><span class="hs-identifier hs-var">pv'</span></a></span><span>
 </span><span id="line-143"></span><span>          </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">PatMat -&gt; PatMat
 </span><a href="Front.Pattern.Matrix.html#defaultize"><span class="hs-identifier hs-var">defaultize</span></a></span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452468"><span class="hs-identifier hs-var">pm'</span></a></span><span>
+</span><a href="#local-6989586621679498683"><span class="hs-identifier hs-var">pm'</span></a></span><span>
 </span><span id="line-144"></span><span>    </span><span class="hs-keyword">in</span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PatVec -&gt; Pat
 </span><a href="Front.Pattern.Vector.html#hd"><span class="hs-identifier hs-var">PV.hd</span></a></span><span> </span><span class="annot"><span class="annottext">PatVec
-</span><a href="#local-6989586621679452473"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-145"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679452467"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452467"><span class="hs-identifier hs-var">i</span></a></span></span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
+</span><a href="#local-6989586621679498688"><span class="hs-identifier hs-var">pv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-145"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatId"><span class="hs-identifier hs-type">A.PatId</span></a></span><span> </span><span id="local-6989586621679498682"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679498682"><span class="hs-identifier hs-var">i</span></a></span></span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Bool
 forall a. Identifiable a =&gt; a -&gt; Bool
 </span><a href="Common.Identifiers.html#isVar"><span class="hs-identifier hs-var">isVar</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679452467"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452472"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498682"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498687"><span class="hs-identifier hs-var">wildCase</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PatMat
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-146"></span><span>          </span><span class="annot"><span class="annottext">Pat
 </span><a href="Front.Ast.html#PatWildcard"><span class="hs-identifier hs-var">A.PatWildcard</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452472"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
+</span><a href="#local-6989586621679498687"><span class="hs-identifier hs-var">wildCase</span></a></span><span>
 </span><span id="line-147"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAs"><span class="hs-identifier hs-type">A.PatAs</span></a></span><span>  </span><span class="annot"><span class="annottext">Identifier
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452466"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452466"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452471"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452466"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498681"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498681"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498686"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498681"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-148"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatAnn"><span class="hs-identifier hs-type">A.PatAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Typ
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679452465"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452465"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
-</span><a href="#local-6989586621679452471"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679452465"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679498680"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498680"><span class="hs-identifier hs-var">p</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; PatMat
+</span><a href="#local-6989586621679498686"><span class="hs-identifier hs-var">passThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679498680"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-149"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatTup"><span class="hs-identifier hs-type">A.PatTup</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-150"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatApp"><span class="hs-identifier hs-type">A.PatApp</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-151"></span><span>          </span><span class="annot"><a href="Front.Ast.html#PatLit"><span class="hs-identifier hs-type">A.PatLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
 </span><span class="hs-identifier">_</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">PatMat
-</span><a href="#local-6989586621679452474"><span class="hs-identifier hs-var">noRow</span></a></span><span>
+</span><a href="#local-6989586621679498689"><span class="hs-identifier hs-var">noRow</span></a></span><span>
 </span><span id="line-152"></span></pre></body></html>

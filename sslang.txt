@@ -126,7 +126,7 @@ dumpy :: Dumpy a => a -> Doc ann
 module Common.Identifiers
 
 -- | A type that may be used as a Sslang identifier.
-class (IsString i, Ord i) => Identifiable i
+class (IsString i, Ord i, Show i) => Identifiable i
 ident :: Identifiable i => i -> String
 
 -- | Class for string-like datastructures; used by the overloaded string
@@ -136,6 +136,9 @@ fromString :: IsString a => String -> a
 
 -- | Explicitly convert between two types of identifiers.
 fromId :: (Identifiable a, Identifiable b) => a -> b
+
+-- | Convert a showable instance to some kind of identifier.
+showId :: (Show a, Identifiable b) => a -> b
 
 -- | Identifier for type constructors, e.g., <tt>Option</tt>.
 newtype TConId
@@ -161,6 +164,10 @@ TVarIdx :: Int -> TVarIdx
 newtype CSym
 CSym :: Identifier -> CSym
 
+-- | Terms <tt>t</tt> that have free variables <tt>i</tt>
+class Identifiable i => HasFreeVars t i | t -> i
+freeVars :: HasFreeVars t i => t -> Set i
+
 -- | A name to be bound; <a>Nothing</a> represents a wildcard, e.g.,
 --   <tt>let _ = ...</tt>.
 type Binder = Maybe VarId
@@ -178,6 +185,9 @@ Identifier :: String -> Identifier
 isCons :: Identifiable a => a -> Bool
 
 -- | Whether an identifier refers to a type or data variable.
+--   
+--   Note that internal variables (i.e., <tt>isIVar</tt>) are also
+--   considered variables.
 isVar :: Identifiable a => a -> Bool
 
 -- | Mangle all identifiers in some data structure.
@@ -198,6 +208,15 @@ mangle :: (Identifiable i, Data i, Data a) => Proxy i -> a -> a
 
 -- | Mangle all type and data variable identifiers.
 mangleVars :: Data a => a -> a
+
+-- | Whether an identifier is an compiler-generated variable name.
+isGenerated :: Identifiable a => a -> Bool
+
+-- | Generate an internal variable name (parenthesized) from some hint.
+genId :: Identifiable a => a -> a
+
+-- | Filter out generated identifiers.
+ungenId :: Identifiable a => a -> Maybe a
 instance Data.Data.Data Common.Identifiers.Identifier
 instance GHC.Classes.Ord Common.Identifiers.Identifier
 instance GHC.Classes.Eq Common.Identifiers.Identifier
@@ -602,6 +621,7 @@ instance GHC.Base.Semigroup Codegen.LibSSM.CIdent
 instance Language.C.Quote.Base.ToIdent Codegen.LibSSM.CIdent
 instance Common.Identifiers.Identifiable Codegen.LibSSM.CIdent
 instance Data.String.IsString Codegen.LibSSM.CIdent
+instance GHC.Show.Show Codegen.LibSSM.CIdent
 instance GHC.Classes.Ord Codegen.LibSSM.CIdent
 instance GHC.Classes.Eq Codegen.LibSSM.CIdent
 instance GHC.Classes.Ord Codegen.LibSSM.CSize
@@ -624,6 +644,9 @@ Dump :: String -> Error
 
 -- | Internal error; should be unreachable
 UnexpectedError :: ErrorMsg -> Error
+
+-- | "It's a research artifact"
+UnimplementedError :: ErrorMsg -> Error
 
 -- | Round peg in square hole
 TypeError :: ErrorMsg -> Error
@@ -702,6 +725,9 @@ unexpected :: MonadError Error m => String -> m a
 
 -- | Log a compiler warning.
 warn :: MonadWriter [Warning] m => Warning -> m ()
+
+-- | Report unexpected compiler error and halt pipeline.
+todo :: MonadError Error m => String -> m a
 
 -- | Execute compiler pass in I/O monad, exiting upon exception.
 passIO :: Pass a -> IO (a, [Warning])
@@ -873,6 +899,9 @@ collectTApp :: Typ -> (Typ, [Typ])
 -- | Collect a curried application into the function and its list of
 --   arguments.
 collectApp :: Expr -> (Expr, [Expr])
+
+-- | Collect a pattern application into the destructor and arguments.
+collectPApp :: Pat -> (Pat, [Pat])
 
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
@@ -1423,329 +1452,157 @@ instance GHC.Show.Show Front.Options
 instance GHC.Classes.Eq Front.Options
 instance Common.Default.Default Front.Options
 
+module IR.Types.Type
 
--- | Common definitions for the type system(s) used in this compiler.
+-- | The type of sslang types.
 --   
---   The following is a sketch of the type pipeline (from top to bottom):
+--   Structurally speaking, these are very simple. Types are either type
+--   variables or type constructors applied to some other types.
 --   
---   Types.Ast: type classes + polymorphic types + implicit types (to be
---   inferred)
+--   Builtin types (and type constructors) include <a>Arrow</a>,
+--   <a>Unit</a>, <a>Ref</a>, <a>List</a>, and various sizes of tuples; for
+--   convenience, these are defined using GHC extensions PatternSynonyms.
+data Type
+TCon :: TConId -> [Type] -> Type
+TVar :: TVarId -> Type
+
+-- | Constraints on a type scheme.
 --   
---   (type inference)
+--   For now, we only support trivial constraints.
+data Constraint
+CTrue :: Constraint
+
+-- | Schemes quantify over <a>Type</a> variables and impose
+--   <a>Constraint</a>.
 --   
---   Types.Classes: type classes + polymorphic types
+--   <a>SchemeOf</a> is implemented a functor over some kind of type so
+--   that we can easily substitute in <a>Type</a> vs <tt>UType</tt> when
+--   performing type inference/unification.
+data SchemeOf t
+Forall :: Set TVarId -> Constraint -> t -> SchemeOf t
+
+-- | Unwrap a scheme and obtain the underlying type.
+unScheme :: SchemeOf t -> t
+
+-- | Construct a scheme with quantified type variables and a trivial
+--   constraint
+forall :: (Functor l, Foldable l) => l TVarId -> t -> SchemeOf t
+
+-- | Schemes over <a>Type</a>.
+newtype Scheme
+Scheme :: SchemeOf Type -> Scheme
+
+-- | An annotation records the annotated portion of a pattern.
+data Annotation
+AnnType :: Type -> Annotation
+AnnDCon :: DConId -> [Annotation] -> Annotation
+AnnArrows :: [Annotation] -> Annotation -> Annotation
+newtype Annotations
+Annotations :: [Annotation] -> Annotations
+unAnnotations :: Annotations -> [Annotation]
+fromAnnotations :: Annotations -> Type
+schemeOf :: Type -> Scheme
+
+-- | Some data type that contains a sslang <a>Type</a>.
+class HasType a
+getType :: HasType a => a -> Type
+
+-- | May appear in type annotations; indicates a fresh free type variable.
+pattern Hole :: Type
+pattern Arrow :: Type -> Type -> Type
+unfoldArrow :: Type -> ([Type], Type)
+foldArrow :: ([Type], Type) -> Type
+pattern Unit :: Type
+pattern Ref :: Type -> Type
+pattern List :: Type -> Type
+pattern Time :: Type
+pattern I64 :: Type
+pattern U64 :: Type
+pattern I32 :: Type
+pattern U32 :: Type
+pattern I16 :: Type
+pattern U16 :: Type
+pattern I8 :: Type
+pattern U8 :: Type
+isInt :: Type -> Bool
+isUInt :: Type -> Bool
+isNum :: Type -> Bool
+tuple :: [Type] -> Type
+
+-- | Tests whether a <a>Type</a> is a tuple of some arity.
+isTuple :: Type -> Bool
+
+-- | Construct the name of the built-in tuple type of given arity.
 --   
---   (typeclass instantiation)
+--   Fails if arity is less than 2.
+tupleId :: (Integral i, Identifiable v) => i -> v
+
+-- | More convenient representation of tuple types, for pattern-matching.
+data TupleView
+
+-- | 2-tuples
+Tup2 :: (Type, Type) -> TupleView
+
+-- | 3-tuples
+Tup3 :: (Type, Type, Type) -> TupleView
+
+-- | 4-tuples
+Tup4 :: (Type, Type, Type, Type) -> TupleView
+
+-- | n-ary tuples
+TupN :: [Type] -> TupleView
+
+-- | not a tuple
+NotATuple :: TupleView
+
+-- | Convert a <a>Type</a> to a <a>TupleView</a>; convenient for
+--   ViewPatterns.
 --   
---   Types.Poly: polymorphic types
---   
---   (monomophisation)
---   
---   Types.Flat: concrete only
-module IR.Types.TypeSystem
-
--- | The number of arguments a type constructor will take.
-type Arity = Int
-
--- | Builtin type constructors that should be preserved across all type
---   systems.
-data Builtin t
-
--- | Singleton type <tt>()</tt>
-Unit :: Builtin t
-
--- | Uninhabited type <tt>!</tt>, coerces with anything
-Void :: Builtin t
-
--- | Reference of <tt>&amp;</tt>
-Ref :: t -> Builtin t
-
--- | Function arrow <tt>a -&gt; b</tt>
-Arrow :: t -> t -> Builtin t
-
--- | Tuple with two or more fields
-Tuple :: [t] -> Builtin t
-
--- | Two's complement binary type with size in bits
-Integral :: Int -> Builtin t
-
--- | A type system must allow us to construct and access underlying
---   builtins.
---   
---   Instances should satisfy the following law:
---   
---   <ul>
---   <li><pre>injectBuiltin . projectBuiltin = Just</pre></li>
---   </ul>
-class TypeSystem t
-projectBuiltin :: TypeSystem t => Builtin t -> t
-injectBuiltin :: TypeSystem t => t -> Maybe (Builtin t)
-
--- | Helper to construct <a>Unit</a> type in any <a>TypeSystem</a>.
-unit :: TypeSystem t => t
-
--- | Helper to construct <a>Void</a> type in any <a>TypeSystem</a>.
-void :: TypeSystem t => t
-
--- | Helper to construct <a>Ref</a> type in any <a>TypeSystem</a>.
-ref :: TypeSystem t => t -> t
-
--- | Helper to construct <a>Arrow</a> type in any <a>TypeSystem</a>.
-arrow :: TypeSystem t => t -> t -> t
-
--- | Helper to unwrap <a>Ref</a> in any <a>TypeSystem</a>.
-deref :: TypeSystem t => t -> Maybe t
-
--- | Helper to unwrap <a>Arrow</a> in any <a>TypeSystem</a>.
-dearrow :: TypeSystem t => t -> Maybe (t, t)
-
--- | Helper to construct tuples from list of types, accounting for size
---   &lt; 2.
-tuple :: TypeSystem t => [t] -> t
-
--- | Helper to construct integral type.
-int :: TypeSystem t => Int -> t
-
--- | Decompose an <a>Arrow</a> type into a list of argument types and a
---   return type.
-collectArrow :: TypeSystem t => t -> ([t], t)
-
--- | The type definition associated with a type constructor.
---   
---   A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
+--   For example, to match on just 2-tuples;
 --   
 --   <pre>
---   TypeDef { targs = [a]
---           , [ (<a>Cons</a>, VariantUnnamed [TVar a, TCon (<a>MyList</a> [TVar a])])
---             , (<a>Nil</a>, VariantUnnamed [])
---             ]
---           }
+--   foo :: Type -&gt; String
+--   foo (tupleOf -&gt; Tup2 (a, b)) = "2-tuple of " ++ show a ++ " and " ++ show b
+--   foo t                        = "Some other kind of type: " ++ show t
 --   </pre>
---   
---   (Data constructors for identifiers are omitted for brevity.)
---   
---   Note that for a flat type system, where all type constructors are
---   nullary, targs will just be set to [].
-data TypeDef t
-TypeDef :: [(DConId, TypeVariant t)] -> [TVarId] -> TypeDef t
-[variants] :: TypeDef t -> [(DConId, TypeVariant t)]
-[targs] :: TypeDef t -> [TVarId]
-
--- | Arguments to a data constructor, whose fields may or may not be named
-data TypeVariant t
-
--- | A record with named fields
-VariantNamed :: [(VarId, t)] -> TypeVariant t
-
--- | An algebraic type with unnamed fields
-VariantUnnamed :: [t] -> TypeVariant t
-
--- | The number of fields in a <a>TypeVariant</a>.
-variantFields :: TypeVariant t -> Int
-instance Data.Data.Data t => Data.Data.Data (IR.Types.TypeSystem.Builtin t)
-instance GHC.Classes.Ord t => GHC.Classes.Ord (IR.Types.TypeSystem.Builtin t)
-instance GHC.Show.Show t => GHC.Show.Show (IR.Types.TypeSystem.Builtin t)
-instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.Types.TypeSystem.Builtin t)
-instance Data.Data.Data t => Data.Data.Data (IR.Types.TypeSystem.TypeVariant t)
-instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.Types.TypeSystem.TypeVariant t)
-instance GHC.Show.Show t => GHC.Show.Show (IR.Types.TypeSystem.TypeVariant t)
-instance Data.Data.Data t => Data.Data.Data (IR.Types.TypeSystem.TypeDef t)
-instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.Types.TypeSystem.TypeDef t)
-instance GHC.Show.Show t => GHC.Show.Show (IR.Types.TypeSystem.TypeDef t)
-instance GHC.Base.Functor IR.Types.TypeSystem.TypeDef
-instance GHC.Base.Functor IR.Types.TypeSystem.TypeVariant
-instance GHC.Base.Functor IR.Types.TypeSystem.Builtin
-instance Prettyprinter.Internal.Pretty t => Prettyprinter.Internal.Pretty (IR.Types.TypeSystem.Builtin t)
-instance Common.Pretty.Dumpy t => Common.Pretty.Dumpy (IR.Types.TypeSystem.Builtin t)
-
-
--- | Type system supporting (parametric) polymorphism.
---   
---   Based on the Hindley-Milner-Damas type system and the definitions in
---   OCaml and Caml Light.
---   
---   This is written with the intention of being a lower-level type system,
---   one that a more expressive type system compiles down into. Notably,
---   this type system does not support aliases, records (data constructors
---   with named field), etc. These will have been instantiated/desugared by
---   this point.
---   
---   This type system also does not support type classes or any sort of
---   higher-kinded polymorphism. This is due to following restrictions:
---   
---   <ul>
---   <li>No partially-applied type constructors; whenever a type
---   constructor appears in a type expression, it is fully applied. e.g.,
---   <tt>Option</tt> by itself is not allowed, but <tt>Option Int</tt>
---   is.</li>
---   <li>No abstraction over type constructors; the head (left-most term)
---   of a type application must be a concrete type constructor. e.g.,
---   <tt>'1 '2</tt> is not allowed.</li>
---   <li>No quantifiers inside of type expressions; all quantifiers must be
---   top-level (also known as prenex normal form, or PNF). This is what
---   distinguishes HM from System F, and what makes the former decidable
---   while the latter undecidable.</li>
---   </ul>
-module IR.Types.Poly
-
--- | The language of type expressions, e.g., what appears in a type
---   signature.
-data Type
-
--- | Builtin types
-TBuiltin :: Builtin Type -> Type
-
--- | Type constructor, e.g., <tt>Option '0</tt>
-TCon :: TConId -> [Type] -> Type
-
--- | Type variables, e.g., <tt>'0</tt>
-TVar :: TVarId -> Type
-
--- | Builtin type constructors that should be preserved across all type
---   systems.
-data Builtin t
-
--- | Singleton type <tt>()</tt>
-Unit :: Builtin t
-
--- | Uninhabited type <tt>!</tt>, coerces with anything
-Void :: Builtin t
-
--- | Reference of <tt>&amp;</tt>
-Ref :: t -> Builtin t
-
--- | Function arrow <tt>a -&gt; b</tt>
-Arrow :: t -> t -> Builtin t
-
--- | Tuple with two or more fields
-Tuple :: [t] -> Builtin t
-
--- | Two's complement binary type with size in bits
-Integral :: Int -> Builtin t
-instance Data.Data.Data IR.Types.Poly.Type
-instance GHC.Show.Show IR.Types.Poly.Type
-instance GHC.Classes.Eq IR.Types.Poly.Type
-instance IR.Types.TypeSystem.TypeSystem IR.Types.Poly.Type
-instance Prettyprinter.Internal.Pretty IR.Types.Poly.Type
-instance Common.Pretty.Dumpy IR.Types.Poly.Type
-
-
--- | Types with Typeclasses, e.g., after type inference
---   
---   For now, just the polymorphic types.
-module IR.Types.Classes
-
--- | Builtin type constructors that should be preserved across all type
---   systems.
-data Builtin t
-
--- | Singleton type <tt>()</tt>
-Unit :: Builtin t
-
--- | Uninhabited type <tt>!</tt>, coerces with anything
-Void :: Builtin t
-
--- | Reference of <tt>&amp;</tt>
-Ref :: t -> Builtin t
-
--- | Function arrow <tt>a -&gt; b</tt>
-Arrow :: t -> t -> Builtin t
-
--- | Tuple with two or more fields
-Tuple :: [t] -> Builtin t
-
--- | Two's complement binary type with size in bits
-Integral :: Int -> Builtin t
-
--- | The language of type expressions, e.g., what appears in a type
---   signature.
-data Type
-
--- | Builtin types
-TBuiltin :: Builtin Type -> Type
-
--- | Type constructor, e.g., Option '0
-TCon :: TConId -> [Type] -> Type
-
--- | Type variables, e.g., '0
-TVar :: TVarId -> Type
-
--- | Type scheme.
-data Scheme
-Forall :: [TVarId] -> Type -> Scheme
-instance Data.Data.Data IR.Types.Classes.Type
-instance GHC.Classes.Ord IR.Types.Classes.Type
-instance GHC.Classes.Eq IR.Types.Classes.Type
-instance GHC.Show.Show IR.Types.Classes.Scheme
-instance Data.Data.Data IR.Types.Classes.Scheme
-instance GHC.Classes.Ord IR.Types.Classes.Scheme
-instance GHC.Classes.Eq IR.Types.Classes.Scheme
-instance Prettyprinter.Internal.Pretty IR.Types.Classes.Scheme
-instance IR.Types.TypeSystem.TypeSystem IR.Types.Classes.Type
-instance Prettyprinter.Internal.Pretty IR.Types.Classes.Type
-instance GHC.Show.Show IR.Types.Classes.Type
-
-
--- | Type annotations, as collected from the Ast.
-module IR.Types.Annotated
-
--- | Builtin type constructors that should be preserved across all type
---   systems.
-data Builtin t
-
--- | Singleton type <tt>()</tt>
-Unit :: Builtin t
-
--- | Uninhabited type <tt>!</tt>, coerces with anything
-Void :: Builtin t
-
--- | Reference of <tt>&amp;</tt>
-Ref :: t -> Builtin t
-
--- | Function arrow <tt>a -&gt; b</tt>
-Arrow :: t -> t -> Builtin t
-
--- | Tuple with two or more fields
-Tuple :: [t] -> Builtin t
-
--- | Two's complement binary type with size in bits
-Integral :: Int -> Builtin t
-
--- | A single term may be annotated by zero or more types.
---   
---   When multiple exist, it should be assumed that they are equivalent, in
---   the sense that they can be unified.
---   
---   Type annotations can be added using <a>&lt;&gt;</a> (from
---   <a>Semigroup</a>), while <a>mempty</a> represents no type annotation.
-newtype Type
-Type :: [TypeAnnote] -> Type
-
--- | A type annotation.
-data TypeAnnote
-
--- | Builtin types
-TBuiltin :: Builtin Type -> TypeAnnote
-
--- | Type constructor, e.g., Option '0
-TCon :: TConId -> [Type] -> TypeAnnote
-
--- | Type variables, e.g., '0
-TVar :: TVarId -> TypeAnnote
-
--- | Convenience helper for no type annotations.
-untyped :: Type
-instance GHC.Base.Monoid IR.Types.Annotated.Type
-instance GHC.Base.Semigroup IR.Types.Annotated.Type
-instance Data.Data.Data IR.Types.Annotated.Type
-instance GHC.Show.Show IR.Types.Annotated.Type
-instance GHC.Classes.Eq IR.Types.Annotated.Type
-instance Data.Data.Data IR.Types.Annotated.TypeAnnote
-instance GHC.Classes.Eq IR.Types.Annotated.TypeAnnote
-instance GHC.Show.Show IR.Types.Annotated.TypeAnnote
-instance IR.Types.TypeSystem.TypeSystem IR.Types.Annotated.Type
-instance Prettyprinter.Internal.Pretty IR.Types.Annotated.Type
-instance Prettyprinter.Internal.Pretty IR.Types.Annotated.TypeAnnote
+tupleOf :: Type -> TupleView
+scheme :: [String] -> Constraint -> Type -> Scheme
+tv :: String -> Type
+instance Data.Data.Data IR.Types.Type.Type
+instance GHC.Show.Show IR.Types.Type.Type
+instance GHC.Classes.Eq IR.Types.Type.Type
+instance Data.Data.Data IR.Types.Type.Constraint
+instance GHC.Show.Show IR.Types.Type.Constraint
+instance GHC.Classes.Eq IR.Types.Type.Constraint
+instance Data.Data.Data t => Data.Data.Data (IR.Types.Type.SchemeOf t)
+instance Data.Traversable.Traversable IR.Types.Type.SchemeOf
+instance Data.Foldable.Foldable IR.Types.Type.SchemeOf
+instance GHC.Base.Functor IR.Types.Type.SchemeOf
+instance GHC.Show.Show t => GHC.Show.Show (IR.Types.Type.SchemeOf t)
+instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.Types.Type.SchemeOf t)
+instance Data.Data.Data IR.Types.Type.Scheme
+instance GHC.Show.Show IR.Types.Type.Scheme
+instance GHC.Classes.Eq IR.Types.Type.Scheme
+instance Data.Data.Data IR.Types.Type.Annotation
+instance GHC.Show.Show IR.Types.Type.Annotation
+instance GHC.Classes.Eq IR.Types.Type.Annotation
+instance GHC.Base.Monoid IR.Types.Type.Annotations
+instance GHC.Base.Semigroup IR.Types.Type.Annotations
+instance Data.Data.Data IR.Types.Type.Annotations
+instance GHC.Show.Show IR.Types.Type.Annotations
+instance GHC.Classes.Eq IR.Types.Type.Annotations
+instance IR.Types.Type.HasType IR.Types.Type.Type
+instance IR.Types.Type.HasType IR.Types.Type.Scheme
+instance Prettyprinter.Internal.Pretty IR.Types.Type.Annotations
+instance Common.Pretty.Dumpy IR.Types.Type.Annotations
+instance Prettyprinter.Internal.Pretty IR.Types.Type.Annotation
+instance Common.Pretty.Dumpy IR.Types.Type.Annotation
+instance Common.Identifiers.HasFreeVars IR.Types.Type.Scheme Common.Identifiers.TVarId
+instance Prettyprinter.Internal.Pretty IR.Types.Type.Scheme
+instance Common.Pretty.Dumpy IR.Types.Type.Scheme
+instance Common.Identifiers.HasFreeVars IR.Types.Type.Type Common.Identifiers.TVarId
+instance Prettyprinter.Internal.Pretty IR.Types.Type.Type
+instance Common.Pretty.Dumpy IR.Types.Type.Type
 
 
 -- | Sslang's intermediate representation and its associated helpers.
@@ -1755,12 +1612,33 @@ module IR.IR
 --   
 --   <tt>t</tt> is the type system in use, e.g., <a>IR.Types.Flat</a>
 data Program t
-Program :: VarId -> String -> [(VarId, t)] -> [(VarId, Expr t)] -> [(TConId, TypeDef t)] -> Program t
+Program :: VarId -> String -> [(VarId, Type)] -> [(VarId, Expr t)] -> [(TConId, TypeDef)] -> Program t
 [programEntry] :: Program t -> VarId
 [cDefs] :: Program t -> String
-[externDecls] :: Program t -> [(VarId, t)]
+[externDecls] :: Program t -> [(VarId, Type)]
 [programDefs] :: Program t -> [(VarId, Expr t)]
-[typeDefs] :: Program t -> [(TConId, TypeDef t)]
+[typeDefs] :: Program t -> [(TConId, TypeDef)]
+
+-- | The type definition associated with a type constructor. A definition
+--   for `data MyList a = Cons a (MyList a) | Nil` looks like: <tt> TypeDef
+--   { targs = [a] , [ (<a>Cons</a>, VariantUnnamed [TVar a, TCon
+--   (<a>MyList</a> [TVar a])]) , (<a>Nil</a>, VariantUnnamed []) ] } </tt>
+--   (Data constructors for identifiers are omitted for brevity.) Note that
+--   for a flat type system, where all type constructors are nullary, targs
+--   will just be set to [].
+data TypeDef
+TypeDef :: [(DConId, TypeVariant)] -> [TVarId] -> TypeDef
+[variants] :: TypeDef -> [(DConId, TypeVariant)]
+[targs] :: TypeDef -> [TVarId]
+
+-- | Arguments to a data constructor, whose fields may or may not be named
+data TypeVariant
+
+-- | A record with named fields
+VariantNamed :: [(VarId, Type)] -> TypeVariant
+
+-- | An algebraic type with unnamed fields
+VariantUnnamed :: [Type] -> TypeVariant
 
 -- | A name to be bound; <a>Nothing</a> represents a wildcard, e.g.,
 --   <tt>let _ = ...</tt>.
@@ -1772,7 +1650,6 @@ type Binder = Maybe VarId
 --   means <tt>1</tt>,
 data Literal
 LitIntegral :: Integer -> Literal
-LitBool :: Bool -> Literal
 LitEvent :: Literal
 
 -- | Primitive operations.
@@ -1974,6 +1851,23 @@ TConId :: Identifier -> TConId
 newtype DConId
 DConId :: Identifier -> DConId
 
+-- | The type of sslang types.
+--   
+--   Structurally speaking, these are very simple. Types are either type
+--   variables or type constructors applied to some other types.
+--   
+--   Builtin types (and type constructors) include <a>Arrow</a>,
+--   <a>Unit</a>, <a>Ref</a>, <a>List</a>, and various sizes of tuples; for
+--   convenience, these are defined using GHC extensions PatternSynonyms.
+data Type
+
+-- | An annotation records the annotated portion of a pattern.
+data Annotation
+data Annotations
+
+-- | The number of fields in a <a>TypeVariant</a>.
+variantFields :: TypeVariant -> Int
+
 -- | Predicate of whether an expression "looks about right".
 --   
 --   Description left deliberately vague so that we have the flexibility to
@@ -1984,13 +1878,18 @@ DConId :: Identifier -> DConId
 --   through all sub-expressions of an expression.
 wellFormed :: Expr t -> Bool
 
+-- | Create a lambda chain given a list of argument-type pairs and a body.
+foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
+
 -- | Collect a curried list of function arguments from a nesting of
 --   lambdas.
-collectLambda :: Expr t -> ([Binder], Expr t)
+unfoldLambda :: Expr t -> ([Binder], Expr t)
 
--- | Create a lambda chain given a list of argument-type pairs and a body.
-makeLambdaChain :: TypeSystem t => [(Binder, t)] -> Expr t -> Expr t
-extract :: Comonad w => w a -> a
+-- | Extract the type carried by an <a>Expr</a>.
+extract :: Expr t -> t
+
+-- | Replace the top-level type carried by an <a>Expr</a>.
+inject :: t -> Expr t -> Expr t
 
 -- | Apply a function to zero or more arguments.
 --   
@@ -2014,6 +1913,15 @@ zipApp :: Expr t -> [(Expr t, t)] -> Expr t
 --   
 --   <a>unzipApp</a> is the inverse of <a>zipApp</a>.
 unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
+
+-- | Whether an expression is a value.
+isValue :: Expr t -> Bool
+instance Data.Data.Data IR.IR.TypeVariant
+instance GHC.Classes.Eq IR.IR.TypeVariant
+instance GHC.Show.Show IR.IR.TypeVariant
+instance Data.Data.Data IR.IR.TypeDef
+instance GHC.Classes.Eq IR.IR.TypeDef
+instance GHC.Show.Show IR.IR.TypeDef
 instance Data.Data.Data IR.IR.Literal
 instance GHC.Show.Show IR.IR.Literal
 instance GHC.Classes.Eq IR.IR.Literal
@@ -2026,107 +1934,27 @@ instance GHC.Classes.Eq IR.IR.Primitive
 instance Data.Data.Data IR.IR.Alt
 instance GHC.Show.Show IR.IR.Alt
 instance GHC.Classes.Eq IR.IR.Alt
+instance Data.Traversable.Traversable IR.IR.Expr
+instance Data.Foldable.Foldable IR.IR.Expr
+instance GHC.Base.Functor IR.IR.Expr
 instance Data.Data.Data t => Data.Data.Data (IR.IR.Expr t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.IR.Expr t)
 instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.IR.Expr t)
+instance GHC.Base.Functor IR.IR.Program
 instance Data.Data.Data t => Data.Data.Data (IR.IR.Program t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.IR.Program t)
 instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.IR.Program t)
-instance GHC.Base.Functor IR.IR.Program
-instance (Prettyprinter.Internal.Pretty t, IR.Types.TypeSystem.TypeSystem t) => Prettyprinter.Internal.Pretty (IR.IR.Program t)
-instance (Common.Pretty.Dumpy t, IR.Types.TypeSystem.TypeSystem t) => Common.Pretty.Dumpy (IR.IR.Program t)
-instance GHC.Base.Functor IR.IR.Expr
-instance Control.Comonad.Comonad IR.IR.Expr
-instance Data.Foldable.Foldable IR.IR.Expr
+instance Prettyprinter.Internal.Pretty (IR.IR.Program IR.Types.Type.Type)
+instance Common.Pretty.Dumpy (IR.IR.Program IR.Types.Type.Type)
+instance Common.Identifiers.HasFreeVars (IR.IR.Expr t) Common.Identifiers.VarId
 instance Prettyprinter.Internal.Pretty (IR.IR.Expr ())
-instance Common.Pretty.Dumpy t => Common.Pretty.Dumpy (IR.IR.Expr t)
+instance Common.Pretty.Dumpy (IR.IR.Expr IR.Types.Type.Type)
 instance Prettyprinter.Internal.Pretty IR.IR.Alt
 instance Common.Pretty.Dumpy IR.IR.Alt
 instance Prettyprinter.Internal.Pretty IR.IR.PrimOp
 instance Common.Pretty.Dumpy IR.IR.PrimOp
 instance Prettyprinter.Internal.Pretty IR.IR.Literal
 instance Common.Pretty.Dumpy IR.IR.Literal
-
-
--- | Infer types for optionally annotated program.
---   
---   For now, this module implements a very crude form of pure,
---   syntax-directed type inference where type annotations can be locally
---   and immediately inferred, without the help of a type
---   environment/context.
-module IR.TypeChecker
-
--- | Typing Environment
-data TypeCtx
-TypeCtx :: Map VarId Type -> Map DConId Type -> TypeCtx
-[varMap] :: TypeCtx -> Map VarId Type
-[dConMap] :: TypeCtx -> Map DConId Type
-newtype InferFn a
-InferFn :: StateT TypeCtx Pass a -> InferFn a
-
--- | Run a InferFn computation.
-runInferFn :: InferFn a -> Pass a
-
--- | Insert a variable ID and its type into current typing context.
-insertVar :: VarId -> Type -> InferFn ()
-
--- | Replace the current typing context with a new one.
-replaceCtx :: TypeCtx -> InferFn ()
-
--- | Look up the type of a variable in the current typing context given its
---   variable ID.
-lookupVar :: VarId -> InferFn (Maybe Type)
-
--- | Look up the type of a data constructor in the typing context.
-lookupDCon :: DConId -> InferFn (Maybe Type)
-
--- | Infer all the program defs of the given program.
-inferProgram :: Program Type -> Pass (Program Type)
-
--- | Pass all program typeDefs through the typechecker
---   
---   Change Ann.Type to Classes.Type For each ADT, save ('DConId, 'TConId)
---   key-value pairs in typing context for future use
-inferADT :: [(TConId, TypeDef Type)] -> InferFn [(TConId, TypeDef Type)]
-inferExterns :: [(VarId, Type)] -> InferFn [(VarId, Type)]
-
--- | Top level inference.
---   
---   This will infer the (VarId, Expr) pair sequentially and add the
---   infered types into the type context so that these info can be used
---   when infering the following expressions.
-inferProgramDefs :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
-
--- | Infer a single expression <tt>e</tt>.
---   
---   This function will also infer any nested expressions inside <tt>e</tt>
---   and all expressions in the return value will have Classes.Type as its
---   type. Error will be thrown if the type annotation is in inconsistent
---   with the true true or the expression is known.
-inferExpr :: Expr Type -> InferFn (Expr Type)
-
--- | Infer the type of a Primitive expression.
-inferPrim :: Expr Type -> InferFn (Expr Type)
-
--- | Check type of a binary integer operation.
-inferPrimBinop :: PrimOp -> Expr Type -> Expr Type -> InferFn (Expr Type)
-
--- | Helper function to support local modificaton of type context.
-withNewScope :: InferFn a -> InferFn a
-
--- | Helper function to do type inference with the knowledge of the correct
---   type for a binding.
-withVty :: Expr Type -> Binder -> Type -> InferFn ()
-
--- | Transfrom an Ann.Type to Classes.Type.
-anns2Class :: Type -> InferFn Type
-ann2Class :: TypeAnnote -> InferFn Type
-instance Control.Monad.State.Class.MonadState IR.TypeChecker.TypeCtx IR.TypeChecker.InferFn
-instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.TypeChecker.InferFn
-instance Control.Monad.Fail.MonadFail IR.TypeChecker.InferFn
-instance GHC.Base.Monad IR.TypeChecker.InferFn
-instance GHC.Base.Applicative IR.TypeChecker.InferFn
-instance GHC.Base.Functor IR.TypeChecker.InferFn
 
 
 -- | Substitute AST nodes with magical primitives.
@@ -2145,7 +1973,183 @@ module IR.SubstMagic
 --   <li>- Given: myProm :: Program Annotated.Type</li>
 --   <li>- Do: substMagic (Proxy :: Proxy Annotated.Type) myProg @@</li>
 --   </ul>
-substMagic :: (TypeSystem t, Data t, Data a) => Proxy t -> a -> a
+substMagic :: (Data t, Data a) => Proxy t -> a -> a
+
+
+-- | Unroll let-def blocks to break apart non-mutually recursive
+--   definitions.
+module IR.SegmentLets
+segmentLets :: Program T -> Pass (Program T)
+segmentDefs :: Show t => [Def t] -> [[Def t]]
+
+module IR.ClassInstantiation
+instProgram :: Program Type -> Pass (Program Type)
+
+
+-- | Extract and encapsulate the type information needed during codegen.
+module Codegen.Typegen
+
+-- | Information and codegen handlers associated with each data
+--   constructor.
+data DConInfo
+DConInfo :: TConId -> Int -> Bool -> Exp -> Exp -> (Int -> Exp -> Exp) -> DConInfo
+
+-- | the type that the data constructor inhabits
+[dconType] :: DConInfo -> TConId
+
+-- | number of fields
+[dconSize] :: DConInfo -> Int
+
+-- | whether the data constructor is heap-allocated
+[dconOnHeap] :: DConInfo -> Bool
+
+-- | the dcon tag to match on, i.e., in <tt>case tag</tt>
+[dconCase] :: DConInfo -> Exp
+
+-- | constructs a dcon instance
+[dconConstruct] :: DConInfo -> Exp
+
+-- | retrieve the ith field
+[dconDestruct] :: DConInfo -> Int -> Exp -> Exp
+
+-- | Information and codegen handlers associated with each type
+--   constructor.
+data TConInfo
+TConInfo :: TypeEncoding -> (Exp -> Exp) -> TConInfo
+
+-- | how the data type is encoded
+[typeEncoding] :: TConInfo -> TypeEncoding
+
+-- | how to retrieve the tag of an instance
+[typeScrut] :: TConInfo -> Exp -> Exp
+
+-- | Type-related information, abstracted behind partial lookup functions.
+data TypegenInfo
+TypegenInfo :: (DConId -> Maybe DConInfo) -> (TConId -> Maybe TConInfo) -> TypegenInfo
+
+-- | for each data constructor.
+[dconInfo] :: TypegenInfo -> DConId -> Maybe DConInfo
+
+-- | for each type constructor.
+[tconInfo] :: TypegenInfo -> TConId -> Maybe TConInfo
+
+-- | Create codegen definitions and helpers for sslang type definitions.
+genTypes :: [(TConId, TypeDef)] -> Pass ([Definition], TypegenInfo)
+
+module IR.Types.Unification
+type Type = UTerm TypeF IntVar
+type Scheme = SchemeOf Type
+pattern TVar :: TVarId -> Type
+pattern TCon :: TConId -> [Type] -> Type
+applyBindings :: Type -> InferM ctx Type
+
+-- | Demote a <a>Type</a> to a regular <a>Type</a>.
+--   
+--   Fails if the unification type contains more than just contructors and
+--   variables.
+freeze :: Type -> InferM ctx Type
+
+-- | Promote a <a>Type</a> to a <a>Type</a>.
+unfreeze :: Type -> Type
+unfreezeAnn :: Type -> Type -> InferM ctx Scheme
+class HasFreeUVars a
+freeUVars :: HasFreeUVars a => a -> InferM ctx (Set IntVar)
+
+-- | Inference monad, build on top of the unification algorithm.
+type InferM ctx = ReaderT ctx (ExceptT Error (IntBindingT TypeF Pass))
+
+-- | See examples in <a>Control.Monad.Reader</a>. Note, the partially
+--   applied function type <tt>(-&gt;) r</tt> is a simple reader monad. See
+--   the <tt>instance</tt> declaration below.
+class Monad m => MonadReader r (m :: Type -> Type) | m -> r
+
+-- | Retrieves the monad environment.
+ask :: MonadReader r m => m r
+
+-- | Executes a computation in a modified environment.
+local :: MonadReader r m => (r -> r) -> m a -> m a
+
+-- | Retrieves a function of the current environment.
+reader :: MonadReader r m => (r -> a) -> m a
+
+-- | The strategy of combining computations that can throw exceptions by
+--   bypassing bound functions from the point an exception is thrown to the
+--   point that it is handled.
+--   
+--   Is parameterized over the type of error information and the monad type
+--   constructor. It is common to use <tt><a>Either</a> String</tt> as the
+--   monad type constructor for an error monad in which error descriptions
+--   take the form of strings. In that case and many other common cases the
+--   resulting monad is already defined as an instance of the
+--   <a>MonadError</a> class. You can also define your own error type
+--   and/or use a monad type constructor other than <tt><a>Either</a>
+--   <tt>String</tt></tt> or <tt><a>Either</a> <tt>IOError</tt></tt>. In
+--   these cases you will have to explicitly define instances of the
+--   <a>MonadError</a> class. (If you are using the deprecated
+--   <a>Control.Monad.Error</a> or <a>Control.Monad.Trans.Error</a>, you
+--   may also have to define an <a>Error</a> instance.)
+class Monad m => MonadError e (m :: Type -> Type) | m -> e
+
+-- | Is used within a monadic computation to begin exception processing.
+throwError :: MonadError e m => e -> m a
+
+-- | A handler function to handle previous errors and return to normal
+--   execution. A common idiom is:
+--   
+--   <pre>
+--   do { action1; action2; action3 } `catchError` handler
+--   </pre>
+--   
+--   where the <tt>action</tt> functions can call <a>throwError</a>. Note
+--   that <tt>handler</tt> and the do-block must have the same return type.
+catchError :: MonadError e m => m a -> (e -> m a) -> m a
+(=:=) :: Type -> Type -> InferM ctx ()
+infix 4 =:=
+(<:=) :: Type -> Type -> InferM ctx Bool
+infix 4 <:=
+fresh :: InferM ctx Type
+generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
+instantiate :: Scheme -> InferM ctx Type
+runInfer :: ctx -> InferM ctx a -> Pass a
+
+-- | Tests whether a <a>Type</a> is a tuple of some arity.
+isTuple :: Type -> Bool
+tuple :: [Type] -> Type
+pattern U8 :: Type
+pattern I8 :: Type
+pattern U32 :: Type
+pattern I32 :: Type
+pattern U64 :: Type
+pattern I64 :: Type
+pattern Time :: Type
+pattern List :: Type -> Type
+pattern Ref :: Type -> Type
+pattern Unit :: Type
+pattern Arrow :: Type -> Type -> Type
+foldArrow :: ([Type], Type) -> Type
+unfoldArrow :: Type -> ([Type], Type)
+instance Control.Unification.Types.Unifiable IR.Types.Unification.TypeF
+instance GHC.Generics.Generic1 IR.Types.Unification.TypeF
+instance Data.Traversable.Traversable IR.Types.Unification.TypeF
+instance Data.Foldable.Foldable IR.Types.Unification.TypeF
+instance GHC.Base.Functor IR.Types.Unification.TypeF
+instance GHC.Classes.Eq a => GHC.Classes.Eq (IR.Types.Unification.TypeF a)
+instance GHC.Classes.Ord Control.Unification.IntVar.IntVar
+instance Control.Unification.Types.Unifiable []
+instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Type
+instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Scheme
+instance GHC.Show.Show a => GHC.Show.Show (IR.Types.Unification.TypeF a)
+instance Control.Unification.Types.Fallible IR.Types.Unification.TypeF Control.Unification.IntVar.IntVar Common.Compiler.Error
+
+module IR.Types.Inference
+inferProgram :: Program [Type] -> Pass (Program Type)
+instance IR.Types.Unification.HasFreeUVars IR.Types.Inference.InferCtx
+
+module IR.Types.Typechecking
+typecheckProgram :: Program Annotations -> Pass (Program Type)
+
+module IR.Types
+typecheckProgram :: Program Annotations -> Pass (Program Type)
 
 
 -- | Lower the representation of a sslang Ast into sslang IR.
@@ -2160,7 +2164,7 @@ substMagic :: (TypeSystem t, Data t, Data a) => Proxy t -> a -> a
 module IR.LowerAst
 
 -- | Lower an AST <tt>Program</tt> into IR.
-lowerProgram :: Program -> Pass (Program Type)
+lowerProgram :: Program -> Pass (Program Annotations)
 
 
 -- | Lift lambda definitions into the global scope.
@@ -2188,217 +2192,6 @@ module IR.InsertRefCounting
 
 -- | Entry-point to insert dup/drops.
 insertRefCounting :: Program Type -> Pass (Program Type)
-
-module IR.ClassInstantiation
-instProgram :: Program Type -> Pass (Program Type)
-
-
--- | Infer types for IR of optionally annotated program using Hindley
---   Milner type inference algorithm with union find tree data structure.
---   
---   There are three main stages of the algorithm 1. Assign symbolic
---   typenames During this stage, we walk through each expression
---   recursively, initialize its type by either assigning a fresh type
---   variable or looking it up in the type context at that point, and
---   generate a list of type equations to record the relationships between
---   types. We also collapse the list of type annotations into the most
---   specific one and put that information into a type equation as well to
---   bring it into the later inference. Note that we will be modifying the
---   expression monad simultaneously to record its new type info. 2. Solve
---   type equations using unification. During this stage, we solve the type
---   equations generated in the last stage and build a union find tree.
---   This stage should be merged with stage 1 in the future. 3. Find the
---   type of the expression. During this stage, we walk through each
---   expression recursively and assign it with its inferred type by loop up
---   the root of its temporary type in the union find tree.
---   
---   The three stages are encaptured by the functions <a>initTypeVars</a>,
---   <a>unifyAll</a>, and <a>getType</a>.
---   
---   TODO: - Define a partial order for the generality of types. The order
---   will be used to (1) collapse type annotations into the most specific
---   one; (2) check that type annotation is equal to or more specific than
---   the expression's inferred type. - Handle recursive function correctly.
-module IR.HM
-
--- | Inference State.
-data InferState
-InferState :: Map VarId Scheme -> [(Type, Type)] -> Map Type Type -> Int -> Map DConId (TConId, [TVarId], [Type]) -> InferState
-[varMap] :: InferState -> Map VarId Scheme
-[equations] :: InferState -> [(Type, Type)]
-[unionFindTree] :: InferState -> Map Type Type
-[count] :: InferState -> Int
-[dConType] :: InferState -> Map DConId (TConId, [TVarId], [Type])
-
--- | Inference Monad.
-newtype InferFn a
-InferFn :: StateT InferState Pass a -> InferFn a
-
--- | Run a InferFn computation.
-runInferFn :: InferFn a -> Pass a
-
--- | <a>inferProgram</a> <tt>p</tt> infers the type of all the programDefs
---   of the given program <tt>p</tt>.
-inferProgram :: Program Type -> Pass (Program Type)
-
--- | <a>recordFDefs</a> saves information about all the declared functions
---   for future use
-recordFDefs :: [(VarId, Expr Type)] -> InferFn ()
-
--- | <a>recordADTs</a> saves information about ADTs in the Inference State
---   for future use
---   
---   saves type of DCon as a (DCon,TCon) key-value pair transforms Ann.Type
---   to Classes.Type saves types of DCon args (the ADT fields) as (DCon,
---   [type]) key-value pairs
-recordADTs :: [(TConId, TypeDef Type)] -> InferFn [(TConId, TypeDef Type)]
-
--- | <tt>insertType</tt> inserts the overall type of an ADT's
---   <tt>DConid</tt> into the Inference State
-recordDCon :: TConId -> [TVarId] -> (DConId, TypeVariant Type) -> InferFn ()
-
--- | Record the types of extern symbols. NOTE: this does not actually check
---   for arity and probably doesn't do polymorphism correctly either.
-recordExterns :: [(VarId, Type)] -> InferFn [(VarId, Type)]
-
--- | <a>inferProgramDefs</a> <tt>ds</tt> infers the type of programDefs
---   <tt>ds</tt> recursively and binds each varibale to its type.
-inferProgramDefs :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
-
--- | <a>initAllTypeVars</a> initialize all the funcitons' type at once
-initAllTypeVars :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
-
--- | <a>getAllTypes</a> replace all the type variables in the initial
---   funciton types
-getAllTypes :: [(VarId, Expr Type)] -> InferFn [(VarId, Expr Type)]
-
--- | Class of things that may contain free type variables.
-class HasFreeTVars a
-freeTVars :: HasFreeTVars a => a -> Set TVarId
-
--- | Instantiates the type from the scheme <tt>Forall vs t</tt>.
---   
---   Create fresh type variable for each quantified type variable in
---   <tt>vs</tt> and substitute them in <tt>t</tt> by applying
---   <tt>subst</tt> to <tt>t</tt>.
-instantiate :: Scheme -> InferFn Type
-
--- | Generalizes the type <tt>t</tt> into a type scheme given the typing
---   context <tt>ctx</tt>.
---   
---   Collect all the free type variables in the type <tt>t</tt> and all the
---   free type variables in the typing context <tt>ctx</tt>, away any type
---   variables that appear free in the type environment, and whatever is
---   leftover can be generalized into a type scheme.
-generalize :: Type -> InferFn Scheme
-
--- | <a>letters</a> represents list of identifiers to be used to construct
---   free type variables assigned during type inference. The leading '_'
---   distinguish them from user-annotated type variables.
-letters :: [String]
-
--- | <tt>dummyAnnT</tt> represents empty type annotation list.
-dummyAnnT :: Type
-
--- | Generates a new <tt>TVar</tt> using the next tick number and increment
---   the counter.
-fresh :: InferFn Type
-
--- | <a>lookupVar</a> <tt>v</tt> looks up the type scheme of a variable in
---   the current <a>varMap</a> given its variable ID <tt>v</tt>.
-lookupVar :: VarId -> InferFn (Maybe Scheme)
-
--- | Look up the type of a data constructor in the inference state.
-lookupDCon :: DConId -> InferFn (Maybe Scheme)
-
--- | <a>insertVar</a> <tt>v t</tt> Insert a variable ID and its type scheme
---   into current <a>varMap</a>.
-insertVar :: VarId -> Scheme -> InferFn ()
-
--- | <a>insertBinder</a> is a wrapper of <a>insertVar</a> for <a>Binder</a>
---   type.
-insertBinder :: Binder -> Scheme -> InferFn ()
-
--- | <a>insertEquation</a> <tt>e</tt> inserts <tt>e</tt> into the current
---   <a>equations</a> list.
-insertEquation :: (Type, Type) -> InferFn ()
-
--- | <a>insertUnion</a> <tt>t1 t2</tt> inserts <tt>t1 : t2</tt> into the
---   current <a>unionFindTree</a>.
-insertUnion :: Type -> Type -> InferFn ()
-
--- | Helper function to support local modificaton of <a>varMap</a>.
-withNewScope :: InferFn a -> InferFn a
-
--- | Helper function to support local modificaton of <a>unionFindTree</a>.
-withNewTypeScope :: InferFn a -> InferFn a
-
--- | Helper function to collapse a list of type annotation to a single one
---   with 'Classes.type' type. If the list is empty, use <tt>Classes.TVar
---   (TVarId $ Identifier "_"))</tt> to denote a dummy annotation. TODO:
---   Currently just take the first type annotation of the list as the
---   result. Need to implement the <tt>collapse</tt> step to find and
---   return the most specific type annotation from the list. Need yo add
---   support for annotating type variables as well.
-collapseAnnT :: Type -> Type
-
--- | Stage 1: Assign symbolic typenames
---   
---   <a>initTypeVars</a> <tt>e</tt> walks into the expression <tt>e</tt>
---   recursively, assign a fresh <tt>TVar</tt> to each unknown type, and
---   build type equations that will be solved later.
-initTypeVars :: Expr Type -> InferFn (Expr Type)
-
--- | Infer the type of a binary integer operation.
-inferPrimBinop :: PrimOp -> Expr Type -> Expr Type -> Type -> InferFn (Expr Type)
-
--- | <tt>typeCheck annT expectedT</tt> checks whether the type annotation
---   <tt>annT</tt> is compatible with the expected type <tt>expectedT</tt>.
---   Insert new type equations when the expected type is a type variable.
---   TODO: currently only consider equality as compatibility. Need to
---   support the case when type annotation is more specific than the
---   expected type.
-typeCheck :: Type -> Type -> InferFn Type
-
--- | Stage 2: Solve type equations using unification.
---   
---   Solve the list of <a>equations</a> one by one and puts solutions as
---   new enties in the <a>unionFindTree</a>.
-unifyAll :: InferFn ()
-
--- | <a>unify</a> <tt>t1 t2</tt> solves the type equation t1 ~ t2 and put
---   the solution into <a>unionFindTree</a>.
-unify :: Type -> Type -> InferFn ()
-
--- | Stage 3: Find the type of the expression based on
---   <a>unionFindTree</a>.
---   
---   <a>getType</a> <tt>e</tt> walks into the expression <tt>e</tt> and
---   solves its type <tt>t</tt> recursively.
-getType :: Expr Type -> InferFn (Expr Type)
-
--- | Recursively get type of operands to PrimOp, then apply given type.
-getTypePrimOp :: PrimOp -> [Expr Type] -> Type -> InferFn (Expr Type)
-
--- | <a>solveType</a> <tt>t</tt> solves the type <tt>t</tt> by replacing
---   any embeded <tt>TVar</tt> <tt>tvar</tt> with its real type, which is
---   the root of <tt>tvar</tt> in the <a>unionFindTree</a>.
-solveType :: Type -> InferFn Type
-
--- | <a>findRoot</a> <tt>t</tt> finds the root of <tt>t</tt> inside
---   <a>unionFindTree</a>.
-findRoot :: Type -> InferFn Type
-instance Control.Monad.State.Class.MonadState IR.HM.InferState IR.HM.InferFn
-instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.HM.InferFn
-instance Control.Monad.Fail.MonadFail IR.HM.InferFn
-instance GHC.Base.Monad IR.HM.InferFn
-instance GHC.Base.Applicative IR.HM.InferFn
-instance GHC.Base.Functor IR.HM.InferFn
-instance IR.HM.HasFreeTVars Common.Identifiers.TVarId
-instance IR.HM.HasFreeTVars IR.Types.Classes.Scheme
-instance IR.HM.HasFreeTVars IR.Types.Classes.Type
-instance IR.HM.HasFreeTVars t => IR.HM.HasFreeTVars (IR.Types.TypeSystem.Builtin t)
-instance IR.HM.HasFreeTVars a => IR.HM.HasFreeTVars [a]
 
 
 -- | Turns non-nullary data constructors into calls to constructor
@@ -2505,147 +2298,46 @@ instance GHC.Base.Applicative IR.DConToFunc.ArityFn
 instance GHC.Base.Functor IR.DConToFunc.ArityFn
 
 
--- | Intermediate representation (IR) stage of the compiler pipeline.
---   
---   The IR stage is organized into 4 distinct substages: <a>lower</a>,
---   <a>ann2Class</a>, <a>class2Poly</a>, and <tt>poly2Flat</tt>,
---   delineated by each type system used in the compiler.
+-- | Intermediate representation (IR) stages of the compiler pipeline.
 module IR
 
 -- | Operation modes for the IR compiler stage.
+--   
+--   By default, <a>Continue</a> completes the pipeline end-to-end.
 data Mode
-
--- | Compile end-to-end (default).
 Continue :: Mode
-
--- | Print the IR immediately after lowering.
 DumpIR :: Mode
-
--- | Print the fully-typed IR after type inference.
+DumpIRAnnotated :: Mode
 DumpIRTyped :: Mode
-
--- | Print the IR after lambda lifting.
 DumpIRLifted :: Mode
-
--- | Print the final IR representation before codegen.
 DumpIRFinal :: Mode
-data TIType
-
--- | Only run HM type inference
-HMOnly :: TIType
-
--- | Only run type checker
-TCOnly :: TIType
-
--- | Run both HM type Inference and type checker
-Both :: TIType
 
 -- | Compiler options for the IR compiler stage.
-data Options
-Options :: Mode -> TIType -> Options
+newtype Options
+Options :: Mode -> Options
 [mode] :: Options -> Mode
-[tiType] :: Options -> TIType
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
 
--- | IR compiler sub-stage, lowering AST to optionally type-annotated IR.
-lower :: Options -> Program -> Pass (Program Type)
+-- | Lower from AST to IR (with annotations).
+lower :: Options -> Program -> Pass (Program Annotations)
 
--- | IR compiler sub-stage, ultimately producing a fully-typed IR.
+-- | Type inference + check against type annotations.
 --   
---   Runs HM inference, type checker, or both (default) based on the CLI
---   option.
---   
---   When both algorithms are run, the program fails type check iff both
---   algorithms throw an error.
-ann2Class :: Options -> Program Type -> Pass (Program Type)
+--   After this stage, no compiler errors should be thrown.
+typecheck :: Options -> Program Annotations -> Pass (Program Type)
 
--- | IR compiler sub-stage, ultimately instantiating all type classes.
-class2Poly :: Options -> Program Type -> Pass (Program Type)
-
--- | IR compiler sub-stage, performing source-to-source translations.
-poly2Poly :: Options -> Program Type -> Pass (Program Type)
+-- | IR transformations to prepare for codegen.
+transform :: Options -> Program Type -> Pass (Program Type)
 
 -- | IR compiler stage.
 run :: Options -> Program -> Pass (Program Type)
-
--- | Helper function to set ti type to HM-only
-setHM :: Options -> Options
-
--- | Helper function to set ti type to TC-only
-setTC :: Options -> Options
 instance GHC.Show.Show IR.Mode
 instance GHC.Classes.Eq IR.Mode
-instance GHC.Show.Show IR.TIType
-instance GHC.Classes.Eq IR.TIType
 instance GHC.Show.Show IR.Options
 instance GHC.Classes.Eq IR.Options
 instance Common.Default.Default IR.Options
-
-
--- | Extract and encapsulate the type information needed during codegen.
-module Codegen.Typegen
-
--- | Type-related information, abstracted behind partial lookup functions.
-data TypegenInfo
-TypegenInfo :: (DConId -> Maybe DConInfo) -> (TConId -> Maybe TConInfo) -> TypegenInfo
-
--- | for each data constructor.
-[dconInfo] :: TypegenInfo -> DConId -> Maybe DConInfo
-
--- | for each type constructor.
-[tconInfo] :: TypegenInfo -> TConId -> Maybe TConInfo
-
--- | Information and codegen handlers associated with each data
---   constructor.
-data DConInfo
-DConInfo :: TConId -> Int -> Bool -> Exp -> Exp -> (Int -> Exp -> Exp) -> DConInfo
-
--- | the type that the data constructor inhabits
-[dconType] :: DConInfo -> TConId
-
--- | number of fields
-[dconSize] :: DConInfo -> Int
-
--- | whether the data constructor is heap-allocated
-[dconOnHeap] :: DConInfo -> Bool
-
--- | the dcon tag to match on, i.e., in <tt>case tag</tt>
-[dconCase] :: DConInfo -> Exp
-
--- | constructs a dcon instance
-[dconConstruct] :: DConInfo -> Exp
-
--- | retrieve the ith field
-[dconDestruct] :: DConInfo -> Int -> Exp -> Exp
-
--- | Information and codegen handlers associated with each type
---   constructor.
-data TConInfo
-TConInfo :: TypeEncoding -> (Exp -> Exp) -> TConInfo
-
--- | how the data type is encoded
-[typeEncoding] :: TConInfo -> TypeEncoding
-
--- | how to retrieve the tag of an instance
-[typeScrut] :: TConInfo -> Exp -> Exp
-
--- | How a data type may be encoded, i.e., heap-allocated, by value, or
---   both.
-data TypeEncoding
-TypePacked :: TypeEncoding
-TypeHeap :: TypeEncoding
-TypeMixed :: TypeEncoding
-
--- | Create codegen definitions and helpers for sslang type definitions.
-genTypes :: [(TConId, TypeDef Type)] -> Pass ([Definition], TypegenInfo)
-
--- | Generate C enums for sslang type definitions, enumerating tags.
-genTypeDef :: (TConId, TypeDef Type) -> Pass Definition
-
--- | Compute codgen helpers for each sslang type definition.
-genTypeInfo :: [(TConId, TypeDef Type)] -> Pass TypegenInfo
 
 
 -- | Translate SSM program to C compilation unit.
