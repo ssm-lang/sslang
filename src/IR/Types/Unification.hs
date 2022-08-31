@@ -24,6 +24,7 @@ module IR.Types.Unification
   , HasFreeUVars(..)
   , InferM
   , MonadReader(..)
+  , asks
   , MonadError(..)
   , (=:=)
   , (<:=)
@@ -80,6 +81,7 @@ import           Control.Monad.Except           ( ExceptT
                                                 )
 import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
+                                                , asks
                                                 )
 import           Control.Monad.Trans            ( MonadTrans(..) )
 import           Data.Function                  ( (&) )
