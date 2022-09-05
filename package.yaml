@@ -1,100 +1,101 @@
-name:                sslang
-version:             0.1.0.0
-github:              "sedwards-lab/sslang"
-license:             BSD3
-author:              "Stephen A. Edwards"
-maintainer:          "sedwards@cs.columbia.edu"
-copyright:           "2021 Stephen A. Edwards"
+name: sslang
+version: 0.1.0.0
+github: "sedwards-lab/sslang"
+license: BSD3
+author: "Stephen A. Edwards"
+maintainer: "sedwards@cs.columbia.edu"
+copyright: "2021 Stephen A. Edwards"
 
 extra-source-files:
-- README.md
+  - README.md
 
-description:         Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
+description: Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
 
 dependencies:
-- base >= 4.7 && < 5
+  - base >= 4.7 && < 5
 
 library:
   source-dirs: src
   ghc-options:
-  - -Wall
+    - -Wall
   dependencies:
-  - prettyprinter >= 1.7.0
-  - array
-  - mtl
-  - containers
-  - language-c-quote
-  - mainland-pretty
-  - srcloc
-  - composition
-  - comonad
-  - syb
-  - unification-fd
+    - prettyprinter >= 1.7.0
+    - array
+    - mtl
+    - containers
+    - language-c-quote
+    - mainland-pretty
+    - srcloc
+    - composition
+    - comonad
+    - syb
+    - unification-fd
+    - STMonadTrans
 
 executables:
   sslc:
-    main:                Main.hs
-    source-dirs:         app
+    main: Main.hs
+    source-dirs: app
 
     ghc-options:
-    - -Wall
-#    - -threaded
-#    - -rtsopts
-#    - -with-rtsopts=-N
+      - -Wall
+    #    - -threaded
+    #    - -rtsopts
+    #    - -with-rtsopts=-N
 
     dependencies:
-    - sslang
-    - prettyprinter >= 1.7.0
+      - sslang
+      - prettyprinter >= 1.7.0
 
     build-tools:
-    - happy
-    - alex
+      - happy
+      - alex
 
 _test-suite: &test-suite
   main: Spec.hs
   dependencies:
-  - sslang
-  - hspec
-  - HUnit
-  - deepseq
-  - call-stack
-  - here
-  - template-haskell
-  - containers
-  - comonad
-  - syb
+    - sslang
+    - hspec
+    - HUnit
+    - deepseq
+    - call-stack
+    - here
+    - template-haskell
+    - containers
+    - comonad
+    - syb
 
 tests:
   # End-to-end regression tests
   regression:
     main: test/regression/Spec.hs
     dependencies:
-    - process
+      - process
 
   # Tests related to the textual representation of programs
   text:
     <<: *test-suite
     source-dirs:
-    - test/lib
-    - test/text
+      - test/lib
+      - test/text
 
   # Tests related to the user-facing semantics of programs
   semant:
     <<: *test-suite
     source-dirs:
-    - test/lib
-    - test/semant
+      - test/lib
+      - test/semant
 
   # Tests related to internal compiler transformations invisible to the user
   trans:
     <<: *test-suite
     source-dirs:
-    - test/lib
-    - test/trans
+      - test/lib
+      - test/trans
 
   # Tests related to patterns
   pattern:
     <<: *test-suite
     source-dirs:
-    - test/lib
-    - test/pattern
+      - test/lib
+      - test/pattern
