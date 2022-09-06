@@ -1,5 +1,6 @@
 module IR.Types.Constraint.MultiEquation where
 
+import           Common.Identifiers             ( TVarId(..) )
 import           Control.Monad                  ( foldM )
 import           Control.Monad.ST.Trans
 import qualified Data.Map                      as M
@@ -19,15 +20,12 @@ data Descriptor s = Descriptor
   { structure :: STRef s (Maybe (Structure s))
   , rank      :: STRef s Rank.Rank
   , rigidity  :: STRef s Rigidity
-  , name      :: STRef s (Maybe TName)
+  , name      :: STRef s (Maybe TVarId)
   }
 
 type Structure s = Term (Variable s)
 
 data Rigidity = Rigid | Flexible | Constant
-  deriving (Eq, Show)
-
-newtype TName = TName String -- TODO: what type should I use here?
   deriving (Eq, Show)
 
 type CRTerm s = ARTerm (Variable s)
@@ -48,6 +46,12 @@ isFlexible v = do
   d <- UF.descriptor v
   r <- readSTRef $ rigidity d
   return $ r == Flexible
+
+isConstant :: Variable s -> InferM s Bool
+isConstant v = do
+  d <- UF.descriptor v
+  r <- readSTRef $ rigidity d
+  return $ r == Constant
 
 new :: Pool s -> InferM s (Pool s)
 new pool = do
@@ -75,7 +79,7 @@ chop pool (TTerm     v) = undefined
 chopi :: Rank.Rank -> CRTerm s -> InferM s (Variable s)
 chopi rank term = undefined
 
-variableName :: Variable s -> InferM s (Maybe TName)
+variableName :: Variable s -> InferM s (Maybe TVarId)
 variableName v = do
   d <- UF.descriptor v
   readSTRef $ name d
@@ -105,7 +109,7 @@ poolNumber :: Pool s -> InferM s Int
 poolNumber pool = return $ number pool
 
 variable
-  :: Rigidity -> Maybe TName -> Maybe (CRTerm s) -> InferM s (Variable s)
+  :: Rigidity -> Maybe TVarId -> Maybe (CRTerm s) -> InferM s (Variable s)
 variable rig n s = do
   s' <- case s of
     Just t -> do
@@ -127,7 +131,7 @@ variableList rig xs =
   in  foldrM f ([], []) xs
 
 variableListFromNames
-  :: (a -> (Rigidity, Maybe TName))
+  :: (a -> (Rigidity, Maybe TVarId))
   -> [a]
   -> InferM s ([Variable s], [(a, CRTerm s)])
 variableListFromNames getRig xs =
@@ -138,12 +142,12 @@ variableListFromNames getRig xs =
   in  foldrM f ([], []) xs
 
 variableSet
-  :: (TName -> (Rigidity, Maybe TName))
-  -> S.Set String
-  -> InferM s ([Variable s], M.Map String (CRTerm s))
+  :: (TVarId -> (Rigidity, Maybe TVarId))
+  -> S.Set TVarId
+  -> InferM s ([Variable s], M.Map TVarId (CRTerm s))
 variableSet getRig xs =
   let f (vs, xts) x = do
-        let (rig, n) = getRig (TName x)
+        let (rig, n) = getRig x
         v <- variable rig n Nothing
         return (v : vs, M.insert x (TVariable v) xts)
   in  foldM f ([], M.empty) xs

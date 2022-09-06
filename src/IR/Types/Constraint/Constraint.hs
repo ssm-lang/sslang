@@ -22,6 +22,7 @@ module IR.Types.Constraint.Constraint
   , scheme'
   ) where
 
+import           Common.Identifiers             ( TVarId(..) )
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import           IR.Types.Constraint.CoreAlgebra
@@ -32,7 +33,6 @@ import           IR.Types.Constraint.MultiEquation
                                                 ( CRTerm
                                                 , Rigidity(..)
                                                 , Structure
-                                                , TName(..)
                                                 , Variable
                                                 , variable
                                                 , variableList
@@ -50,7 +50,7 @@ data TypeConstraint c v = CTrue
                           | CInstance SName c
                           | CDisjunction [TypeConstraint c v]
 
-data Scheme c v = Scheme [v] [v] (TypeConstraint c v) (M.Map String c)
+data Scheme c v = Scheme [v] [v] (TypeConstraint c v) (M.Map TVarId c)
 
 type TConstraint s = TypeConstraint (CRTerm s) (Variable s)
 
@@ -95,8 +95,8 @@ existsList l f = do
   return $ ex l (f m)
 
 forallList
-  :: [TName]
-  -> ([(TName, CRTerm s)] -> TConstraint s)
+  :: [TVarId]
+  -> ([(TVarId, CRTerm s)] -> TConstraint s)
   -> InferM s (TConstraint s)
 forallList l f =
   let g x (vs, xts) = do
@@ -107,20 +107,20 @@ forallList l f =
         return $ fl l' (f m)
 
 existsSet
-  :: S.Set String
-  -> (M.Map String (CRTerm s) -> TConstraint s)
+  :: S.Set TVarId
+  -> (M.Map TVarId (CRTerm s) -> TConstraint s)
   -> InferM s (TConstraint s)
 existsSet names f = do
   (l, m) <- variableSet (const (Flexible, Nothing)) names
   return $ ex l (f m)
 
-monoScheme :: M.Map String c -> Scheme c v
+monoScheme :: M.Map TVarId c -> Scheme c v
 monoScheme = Scheme [] [] CTrue
 
 scheme
   :: [Variable s]
-  -> S.Set String
-  -> (M.Map String (CRTerm s) -> TConstraint s)
+  -> S.Set TVarId
+  -> (M.Map TVarId (CRTerm s) -> TConstraint s)
   -> InferM s (TScheme s)
 scheme rqs names f = do
   (l, m) <- variableSet (const (Flexible, Nothing)) names
@@ -128,9 +128,9 @@ scheme rqs names f = do
 
 scheme'
   :: [Variable s]
-  -> S.Set String
-  -> S.Set String
-  -> (M.Map String (CRTerm s) -> TConstraint s)
+  -> S.Set TVarId
+  -> S.Set TVarId
+  -> (M.Map TVarId (CRTerm s) -> TConstraint s)
   -> InferM s (TScheme s)
 scheme' rqs rnames fnames f = do
   (fls, fm) <- variableSet (const (Flexible, Nothing)) fnames
