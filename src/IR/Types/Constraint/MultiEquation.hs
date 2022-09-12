@@ -3,15 +3,14 @@ module IR.Types.Constraint.MultiEquation where
 import           Common.Identifiers             ( TVarId(..) )
 import           Control.Monad                  ( foldM )
 import           Control.Monad.ST.Trans
+import           Data.Foldable                  ( foldrM )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( isNothing )
 import qualified Data.Set                      as S
 import           IR.Types.Constraint.CoreAlgebra
 import           IR.Types.Constraint.Inference  ( InferM )
 import qualified IR.Types.Constraint.IntRank   as Rank
-import           IR.Types.Constraint.Misc       ( foldrM
-                                                , modifySTRef
-                                                )
+import           IR.Types.Constraint.Misc       ( modifySTRef )
 import qualified IR.Types.Constraint.UnionFind as UF
 
 type Variable s = UF.Point s (Descriptor s)

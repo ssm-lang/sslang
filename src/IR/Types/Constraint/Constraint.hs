@@ -23,12 +23,12 @@ module IR.Types.Constraint.Constraint
   ) where
 
 import           Common.Identifiers             ( TVarId(..) )
+import           Data.Foldable                  ( foldrM )
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import           IR.Types.Constraint.CoreAlgebra
                                                 ( ARTerm(..) )
 import           IR.Types.Constraint.Inference  ( InferM )
-import           IR.Types.Constraint.Misc       ( foldrM )
 import           IR.Types.Constraint.MultiEquation
                                                 ( CRTerm
                                                 , Rigidity(..)
