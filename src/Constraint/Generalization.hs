@@ -25,3 +25,6 @@ rigid = undefined
 
 instantiate :: Scheme s -> SolverM s ([U.Variable s], U.Variable s)
 instantiate = undefined
+
+trivial :: U.Variable s -> SolverM s (Scheme s)
+trivial = undefined

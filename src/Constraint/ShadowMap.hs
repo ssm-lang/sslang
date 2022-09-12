@@ -8,9 +8,7 @@ import qualified Data.Map.Strict as M
 newtype Map s k a = ShadowMap (STRef s (M.Map k [a]))
 
 new :: SolverM s (Map s k a)
-new = do
-  ref <- newSTRef M.empty
-  return $ ShadowMap ref
+new = ShadowMap <$> newSTRef M.empty
 
 lookup :: Ord k => Map s k a -> k -> SolverM s (Maybe a)
 lookup (ShadowMap ref) k = do

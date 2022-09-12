@@ -4,13 +4,14 @@ module Constraint.Solver where
 
 import Common.Compiler (Error (..), throwError)
 import Common.Identifiers (TVarId (..), fromString)
+import qualified Constraint.Decoder as D
 import qualified Constraint.Generalization as G
 import qualified Constraint.ShadowMap as SM
 import Constraint.SolverM (SolverM)
 import Constraint.Structure (Structure (..))
 import qualified Constraint.Unifier as U
 import Constraint.Utils (throwTypeError)
-import Control.Monad (unless, void)
+import Control.Monad (unless, void, zipWithM, zipWithM_)
 import IR.IR (VarId (..))
 import qualified IR.IR as I
 
@@ -29,8 +30,8 @@ data Co a where
   CExist :: Variable -> Maybe (Structure Variable) -> Co a -> Co a
   CDecode :: Variable -> Co I.Type
   CInstance :: VarId -> Variable -> Co [I.Type]
-  CDef :: TVarId -> Variable -> Co a -> Co a
-  CLet :: [Variable] -> [TVarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
+  CDef :: VarId -> Variable -> Co a -> Co a
+  CLet :: [Variable] -> [VarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
 
 solveAndElab :: Co (I.Expr I.Type) -> SolverM s (I.Expr I.Type)
 solveAndElab c = do
@@ -74,33 +75,66 @@ solve ctx = solve'
       return result
     solve' (CDecode v) = do
       uv <- uvar ctx v
-      return $ decode uv
+      return $ decode ctx uv
     solve' (CInstance x w) = do
       s <- elookup ctx x
       (witnesses, v) <- G.instantiate s
       uw <- uvar ctx w
       U.unify v uw
-      return $ mapM decode witnesses
+      return $ mapM (decode ctx) witnesses
+    solve' (CDef x v c) = do
+      uv <- uvar ctx v
+      s <- G.trivial uv
+      bind ctx x s
+      r <- solve ctx c
+      unbind ctx x
+      return r
+    solve' (CLet rs xs vs c1 c2) = do
+      enter
+      urs <- mapM (rigid ctx) rs
+      uvs <- mapM (\v -> flexible ctx v Nothing) vs
+      r1 <- solve ctx c1
+      (gammas, ss) <- exit uvs
+      unless (all (`elem` gammas) urs) $ throwTypeError "all rigid variables of [rs] must be generalizable"
+      mapM_ (uunbind ctx) vs
+      zipWithM_ (bind ctx) xs ss
+      r2 <- solve ctx c2
+      mapM_ (unbind ctx) xs
+      return $ do
+        gammas' <- mapM D.decodeVariable gammas
+        ss' <- mapM decodeScheme ss
+        r1' <- r1
+        r2' <- r2
+        return (gammas', ss', r1', r2')
 
--- solve' (CDef x v c) = undefined
--- solve' (CLet rs cs vs c1 c2) = undefined
+decodeScheme :: G.Scheme s -> SolverM s Scheme
+decodeScheme = undefined
 
-decode :: U.Variable s -> SolverM s I.Type
-decode = undefined
+enter :: SolverM s ()
+enter = undefined
+
+exit :: [U.Variable s] -> SolverM s ([U.Variable s], [G.Scheme s])
+exit = undefined
+
+decode :: Ctx s -> U.Variable s -> SolverM s I.Type
+decode (Ctx {ctxDecoder = dec}) = D.decode dec
 
 data Ctx s = Ctx
   { ctxEnv :: Env s,
-    ctxTab :: Tab s
+    ctxTab :: Tab s,
+    ctxDecoder :: D.Decoder s
   }
 
 initCtx :: SolverM s (Ctx s)
 initCtx = do
   env <- initEnv
   tab <- initTab
+  dec <- D.initDecoder
   return
     Ctx
       { ctxEnv = env,
-        ctxTab = tab
+        ctxTab = tab,
+        ctxDecoder = dec
       }
 
 -- | *Env*
