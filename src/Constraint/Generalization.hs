@@ -1,8 +1,10 @@
 module Constraint.Generalization where
 
+import qualified Constraint.InfiniteArray as IA
 import Constraint.SolverM (SolverM, count)
 import Constraint.Structure (Structure)
 import qualified Constraint.Unifier as U
+import Control.Monad.ST.Trans (STRef)
 import Control.Monad.State.Class (get, put)
 
 data Scheme s = Scheme
@@ -10,6 +12,8 @@ data Scheme s = Scheme
     generics :: [U.Variable s],
     quantifiers :: [U.Variable s]
   }
+
+-- newtype Generalizer s = Generalizer (STRef s ()
 
 freshId :: SolverM s Int
 freshId = do
