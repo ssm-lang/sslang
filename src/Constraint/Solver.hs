@@ -11,13 +11,13 @@ import Constraint.SolverM (SolverM)
 import Constraint.Structure (Structure (..))
 import qualified Constraint.Unifier as U
 import Constraint.Utils (throwTypeError)
-import Control.Monad (unless, void, zipWithM, zipWithM_)
+import Control.Monad (unless, void, zipWithM_)
 import IR.IR (VarId (..))
 import qualified IR.IR as I
 
 type Variable = Int
 
-type Scheme = (TVarId, I.Type)
+type Scheme = ([TVarId], I.Type)
 
 type OnSolve s a = SolverM s a
 
@@ -78,23 +78,23 @@ solve ctx = solve'
       return $ decode ctx uv
     solve' (CInstance x w) = do
       s <- elookup ctx x
-      (witnesses, v) <- G.instantiate s
+      (witnesses, v) <- instantiate ctx s
       uw <- uvar ctx w
       U.unify v uw
       return $ mapM (decode ctx) witnesses
     solve' (CDef x v c) = do
       uv <- uvar ctx v
-      s <- G.trivial uv
+      let s = G.trivial uv
       bind ctx x s
       r <- solve ctx c
       unbind ctx x
       return r
     solve' (CLet rs xs vs c1 c2) = do
-      enter
+      enter ctx
       urs <- mapM (rigid ctx) rs
       uvs <- mapM (\v -> flexible ctx v Nothing) vs
       r1 <- solve ctx c1
-      (gammas, ss) <- exit uvs
+      (gammas, ss) <- exit ctx uvs
       unless (all (`elem` gammas) urs) $ throwTypeError "all rigid variables of [rs] must be generalizable"
       mapM_ (uunbind ctx) vs
       zipWithM_ (bind ctx) xs ss
@@ -102,27 +102,16 @@ solve ctx = solve'
       mapM_ (unbind ctx) xs
       return $ do
         gammas' <- mapM D.decodeVariable gammas
-        ss' <- mapM decodeScheme ss
+        ss' <- mapM (decodeScheme ctx) ss
         r1' <- r1
         r2' <- r2
         return (gammas', ss', r1', r2')
 
-decodeScheme :: G.Scheme s -> SolverM s Scheme
-decodeScheme = undefined
-
-enter :: SolverM s ()
-enter = undefined
-
-exit :: [U.Variable s] -> SolverM s ([U.Variable s], [G.Scheme s])
-exit = undefined
-
-decode :: Ctx s -> U.Variable s -> SolverM s I.Type
-decode (Ctx {ctxDecoder = dec}) = D.decode dec
-
 data Ctx s = Ctx
   { ctxEnv :: Env s,
     ctxTab :: Tab s,
-    ctxDecoder :: D.Decoder s
+    ctxDecoder :: D.Decoder s,
+    ctxGen :: G.Gen s
   }
 
 initCtx :: SolverM s (Ctx s)
@@ -130,12 +119,33 @@ initCtx = do
   env <- initEnv
   tab <- initTab
   dec <- D.initDecoder
+  gen <- G.initGen
   return
     Ctx
       { ctxEnv = env,
         ctxTab = tab,
-        ctxDecoder = dec
+        ctxDecoder = dec,
+        ctxGen = gen
       }
+
+-- | auxilliary mappings
+enter :: Ctx s -> SolverM s ()
+enter (Ctx {ctxGen = gen}) = G.enter gen
+
+exit :: Ctx s -> [U.Variable s] -> SolverM s ([U.Variable s], [G.Scheme s])
+exit (Ctx {ctxGen = gen}) = G.exit gen
+
+instantiate :: Ctx s -> G.Scheme s -> SolverM s ([U.Variable s], U.Variable s)
+instantiate (Ctx {ctxGen = gen}) = G.instantiate gen
+
+decode :: Ctx s -> U.Variable s -> SolverM s I.Type
+decode (Ctx {ctxDecoder = dec}) = D.decode dec
+
+decodeScheme :: Ctx s -> G.Scheme s -> SolverM s Scheme
+decodeScheme Ctx {ctxDecoder = dec} s = do
+  tvs <- mapM D.decodeVariable (G.schemeQuantifiers s)
+  t <- D.decode dec (G.schemeRoot s)
+  return (tvs, t)
 
 -- | *Env*
 -- |
@@ -182,19 +192,19 @@ uvar (Ctx {ctxTab = tab}) v = do
     Nothing -> throwTypeError $ "unbound type variable: " ++ show v
 
 flexible :: Ctx s -> Variable -> Maybe (Structure Variable) -> SolverM s (U.Variable s)
-flexible ctx@(Ctx {ctxTab = tab}) v so = do
+flexible ctx@(Ctx {ctxTab = tab, ctxGen = gen}) v so = do
   notmem <- SM.notMember tab v
   unless notmem $ throwTypeError $ "variable already in table: " ++ show v
   so' <- mapM (mapM (uvar ctx)) so
-  uv <- G.flexible so'
+  uv <- G.flexible gen so'
   SM.add tab v uv
   return uv
 
 rigid :: Ctx s -> Variable -> SolverM s (U.Variable s)
-rigid (Ctx {ctxTab = tab}) v = do
+rigid (Ctx {ctxTab = tab, ctxGen = gen}) v = do
   notmem <- SM.notMember tab v
   unless notmem $ throwTypeError $ "variable already in table: " ++ show v
-  uv <- G.rigid
+  uv <- G.rigid gen
   SM.add tab v uv
   return uv
 

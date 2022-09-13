@@ -3,6 +3,7 @@ module Constraint.InfiniteArray
     new,
     get,
     set,
+    update,
   )
 where
 
@@ -42,6 +43,12 @@ set a i x = do
   ensure a i
   t <- readSTRef (table a)
   writeSTArray t i x
+
+update :: InfiniteArray s e -> Int -> (e -> e) -> SolverM s ()
+update a i f = do
+  ensure a i
+  t <- get a i
+  set a i (f t)
 
 newLength :: Int -> Int -> Int
 newLength l i =

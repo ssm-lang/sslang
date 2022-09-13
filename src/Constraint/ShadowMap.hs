@@ -27,6 +27,9 @@ add (ShadowMap ref) k v = do
         Just vs -> M.insert k (v : vs) m
   modifySTRef ref add'
 
+replace :: Ord k => Map s k a -> k -> a -> SolverM s ()
+replace (ShadowMap ref) k v = modifySTRef ref (M.insert k [v])
+
 remove :: Ord k => Map s k a -> k -> SolverM s ()
 remove (ShadowMap ref) k = do
   let remove' m = case M.lookup k m of

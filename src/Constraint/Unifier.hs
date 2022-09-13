@@ -1,34 +1,63 @@
-module Constraint.Unifier where
+module Constraint.Unifier
+  ( Variable,
+    Descriptor (..),
+    Status (..),
+    Mark,
+    Rank,
+    baseRank,
+    freshMark,
+    adjustRank,
+    makeDesc,
+    unify,
+  )
+where
 
-import Constraint.SolverM (SolverM)
+import Constraint.SolverM (SolverM, currId, currMark)
 import Constraint.Structure (Structure (..), isLeaf)
-import qualified Constraint.UnionFind as UF
+import Constraint.UnionFind
+  ( Point,
+    equivalent,
+    union',
+  )
 import Constraint.Utils (throwTypeError, throwVariableScopeEscapeError)
 import Control.Monad (unless, when)
 import Control.Monad.ST.Trans (STRef, newSTRef, readSTRef, writeSTRef)
+import Control.Monad.State.Class (get, put)
 
-type Variable s = UF.Point s (Descriptor s)
+type Variable s = Point s (Descriptor s)
 
 data Descriptor s = Descriptor
   { descId :: Int,
     descStructure :: STRef s (Maybe (Structure (Variable s))),
     descRank :: STRef s Rank,
     descStatus :: STRef s Status,
-    descMark :: STRef s (Mark s)
+    descMark :: STRef s Mark
   }
 
 data Status = Rigid | Flexible | Generic
   deriving (Eq, Show)
 
-type Mark s = Int
+type Mark = Int
 
 type Rank = Int
 
-baseRank :: Integer
+baseRank :: Int
 baseRank = 0
 
-freshMark :: SolverM s (STRef s (Mark s))
-freshMark = newSTRef 0
+freshId :: SolverM s Int
+freshId = do
+  ctx <- get
+  put ctx {currId = currId ctx + 1}
+  return $ currId ctx
+
+freshMark :: SolverM s Mark
+freshMark = do
+  ctx <- get
+  put ctx {currMark = currMark ctx + 1}
+  return $ currMark ctx
+
+dummyMark :: Mark
+dummyMark = 0
 
 adjustRank :: Descriptor s -> Rank -> SolverM s ()
 adjustRank d k = do
@@ -40,6 +69,22 @@ adjustRank d k = do
       unless (st == Flexible) throwVariableScopeEscapeError
       writeSTRef (descRank d) k
     else return ()
+
+makeDesc :: Maybe (Structure (Variable s)) -> Rank -> Status -> SolverM s (Descriptor s)
+makeDesc so rank status = do
+  so' <- newSTRef so
+  rank' <- newSTRef rank
+  status' <- newSTRef status
+  i <- freshId
+  mark <- newSTRef dummyMark
+  return
+    Descriptor
+      { descId = i,
+        descStructure = so',
+        descRank = rank',
+        descStatus = status',
+        descMark = mark
+      }
 
 -- | Unification Queue
 -- | TODO
@@ -57,7 +102,7 @@ pop qref = do
 insert :: Queue s -> Variable s -> Variable s -> SolverM s ()
 insert qref v1 v2 = do
   q <- readSTRef qref
-  iseq <- UF.equivalent v1 v2
+  iseq <- equivalent v1 v2
   unless iseq $ writeSTRef qref ((v1, v2) : q)
 
 unifyDesc ::
@@ -73,7 +118,7 @@ unifyDesc qref d1 d2 = do
   rank' <- newSTRef rank
   status <- unifyStatus rank struc
   status' <- newSTRef status
-  mark <- freshMark
+  mark <- newSTRef dummyMark
   return
     Descriptor
       { descId = i,
@@ -111,7 +156,7 @@ unifyDesc qref d1 d2 = do
 unify' :: Queue s -> Variable s -> Variable s -> SolverM s ()
 unify' qref v1 v2 = do
   -- desc <- unifyDesc qref v1 v2
-  UF.union' v1 v2 (unifyDesc qref)
+  union' v1 v2 (unifyDesc qref)
   unifyPending qref
 
 unifyPending :: Queue s -> SolverM s ()
