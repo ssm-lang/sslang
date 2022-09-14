@@ -10,8 +10,9 @@ import qualified Constraint.ShadowMap as SM
 import Constraint.SolverM (SolverM)
 import Constraint.Structure (Structure (..))
 import qualified Constraint.Unifier as U
-import Constraint.Utils (throwTypeError)
-import Control.Monad (unless, void, zipWithM_)
+import Constraint.Utils (modifySTRef, throwTypeError)
+import Control.Monad (replicateM, unless, void, zipWithM_)
+import Control.Monad.ST.Trans (newSTRef, readSTRef)
 import IR.IR (VarId (..))
 import qualified IR.IR as I
 
@@ -32,6 +33,13 @@ data Co a where
   CInstance :: VarId -> Variable -> Co [I.Type]
   CDef :: VarId -> Variable -> Co a -> Co a
   CLet :: [Variable] -> [VarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
+
+instance Functor Co where
+  fmap f c = CMap c f
+
+instance Applicative Co where
+  pure = CPure
+  mf <*> mx = fmap (\(f, x) -> f x) (CConj mf mx)
 
 solveAndElab :: Co (I.Expr I.Type) -> SolverM s (I.Expr I.Type)
 solveAndElab c = do
@@ -210,3 +218,104 @@ rigid (Ctx {ctxTab = tab, ctxGen = gen}) v = do
 
 uunbind :: Ctx s -> Variable -> SolverM s ()
 uunbind (Ctx {ctxTab = tab}) = SM.remove tab
+
+-- | Combinators
+type Binder s a = (Variable -> SolverM s (Co a)) -> SolverM s (Co a)
+
+type ShallowType = Structure Variable
+
+data DeepType
+  = DeepVar Variable
+  | DeepStructure (Structure DeepType)
+
+inst :: VarId -> Variable -> SolverM s (Co [I.Type])
+inst x v = return $ CInstance x v
+
+(-=-) :: Variable -> Variable -> SolverM s (Co ())
+v1 -=- v2 = return $ CEq v1 v2
+
+(-==-) :: Variable -> Structure Variable -> SolverM s (Co ())
+(-==-) = liftB (-=-)
+
+(<$$>) :: SolverM s (Co a) -> (a -> b) -> SolverM s (Co b)
+m <$$> f = do
+  c <- m
+  return $ CMap c f
+
+letrn ::
+  Int ->
+  [I.VarId] ->
+  ([Variable] -> [Variable] -> Co a) ->
+  Co b ->
+  SolverM s (Co ([TVarId], [Scheme], a, b))
+letrn k xs f1 c2 = do
+  rs <- replicateM k U.freshId
+  vs <- mapM (const U.freshId) xs
+  let c1 = f1 rs vs
+  return $ CLet rs xs vs c1 c2
+
+letr1 ::
+  Int ->
+  I.VarId ->
+  ([Variable] -> Variable -> Co a) ->
+  Co b ->
+  SolverM s (Co ([TVarId], Scheme, a, b))
+letr1 k x f1 c2 =
+  letrn k [x] (\rs vs -> f1 rs (head vs)) c2
+    <$$> \(gammas, ss, v1, v2) -> (gammas, head ss, v1, v2)
+
+letn ::
+  [VarId] ->
+  ([Variable] -> Co a) ->
+  Co b ->
+  SolverM s (Co ([TVarId], [Scheme], a, b))
+letn xs f1 = letrn 1 xs (\_rs vs -> f1 vs)
+
+let1 ::
+  VarId ->
+  (Variable -> Co c) ->
+  Co d ->
+  SolverM s (Co ([TVarId], Scheme, c, d))
+let1 x f1 c2 =
+  letn [x] (f1 . head) c2
+    <$$> \(gammas, ss, v1, v2) -> (gammas, head ss, v1, v2)
+
+let0 :: Co b -> SolverM s (Co ([TVarId], b))
+let0 c1 =
+  letn [] (const c1) CTrue
+    <$$> \(gammas, _, v1, _) -> (gammas, v1)
+
+exist :: Binder s r
+exist = exist' Nothing
+
+shallow :: ShallowType -> Binder s r
+shallow t = exist' (Just t)
+
+deep :: DeepType -> Binder s r
+deep dty f = do
+  vsRef <- newSTRef []
+  let convert dty' =
+        case dty' of
+          DeepVar v -> return v
+          DeepStructure s -> do
+            v <- U.freshId
+            s' <- mapM convert s
+            modifySTRef vsRef ((v, s') :)
+            return v
+  v <- convert dty
+  c <- f v
+  vs <- readSTRef vsRef
+  return $ foldl (\rc (v', s) -> CExist v' (Just s) rc) c vs
+
+liftB ::
+  (a -> Variable -> SolverM s (Co b)) ->
+  a ->
+  ShallowType ->
+  SolverM s (Co b)
+liftB f v1 t2 = shallow t2 (f v1)
+
+exist' :: Maybe ShallowType -> Binder s a
+exist' t f = do
+  v <- U.freshId
+  c <- f v
+  return $ CExist v t c

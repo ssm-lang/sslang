@@ -22,11 +22,21 @@ import qualified IR.IR as I
 -- | Elaborate implicitly typed AST program to explicitly typed IR program
 elab :: A.Program -> Compiler.Pass (I.Program I.Type)
 elab aprog =
-  let ast = letify aprog
-      env = prepEnv aprog
-      iprog = do
-        iexpr <- translate env ast
-        let idefs = unletify iexpr
+  -- let ast = letify aprog
+  --     env = prepEnv aprog
+  --     iprog = do
+  --       iexpr <- translate env ast
+  --       let idefs = unletify iexpr
+  --       return $
+  --         I.Program
+  --           { I.programEntry = "main",
+  --             I.cDefs = undefined, -- TODO
+  --             I.externDecls = undefined, -- TODO
+  --             I.programDefs = idefs,
+  --             I.typeDefs = undefined -- TODO
+  --           }
+  let iprog = do
+        idefs <- translateDefs aprog
         return $
           I.Program
             { I.programEntry = "main",
@@ -37,11 +47,16 @@ elab aprog =
             }
    in evalStateT (runSTT iprog) initSolverCtx
 
--- | Elaborate AST expression to IR expression
-translate :: AstEnv -> A.Expr -> SolverM s (I.Expr I.Type)
-translate env aexpr = do
-  co <- hastype env aexpr
-  solveAndElab co
+-- | Elaborate AST program defs to IR program defs
+translateDefs :: A.Program -> SolverM s [(VarId, I.Expr I.Type)]
+translateDefs (A.Program ds) =
+  let (_, _, _, dds) = A.getTops ds
+  
+
+-- translate :: AstEnv -> A.Expr -> SolverM s (I.Expr I.Type)
+-- translate env aexpr = do
+--   co <- hastype env aexpr
+--   solveAndElab co
 
 -- TODO: Need to prepare type declaration env for AST program
 prepEnv :: A.Program -> AstEnv

@@ -9,6 +9,7 @@ module Constraint.Unifier
     adjustRank,
     makeDesc,
     unify,
+    freshId,
   )
 where
 
