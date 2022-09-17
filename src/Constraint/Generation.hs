@@ -16,15 +16,16 @@ import IR.Types.Type
 
 genConstraints :: Program Annotations -> SolverM s (Co (Program Type))
 genConstraints prog = do
-  let (n, e) = head $ programDefs prog
-  c1 <-
-    exist
-      ( \v -> do
-          c <- hastype prog e v
-          return $ def n v c -- support recursion
-      )
-  c2 <- let0 c1
-  let c3 = fmap (\(_, e') -> prog {programDefs = [(n, e')]}) c2
+  -- let (n, e) = head $ programDefs prog
+  -- c1 <-
+  --   exist
+  --     ( \v -> do
+  --         c <- hastype prog e v
+  --         return $ def n v c -- support recursion
+  --     )
+  c1 <- hastypeDefs prog (programDefs prog)
+  c2 <- let0 c1 -- make constraint well-formed
+  let c3 = fmap (\(_, defs') -> prog {programDefs = defs'}) c2
   return c3
 
 lookupLitStruc :: Literal -> Structure Variable
@@ -66,18 +67,29 @@ hastype prog = hastype'
         )
         <$$> \(e1', e2') -> App e1' e2' (Arrow (extract e1') (extract e2'))
     hastype' (Let binds u _) w =
-      let (x, e) = head binds
-       in ( do
-              cu <- hastype' u w
-              let1
-                (fromJust x)
-                ( \v -> do
-                    c <- hastype' e v
-                    return $ def (fromJust x) v c -- support recursion
-                )
-                cu
-          )
-            <$$> \(_, (_, t'), e', u') -> Let [(x, e')] u' t'
+      ( do
+          let binders = map fst binds
+              exprs = map snd binds
+          names <- mapM unBinder binders
+          let binds' = zip names exprs
+          cu <- hastype' u w
+          letn
+            names
+            ( \vs -> do
+                hastypeLets
+                  prog
+                  binds'
+                  vs
+                  ( return . defDefs prog binds' vs
+                  )
+                  -- c <- hastype' e v
+                  -- return $ def (fromJust x) v c -- support recursion
+            )
+            cu
+      )
+        <$$> \(_, _, binds', u') ->
+          let binds'' = [(n, e) | ((n, _), (_, e)) <- zip binds binds']
+           in Let binds'' u' (extract u')
     hastype' (Match e branches _) w =
       exist
         ( \v ->
@@ -96,6 +108,16 @@ hastype prog = hastype'
         <$$> \((e', branches'), t) -> Match e' branches' t
     hastype' e _ = error $ show e
 
+unBinder :: Binder -> SolverM s VarId
+unBinder = undefined
+
+hastypeLets ::
+  Program Annotations ->
+  [(VarId, Expr Annotations)] ->
+  [Variable] ->
+  SBinder s (Co [(VarId, Expr Type)]) r
+hastypeLets = undefined
+
 hastypeBranches ::
   Program Annotations ->
   [(Alt, Expr Annotations)] ->
@@ -106,27 +128,71 @@ hastypeBranches prog branches vReturn vScrutinee =
   mapMlater onBranch branches
   where
     onBranch :: (Alt, Expr Annotations) -> SBinder s (Co (Alt, Expr Type)) r
-    onBranch (p@(AltLit _), u) k = do
+    onBranch (p@(AltLit lit), u) k = do
       res <-
-        hastype prog u vReturn
-          <$$> \u' -> (p, u')
+        ( do
+            c1 <- vScrutinee -==- lookupLitStruc lit
+            c2 <- hastype prog u vReturn
+            return $ c1 ^& c2
+          )
+          <$$> \(_, u') -> (p, u')
       k res
     onBranch (p@(AltDefault Nothing), u) k = do
       res <-
         hastype prog u vReturn
           <$$> \u' -> (p, u')
       k res
+    onBranch _ _ = error "this type of Alt is not inferred yet"
 
-hastypeBranch ::
+hastypeExprs ::
   Program Annotations ->
-  (Alt, Expr Annotations) ->
-  Variable ->
-  SolverM s (Co (Alt, Expr Type))
-hastypeBranch prog (p, b) w = case p of
-  AltLit _ ->
-    hastype prog b w
-      <$$> \b' -> (p, b')
-  _ -> error "This type of Alt is not inferred yet"
+  [(VarId, Expr Annotations)] ->
+  [Variable] ->
+  SBinder s (Co [(VarId, Expr Type)]) r
+hastypeExprs prog defs vs =
+  mapMlater onDef (zip defs vs)
+  where
+    onDef :: ((VarId, Expr Annotations), Variable) -> SBinder s (Co (VarId, Expr Type)) r
+    onDef ((name, e), v) k = do
+      c <- hastype prog e v <$$> \e' -> (name, e')
+      k c
+
+existDefs ::
+  Program Annotations ->
+  [(VarId, Expr Annotations)] ->
+  SBinder s [Variable] r
+existDefs prog defs = mapMnow onDef defs
+  where
+    onDef :: (VarId, Expr Annotations) -> SBinder s Variable r
+    onDef (name, e) = exist
+
+hastypeDefs ::
+  Program Annotations ->
+  [(VarId, Expr Annotations)] ->
+  SolverM s (Co [(VarId, Expr Type)])
+hastypeDefs prog defs = do
+  existDefs
+    prog
+    defs
+    ( \vs ->
+        hastypeExprs
+          prog
+          defs
+          vs
+          ( return . defDefs prog defs vs
+          )
+    )
+
+defDefs ::
+  Program Annotations ->
+  [(VarId, Expr Annotations)] ->
+  [Variable] ->
+  Co [(VarId, Expr Type)] ->
+  Co [(VarId, Expr Type)]
+defDefs _ defs vs cdefs =
+  foldl addDef cdefs (zip defs vs)
+  where
+    addDef c ((name, _), v) = CDef name v c
 
 subTVars :: [TVarId] -> [Type] -> Type -> Type
 subTVars gs ws = subTVars'
@@ -138,7 +204,21 @@ subTVars gs ws = subTVars'
             Just i -> ws !! i
             Nothing -> TVar x
 
-mapMlater :: (a -> SBinder s (Co c) r) -> [a] -> SBinder s (Co [c]) r
+mapMnow :: (a -> SBinder s b r) -> [a] -> SBinder s [b] r
+mapMnow _ [] k = k []
+mapMnow f (x : xs) k =
+  f
+    x
+    ( \y ->
+        mapMnow
+          f
+          xs
+          ( \ys ->
+              k (y : ys)
+          )
+    )
+
+mapMlater :: (a -> SBinder s (Co b) r) -> [a] -> SBinder s (Co [b]) r
 mapMlater _ [] k = k (pure [])
 mapMlater f (x : xs) k =
   f
