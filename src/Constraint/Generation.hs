@@ -1,14 +1,14 @@
-{-# LANGUAGE TupleSections #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-{-# HLINT ignore "Use tuple-section" #-}
 module Constraint.Generation where
 
 import Common.Identifiers (IsString (fromString), TVarId (..), VarId (..))
 import Constraint.Datatype (AstEnv)
 import Constraint.Solver
-import Constraint.SolverM (SolverM)
+import Constraint.SolverM (SolverCtx (..), SolverM)
 import Constraint.Structure
+import Constraint.Utils (throwTypeError)
+import Control.Monad.State.Class (get, put)
 import Data.List (elemIndex)
 import Data.Maybe (fromJust)
 import IR.IR
@@ -75,8 +75,8 @@ hastype prog = hastype'
           cu <- hastype' u w
           letn
             names
-            ( \vs -> do
-                hastypeLets
+            ( \vs ->
+                hastypeExprs
                   prog
                   binds'
                   vs
@@ -93,30 +93,115 @@ hastype prog = hastype'
     hastype' (Match e branches _) w =
       exist
         ( \v ->
-            ( hastypeBranches
-                prog
-                branches
-                w
-                v
-                ( \branches' -> do
-                    c1 <- hastype' e v
-                    let ty = CDecode w
-                    return $ c1 ^& branches' ^& ty
-                )
-            )
+            hastypeBranches
+              prog
+              branches
+              w
+              v
+              ( \branches' -> do
+                  c1 <- hastype' e v
+                  let ty = CDecode w
+                  return $ c1 ^& branches' ^& ty
+              )
         )
         <$$> \((e', branches'), t) -> Match e' branches' t
-    hastype' e _ = error $ show e
+    hastype' (Prim prim es _) w = hastypePrim prog prim es w
+    hastype' (Data dcid _) w = hastypeData prog dcid w
+
+hastypePrim ::
+  Program Annotations ->
+  Primitive ->
+  [Expr Annotations] ->
+  Variable ->
+  SolverM s (Co (Expr Type))
+hastypePrim prog prim es w =
+  case prim of
+    New ->
+      exist
+        ( \v ->
+            case es of
+              [x] -> do
+                c1 <- w -==- TyConS (TConId "&") [v]
+                c2 <- hastype prog x v
+                return $ c1 ^& c2
+              _ -> throwIncorrectPrimArguments prim
+        )
+        <$$> \(_, e) -> Prim prim [e] (Ref (extract e))
+    Dup -> undefined
+    Drop -> undefined
+    Deref -> undefined
+    Assign -> undefined
+    After -> undefined
+    Par -> undefined
+    Wait -> undefined
+    Loop -> undefined
+    Break -> undefined
+    Now -> undefined
+    PrimOp primOp -> hastypePrimOp prog primOp es w
+    CQuote s -> undefined
+    CCall csym -> undefined
+    FfiCall vid -> undefined
+
+hastypePrimOp ::
+  Program Annotations ->
+  PrimOp ->
+  [Expr Annotations] ->
+  Variable ->
+  SolverM s (Co (Expr Type))
+hastypePrimOp prog primOp es w =
+  case primOp of
+    PrimNeg -> undefined
+    PrimNot -> undefined
+    PrimBitNot -> undefined
+    PrimAdd ->
+      exist
+        ( \v1 ->
+            exist
+              ( \v2 ->
+                  case es of
+                    [x1, x2] -> do
+                      c1 <- w -==- TyConS (TConId "Int32") []
+                      c2 <- hastype prog x1 v1
+                      c3 <- hastype prog x2 v2
+                      return $ c1 ^& c2 ^& c3
+                    _ -> throwIncorrectPrimOpArguments primOp
+              )
+        )
+        <$$> \((_, e1), e2) -> Prim (PrimOp primOp) [e1, e2] U32
+    PrimSub -> undefined
+    PrimMul -> undefined
+    PrimDiv -> undefined
+    PrimMod -> undefined
+    PrimBitAnd -> undefined
+    PrimBitOr -> undefined
+    PrimEq -> undefined
+    PrimNeq -> undefined
+    PrimGt -> undefined
+    PrimGe -> undefined
+    PrimLt -> undefined
+    PrimLe -> undefined
+
+throwIncorrectPrimArguments :: Primitive -> SolverM s a
+throwIncorrectPrimArguments prim = throwTypeError $ "incorrect argument number for " ++ show prim
+
+throwIncorrectPrimOpArguments :: PrimOp -> SolverM s a
+throwIncorrectPrimOpArguments primOp = throwTypeError $ "incorrect argument number for " ++ show primOp
+
+hastypeData ::
+  Program Annotations ->
+  DConId ->
+  Variable ->
+  SolverM s (Co (Expr Type))
+hastypeData = undefined
 
 unBinder :: Binder -> SolverM s VarId
-unBinder = undefined
+unBinder = maybe freshName return
 
-hastypeLets ::
-  Program Annotations ->
-  [(VarId, Expr Annotations)] ->
-  [Variable] ->
-  SBinder s (Co [(VarId, Expr Type)]) r
-hastypeLets = undefined
+freshName :: SolverM s VarId
+freshName = do
+  ctx <- get
+  put ctx {currNameId = currNameId ctx + 1}
+  return . VarId . fromString $ "_anon_var" ++ show (currNameId ctx)
 
 hastypeBranches ::
   Program Annotations ->
@@ -161,7 +246,7 @@ existDefs ::
   Program Annotations ->
   [(VarId, Expr Annotations)] ->
   SBinder s [Variable] r
-existDefs prog defs = mapMnow onDef defs
+existDefs prog = mapMnow onDef
   where
     onDef :: (VarId, Expr Annotations) -> SBinder s Variable r
     onDef (name, e) = exist
@@ -170,7 +255,7 @@ hastypeDefs ::
   Program Annotations ->
   [(VarId, Expr Annotations)] ->
   SolverM s (Co [(VarId, Expr Type)])
-hastypeDefs prog defs = do
+hastypeDefs prog defs =
   existDefs
     prog
     defs

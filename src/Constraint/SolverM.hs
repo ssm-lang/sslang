@@ -6,10 +6,11 @@ import Control.Monad.State.Lazy (StateT (..))
 
 data SolverCtx = SolverCtx
   { currId :: Int,
-    currMark :: Int
+    currMark :: Int,
+    currNameId :: Int
   }
 
 type SolverM s a = STT s (StateT SolverCtx Pass) a
 
 initSolverCtx :: SolverCtx
-initSolverCtx = SolverCtx {currId = 0, currMark = 0}
+initSolverCtx = SolverCtx {currId = 0, currMark = 0, currNameId = 0}
