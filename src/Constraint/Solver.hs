@@ -30,8 +30,8 @@ data Co a where
   CEq :: Variable -> Variable -> Co ()
   CExist :: Variable -> Maybe (Structure Variable) -> Co a -> Co a
   CDecode :: Variable -> Co I.Type
-  CInstance :: VarId -> Variable -> Co [I.Type]
-  CDef :: VarId -> Variable -> Co a -> Co a
+  CInstance :: VarId -> Variable -> Co (Scheme, [I.Type])
+  CDef :: VarId -> Variable -> Co a -> Co (I.Type, a)
   CLet :: [Variable] -> [VarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
 
 instance Functor Co where
@@ -41,7 +41,8 @@ instance Applicative Co where
   pure = CPure
   mf <*> mx = fmap (\(f, x) -> f x) (CConj mf mx)
 
-solveAndElab :: Co (I.Expr I.Type) -> SolverM s (I.Expr I.Type)
+-- solveAndElab :: Co (I.Expr I.Type) -> SolverM s (I.Expr I.Type)
+solveAndElab :: Co (I.Program I.Type) -> SolverM s (I.Program I.Type)
 solveAndElab c = do
   unless (ok c) (throwError . TypeError . fromString $ "Solver: ill-formed toplevel constraint")
   ctx <- initCtx
@@ -89,14 +90,20 @@ solve ctx = solve'
       (witnesses, v) <- instantiate ctx s
       uw <- uvar ctx w
       U.unify v uw
-      return $ mapM (decode ctx) witnesses
+      return $ do
+        s' <- decodeScheme ctx s
+        witnesses' <- mapM (decode ctx) witnesses
+        return (s', witnesses')
     solve' (CDef x v c) = do
       uv <- uvar ctx v
       let s = G.trivial uv
       bind ctx x s
       r <- solve ctx c
       unbind ctx x
-      return r
+      return $ do
+        res <- r
+        t <- decode ctx uv
+        return (t, res)
     solve' (CLet rs xs vs c1 c2) = do
       enter ctx
       urs <- mapM (rigid ctx) rs
@@ -228,7 +235,7 @@ data DeepType
   = DeepVar Variable
   | DeepStructure (Structure DeepType)
 
-inst :: VarId -> Variable -> SolverM s (Co [I.Type])
+inst :: VarId -> Variable -> SolverM s (Co (Scheme, [I.Type]))
 inst x v = return $ CInstance x v
 
 (-=-) :: Variable -> Variable -> SolverM s (Co ())
@@ -241,6 +248,12 @@ v1 -=- v2 = return $ CEq v1 v2
 m <$$> f = do
   c <- m
   return $ CMap c f
+
+(^&) :: Co a -> Co b -> Co (a, b)
+c1 ^& c2 = CConj c1 c2
+
+def :: VarId -> Variable -> Co a -> Co (I.Type, a)
+def = CDef
 
 letrn ::
   Int ->
