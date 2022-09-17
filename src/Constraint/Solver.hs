@@ -31,7 +31,7 @@ data Co a where
   CExist :: Variable -> Maybe (Structure Variable) -> Co a -> Co a
   CDecode :: Variable -> Co I.Type
   CInstance :: VarId -> Variable -> Co (Scheme, [I.Type])
-  CDef :: VarId -> Variable -> Co a -> Co (I.Type, a)
+  CDef :: VarId -> Variable -> Co a -> Co a
   CLet :: [Variable] -> [VarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
 
 instance Functor Co where
@@ -100,10 +100,10 @@ solve ctx = solve'
       bind ctx x s
       r <- solve ctx c
       unbind ctx x
-      return $ do
-        res <- r
-        t <- decode ctx uv
-        return (t, res)
+      return r
+    -- res <- r
+    -- t <- decode ctx uv
+    -- return (t, res)
     solve' (CLet rs xs vs c1 c2) = do
       enter ctx
       urs <- mapM (rigid ctx) rs
@@ -176,7 +176,7 @@ elookup (Ctx {ctxEnv = env}) vid = do
   res <- SM.lookup env vid
   case res of
     Just s -> return s
-    Nothing -> throwTypeError $ "unvound variable: " ++ show vid
+    Nothing -> throwTypeError $ "unbound variable: " ++ show vid
 
 bind :: Ctx s -> VarId -> G.Scheme s -> SolverM s ()
 bind (Ctx {ctxEnv = env}) = SM.add env
@@ -227,7 +227,7 @@ uunbind :: Ctx s -> Variable -> SolverM s ()
 uunbind (Ctx {ctxTab = tab}) = SM.remove tab
 
 -- | Combinators
-type Binder s a = (Variable -> SolverM s (Co a)) -> SolverM s (Co a)
+type SBinder s v a = (v -> SolverM s (Co a)) -> SolverM s (Co a)
 
 type ShallowType = Structure Variable
 
@@ -252,25 +252,25 @@ m <$$> f = do
 (^&) :: Co a -> Co b -> Co (a, b)
 c1 ^& c2 = CConj c1 c2
 
-def :: VarId -> Variable -> Co a -> Co (I.Type, a)
+def :: VarId -> Variable -> Co a -> Co a
 def = CDef
 
 letrn ::
   Int ->
   [I.VarId] ->
-  ([Variable] -> [Variable] -> Co a) ->
+  ([Variable] -> [Variable] -> SolverM s (Co a)) ->
   Co b ->
   SolverM s (Co ([TVarId], [Scheme], a, b))
 letrn k xs f1 c2 = do
   rs <- replicateM k U.freshId
   vs <- mapM (const U.freshId) xs
-  let c1 = f1 rs vs
+  c1 <- f1 rs vs
   return $ CLet rs xs vs c1 c2
 
 letr1 ::
   Int ->
   I.VarId ->
-  ([Variable] -> Variable -> Co a) ->
+  ([Variable] -> Variable -> SolverM s (Co a)) ->
   Co b ->
   SolverM s (Co ([TVarId], Scheme, a, b))
 letr1 k x f1 c2 =
@@ -279,14 +279,14 @@ letr1 k x f1 c2 =
 
 letn ::
   [VarId] ->
-  ([Variable] -> Co a) ->
+  ([Variable] -> SolverM s (Co a)) ->
   Co b ->
   SolverM s (Co ([TVarId], [Scheme], a, b))
-letn xs f1 = letrn 1 xs (\_rs vs -> f1 vs)
+letn xs f1 = letrn 0 xs (\_rs vs -> f1 vs)
 
 let1 ::
   VarId ->
-  (Variable -> Co c) ->
+  (Variable -> SolverM s (Co c)) ->
   Co d ->
   SolverM s (Co ([TVarId], Scheme, c, d))
 let1 x f1 c2 =
@@ -295,16 +295,16 @@ let1 x f1 c2 =
 
 let0 :: Co b -> SolverM s (Co ([TVarId], b))
 let0 c1 =
-  letn [] (const c1) CTrue
+  letn [] (const (return c1)) CTrue
     <$$> \(gammas, _, v1, _) -> (gammas, v1)
 
-exist :: Binder s r
+exist :: SBinder s Variable r
 exist = exist' Nothing
 
-shallow :: ShallowType -> Binder s r
+shallow :: ShallowType -> SBinder s Variable r
 shallow t = exist' (Just t)
 
-deep :: DeepType -> Binder s r
+deep :: DeepType -> SBinder s Variable r
 deep dty f = do
   vsRef <- newSTRef []
   let convert dty' =
@@ -327,7 +327,7 @@ liftB ::
   SolverM s (Co b)
 liftB f v1 t2 = shallow t2 (f v1)
 
-exist' :: Maybe ShallowType -> Binder s a
+exist' :: Maybe ShallowType -> SBinder s Variable a
 exist' t f = do
   v <- U.freshId
   c <- f v
