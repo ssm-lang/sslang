@@ -4,10 +4,11 @@ module Constraint.Generation where
 
 import Common.Identifiers (IsString (fromString), TVarId (..), VarId (..))
 import Constraint.Datatype (AstEnv)
-import Constraint.Solver
+import Constraint.Solver as S
 import Constraint.SolverM (SolverCtx (..), SolverM)
 import Constraint.Structure
 import Constraint.Utils (throwTypeError)
+import Control.Monad (unless)
 import Control.Monad.State.Class (get, put)
 import Data.List (elemIndex)
 import Data.Maybe (fromJust)
@@ -82,8 +83,6 @@ hastype prog = hastype'
                   vs
                   ( return . defDefs prog binds' vs
                   )
-                  -- c <- hastype' e v
-                  -- return $ def (fromJust x) v c -- support recursion
             )
             cu
       )
@@ -115,32 +114,82 @@ hastypePrim ::
   Variable ->
   SolverM s (Co (Expr Type))
 hastypePrim prog prim es w =
-  case prim of
-    New ->
-      exist
-        ( \v ->
-            case es of
-              [x] -> do
-                c1 <- w -==- TyConS (TConId "&") [v]
-                c2 <- hastype prog x v
-                return $ c1 ^& c2
-              _ -> throwIncorrectPrimArguments prim
-        )
-        <$$> \(_, e) -> Prim prim [e] (Ref (extract e))
-    Dup -> undefined
-    Drop -> undefined
-    Deref -> undefined
-    Assign -> undefined
-    After -> undefined
-    Par -> undefined
-    Wait -> undefined
-    Loop -> undefined
-    Break -> undefined
-    Now -> undefined
-    PrimOp primOp -> hastypePrimOp prog primOp es w
-    CQuote s -> undefined
-    CCall csym -> undefined
-    FfiCall vid -> undefined
+  let primConstraints' = primConstraints prog prim es w
+   in case prim of
+        New ->
+          primConstraints'
+            ( \vs ->
+                let v1 = head vs
+                 in Just $ DeepStructure (TyConS (TConId "&") [DeepVar v1])
+            )
+            (const [Nothing])
+        Dup ->
+          primConstraints'
+            (Just . DeepVar . head)
+            (const [Nothing])
+        Drop ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            (const [Nothing])
+        Deref ->
+          primConstraints'
+            ( \vs ->
+                let v1 = head vs
+                 in Just $ DeepStructure $ TyConS "&" [DeepVar v1]
+            )
+            (const [Nothing])
+        Assign ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            ( \vs ->
+                let v1 = head vs
+                 in [ Just $ DeepStructure $ TyConS "&" [DeepVar v1],
+                      Just $ DeepVar v1
+                    ]
+            )
+        After ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            ( \vs ->
+                let v1 = head vs
+                 in [ Just $ DeepStructure $ TyConS "Int32" [],
+                      Just $ DeepStructure $ TyConS "&" [DeepVar v1],
+                      Just $ DeepVar v1
+                    ]
+            )
+        Par ->
+          primConstraints'
+            (Just . tupleDeepStructure)
+            (map $ const Nothing)
+        Wait ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            (map $ const Nothing)
+        Loop ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            (const [Nothing])
+        Break ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "()" [])
+            (const [])
+        Now ->
+          primConstraints'
+            (const $ Just $ DeepStructure $ TyConS "Int32" [])
+            (const [Just $ DeepStructure $ TyConS "()" []])
+        PrimOp primOp -> hastypePrimOp prog primOp es w
+        CQuote s ->
+          primConstraints'
+            (const Nothing)
+            (const [])
+        CCall csym ->
+          primConstraints'
+            (const Nothing)
+            (const [])
+        FfiCall vid -> undefined -- TODO
+
+tupleDeepStructure :: [Variable] -> DeepType
+tupleDeepStructure vs = DeepStructure $ TyConS (tupleId $ length vs) (map DeepVar vs)
 
 hastypePrimOp ::
   Program Annotations ->
@@ -149,37 +198,77 @@ hastypePrimOp ::
   Variable ->
   SolverM s (Co (Expr Type))
 hastypePrimOp prog primOp es w =
-  case primOp of
-    PrimNeg -> undefined
-    PrimNot -> undefined
-    PrimBitNot -> undefined
-    PrimAdd ->
-      exist
-        ( \v1 ->
-            exist
-              ( \v2 ->
-                  case es of
-                    [x1, x2] -> do
-                      c1 <- w -==- TyConS (TConId "Int32") []
-                      c2 <- hastype prog x1 v1
-                      c3 <- hastype prog x2 v2
-                      return $ c1 ^& c2 ^& c3
-                    _ -> throwIncorrectPrimOpArguments primOp
+  let primConstraints' = primConstraints prog (PrimOp primOp) es w
+      unaryPrimOp =
+        primConstraints'
+          (const (Just $ DeepStructure $ TyConS (TConId "Int32") []))
+          (const [Just $ DeepStructure $ TyConS (TConId "Int32") []])
+      binaryPrimOp =
+        primConstraints'
+          (const (Just $ DeepStructure $ TyConS (TConId "Int32") []))
+          ( const
+              [ Just $ DeepStructure $ TyConS (TConId "Int32") [],
+                Just $ DeepStructure $ TyConS (TConId "Int32") []
+              ]
+          )
+   in case primOp of
+        PrimNeg -> unaryPrimOp
+        PrimNot -> unaryPrimOp
+        PrimBitNot -> unaryPrimOp
+        PrimAdd -> binaryPrimOp
+        PrimSub -> binaryPrimOp
+        PrimMul -> binaryPrimOp
+        PrimDiv -> binaryPrimOp
+        PrimMod -> binaryPrimOp
+        PrimBitAnd -> binaryPrimOp
+        PrimBitOr -> binaryPrimOp
+        PrimEq -> binaryPrimOp
+        PrimNeq -> binaryPrimOp
+        PrimGt -> binaryPrimOp
+        PrimGe -> binaryPrimOp
+        PrimLt -> binaryPrimOp
+        PrimLe -> binaryPrimOp
+
+primConstraints ::
+  Program Annotations ->
+  Primitive ->
+  [Expr Annotations] ->
+  Variable ->
+  ([Variable] -> Maybe DeepType) ->
+  ([Variable] -> [Maybe DeepType]) ->
+  SolverM s (Co (Expr Type))
+primConstraints prog prim es w struc strucs = do
+  existn
+    es
+    ( \vs -> do
+        unless (length es == length (strucs vs)) $ throwIncorrectPrimArguments prim
+        mapMlater
+          perE
+          (zip3 es vs (strucs vs))
+          ( \ces ->
+              ( do
+                  c1 <- case struc vs of
+                    Just struc' ->
+                      deep struc' (w -=-)
+                    Nothing -> return S.CTrue
+                  let c2 = CDecode w
+                  return $ c1 ^& ces ^& c2
               )
-        )
-        <$$> \((_, e1), e2) -> Prim (PrimOp primOp) [e1, e2] U32
-    PrimSub -> undefined
-    PrimMul -> undefined
-    PrimDiv -> undefined
-    PrimMod -> undefined
-    PrimBitAnd -> undefined
-    PrimBitOr -> undefined
-    PrimEq -> undefined
-    PrimNeq -> undefined
-    PrimGt -> undefined
-    PrimGe -> undefined
-    PrimLt -> undefined
-    PrimLe -> undefined
+                <$$> \((_, es'), t) -> Prim prim es' t
+          )
+    )
+  where
+    perE (e, v, struc') k = do
+      c <-
+        ( do
+            c1 <- hastype prog e v
+            c2 <- case struc' of
+              Just struc'' -> deep struc'' (v -=-)
+              Nothing -> return S.CTrue
+            return $ c1 ^& c2
+          )
+          <$$> fst
+      k c
 
 throwIncorrectPrimArguments :: Primitive -> SolverM s a
 throwIncorrectPrimArguments prim = throwTypeError $ "incorrect argument number for " ++ show prim
@@ -192,7 +281,7 @@ hastypeData ::
   DConId ->
   Variable ->
   SolverM s (Co (Expr Type))
-hastypeData = undefined
+hastypeData prog dcid w = undefined
 
 unBinder :: Binder -> SolverM s VarId
 unBinder = maybe freshName return
@@ -242,22 +331,20 @@ hastypeExprs prog defs vs =
       c <- hastype prog e v <$$> \e' -> (name, e')
       k c
 
-existDefs ::
-  Program Annotations ->
-  [(VarId, Expr Annotations)] ->
+existn ::
+  [a] ->
   SBinder s [Variable] r
-existDefs prog = mapMnow onDef
+existn = mapMnow onDef
   where
-    onDef :: (VarId, Expr Annotations) -> SBinder s Variable r
-    onDef (name, e) = exist
+    onDef :: a -> SBinder s Variable r
+    onDef _ = exist
 
 hastypeDefs ::
   Program Annotations ->
   [(VarId, Expr Annotations)] ->
   SolverM s (Co [(VarId, Expr Type)])
 hastypeDefs prog defs =
-  existDefs
-    prog
+  existn
     defs
     ( \vs ->
         hastypeExprs
