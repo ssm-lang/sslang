@@ -234,6 +234,7 @@ type ShallowType = Structure Variable
 data DeepType
   = DeepVar Variable
   | DeepStructure (Structure DeepType)
+  deriving (Show)
 
 inst :: VarId -> Variable -> SolverM s (Co (Scheme, [I.Type]))
 inst x v = return $ CInstance x v
@@ -257,7 +258,7 @@ def = CDef
 
 letrn ::
   Int ->
-  [I.VarId] ->
+  [VarId] ->
   ([Variable] -> [Variable] -> SolverM s (Co a)) ->
   Co b ->
   SolverM s (Co ([TVarId], [Scheme], a, b))
@@ -269,7 +270,7 @@ letrn k xs f1 c2 = do
 
 letr1 ::
   Int ->
-  I.VarId ->
+  VarId ->
   ([Variable] -> Variable -> SolverM s (Co a)) ->
   Co b ->
   SolverM s (Co ([TVarId], Scheme, a, b))

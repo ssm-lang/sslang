@@ -2,32 +2,66 @@
 
 module Constraint.Generation where
 
-import Common.Identifiers (IsString (fromString), TVarId (..), VarId (..))
-import Constraint.Datatype (AstEnv)
+import Common.Identifiers (IsString (fromString), TVarId (..))
 import Constraint.Solver as S
-import Constraint.SolverM (SolverCtx (..), SolverM)
+import Constraint.SolverM (SolverCtx (..), SolverGen (..), SolverM)
 import Constraint.Structure
 import Constraint.Utils (throwTypeError)
-import Control.Monad (unless)
+import Control.Monad (foldM, unless)
 import Control.Monad.State.Class (get, put)
 import Data.List (elemIndex)
+import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import IR.IR
 import IR.Types.Type
 
-genConstraints :: Program Annotations -> SolverM s (Co (Program Type))
-genConstraints prog = do
-  -- let (n, e) = head $ programDefs prog
-  -- c1 <-
-  --   exist
-  --     ( \v -> do
-  --         c <- hastype prog e v
-  --         return $ def n v c -- support recursion
-  --     )
-  c1 <- hastypeDefs prog (programDefs prog)
-  c2 <- let0 c1 -- make constraint well-formed
-  let c3 = fmap (\(_, defs') -> prog {programDefs = defs'}) c2
-  return c3
+genConstraints :: SolverM s (Co (Program Type))
+genConstraints = do
+  m <- dconMap . solverGen <$> get
+  prog <- solverProg <$> get
+  c <-
+    hastypeDefs (programDefs prog)
+      >>= genDConConstraints -- define data constructors in constraints (using CLet)
+      >>= let0 -- make constraint well-formed
+  let c' = fmap (\(_, defs') -> prog {programDefs = defs'}) c
+  return c'
+
+genDConConstraints :: Co [(VarId, Expr Type)] -> SolverM s (Co [(VarId, Expr Type)])
+genDConConstraints cdefs = do
+  cmap <- dconMap . solverGen <$> get
+  foldM dconConstraint cdefs cmap
+  where
+    dconDeepStruc tcid _ [] vs = return $ DeepStructure (TyConS tcid (map DeepVar vs))
+    dconDeepStruc tcid tvs (t : ts) vs = do
+      d <- dconDeepStruc tcid tvs ts vs
+      let substT (TCon tcid' ts') = do
+            ts'' <- mapM substT ts'
+            return $ DeepStructure (TyConS tcid' ts'')
+          substT (TVar tvid) = case elemIndex tvid tvs of
+            Just i -> return $ DeepVar (vs !! i)
+            Nothing -> throwTypeError $ "unknown data constructor type variable: " ++ show tvid
+      dcurr <- substT t
+      return $
+        DeepStructure
+          ( TyConS
+              (fromString "->")
+              [dcurr, d]
+          )
+    dconConstraint c (DConId ident, tcid, tvs, ts) = do
+      let vid = VarId ident
+          defC =
+            let1
+              vid
+              ( \w ->
+                  existn
+                    (length tvs)
+                    ( \vs -> do
+                        deepstruc <- dconDeepStruc tcid tvs ts vs
+                        deep deepstruc (w -=-)
+                    )
+              )
+              c
+      defC <$$> \(_, _, _, d) -> d
 
 lookupLitStruc :: Literal -> Structure Variable
 lookupLitStruc (LitIntegral _) = TyConS (fromString "Int32") []
@@ -37,84 +71,82 @@ lookupLitType :: Literal -> Type
 lookupLitType (LitIntegral _) = I32
 lookupLitType LitEvent = Unit
 
-hastype :: Program Annotations -> Expr Annotations -> Variable -> SolverM s (Co (Expr Type))
-hastype prog = hastype'
-  where
-    hastype' (Var x _) w =
-      inst x w
-        <$$> \((gs, t), witnesses) -> Var x (subTVars gs witnesses t)
-    hastype' (Lit l _) w =
-      w -==- lookupLitStruc l
-        <$$> \_ -> Lit l (lookupLitType l)
-    hastype' (Lambda x u _) w =
-      exist
-        ( \v1 ->
-            exist
-              ( \v2 ->
-                  do
-                    c1 <- w -==- TyConS (fromString "->") [v1, v2]
-                    c2 <- hastype prog u v2
-                    let c3 = def (fromJust x) v1 c2
-                    return $ c1 ^& c3 ^& CDecode v1
+hastype :: Expr Annotations -> Variable -> SolverM s (Co (Expr Type))
+hastype (Var x _) w =
+  inst x w
+    <$$> \((gs, t), witnesses) -> Var x (subTVars gs witnesses t)
+hastype (Data dcid@(DConId ident) _) w =
+  inst (VarId ident) w
+    <$$> \((gs, t), witnesses) -> Data dcid (subTVars gs witnesses t)
+hastype (Lit l _) w =
+  w -==- lookupLitStruc l
+    <$$> \_ -> Lit l (lookupLitType l)
+hastype (Lambda x u _) w =
+  exist
+    ( \v1 ->
+        exist
+          ( \v2 ->
+              do
+                c1 <- w -==- TyConS (fromString "->") [v1, v2]
+                c2 <- hastype u v2
+                x' <- unBinder x
+                let c3 = def x' v1 c2
+                return $ c1 ^& c3 ^& CDecode v1
+          )
+    )
+    <$$> \((_, e), t) -> Lambda x e (Arrow t (extract e))
+hastype (App e1 e2 _) w =
+  exist
+    ( \v -> do
+        c1 <- liftB hastype e1 (TyConS (fromString "->") [v, w])
+        c2 <- hastype e2 v
+        return $ c1 ^& c2
+    )
+    <$$> \(e1', e2') -> App e1' e2' (Arrow (extract e1') (extract e2'))
+hastype (Let binds u _) w =
+  ( do
+      let binders = map fst binds
+          exprs = map snd binds
+      names <- mapM unBinder binders
+      let binds' = zip names exprs
+      cu <- hastype u w
+      letn
+        names
+        ( \vs ->
+            hastypeExprs
+              binds'
+              vs
+              ( return . defDefs binds' vs
               )
         )
-        <$$> \((_, e), t) -> Lambda x e (Arrow t (extract e))
-    hastype' (App e1 e2 _) w =
-      exist
-        ( \v -> do
-            c1 <- liftB hastype' e1 (TyConS (fromString "->") [v, w])
-            c2 <- hastype' e2 v
-            return $ c1 ^& c2
-        )
-        <$$> \(e1', e2') -> App e1' e2' (Arrow (extract e1') (extract e2'))
-    hastype' (Let binds u _) w =
-      ( do
-          let binders = map fst binds
-              exprs = map snd binds
-          names <- mapM unBinder binders
-          let binds' = zip names exprs
-          cu <- hastype' u w
-          letn
-            names
-            ( \vs ->
-                hastypeExprs
-                  prog
-                  binds'
-                  vs
-                  ( return . defDefs prog binds' vs
-                  )
-            )
-            cu
-      )
-        <$$> \(_, _, binds', u') ->
-          let binds'' = [(n, e) | ((n, _), (_, e)) <- zip binds binds']
-           in Let binds'' u' (extract u')
-    hastype' (Match e branches _) w =
-      exist
-        ( \v ->
-            hastypeBranches
-              prog
-              branches
-              w
-              v
-              ( \branches' -> do
-                  c1 <- hastype' e v
-                  let ty = CDecode w
-                  return $ c1 ^& branches' ^& ty
-              )
-        )
-        <$$> \((e', branches'), t) -> Match e' branches' t
-    hastype' (Prim prim es _) w = hastypePrim prog prim es w
-    hastype' (Data dcid _) w = hastypeData prog dcid w
+        cu
+  )
+    <$$> \(_, _, binds', u') ->
+      let binds'' = [(n, e) | ((n, _), (_, e)) <- zip binds binds']
+       in Let binds'' u' (extract u')
+hastype (Match e branches _) w =
+  exist
+    ( \v ->
+        hastypeBranches
+          branches
+          w
+          v
+          ( \branches' -> do
+              c1 <- hastype e v
+              let ty = CDecode w
+              return $ c1 ^& branches' ^& ty
+          )
+    )
+    <$$> \((e', branches'), t) -> Match e' branches' t
+hastype (Prim prim es _) w = hastypePrim prim es w
 
 hastypePrim ::
-  Program Annotations ->
   Primitive ->
   [Expr Annotations] ->
   Variable ->
   SolverM s (Co (Expr Type))
-hastypePrim prog prim es w =
-  let primConstraints' = primConstraints prog prim es w
+hastypePrim prim es w =
+  let primConstraints' = primConstraints prim es w
    in case prim of
         New ->
           primConstraints'
@@ -133,11 +165,8 @@ hastypePrim prog prim es w =
             (const [Nothing])
         Deref ->
           primConstraints'
-            ( \vs ->
-                let v1 = head vs
-                 in Just $ DeepStructure $ TyConS "&" [DeepVar v1]
-            )
-            (const [Nothing])
+            (const Nothing)
+            (const [Just $ DeepStructure $ TyConS "&" [DeepVar w]])
         Assign ->
           primConstraints'
             (const $ Just $ DeepStructure $ TyConS "()" [])
@@ -177,7 +206,7 @@ hastypePrim prog prim es w =
           primConstraints'
             (const $ Just $ DeepStructure $ TyConS "Int32" [])
             (const [Just $ DeepStructure $ TyConS "()" []])
-        PrimOp primOp -> hastypePrimOp prog primOp es w
+        PrimOp primOp -> hastypePrimOp primOp es w
         CQuote s ->
           primConstraints'
             (const Nothing)
@@ -192,13 +221,12 @@ tupleDeepStructure :: [Variable] -> DeepType
 tupleDeepStructure vs = DeepStructure $ TyConS (tupleId $ length vs) (map DeepVar vs)
 
 hastypePrimOp ::
-  Program Annotations ->
   PrimOp ->
   [Expr Annotations] ->
   Variable ->
   SolverM s (Co (Expr Type))
-hastypePrimOp prog primOp es w =
-  let primConstraints' = primConstraints prog (PrimOp primOp) es w
+hastypePrimOp primOp es w =
+  let primConstraints' = primConstraints (PrimOp primOp) es w
       unaryPrimOp =
         primConstraints'
           (const (Just $ DeepStructure $ TyConS (TConId "Int32") []))
@@ -230,16 +258,15 @@ hastypePrimOp prog primOp es w =
         PrimLe -> binaryPrimOp
 
 primConstraints ::
-  Program Annotations ->
   Primitive ->
   [Expr Annotations] ->
   Variable ->
   ([Variable] -> Maybe DeepType) ->
   ([Variable] -> [Maybe DeepType]) ->
   SolverM s (Co (Expr Type))
-primConstraints prog prim es w struc strucs = do
+primConstraints prim es w struc strucs = do
   existn
-    es
+    (length es)
     ( \vs -> do
         unless (length es == length (strucs vs)) $ throwIncorrectPrimArguments prim
         mapMlater
@@ -261,7 +288,7 @@ primConstraints prog prim es w struc strucs = do
     perE (e, v, struc') k = do
       c <-
         ( do
-            c1 <- hastype prog e v
+            c1 <- hastype e v
             c2 <- case struc' of
               Just struc'' -> deep struc'' (v -=-)
               Nothing -> return S.CTrue
@@ -276,13 +303,6 @@ throwIncorrectPrimArguments prim = throwTypeError $ "incorrect argument number f
 throwIncorrectPrimOpArguments :: PrimOp -> SolverM s a
 throwIncorrectPrimOpArguments primOp = throwTypeError $ "incorrect argument number for " ++ show primOp
 
-hastypeData ::
-  Program Annotations ->
-  DConId ->
-  Variable ->
-  SolverM s (Co (Expr Type))
-hastypeData prog dcid w = undefined
-
 unBinder :: Binder -> SolverM s VarId
 unBinder = maybe freshName return
 
@@ -290,15 +310,14 @@ freshName :: SolverM s VarId
 freshName = do
   ctx <- get
   put ctx {currNameId = currNameId ctx + 1}
-  return . VarId . fromString $ "_anon_var" ++ show (currNameId ctx)
+  return . VarId . fromString $ "_type_pass_anon_var" ++ show (currNameId ctx)
 
 hastypeBranches ::
-  Program Annotations ->
   [(Alt, Expr Annotations)] ->
   Variable ->
   Variable ->
   SBinder s (Co [(Alt, Expr Type)]) r
-hastypeBranches prog branches vReturn vScrutinee =
+hastypeBranches branches vReturn vScrutinee =
   mapMlater onBranch branches
   where
     onBranch :: (Alt, Expr Annotations) -> SBinder s (Co (Alt, Expr Type)) r
@@ -306,62 +325,115 @@ hastypeBranches prog branches vReturn vScrutinee =
       res <-
         ( do
             c1 <- vScrutinee -==- lookupLitStruc lit
-            c2 <- hastype prog u vReturn
+            c2 <- hastype u vReturn
             return $ c1 ^& c2
           )
           <$$> \(_, u') -> (p, u')
       k res
     onBranch (p@(AltDefault Nothing), u) k = do
       res <-
-        hastype prog u vReturn
+        hastype u vReturn
           <$$> \u' -> (p, u')
       k res
-    onBranch _ _ = error "this type of Alt is not inferred yet"
+    onBranch (p@(AltData dcid binders), u) k = do
+      hastypeBranchData
+        dcid
+        binders
+        u
+        vReturn
+        vScrutinee
+        ( k . fmap (\u' -> (p, u'))
+        )
+
+hastypeBranchData ::
+  DConId ->
+  [Binder] ->
+  Expr Annotations ->
+  Variable ->
+  Variable ->
+  SBinder s (Co (Expr Type)) r
+hastypeBranchData dcid binders u vReturn vScrutinee k = do
+  res <-
+    ( do
+        vids <- mapM unBinder binders
+        existn
+          (length vids)
+          ( \vs -> do
+              cmap <- dconMap . solverGen <$> get
+              case M.lookup dcid cmap of
+                Just (_, tcid, tvs, ts) ->
+                  existn
+                    (length tvs)
+                    ( \dataVs -> do
+                        let scrutineeType = DeepStructure (TyConS tcid (map DeepVar dataVs))
+                        cScrutinee <- deep scrutineeType (vScrutinee -=-)
+                        cInner <- hastype u vReturn
+                        cData <- foldM (defAltVar tvs dataVs) cInner (zip3 vids ts vs)
+                        return $ cScrutinee ^& cData
+                    )
+                Nothing -> throwTypeError $ "Alt data pattern does not exist: " ++ show dcid
+          )
+      )
+      <$$> \(_, inner) -> inner
+  k res
+  where
+    defAltVar tvs dataVs cInner (vid, t, v) = do
+      let substT (TCon tcid' ts') = do
+            ts'' <- mapM substT ts'
+            return $ DeepStructure (TyConS tcid' ts'')
+          substT (TVar tvid) = case elemIndex tvid tvs of
+            Just i -> return $ DeepVar (dataVs !! i)
+            Nothing -> throwTypeError $ "unknown data constructor type variable: " ++ show tvid
+      deepT <- substT t
+      ( deep
+          deepT
+          ( \w -> do
+              c1 <- v -=- w
+              return $ c1 ^& def vid v cInner
+          )
+        )
+        <$$> \(_, e) -> e
 
 hastypeExprs ::
-  Program Annotations ->
   [(VarId, Expr Annotations)] ->
   [Variable] ->
   SBinder s (Co [(VarId, Expr Type)]) r
-hastypeExprs prog defs vs =
+hastypeExprs defs vs =
   mapMlater onDef (zip defs vs)
   where
     onDef :: ((VarId, Expr Annotations), Variable) -> SBinder s (Co (VarId, Expr Type)) r
     onDef ((name, e), v) k = do
-      c <- hastype prog e v <$$> \e' -> (name, e')
+      c <- hastype e v <$$> \e' -> (name, e')
       k c
 
 existn ::
-  [a] ->
+  Int ->
   SBinder s [Variable] r
-existn = mapMnow onDef
+existn k = mapMnow onDef [1 .. k]
   where
     onDef :: a -> SBinder s Variable r
     onDef _ = exist
 
 hastypeDefs ::
-  Program Annotations ->
   [(VarId, Expr Annotations)] ->
   SolverM s (Co [(VarId, Expr Type)])
-hastypeDefs prog defs =
+hastypeDefs defs =
   existn
-    defs
+    (length defs)
     ( \vs ->
         hastypeExprs
-          prog
           defs
           vs
-          ( return . defDefs prog defs vs
+          ( return . defDefs defs vs
           )
     )
 
 defDefs ::
-  Program Annotations ->
   [(VarId, Expr Annotations)] ->
   [Variable] ->
   Co [(VarId, Expr Type)] ->
   Co [(VarId, Expr Type)]
-defDefs _ defs vs cdefs =
+defDefs defs vs cdefs =
   foldl addDef cdefs (zip defs vs)
   where
     addDef c ((name, _), v) = CDef name v c
@@ -404,9 +476,3 @@ mapMlater f (x : xs) k =
                 (fmap (uncurry (:)) (y ^& ys))
           )
     )
-
--- hastype' :: AstEnv -> A.Expr -> Variable -> SolverM s (Co IExpr)
--- hastype' = undefined
-
--- exist :: (Variable -> SolverM s (Co IExpr)) -> SolverM s (Co IExpr)
--- exist = undefined

@@ -20,7 +20,7 @@ import IR.IR (Annotations, Expr, Program (..), Type)
 
 -- | Elaborate implicitly typed AST program to explicitly typed IR program
 elab :: Program Annotations -> Compiler.Pass (Program Type)
-elab prog = evalStateT (runSTT (genConstraints prog >>= solveAndElab)) initSolverCtx
+elab prog = evalStateT (runSTT (genConstraints >>= solveAndElab)) (initSolverCtx prog)
 
 -- elab aprog =
 --   -- let ast = letify aprog
