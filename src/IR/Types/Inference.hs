@@ -223,17 +223,11 @@ inferLit (LitIntegral _) = return $ T.forall [] U.I32
 checkAgainst :: Annotations -> U.Type -> Infer U.Type
 checkAgainst anns = check (reverse $ T.unAnnotations anns)
  where
-  -- checkAnns [] t = return t
-  -- checkAnns (a:as) t = do
-  --   t'        <- unravelAnnotation a -- U.instantiate =<< U.unfreezeAnn t a
-  --
-  --   checkAnns as <$> check t' t
-
-  -- check (T.Hole : as) t = check as t
   check []       t = return t
   check (a : as) t = do
     t' <- unravelAnnotation t a
     checkKind t
+    checkKind t'
     checksOut <- t <:= t'
     unless checksOut $ do
       Compiler.typeError $ unlines
@@ -266,8 +260,8 @@ unravelAnnotation u (T.AnnType (U.unfreeze -> t)) = do
 unravelAnnotation (U.unfoldArrow -> (us, u)) (T.AnnArrows as a) =
   curry U.foldArrow
     <$> zipWithM unravelAnnotation us as
-    <*> unravelAnnotation u a
-unravelAnnotation u (T.AnnDCon dc as) = undefined
+    <*> unravelAnnotation (U.foldArrow (drop (length as) us, u)) a
+unravelAnnotation _u (T.AnnDCon _dc _as) = undefined
 
 rewriteHoles :: U.Type -> U.Type -> Infer U.Type
 rewriteHoles u U.Hole = return u
