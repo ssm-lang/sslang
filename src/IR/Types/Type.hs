@@ -30,6 +30,7 @@ import           Data.Foldable                  ( toList )
 import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
+import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import           Data.Set                       ( (\\) )
 
@@ -222,6 +223,33 @@ tupleOf (TCon "(,,)"  [a, b, c]   ) = Tup3 (a, b, c)
 tupleOf (TCon "(,,,)" [a, b, c, d]) = Tup4 (a, b, c, d)
 tupleOf t@(TCon _ ts) | isTuple t   = TupN ts
 tupleOf _                           = NotATuple
+
+type Kind = Int
+
+builtinKinds :: M.Map TConId Kind
+builtinKinds =
+  M.fromList
+    $  [ k $ TVar "a" `Arrow` TVar "b"
+       , k Unit
+       , k $ Ref $ TVar "a"
+       , k $ List $ TVar "a"
+       , k Time
+       , k I64
+       , k U64
+       , k I32
+       , k U32
+       , k I16
+       , k U16
+       , k I8
+       , k U8
+       , ("(,)" , 2)
+       , ("(,,)", 3)
+       ]
+    ++ take 8 (map tup [(2 :: Int) ..])
+ where
+  k (TCon tc ts) = (tc, length ts)
+  k _            = error "This should only be used with built-in TCons"
+  tup i = (tupleId i, 2)
 
 instance Pretty Type where
   pretty (Arrow a b) = parens $ pretty a <+> "->" <+> pretty b

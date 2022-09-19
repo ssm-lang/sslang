@@ -16,7 +16,8 @@ import           IR.Types.Unification           ( (<:=)
                                                 )
 
 import qualified Common.Compiler               as Compiler
-import           Common.Identifiers             ( Identifiable(..)
+import           Common.Identifiers             ( HasFreeVars(..)
+                                                , Identifiable(..)
                                                 , Identifier(..)
                                                 , IsString(..)
                                                 , TVarId
@@ -45,11 +46,9 @@ infixr 5 -:>
 (-:>) :: U.Type -> U.Type -> U.Type
 (-:>) = U.Arrow
 
-type Kind = Int
-
 data InferCtx = InferCtx
   { varEnv  :: M.Map Identifier U.Scheme
-  , kindEnv :: M.Map TConId Kind
+  , kindEnv :: M.Map TConId T.Kind
   }
 
 type Infer = U.InferM InferCtx
@@ -67,8 +66,9 @@ inferProgram p = U.runInfer initCtx $ do
       ds
     return $ p { programDefs = zip bs ds' }
  where
-  kenv    = M.fromList $ map (second $ length . targs) $ typeDefs p
-  initCtx = InferCtx { varEnv = M.empty, kindEnv = kenv }
+  kenv = M.fromList $ map (second $ length . targs) $ typeDefs p
+  initCtx =
+    InferCtx { varEnv = M.empty, kindEnv = T.builtinKinds `M.union` kenv }
 
 externBindings :: (VarId, Type) -> Infer (Binder, U.Scheme)
 externBindings (v, t) = do
@@ -220,10 +220,6 @@ inferLit LitEvent        = return $ T.forall [] U.Unit
 inferLit (LitIntegral _) = return $ T.forall [] U.I32
 -- TODO: ^ integral typeclasses
 
-unravelAnnotation :: Annotation -> Infer U.Type
-unravelAnnotation = do
-  undefined
-
 checkAgainst :: Annotations -> U.Type -> Infer U.Type
 checkAgainst anns = check (reverse $ T.unAnnotations anns)
  where
@@ -236,8 +232,8 @@ checkAgainst anns = check (reverse $ T.unAnnotations anns)
   -- check (T.Hole : as) t = check as t
   check []       t = return t
   check (a : as) t = do
-    t' <- unravelAnnotation a -- U.instantiate =<< U.unfreezeAnn t a
-    checkKind t'
+    t' <- unravelAnnotation t a
+    checkKind t
     checksOut <- t <:= t'
     unless checksOut $ do
       Compiler.typeError $ unlines
@@ -263,6 +259,27 @@ checkKind (U.TCon tcon ts) = do
   fmtKind k = concat $ "*" : replicate k " -> *"
 checkKind _ = return ()
 
+unravelAnnotation :: U.Type -> Annotation -> Infer U.Type
+unravelAnnotation u (T.AnnType (U.unfreeze -> t)) = do
+  t' <- rewriteHoles u t
+  U.instantiate $ T.forall (S.toList $ freeVars t') t'
+unravelAnnotation (U.unfoldArrow -> (us, u)) (T.AnnArrows as a) =
+  curry U.foldArrow
+    <$> zipWithM unravelAnnotation us as
+    <*> unravelAnnotation u a
+unravelAnnotation u (T.AnnDCon dc as) = undefined
+
+rewriteHoles :: U.Type -> U.Type -> Infer U.Type
+rewriteHoles u U.Hole = return u
+rewriteHoles (U.TCon ud us) (U.TCon td ts)
+  | ud == td = U.TCon ud <$> zipWithM rewriteHoles us ts
+  | otherwise = Compiler.typeError $ unlines
+    [ "Type constructor mismatch in annotation: "
+    , "Annotated: " <> show td
+    , "Actual: " <> show ud
+    ]
+rewriteHoles _ u = return u
+
 instance U.HasFreeUVars InferCtx where
   freeUVars = fmap S.unions . mapM U.freeUVars . M.elems . varEnv
 
@@ -280,7 +297,7 @@ lookupBinding x =
  where
   unbound = Compiler.TypeError $ fromString $ "Unbound variable: " <> show x
 
-lookupKind :: TConId -> Infer Kind
+lookupKind :: TConId -> Infer T.Kind
 lookupKind tcon =
   U.asks (M.lookup tcon . kindEnv) >>= maybe (U.throwError missing) return
  where

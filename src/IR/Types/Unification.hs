@@ -20,7 +20,6 @@ module IR.Types.Unification
   , applyBindings
   , freeze
   , unfreeze
-  , unfreezeAnn
   , HasFreeUVars(..)
   , InferM
   , MonadReader(..)
@@ -34,6 +33,7 @@ module IR.Types.Unification
   , runInfer
   , isTuple
   , tuple
+  , pattern Hole
   , pattern U8
   , pattern I8
   , pattern U32
@@ -134,24 +134,6 @@ freeze t =
     $  "Could not freeze: "
     ++ show t
 
-unfreezeAnn :: Type -> T.Type -> InferM ctx Scheme
-unfreezeAnn ut tt = Forall (freeVars tt) T.CTrue
-  <$> rewriteHoles ut (unfreeze tt)
- where
-  rewriteHoles u Hole = return u
-  rewriteHoles (UTerm (TConF ud us)) (UTerm (TConF td ts))
-    | ud == td = UTerm . TConF ud <$> zipWithM rewriteHoles us ts
-    | otherwise = Compiler.typeError $ unlines
-      [ "Type constructor mismatch in annotation: "
-      , "Annotated: " <> show td
-      , "Actual: " <> show ud
-      ]
-  rewriteHoles _ u@(UTerm _) = return u
-  rewriteHoles _ (UVar _) =
-    Compiler.unexpected
-      $  "Unexpected uvar in freshly unfrozen type: "
-      ++ show tt
-
 -- | Catamorphism over unification types; useful for term rewriting.
 ucata :: Functor t => (v -> a) -> (t a -> a) -> UTerm t v -> a
 ucata f _ (UVar  v) = f v
@@ -188,6 +170,12 @@ instance HasFreeUVars Type where
 
 instance HasFreeUVars Scheme where
   freeUVars (Forall _ _ t) = freeUVars t
+
+instance HasFreeVars Type TVarId where
+  freeVars (TCon _ ts) = S.unions $ map freeVars ts
+  freeVars Hole        = S.empty
+  freeVars (TVar v)    = S.singleton v
+  freeVars _           = S.empty
 
 -- | Inference monad, build on top of the unification algorithm.
 type InferM ctx
