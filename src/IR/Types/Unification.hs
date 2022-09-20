@@ -72,9 +72,7 @@ import           Control.Unification.IntVar     ( IntBindingT
                                                 , evalIntBindingT
                                                 )
 
-import           Control.Monad                  ( forM
-                                                , zipWithM
-                                                )
+import           Control.Monad                  ( forM )
 import           Control.Monad.Except           ( ExceptT
                                                 , MonadError(..)
                                                 , runExceptT

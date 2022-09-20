@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+-- | Entry point to the type checking phase of the compiler.
 module IR.Types.Typechecking
   ( typecheckProgram
   ) where
@@ -10,6 +10,6 @@ import           IR.IR                          ( Annotations
                                                 )
 import           IR.Types.Inference             ( inferProgram )
 
--- | Typecheck a program. For now, we just use HM inference.
+-- | Type check an optionally annotated program.
 typecheckProgram :: Program Annotations -> Compiler.Pass (Program Type)
-typecheckProgram = inferProgram
+typecheckProgram = inferProgram -- for now, we just use HM inference
