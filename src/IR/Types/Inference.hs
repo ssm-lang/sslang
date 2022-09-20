@@ -31,6 +31,7 @@ import           Control.Monad                  ( (<=<)
                                                 , unless
                                                 , when
                                                 , zipWithM
+                                                , zipWithM_
                                                 )
 import           Data.Bifunctor                 ( Bifunctor(..) )
 import qualified Data.Map                      as M
@@ -221,7 +222,8 @@ inferLit (LitIntegral _) = return $ T.forall [] U.I32
 -- TODO: ^ integral typeclasses
 
 checkAgainst :: Annotations -> U.Type -> Infer U.Type
-checkAgainst anns = check (reverse $ T.unAnnotations anns)
+checkAgainst anns u = do
+  check (reverse $ T.unAnnotations anns) u
  where
   check []       t = return t
   check (a : as) t = do
@@ -236,7 +238,8 @@ checkAgainst anns = check (reverse $ T.unAnnotations anns)
         , "Actual type: " ++ show t
         , "Instantiated ann: " ++ show t'
         ]
-    check as t'
+    t =:= t'    -- Now that the annotation is valid, actually unify it
+    check as t' -- Pass on the more general annotation type
 
 checkKind :: U.Type -> Infer ()
 checkKind (U.TCon tcon ts) = do
@@ -261,7 +264,17 @@ unravelAnnotation (U.unfoldArrow -> (us, u)) (T.AnnArrows as a) =
   curry U.foldArrow
     <$> zipWithM unravelAnnotation us as
     <*> unravelAnnotation (U.foldArrow (drop (length as) us, u)) a
-unravelAnnotation _u (T.AnnDCon _dc _as) = undefined
+unravelAnnotation u (T.AnnDCon dc as) = do
+  (ts, t) <- U.unfoldArrow <$> (U.instantiate =<< lookupBinding dc)
+  t =:= u
+  when (length ts /= length as) $ do
+    Compiler.typeError $ fromString $ unlines
+      [ "Wrong number of arguments in pattern for constructor " <> show dc
+      , "Expected: " ++ show (length ts)
+      , "Got: " ++ show (length as)
+      ]
+  zipWithM_ unravelAnnotation ts as
+  return t -- ???
 
 rewriteHoles :: U.Type -> U.Type -> Infer U.Type
 rewriteHoles u U.Hole = return u
