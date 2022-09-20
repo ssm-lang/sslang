@@ -1,9 +1,49 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TupleSections #-}
--- | Insert reference counting primitives.
-module IR.InsertRefCounting
-  ( insertRefCounting
-  ) where
+
+{-| Description : Insert reference counting primitives
+
+This inserts @dup@ and @drop@ primitives according to a caller @dup@,
+callee @drop@ policy.  A function returning a value should @dup@ that value.
+
+The @dup : a -> a@ primitive behaves like the identity function,
+evaluating and returning its first argument and increasing the
+reference count on the result.  It is meant to be wrapped around
+function arguments.
+
+The @drop : a -> b -> a@ primitive evaluates and returns its first
+argument.  It decrements the reference count to its second argument
+after it has evaluated its first argument.  It is meant to be wrapped
+around function bodies that need to use and then de-reference their
+arguments.
+
+Thus, something like
+
+> add a b = a + b
+
+becomes
+
+@
+add a b =
+  drop
+    (drop
+       ((dup a) + (dup b))
+       b)
+    a
+@
+
+Arguments @a@ and @b@ to the @+@ primitive are duplicated and the
+result of @+@ is duplicated internally, so @add@ does not need to
+duplicate its result.  Both arguments @a@ and @b@ are dropped.
+
+Try running @sslc --dump-ir-final@ on an example to see the inserted
+@dup@ and @drop@ constructs.
+
+Our approach was inspired by Perceus
+<https://www.microsoft.com/en-us/research/publication/perceus-garbage-free-reference-counting-with-reuse/>
+
+-}
+module IR.InsertRefCounting where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
@@ -17,24 +57,12 @@ import           Data.Maybe                     ( fromJust )
 import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
-type Fresh = StateT Int Compiler.Pass
 
--- | Get a fresh variable name.
-getFresh :: String -> Fresh I.VarId
-getFresh str = do
-  curCount <- get
-  modify (+ 1)
-  return $ fromString $ ("anon" <> show curCount) ++ str
+-- * The external interface
 
--- | Make a drop primitive with unit type.
-makeDrop :: I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
-makeDrop r e = I.Prim I.Drop [e, r] I.Unit
+-- $external
 
--- | Make a dup primitive with actual type.
-makeDup :: I.Expr I.Type -> I.Expr I.Type
-makeDup e = I.Prim I.Dup [e] $ I.extract e
-
--- | Entry-point to insert dup/drops.
+-- | Insert dup and drop primitives throughout a program
 insertRefCounting :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 insertRefCounting program = (`evalStateT` 0) $ do
   let programDefs = I.programDefs program
@@ -44,6 +72,31 @@ insertRefCounting program = (`evalStateT` 0) $ do
                    , I.typeDefs     = I.typeDefs program
                    }
 
+
+-- * Module internals, not intended for use outside this module
+--
+-- $internal
+
+type Fresh = StateT Int Compiler.Pass
+
+-- | Get a fresh variable name
+getFresh :: String -> Fresh I.VarId
+getFresh str = do
+  curCount <- get
+  modify (+ 1)
+  return $ fromString $ ("anon" <> show curCount) ++ str
+
+-- | Make a drop primitive with unit type
+makeDrop :: I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
+makeDrop r e = I.Prim I.Drop [e, r] I.Unit
+
+-- | Make a dup primitive with actual type
+makeDup :: I.Expr I.Type -> I.Expr I.Type
+makeDup e = I.Prim I.Dup [e] $ I.extract e
+
+
+
+-- $internal
 
 -- | Insert referencing counting for top-level expressions.
 insertTop :: (I.VarId, I.Expr I.Type) -> Fresh (I.VarId, I.Expr I.Type)
