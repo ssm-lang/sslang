@@ -212,7 +212,7 @@ isNum t = isInt t || isUInt t
 
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
-tuple ts 
+tuple ts
   | length ts >= 2 = TCon (tupleId $ length ts) ts
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (length ts)
 
@@ -250,8 +250,10 @@ tupleOf (TCon "(,,,)" [a, b, c, d]) = Tup4 (a, b, c, d)
 tupleOf t@(TCon _ ts) | isTuple t   = TupN ts
 tupleOf _                           = NotATuple
 
+-- | Kinds are just the arity of type constructors.
 type Kind = Int
 
+-- | Map to help us look up the kinds of builtin types.
 builtinKinds :: M.Map TConId Kind
 builtinKinds =
   M.fromList
@@ -274,7 +276,7 @@ builtinKinds =
     ++ take 8 (map tup [(2 :: Int) ..])
  where
   k (TCon tc ts) = (tc, length ts)
-  k _            = error "This should only be used with built-in TCons"
+  k _            = error "This should only be used with (builtin) TCons"
   tup i = (tupleId i, 2)
 
 instance Pretty Type where
@@ -310,11 +312,3 @@ instance Pretty Annotations where
 
 instance Dumpy Annotations where
   dumpy = pretty
-
--- FIXME: convenience for ghci debugging
-scheme :: [String] -> Constraint -> Type -> Scheme
-scheme vs c t = Scheme $ Forall (S.fromList $ map fromString vs) c t
-
--- FIXME: convenience for ghci debugging
-tv :: String -> Type
-tv = TVar . fromString
