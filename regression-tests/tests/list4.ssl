@@ -3,7 +3,6 @@
 // stack exec sslc -- tests/list4.ssl
 
 
-
 type List a
   Cons a (List a)
   Nil
@@ -11,8 +10,17 @@ type List a
 main cin cout =
   let putc c = after 1, cout <- c
                wait cout
-  let printNil _ = putc '['   // do we not have 0 argument functions??
+  let printNil _ = putc '['   // maybe we don't have 0 argument functions yet??
                    putc ']'
+                   
+/* maybe we don't have local recursive functions yet??
+  let printList lst = match lst
+                       Cons h tl = putc h
+                                   putc '\n'
+                                   printList tl
+                       Nil = printNil
+                             putc '\n'
+*/
 
   // want to add syntax for list here!
   let two = Cons 65 (Cons 68 Nil) // 'A' : 'D' : []
