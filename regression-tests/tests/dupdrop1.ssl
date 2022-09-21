@@ -1,0 +1,11 @@
+// Example designed to test the InsertRefCounting module
+
+add a b =
+  a + b      // Becomes (+) (dup a) (dup b)
+
+main cin cout =
+  let x = 5
+      y = 3
+  let c = add x y
+  after 1, cout <- 10
+  wait cout
