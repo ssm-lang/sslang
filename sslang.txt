@@ -1452,32 +1452,41 @@ instance GHC.Show.Show Front.Options
 instance GHC.Classes.Eq Front.Options
 instance Common.Default.Default Front.Options
 
+
+-- | Definitions of and related to the sslang IR's type system.
 module IR.Types.Type
 
--- | The type of sslang types.
+-- | Encoding of sslang types.
 --   
 --   Structurally speaking, these are very simple. Types are either type
 --   variables or type constructors applied to some other types.
 --   
 --   Builtin types (and type constructors) include <a>Arrow</a>,
 --   <a>Unit</a>, <a>Ref</a>, <a>List</a>, and various sizes of tuples; for
---   convenience, these are defined using GHC extensions PatternSynonyms.
+--   convenience, those are defined elsewhere using the GHC PatternSynonyms
+--   extension.
 data Type
+
+-- | Type constructor, applied to zero or more types
 TCon :: TConId -> [Type] -> Type
+
+-- | Type variable (may be implicitly quantified)
 TVar :: TVarId -> Type
 
 -- | Constraints on a type scheme.
 --   
 --   For now, we only support trivial constraints.
 data Constraint
+
+-- | The trivial constraint, i.e., always satisfied.
 CTrue :: Constraint
 
--- | Schemes quantify over <a>Type</a> variables and impose
+-- | Schemes quantify over <a>Type</a> variables and impose some
 --   <a>Constraint</a>.
 --   
---   <a>SchemeOf</a> is implemented a functor over some kind of type so
---   that we can easily substitute in <a>Type</a> vs <tt>UType</tt> when
---   performing type inference/unification.
+--   <a>SchemeOf</a> is implemented as functor over some kind of type so we
+--   can easily substitute in <a>Type</a> vs <tt>UType</tt> when performing
+--   type inference/unification.
 data SchemeOf t
 Forall :: Set TVarId -> Constraint -> t -> SchemeOf t
 
@@ -1485,8 +1494,12 @@ Forall :: Set TVarId -> Constraint -> t -> SchemeOf t
 unScheme :: SchemeOf t -> t
 
 -- | Construct a scheme with quantified type variables and a trivial
---   constraint
+--   constraint.
 forall :: (Functor l, Foldable l) => l TVarId -> t -> SchemeOf t
+
+-- | Construct a scheme from all free type variables and a trivial
+--   constraint.
+schemeOf :: Type -> Scheme
 
 -- | Schemes over <a>Type</a>.
 newtype Scheme
@@ -1494,47 +1507,100 @@ Scheme :: SchemeOf Type -> Scheme
 
 -- | An annotation records the annotated portion of a pattern.
 data Annotation
+
+-- | A basic <a>Type</a> annotation
 AnnType :: Type -> Annotation
+
+-- | Annotations collected from patterns
 AnnDCon :: DConId -> [Annotation] -> Annotation
+
+-- | Annotations collected from fun args
 AnnArrows :: [Annotation] -> Annotation -> Annotation
+
+-- | Expressions are annotated with a (potentially empty) list of
+--   <a>Annotation</a>.
 newtype Annotations
 Annotations :: [Annotation] -> Annotations
+
+-- | Unwrap the <a>Annotations</a> data constructor.
 unAnnotations :: Annotations -> [Annotation]
+
+-- | Unroll an annotation into a type. FIXME: get rid of this.
 fromAnnotations :: Annotations -> Type
-schemeOf :: Type -> Scheme
 
 -- | Some data type that contains a sslang <a>Type</a>.
 class HasType a
 getType :: HasType a => a -> Type
 
--- | May appear in type annotations; indicates a fresh free type variable.
+-- | A fresh, free type variable; may appear in type annotations.
 pattern Hole :: Type
+
+-- | The type constructor for function arrows.
 pattern Arrow :: Type -> Type -> Type
+
+-- | Unfold an <a>Arrow</a> <a>Type</a> into a list of argument types and a
+--   return type.
 unfoldArrow :: Type -> ([Type], Type)
+
+-- | Fold a list of argument types and a return type into an <a>Arrow</a>
+--   <a>Type</a>.
 foldArrow :: ([Type], Type) -> Type
+
+-- | The builtin singleton <a>Type</a>, whose only data constructor is just
+--   <tt>()</tt>.
 pattern Unit :: Type
+
+-- | The builtin reference <a>Type</a>, created using <tt>new</tt>.
 pattern Ref :: Type -> Type
+
+-- | The builtin list <a>Type</a>, created using list syntax, e.g., <tt>[a,
+--   b]</tt>.
 pattern List :: Type -> Type
+
+-- | The builtin 64-bit timestamp <a>Type</a>.
 pattern Time :: Type
+
+-- | Builtin <a>Type</a> for signed 64-bit integers.
 pattern I64 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 64-bit integers.
 pattern U64 :: Type
+
+-- | Builtin <a>Type</a> for signed 32-bit integers.
 pattern I32 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 32-bit integers.
 pattern U32 :: Type
+
+-- | Builtin <a>Type</a> for signed 16-bit integers.
 pattern I16 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 16-bit integers.
 pattern U16 :: Type
+
+-- | Builtin <a>Type</a> for signed 8-bit integers.
 pattern I8 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 8-bit integers.
 pattern U8 :: Type
+
+-- | Test whether a <a>Type</a> is one of the builtin signed integers.
 isInt :: Type -> Bool
+
+-- | Test whether a <a>Type</a> is one of the builtin unsigned integers.
 isUInt :: Type -> Bool
+
+-- | Test whether a <a>Type</a> is one of the builtin numeric types.
 isNum :: Type -> Bool
+
+-- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
 
--- | Tests whether a <a>Type</a> is a tuple of some arity.
+-- | Test whether a <a>Type</a> is a tuple of some arity.
 isTuple :: Type -> Bool
 
--- | Construct the name of the built-in tuple type of given arity.
---   
---   Fails if arity is less than 2.
+-- | Construct the type constructor of a builtin tuple of given arity
+--   (&gt;= 2).
 tupleId :: (Integral i, Identifiable v) => i -> v
 
 -- | More convenient representation of tuple types, for pattern-matching.
@@ -1566,8 +1632,12 @@ NotATuple :: TupleView
 --   foo t                        = "Some other kind of type: " ++ show t
 --   </pre>
 tupleOf :: Type -> TupleView
-scheme :: [String] -> Constraint -> Type -> Scheme
-tv :: String -> Type
+
+-- | Kinds are just the arity of type constructors.
+type Kind = Int
+
+-- | Map to help us look up the kinds of builtin types.
+builtinKinds :: Map TConId Kind
 instance Data.Data.Data IR.Types.Type.Type
 instance GHC.Show.Show IR.Types.Type.Type
 instance GHC.Classes.Eq IR.Types.Type.Type
@@ -1851,18 +1921,22 @@ TConId :: Identifier -> TConId
 newtype DConId
 DConId :: Identifier -> DConId
 
--- | The type of sslang types.
+-- | Encoding of sslang types.
 --   
 --   Structurally speaking, these are very simple. Types are either type
 --   variables or type constructors applied to some other types.
 --   
 --   Builtin types (and type constructors) include <a>Arrow</a>,
 --   <a>Unit</a>, <a>Ref</a>, <a>List</a>, and various sizes of tuples; for
---   convenience, these are defined using GHC extensions PatternSynonyms.
+--   convenience, those are defined elsewhere using the GHC PatternSynonyms
+--   extension.
 data Type
 
 -- | An annotation records the annotated portion of a pattern.
 data Annotation
+
+-- | Expressions are annotated with a (potentially empty) list of
+--   <a>Annotation</a>.
 data Annotations
 
 -- | The number of fields in a <a>TypeVariant</a>.
@@ -2036,12 +2110,54 @@ TypegenInfo :: (DConId -> Maybe DConInfo) -> (TConId -> Maybe TConInfo) -> Typeg
 -- | Create codegen definitions and helpers for sslang type definitions.
 genTypes :: [(TConId, TypeDef)] -> Pass ([Definition], TypegenInfo)
 
+
+-- | Wrapper around the unification-fd library.
+--   
+--   Compared to normal types (<a>Type</a>), unification types
+--   (<a>Type</a>) may contain unification variables, which only appear
+--   during the type inference process.
+--   
+--   This module provides a definition for unification types, an inference
+--   monad, as well as some pattern synonyms for the builtin types.
 module IR.Types.Unification
+
+-- | A type that may also contain unification variables.
 type Type = UTerm TypeF IntVar
+
+-- | An explicitly quantified <a>Type</a>, which may contain unification
+--   variables.
 type Scheme = SchemeOf Type
+
+-- | Pattern synonym for <a>Type</a> variables.
 pattern TVar :: TVarId -> Type
+
+-- | Pattern synonym for <a>Type</a> constructors.
 pattern TCon :: TConId -> [Type] -> Type
+class HasFreeUVars a
+freeUVars :: HasFreeUVars a => a -> InferM ctx (Set IntVar)
+
+-- | Inference monad, build on top of the unification algorithm.
+type InferM ctx = ReaderT ctx (ExceptT Error (IntBindingT TypeF Pass))
+
+-- | Execute the <a>InferM</a> inference monad.
+runInfer :: ctx -> InferM ctx a -> Pass a
+
+-- | Create a fresh unification variable.
+fresh :: InferM ctx Type
+
+-- | Apply bindings from current monad so remaining bindings must be free.
 applyBindings :: Type -> InferM ctx Type
+
+-- | Unifies two types; fails if they cannot unify.
+(=:=) :: Type -> Type -> InferM ctx ()
+infix 4 =:=
+
+-- | Whether the LHS subsumes the RHS.
+(<:=) :: Type -> Type -> InferM ctx Bool
+infix 4 <:=
+
+-- | Promote a <a>Type</a> to a <a>Type</a>.
+unfreeze :: Type -> Type
 
 -- | Demote a <a>Type</a> to a regular <a>Type</a>.
 --   
@@ -2049,14 +2165,13 @@ applyBindings :: Type -> InferM ctx Type
 --   variables.
 freeze :: Type -> InferM ctx Type
 
--- | Promote a <a>Type</a> to a <a>Type</a>.
-unfreeze :: Type -> Type
-unfreezeAnn :: Type -> Type -> InferM ctx Scheme
-class HasFreeUVars a
-freeUVars :: HasFreeUVars a => a -> InferM ctx (Set IntVar)
+-- | Instantiate a <a>Scheme</a> by replacing all quantified type varibles
+--   with fresh unification variables
+instantiate :: Scheme -> InferM ctx Type
 
--- | Inference monad, build on top of the unification algorithm.
-type InferM ctx = ReaderT ctx (ExceptT Error (IntBindingT TypeF Pass))
+-- | Generalize a <a>Type</a> by replacing all free unification variables
+--   with quantified type variables.
+generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
 
 -- | See examples in <a>Control.Monad.Reader</a>. Note, the partially
 --   applied function type <tt>(-&gt;) r</tt> is a simple reader monad. See
@@ -2103,31 +2218,64 @@ throwError :: MonadError e m => e -> m a
 --   where the <tt>action</tt> functions can call <a>throwError</a>. Note
 --   that <tt>handler</tt> and the do-block must have the same return type.
 catchError :: MonadError e m => m a -> (e -> m a) -> m a
-(=:=) :: Type -> Type -> InferM ctx ()
-infix 4 =:=
-(<:=) :: Type -> Type -> InferM ctx Bool
-infix 4 <:=
-fresh :: InferM ctx Type
-generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
-instantiate :: Scheme -> InferM ctx Type
-runInfer :: ctx -> InferM ctx a -> Pass a
 
--- | Tests whether a <a>Type</a> is a tuple of some arity.
-isTuple :: Type -> Bool
-tuple :: [Type] -> Type
-pattern U8 :: Type
-pattern I8 :: Type
-pattern U32 :: Type
-pattern I32 :: Type
-pattern U64 :: Type
-pattern I64 :: Type
-pattern Time :: Type
-pattern List :: Type -> Type
-pattern Ref :: Type -> Type
-pattern Unit :: Type
+-- | Retrieves a function of the current environment.
+asks :: MonadReader r m => (r -> a) -> m a
+
+-- | A fresh, free type variable; may appear in type annotations.
+pattern Hole :: Type
+
+-- | The type constructor for function arrows.
 pattern Arrow :: Type -> Type -> Type
+
+-- | Fold a list of argument types and a return type into an <a>Arrow</a>
+--   <a>Type</a>.
 foldArrow :: ([Type], Type) -> Type
+
+-- | Unfold an <a>Arrow</a> <a>Type</a> into a list of argument types and a
+--   return type.
 unfoldArrow :: Type -> ([Type], Type)
+
+-- | The builtin singleton <a>Type</a>, whose only data constructor is just
+--   <tt>()</tt>.
+pattern Unit :: Type
+
+-- | The builtin reference <a>Type</a>, created using <tt>new</tt>.
+pattern Ref :: Type -> Type
+
+-- | The builtin list <a>Type</a>, created using list syntax, e.g., <tt>[a,
+--   b]</tt>.
+pattern List :: Type -> Type
+
+-- | The builtin 64-bit timestamp <a>Type</a>.
+pattern Time :: Type
+
+-- | Builtin <a>Type</a> for signed 64-bit integers.
+pattern I64 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 64-bit integers.
+pattern U64 :: Type
+
+-- | Builtin <a>Type</a> for signed 32-bit integers.
+pattern I32 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 32-bit integers.
+pattern U32 :: Type
+
+-- | Builtin <a>Type</a> for signed 16-bit integers.
+pattern I16 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 16-bit integers.
+pattern U16 :: Type
+
+-- | Builtin <a>Type</a> for signed 8-bit integers.
+pattern I8 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 8-bit integers.
+pattern U8 :: Type
+
+-- | Construct a builtin tuple type out of a list of at least 2 types.
+tuple :: [Type] -> Type
 instance Control.Unification.Types.Unifiable IR.Types.Unification.TypeF
 instance GHC.Generics.Generic1 IR.Types.Unification.TypeF
 instance Data.Traversable.Traversable IR.Types.Unification.TypeF
@@ -2138,17 +2286,30 @@ instance GHC.Classes.Ord Control.Unification.IntVar.IntVar
 instance Control.Unification.Types.Unifiable []
 instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Type
 instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Scheme
+instance Common.Identifiers.HasFreeVars IR.Types.Unification.Type Common.Identifiers.TVarId
 instance GHC.Show.Show a => GHC.Show.Show (IR.Types.Unification.TypeF a)
 instance Control.Unification.Types.Fallible IR.Types.Unification.TypeF Control.Unification.IntVar.IntVar Common.Compiler.Error
 
+
+-- | Hindley-Milner-Damas type inference with union-find.
 module IR.Types.Inference
-inferProgram :: Program [Type] -> Pass (Program Type)
+
+-- | Infer the types of every node in an optionally annotated program.
+inferProgram :: Program Annotations -> Pass (Program Type)
 instance IR.Types.Unification.HasFreeUVars IR.Types.Inference.InferCtx
 
+
+-- | Entry point to the type checking phase of the compiler.
 module IR.Types.Typechecking
+
+-- | Type check an optionally annotated program.
 typecheckProgram :: Program Annotations -> Pass (Program Type)
 
+
+-- | Wrapper module around other types-related modules and definitions.
 module IR.Types
+
+-- | Type check an optionally annotated program.
 typecheckProgram :: Program Annotations -> Pass (Program Type)
 
 
