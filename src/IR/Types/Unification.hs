@@ -12,45 +12,60 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+
+{- | Wrapper around the unification-fd library.
+
+Compared to normal types ('T.Type'), unification types ('Type') may contain
+unification variables, which only appear during the type inference process.
+
+This module provides a definition for unification types, an inference monad, as
+well as some pattern synonyms for the builtin types.
+-}
 module IR.Types.Unification
-  ( Type
+  ( -- * Unification types
+    Type
   , Scheme
   , pattern TVar
   , pattern TCon
-  , applyBindings
-  , freeze
-  , unfreeze
-  , unfreezeAnn
   , HasFreeUVars(..)
+
+  -- * The inference monad
   , InferM
-  , MonadReader(..)
-  , MonadError(..)
+  , runInfer
+  , fresh
+  , applyBindings
   , (=:=)
   , (<:=)
-  , fresh
-  , generalize
+  , unfreeze
+  , freeze
   , instantiate
-  , runInfer
-  , isTuple
-  , tuple
-  , pattern U8
-  , pattern I8
-  , pattern U32
-  , pattern I32
-  , pattern U64
-  , pattern I64
-  , pattern Time
-  , pattern List
-  , pattern Ref
-  , pattern Unit
+  , generalize
+  , MonadReader(..)
+  , MonadError(..)
+  , asks
+
+  -- * Builtin types
+  , pattern Hole
   , pattern Arrow
   , foldArrow
   , unfoldArrow
+  , pattern Unit
+  , pattern Ref
+  , pattern List
+  , pattern Time
+  , pattern I64
+  , pattern U64
+  , pattern I32
+  , pattern U32
+  , pattern I16
+  , pattern U16
+  , pattern I8
+  , pattern U8
+  , tuple
   ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( HasFreeVars(..)
-                                                , Identifiable(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , fromString
@@ -71,15 +86,14 @@ import           Control.Unification.IntVar     ( IntBindingT
                                                 , evalIntBindingT
                                                 )
 
-import           Control.Monad                  ( forM
-                                                , zipWithM
-                                                )
+import           Control.Monad                  ( forM )
 import           Control.Monad.Except           ( ExceptT
                                                 , MonadError(..)
                                                 , runExceptT
                                                 )
 import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
+                                                , asks
                                                 )
 import           Control.Monad.Trans            ( MonadTrans(..) )
 import           Data.Function                  ( (&) )
@@ -93,15 +107,23 @@ import           GHC.Generics                   ( Generic1 )
 deriving instance Ord IntVar
 deriving instance Unifiable []
 
-data TypeF a = TConF TConId [a] | TVarF TVarId
+-- | Base functor for the unification 'Type'.
+data TypeF a
+  = TConF TConId [a]  -- ^ type constructors
+  | TVarF TVarId      -- ^ (quantified) type variables
   deriving (Eq, Functor, Foldable, Traversable, Generic1, Unifiable)
 
+-- | A type that may also contain unification variables.
 type Type = UTerm TypeF IntVar
+
+-- | An explicitly quantified 'Type', which may contain unification variables.
 type Scheme = T.SchemeOf Type
 
+-- | Pattern synonym for 'Type' variables.
 pattern TVar :: TVarId -> Type
 pattern TVar v = UTerm (TVarF v)
 
+-- | Pattern synonym for 'Type' constructors.
 pattern TCon :: TConId -> [Type] -> Type
 pattern TCon tc ts = UTerm (TConF tc ts)
 
@@ -112,43 +134,6 @@ instance Show a => Show (TypeF a) where
   show (TConF tc   []    ) = show tc
   show (TConF tc   ts    ) = unwords (show tc : map show ts)
   show (TVarF v          ) = show v
-
--- | Promote a 'T.Type' to a 'Type'.
-unfreeze :: T.Type -> Type
-unfreeze (T.TCon tc ts) = UTerm $ TConF tc $ fmap unfreeze ts
-unfreeze (T.TVar v    ) = UTerm $ TVarF v
-
--- | Demote a 'Type' to a regular 'T.Type'.
---
--- Fails if the unification type contains more than just contructors and
--- variables.
-freeze :: Type -> InferM ctx T.Type
-freeze (TCon tc ts) = mapM freeze ts <&> T.TCon tc
-freeze (TVar v    ) = return $ T.TVar v
-freeze t =
-  throwError
-    $  Compiler.UnexpectedError
-    $  fromString
-    $  "Could not freeze: "
-    ++ show t
-
-unfreezeAnn :: Type -> T.Type -> InferM ctx Scheme
-unfreezeAnn ut tt = Forall (freeVars tt) T.CTrue
-  <$> rewriteHoles ut (unfreeze tt)
- where
-  rewriteHoles u Hole = return u
-  rewriteHoles (UTerm (TConF ud us)) (UTerm (TConF td ts))
-    | ud == td = UTerm . TConF ud <$> zipWithM rewriteHoles us ts
-    | otherwise = Compiler.typeError $ unlines
-      [ "Type constructor mismatch in annotation: "
-      , "Annotated: " <> show td
-      , "Actual: " <> show ud
-      ]
-  rewriteHoles _ u@(UTerm _) = return u
-  rewriteHoles _ (UVar _) =
-    Compiler.unexpected
-      $  "Unexpected uvar in freshly unfrozen type: "
-      ++ show tt
 
 -- | Catamorphism over unification types; useful for term rewriting.
 ucata :: Functor t => (v -> a) -> (t a -> a) -> UTerm t v -> a
@@ -187,24 +172,63 @@ instance HasFreeUVars Type where
 instance HasFreeUVars Scheme where
   freeUVars (Forall _ _ t) = freeUVars t
 
+instance HasFreeVars Type TVarId where
+  freeVars (TCon _ ts) = S.unions $ map freeVars ts
+  freeVars Hole        = S.empty
+  freeVars (TVar v)    = S.singleton v
+  freeVars _           = S.empty
+
 -- | Inference monad, build on top of the unification algorithm.
 type InferM ctx
   = ReaderT ctx (ExceptT Compiler.Error (IntBindingT TypeF Compiler.Pass))
 
+-- | Execute the 'InferM' inference monad.
+runInfer :: ctx -> InferM ctx a -> Compiler.Pass a
+runInfer ctx m =
+  m & (`runReaderT` ctx) & runExceptT & evalIntBindingT >>= \case
+    Left  err -> Compiler.throwError err
+    Right res -> return res
+
+-- | Create a fresh unification variable.
 fresh :: InferM ctx Type
 fresh = UVar <$> lift (lift freeVar)
 
-infix 4 =:=
-(=:=) :: Type -> Type -> InferM ctx ()
-s =:= t = lift $ s U.=:= t >> return ()
-
-infix 4 <:=
-(<:=) :: Type -> Type -> InferM ctx Bool
-s <:= t = lift $ s U.<:= t
-
+-- | Apply bindings from current monad so remaining bindings must be free.
 applyBindings :: Type -> InferM ctx Type
 applyBindings = lift . U.applyBindings
 
+-- | Unifies two types; fails if they cannot unify.
+(=:=) :: Type -> Type -> InferM ctx ()
+s =:= t = lift $ s U.=:= t >> return ()
+infix 4 =:=
+
+-- | Whether the LHS subsumes the RHS.
+(<:=) :: Type -> Type -> InferM ctx Bool
+s <:= t = lift $ s U.<:= t
+infix 4 <:=
+
+-- | Promote a 'T.Type' to a 'Type'.
+unfreeze :: T.Type -> Type
+unfreeze (T.TCon tc ts) = UTerm $ TConF tc $ fmap unfreeze ts
+unfreeze (T.TVar v    ) = UTerm $ TVarF v
+
+{- | Demote a 'Type' to a regular 'T.Type'.
+
+Fails if the unification type contains more than just contructors and
+variables.
+-}
+freeze :: Type -> InferM ctx T.Type
+freeze (TCon tc ts) = mapM freeze ts <&> T.TCon tc
+freeze (TVar v    ) = return $ T.TVar v
+freeze t =
+  throwError
+    $  Compiler.UnexpectedError
+    $  fromString
+    $  "Could not freeze: "
+    ++ show t
+
+-- | Instantiate a 'Scheme' by replacing all quantified type varibles with fresh
+-- unification variables
 instantiate :: Scheme -> InferM ctx Type
 instantiate (Forall (S.toList -> xs) _ uty) = do
   subs <- forM xs $ \v -> do
@@ -212,6 +236,8 @@ instantiate (Forall (S.toList -> xs) _ uty) = do
     return (Left v, fv)
   return $ substU (M.fromList subs) uty
 
+-- | Generalize a 'Type' by replacing all free unification variables with
+-- quantified type variables.
 generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
 generalize uty = do
   uty'   <- applyBindings uty
@@ -228,68 +254,72 @@ generalize uty = do
   tvarNames :: [TVarId]
   tvarNames = map (("a" <>) . showId) [(1 :: Int) ..]
 
-runInfer :: ctx -> InferM ctx a -> Compiler.Pass a
-runInfer ctx m =
-  m & (`runReaderT` ctx) & runExceptT & evalIntBindingT >>= \case
-    Left  err -> Compiler.throwError err
-    Right res -> return res
+-- | A fresh, free type variable; may appear in type annotations.
+pattern Hole :: Type
+pattern Hole = UTerm (TVarF "_")
 
+-- | The type constructor for function arrows.
 pattern Arrow :: Type -> Type -> Type
 pattern Arrow a b = UTerm (TConF "->" [a, b])
 
+-- | Unfold an 'Arrow' 'Type' into a list of argument types and a return type.
 unfoldArrow :: Type -> ([Type], Type)
 unfoldArrow (Arrow a b) = let (as, rt) = unfoldArrow b in (a : as, rt)
 unfoldArrow t           = ([], t)
 
+-- | Fold a list of argument types and a return type into an 'Arrow' 'Type'.
 foldArrow :: ([Type], Type) -> Type
 foldArrow (a : as, rt) = a `Arrow` foldArrow (as, rt)
 foldArrow ([]    , t ) = t
 
-pattern Hole :: Type
-pattern Hole = UTerm (TVarF "_")
-
+-- | The builtin singleton 'Type', whose only data constructor is just @()@.
 pattern Unit :: Type
-pattern Unit = UTerm (TConF "()" [])
+pattern Unit = TCon "()" []
 
+-- | The builtin reference 'Type', created using @new@.
 pattern Ref :: Type -> Type
-pattern Ref a = UTerm (TConF "&" [a])
+pattern Ref a = TCon "&" [a]
 
+-- | The builtin list 'Type', created using list syntax, e.g., @[a, b]@.
 pattern List :: Type -> Type
-pattern List a = UTerm (TConF "[]" [a])
+pattern List a = TCon "[]" [a]
 
+-- | The builtin 64-bit timestamp 'Type'.
 pattern Time :: Type
-pattern Time = UTerm (TConF "Time" [])
+pattern Time = TCon "Time" []
 
+-- | Builtin 'Type' for signed 64-bit integers.
 pattern I64 :: Type
-pattern I64 = UTerm (TConF "Int64" [])
+pattern I64 = TCon "Int64" []
 
+-- | Builtin 'Type' for unsigned 64-bit integers.
 pattern U64 :: Type
-pattern U64 = UTerm (TConF "UInt64" [])
+pattern U64 = TCon "UInt64" []
 
+-- | Builtin 'Type' for signed 32-bit integers.
 pattern I32 :: Type
-pattern I32 = UTerm (TConF "Int32" [])
+pattern I32 = TCon "Int32" []
 
+-- | Builtin 'Type' for unsigned 32-bit integers.
 pattern U32 :: Type
-pattern U32 = UTerm (TConF "UInt32" [])
+pattern U32 = TCon "UInt32" []
 
+-- | Builtin 'Type' for signed 16-bit integers.
+pattern I16 :: Type
+pattern I16 = TCon "Int16" []
+
+-- | Builtin 'Type' for unsigned 16-bit integers.
+pattern U16 :: Type
+pattern U16 = TCon "UInt16" []
+
+-- | Builtin 'Type' for signed 8-bit integers.
 pattern I8 :: Type
-pattern I8 = UTerm (TConF "Int8" [])
+pattern I8 = TCon "Int8" []
 
+-- | Builtin 'Type' for unsigned 8-bit integers.
 pattern U8 :: Type
-pattern U8 = UTerm (TConF "UInt8" [])
+pattern U8 = TCon "UInt8" []
 
+-- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
-tuple ts = UTerm $ TConF (tupleId $ length ts) ts
-
--- | Tests whether a 'Type' is a tuple of some arity.
-isTuple :: Type -> Bool
-isTuple (UTerm (TConF n ts)) | length ts >= 2 = n == tupleId (length ts)
-isTuple _ = False
-
--- | Construct the name of the built-in tuple type of given arity.
---
--- Fails if arity is less than 2.
-tupleId :: (Integral i, Identifiable v) => i -> v
-tupleId i
-  | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
-  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
+tuple ts = UTerm $ TConF (T.tupleId $ length ts) ts
