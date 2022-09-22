@@ -526,8 +526,10 @@ genYield = do
 -- passes to optimize this.
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
 genExpr (I.Var n _) = do
-  Just v <- M.lookup n <$> gets fnVars
+  mv <- M.lookup n <$> gets fnVars
+  v <- maybe err return mv
   return (v, [])
+  where err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
