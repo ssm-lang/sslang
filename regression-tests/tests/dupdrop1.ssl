@@ -1,11 +1,21 @@
 // Example designed to test the InsertRefCounting module
 
+type MyType
+  Foo Int
+  Bar
+
 add a b =
   a + b      // Becomes (+) (dup a) (dup b)
 
 main cin cout =
-  let x = 5
+  let x = 5       // remains "5"
       y = 3
+      z = Foo 42  // becomes a call of the "__Foo" function
+      w = z       // becomes "dup z"
   let c = add x y
   after 1, cout <- 10
   wait cout
+
+  let a = Foo 42
+      _ = a
+  17

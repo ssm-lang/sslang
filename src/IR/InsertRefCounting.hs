@@ -4,7 +4,9 @@
 {-| Description : Insert reference counting primitives
 
 This inserts @dup@ and @drop@ primitives according to a caller @dup@,
-callee @drop@ policy.  A function returning a value should @dup@ that value.
+callee @drop@ policy.  The value returned by a function should be
+passed back referenced (ownership transfers from the callee back to
+the caller).
 
 The @dup : a -> a@ primitive behaves like the identity function,
 evaluating and returning its first argument and increasing the
@@ -118,13 +120,26 @@ insertTop (var, expr) = (var, ) <$> insertExpr expr
 
 This is the main workhorse of this module.
 
-* __Literals__ are unchanged, e.g., @42@ -> @42@
+* __Literals__ are unchanged, e.g.,
 
-* __Data constructors__ are unchanged, e.g., @True@ -> @True@ because they
-  are functions whose results are referenced
+> 42
+
+remains
+
+> 42
+
+* __Data constructors__ are unchanged, e.g.,
+
+> True
+
+remains
+
+> True
+
+because they are functions whose results are returned with an existing reference
   
 * A __variable reference__ becomes a call to dup because it introduces
-  another reference to the named object,
+  another reference to the named object, e.g.,
 
 > v
 
@@ -132,8 +147,14 @@ becomes
 
 > dup v
 
-* __Application__ inserts dups and drops on both the function being
-  applied and its argument, e.g., @foo x@ -> @(dup foo) (dup x)@
+* __Application__ recurses (inserts dups and drops) on both the
+  function being applied and its argument e.g.,
+
+> add x y
+
+becomes
+
+> (dup add) (dup x) (dup y)
 
 * __Primitive__ function application inserts dups and drops on its
   arguments, e.g.,
@@ -147,10 +168,24 @@ becomes
 * __Let__ introduces new names whose values are dropped after the body
   is evaluated; @let _ =@ are given names so they can be dropped.
 
+> let a = Foo 42
+>     _ = a
+> 17
+
+becomes
+
+> let a = Foo 42
+> drop
+>   (let anon1_underscore = dup a
+>    drop
+>      17
+>      anon1_underscore)
+>   a
 
 * Nested __Lambda__ expressions are handled by collecting them into a
-  single expression with multiple arguments, adding dups and drops to the body,
-  and adding drops around the body for each argument.
+  single expression with multiple arguments, adding dups and drops to
+  the body, and adding drops around the body for each argument (which
+  the caller should have duped)
 
 > add a b = a + b
 
@@ -158,7 +193,7 @@ desugars to
 
 > add = fun a (fun b (a + b))
 
-becomes
+and becomes
 
 @
 add = fun a (
