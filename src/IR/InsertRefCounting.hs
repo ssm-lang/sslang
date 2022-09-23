@@ -208,22 +208,53 @@ add = fun a (
 * __Matches__ that operate on a variable are modified by inserting
  dups and drops into the arms (but not the scrutinee)
 
+@
+match v
+  Foo x = x + 1
+  Bar = 42
+@
+
+desugars to
+
+@
+match v
+  Foo pat_anon0 = let x = pat_anon0
+                    x + 1
+  Bar = 42
+@
+
+then becomes
+
+@
+match v
+  Foo pat_anon0 = drop
+                    dup pat_anon0
+                    let x = dup pat_anon0
+                    drop (
+                       dup x + 1
+                    ) x
+                  ) pat_anon0
+  Bar = 42
+@
+
 * __Matches__ that scrutinize an expression lift the scrutinee
   into a @let@ then insert dups and drops on the whole thing
 
 @
-  match e
-    alt1 =
-    alt2 =
+  match add x y
+    10 = 5
+    _ = 3
 @
 
 becomes
 
 @
-  let anon42_scrutinee = e
-  match s
-    alt1 =
-    alt2 =
+  let anon0_scrutinee = (dup add) (dup x) (dup y)
+  drop (
+    match anon0_scrutinee
+      10 = 5
+      _ = 3
+  ) anon0_scruitinee
 @
 
 -}
@@ -274,7 +305,27 @@ insertExpr (I.Match scrutExpr alts typ) = do
                      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
                      typ
 
--- | Insert ref counting into pattern match arms.
+{- | Insert dups and drops into pattern match arms
+
+The body of default and literal patterns is simply recursed upon.
+
+Every named variable in a pattern is duped and dropped, e.g.,
+
+@
+match v
+  Foo x = expr
+@
+
+becomes
+
+@
+match v
+  Foo _anon1 = drop
+                 (let x = dup _anon1
+                  expr
+               ) x
+@
+-}
 insertAlt :: (I.Alt, I.Expr I.Type) -> Fresh (I.Alt, I.Expr I.Type)
 insertAlt (I.AltDefault v      , e   ) = (I.AltDefault v, ) <$> insertExpr e
 insertAlt (I.AltLit     l      , e   ) = (I.AltLit l, ) <$> insertExpr e
@@ -286,4 +337,4 @@ insertAlt (I.AltData dcon binds, body) = do
   dropDupLet (Just v) e = makeDrop
     varExpr
     (I.Let [(Nothing, makeDup varExpr)] e (I.extract e))
-    where varExpr = I.Var v I.Unit -- FIXME: how do I get its type?
+    where varExpr = I.Var v I.Unit -- FIXME: This should not be I.Unit; it should be the type of the argument of the data constructor

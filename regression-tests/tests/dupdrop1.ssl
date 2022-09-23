@@ -12,10 +12,24 @@ main cin cout =
       y = 3
       z = Foo 42  // becomes a call of the "__Foo" function
       w = z       // becomes "dup z"
-  let c = add x y
+  let c = add x y           // c = 5 + 3 = 8
+  after 1, cout <- c + 48   // "8"
+  wait cout
   after 1, cout <- 10
   wait cout
 
   let a = Foo 42
       _ = a
   17
+
+  match z
+    Foo x = x + 1
+    Bar = 42
+
+  let d = match add x y
+           10 = 5
+           _ = 3
+  after 1, cout <- d + 48   // add 5 3 = 7, so d = "3"
+  wait cout
+  after 1, cout <- 10
+  wait cout
