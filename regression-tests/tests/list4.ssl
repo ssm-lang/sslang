@@ -1,11 +1,16 @@
 // ./runtests.sh tests/list4.ssl
 // stack exec sslc -- --dump-ir tests/list4.ssl
 // stack exec sslc -- tests/list4.ssl
+// stack exec sslc -- --dump-ir-annotated tests/list4.ssl
 
 
 type List a
   Cons a (List a)
   Nil
+
+testfunc (arg0 : Int) -> Int = arg0
+
+
 
 main cin cout =
   let putc c = after 1, cout <- c
@@ -21,6 +26,8 @@ main cin cout =
                        Nil = printNil
                              putc '\n'
 */
+  
+  let x = 'h' + 't' // this should throw an error once character literals are a thing!
 
   // want to add syntax for list here!
   let two = Cons 65 (Cons 68 Nil) // 'A' : 'D' : []
