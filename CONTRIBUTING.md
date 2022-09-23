@@ -272,11 +272,7 @@ Code documentation for this compiler is generated using [Haddock][haddock]. You 
 stack haddock
 ```
 
-This generates the documentation in `haddock-out/`, in the form of a navigable static website (similar to what is found on [Hackage](https://hackage.haskell.org/)). You may view the HTML files in there using your browser. You can also ask that Haddock open your browser automatically:
-
-```shell
-stack haddock --open
-```
+This generates the documentation in `haddock-out/`, in the form of a navigable static website (similar to what is found on [Hackage](https://hackage.haskell.org/)). You may view the HTML files in there using your browser.
 
 The langauge reference manual is maintained separately in the [`doc/`](doc) folder; see build instructions there.
 
