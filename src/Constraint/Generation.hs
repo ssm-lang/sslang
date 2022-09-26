@@ -11,13 +11,11 @@ import Control.Monad (foldM, unless)
 import Control.Monad.State.Class (get, put)
 import Data.List (elemIndex)
 import qualified Data.Map as M
-import Data.Maybe (fromJust)
 import IR.IR
 import IR.Types.Type
 
 genConstraints :: SolverM s (Co (Program Type))
 genConstraints = do
-  m <- dconMap . solverGen <$> get
   prog <- solverProg <$> get
   c <-
     hastypeDefs (programDefs prog)
@@ -91,18 +89,18 @@ hastype (Lambda x u _) w =
                 c2 <- hastype u v2
                 x' <- unBinder x
                 let c3 = def x' v1 c2
-                return $ c1 ^& c3 ^& CDecode v1
+                return $ c1 ^& c3 ^& CDecode w
           )
     )
-    <$$> \((_, e), t) -> Lambda x e (Arrow t (extract e))
+    <$$> \((_, e), t) -> Lambda x e t
 hastype (App e1 e2 _) w =
   exist
     ( \v -> do
         c1 <- liftB hastype e1 (TyConS (fromString "->") [v, w])
         c2 <- hastype e2 v
-        return $ c1 ^& c2
+        return $ c1 ^& c2 ^& CDecode w
     )
-    <$$> \(e1', e2') -> App e1' e2' (Arrow (extract e1') (extract e2'))
+    <$$> \((e1', e2'), t) -> App e1' e2' t
 hastype (Let binds u _) w =
   ( do
       let binders = map fst binds
@@ -150,9 +148,8 @@ hastypePrim prim es w =
    in case prim of
         New ->
           primConstraints'
-            ( \vs ->
-                let v1 = head vs
-                 in Just $ DeepStructure (TyConS (TConId "&") [DeepVar v1])
+            ( \[v1] ->
+                Just $ DeepStructure (TyConS (TConId "&") [DeepVar v1])
             )
             (const [Nothing])
         Dup ->
@@ -164,27 +161,72 @@ hastypePrim prim es w =
             (const $ Just $ DeepStructure $ TyConS "()" [])
             (const [Nothing])
         Deref ->
+          -- ( do
+          --     c1 <- liftB hastype (head es) (TyConS (fromString "&") [w])
+          --     return $ c1 ^& CDecode w
+          -- )
+          --   <$$> \(e, t) -> Prim prim [e] t
+          -- ( do
+          --     c <- hastype (head es) w
+          --     return $ c ^& CDecode w
+          -- )
+          --   <$$> \(e, t) -> Prim prim [e] t
+
+          -- deep
+          --   (DeepStructure (TyConS (fromString "&") [DeepVar w]))
+          --   ( \v -> do
+          --       c1 <- hastype (head es) v
+          --       return $ c1 ^& CDecode w
+          --   )
+          --   <$$> \(e, t) ->
+          --     Prim
+          --       prim
+          --       [e]
+          --       t
+          -- existn
+          --   2
+          --   ( \[v1, v2] -> do
+          --       c1 <- w -=- v2
+          --       c2 <-
+          --         deep
+          --           (DeepStructure (TyConS (fromString "&") [DeepVar v2]))
+          --           (\v' -> v1 -=- v')
+          --       c3 <- hastype (head es) v1
+          --       return $ c1 ^& c2 ^& c3
+          --   )
+          --   <$$> \(_, e) ->
+          --     Prim
+          --       prim
+          --       [e]
+          --       ( case extract e of
+          --           TCon "&" [t] -> trace (show t) t
+          --           _ -> error $ show e
+          --       )
           primConstraints'
             (const Nothing)
             (const [Just $ DeepStructure $ TyConS "&" [DeepVar w]])
+        -- exist
+        --   ( \v ->
+        --       primConstraints'
+        --         (const $ Just $ DeepVar v)
+        --         (const [Just $ DeepStructure $ TyConS "&" [DeepVar v]])
+        --   )
         Assign ->
           primConstraints'
             (const $ Just $ DeepStructure $ TyConS "()" [])
-            ( \vs ->
-                let v1 = head vs
-                 in [ Just $ DeepStructure $ TyConS "&" [DeepVar v1],
-                      Just $ DeepVar v1
-                    ]
+            ( \[_, v2] ->
+                [ Just $ DeepStructure $ TyConS "&" [DeepVar v2],
+                  Nothing
+                ]
             )
         After ->
           primConstraints'
             (const $ Just $ DeepStructure $ TyConS "()" [])
-            ( \vs ->
-                let v1 = head vs
-                 in [ Just $ DeepStructure $ TyConS "Int32" [],
-                      Just $ DeepStructure $ TyConS "&" [DeepVar v1],
-                      Just $ DeepVar v1
-                    ]
+            ( \[_, _, v3] ->
+                [ Just $ DeepStructure $ TyConS "Int32" [],
+                  Just $ DeepStructure $ TyConS "&" [DeepVar v3],
+                  Nothing
+                ]
             )
         Par ->
           primConstraints'
@@ -207,11 +249,11 @@ hastypePrim prim es w =
             (const $ Just $ DeepStructure $ TyConS "Int32" [])
             (const [Just $ DeepStructure $ TyConS "()" []])
         PrimOp primOp -> hastypePrimOp primOp es w
-        CQuote s ->
+        CQuote _ ->
           primConstraints'
             (const Nothing)
             (const [])
-        CCall csym ->
+        CCall _ ->
           primConstraints'
             (const Nothing)
             (const [])

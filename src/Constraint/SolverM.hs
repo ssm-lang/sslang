@@ -24,9 +24,9 @@ type SolverM s a = STT s (StateT SolverCtx Pass) a
 initSolverCtx :: Program Annotations -> SolverCtx
 initSolverCtx prog =
   SolverCtx
-    { currId = 0,
-      currMark = 0,
-      currNameId = 0,
+    { currId = 1,
+      currMark = 1,
+      currNameId = 1,
       solverProg = prog,
       solverGen = initGenCtx prog
     }

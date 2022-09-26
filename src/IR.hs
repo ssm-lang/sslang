@@ -10,6 +10,7 @@ import Control.Monad
   ( when,
     (>=>),
   )
+import Debug.Trace (trace)
 import qualified Front.Ast as A
 import IR.ClassInstantiation (instProgram)
 import IR.DConToFunc (dConToFunc)
@@ -92,8 +93,10 @@ lower opt p = do
 -- After this stage, no compiler errors should be thrown.
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
+  -- trace (show $ programDefs p) (return ())
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- elab p
+  -- trace (show $ programDefs p) (return ())
   when (mode opt == DumpIRTyped) $ dump p
   return p
 

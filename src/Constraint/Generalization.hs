@@ -131,7 +131,7 @@ generalize :: Gen s -> Generation s -> SolverM s [U.Variable s]
 generalize g@(Gen {genYoung = young}) generation =
   let f v = do
         y <- readSTRef young
-        b1 <- U.redundant v
+        b1 <- not <$> U.redundant v
         b2 <- do
           d <- U.descriptor v
           r <- readSTRef (U.descRank d)

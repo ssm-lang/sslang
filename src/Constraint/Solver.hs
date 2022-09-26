@@ -10,6 +10,7 @@ import qualified Constraint.ShadowMap as SM
 import Constraint.SolverM (SolverM)
 import Constraint.Structure (Structure (..))
 import qualified Constraint.Unifier as U
+import qualified Constraint.UnionFind as U
 import Constraint.Utils (modifySTRef, throwTypeError)
 import Control.Monad (replicateM, unless, void, zipWithM_)
 import Control.Monad.ST.Trans (newSTRef, readSTRef)
@@ -33,6 +34,18 @@ data Co a where
   CInstance :: VarId -> Variable -> Co (Scheme, [I.Type])
   CDef :: VarId -> Variable -> Co a -> Co a
   CLet :: [Variable] -> [VarId] -> [Variable] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
+
+instance Show (Co a) where
+  show CTrue = "(CTrue)"
+  show (CMap c _) = "(CMap " ++ show c ++ ")"
+  show (CPure _) = "(CPure)"
+  show (CConj c1 c2) = "(" ++ show c1 ++ " ^& " ++ show c2 ++ ")"
+  show (CEq v1 v2) = "(CEq " ++ show v1 ++ " " ++ show v2 ++ ")"
+  show (CExist v _ c) = "(CExist " ++ show v ++ " " ++ show c ++ ")"
+  show (CDecode v) = "(CDecode " ++ show v ++ ")"
+  show (CInstance vid v) = "(CInstance " ++ show vid ++ " " ++ show v ++ ")"
+  show (CDef vid v c) = "(CDef " ++ show vid ++ " " ++ show v ++ " " ++ show c ++ ")"
+  show (CLet vs vids vs' c1 c2) = "(CLet " ++ show vs ++ " " ++ show vids ++ " " ++ show vs' ++ " " ++ show c1 ++ " " ++ show c2 ++ ")"
 
 instance Functor Co where
   fmap f c = CMap c f
