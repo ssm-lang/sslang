@@ -66,8 +66,7 @@ indentNo :: Int
 -- | Format with a document of infinite width, preventing wraparound.
 spaghetti :: Dumpy t => t -> String
 
--- | Lengthy Typeclass: print an ugly but parseable representation of the
---   AST
+-- | Dumpy Typeclass: print an ugly but parseable representation of the AST
 --   
 --   <ul>
 --   <li>Translates from IR to Doc representation in one-to-one
@@ -2746,6 +2745,7 @@ Continue :: Mode
 DumpIR :: Mode
 DumpIRAnnotated :: Mode
 DumpIRTyped :: Mode
+DumpIRTypedUgly :: Mode
 DumpIRLifted :: Mode
 DumpIRFinal :: Mode
 
