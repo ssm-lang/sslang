@@ -107,6 +107,7 @@ desugarExpr (A.Assign e1 e2) = A.Assign <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr (A.Constraint e typann) =
   A.Constraint <$> desugarExpr e <*> return typann
 desugarExpr (A.Wait es  )    = A.Wait <$> desugarExprs es
+desugarExpr (A.Tuple es )    = A.Tuple <$> desugarExprs es
 desugarExpr (A.Seq e1 e2)    = A.Seq <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr A.Break          = return A.Break
 desugarExpr (A.Match e arms) = do -- INFO: the only important one
@@ -330,6 +331,7 @@ substId old new = substExpr
   substExpr (A.Assign     e1 e2    ) = A.Assign (substExpr e1) (substExpr e2)
   substExpr (A.Constraint e  typann) = A.Constraint (substExpr e) typann
   substExpr (A.Wait es             ) = A.Wait (map substExpr es)
+  substExpr (A.Tuple es)             = A.Tuple (map substExpr es)
   substExpr (A.Seq e1 e2           ) = A.Seq (substExpr e1) (substExpr e2)
   substExpr A.Break                  = A.Break
   substExpr (A.Match e arms) =

@@ -338,6 +338,7 @@ scopeExpr (A.Wait es        ) = mapM_ scopeExpr es
 scopeExpr (A.Seq e e'       ) = mapM_ scopeExpr [e, e']
 scopeExpr (A.Lit _          ) = return ()
 scopeExpr A.Break             = return ()
+scopeExpr (A.Tuple es      ) = mapM_ scopeExpr es
 scopeExpr (A.OpRegion e o) =
   throwError
     $  UnexpectedError

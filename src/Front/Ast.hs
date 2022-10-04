@@ -95,6 +95,7 @@ data Expr
   | Match Expr [(Pat, Expr)]
   | CQuote String
   | CCall Identifier [Expr]
+  | Tuple [Expr]
   deriving (Eq, Show)
 
 {- | An operator region: a flat list of alternating expressions and operators

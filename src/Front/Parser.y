@@ -314,6 +314,7 @@ exprAtom
   | id                                  { Id $1 }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }
+  | '(' exprTups ')'                    { Tuple $2}
 
 -- | Pipe-separated expressions, for parallel composition.
 exprPar                               --> [Expr]
