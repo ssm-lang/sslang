@@ -1,0 +1,43 @@
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+printl_ puti putc l =
+  match l
+    Triple x y z = puti x
+                   putc 32 // sp
+                   puti y
+                   putc 32
+                   puti z
+
+type Triple a b c
+  Triple a b c
+
+
+main cin cout = 
+    let putc c = after 1, cout <- c
+                 wait cout
+    let putnl _ = putc 10
+    let puti = puti_ putc
+    let printl l = printl_ puti putc l
+
+    
+    let x = Triple 1 2 3
+    let y = Triple 4 5 6
+    
+    printl x
+    putnl ()
+    printl y
+    
+    
+    
