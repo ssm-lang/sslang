@@ -1,0 +1,18 @@
+/*type List
+  Cons Int List
+  Nil
+*/
+
+/*puts cout s =
+  match s
+    Cons c ss =
+      after 1, cout <- c
+      wait cout
+      after 1, cout <- 32
+      wait cout
+      puts cout ss
+    Nil = ()
+*/
+
+main cin cout =
+ let lst = []

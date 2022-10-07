@@ -1,0 +1,17 @@
+type List
+  Cons Int List
+  Nil
+
+puts cout s =
+  match s
+    Cons c ss =
+      after 1, cout <- c
+      wait cout
+      after 1, cout <- 32
+      wait cout
+      puts cout ss
+    Nil = ()
+
+main cin cout =
+ let lst = Cons '1' (Cons '2' (Cons '3' (Cons '4' (Cons '5' Nil))))
+ puts cout lst 
