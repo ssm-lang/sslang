@@ -33,6 +33,7 @@ import Control.Monad (when)
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf)
+import Data.Char (readLitChar)
 }
 
 %wrapper "monadUserState"
@@ -575,17 +576,12 @@ strTok f i@(_,_,_,s) len = do
 -- | Parse a char literal into the corresponding literal.
 charTok :: AlexAction Token
 charTok i@(_,_,_,s) len =
-  case dropEnds 1 1 $ take len s of
-    "\\\\"  -> retOrd '\\'
-    "\\'"   -> retOrd '\''
-    "\\\""  -> retOrd '"'
-    "\\n"   -> retOrd '\n'
-    "\\r"   -> retOrd '\r'
-    "\\t"   -> retOrd '\t'
-    c:[]    -> retOrd c
-    c       -> internalErr $ "Encountered unreachable empty char: " ++ show c
-  where retOrd c =
-          return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+  let charStr = dropEnds 1 1 $ take len s in
+  case readLitChar charStr of
+    [(c, [])] ->
+      return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+    _ ->
+      internalErr $ "Could not unescape char literal: '" ++ charStr ++ "'"
 
 
 -- | Start scanning token of inline C code.
