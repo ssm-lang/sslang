@@ -232,7 +232,7 @@ ctxMargin (InlineC _ _         ) = 0
 data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
-  , lastCtxCode :: Int            -- ^ last seen scanning code before special block
+  , lastCtxCode :: Int            -- ^ last seen scanning code before block
   }
 
 -- | Initial Alex monad state.
@@ -444,8 +444,8 @@ lBrace i len = do
 -- | Left delimiting token, along with its (closing) right delimiter.
 lDelimeter :: TokenType -> TokenType -> AlexAction Token
 lDelimeter ttype closer i len = do
-  -- Push 'ExplicitBlock' to remember the alexColumn where this block was started,
-  -- and what closing token to look for.
+  -- Push 'ExplicitBlock' to remember the alexColumn where this block was
+  -- started, and what closing token to look for.
   let sp = alexInputSpan i len
   alexPushContext $ ExplicitBlock (tokCol sp) closer
   return $ Token (sp, ttype)
@@ -492,8 +492,11 @@ closeBrace i _ = do
 
     -- If somehow in ExplicitBlock for different closer, then we there must be
     -- a delimiter mismatch, e.g., @( ]@.
-    ExplicitBlock _ closer' -> lexErr i $
-      "mismatched delimiter: expected '" ++ show closer' ++ "', got '" ++ show closer ++ "'"
+    ExplicitBlock _ closer' -> lexErr i $ unlines
+      [ "mismatched delimiter:"
+      , "expected '" ++ show closer' ++ "'"
+      , "got '" ++ show closer ++ "'"
+      ]
 
     -- If pending block, then user wrote something like @loop )@ or -- @if x )@,
     -- both of which are syntax errors.
