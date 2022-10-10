@@ -56,7 +56,7 @@ forall t. Proxy t -&gt; Expr t -&gt; Expr t
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679521721"><span class="annot"><span class="annottext">Expr t
 </span><a href="#local-6989586621679521721"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; (Expr t, [(Expr t, t)])
 forall t. Expr t -&gt; (Expr t, [(Expr t, t)])
-</span><a href="IR.IR.html#unzipApp"><span class="hs-identifier hs-var">I.unzipApp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr t
+</span><a href="IR.IR.html#unfoldApp"><span class="hs-identifier hs-var">I.unfoldApp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr t
 </span><a href="#local-6989586621679521721"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-42"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
 </span><span class="hs-string">&quot;new&quot;</span></span><span> </span><span class="annot"><span class="annottext">t
@@ -65,7 +65,7 @@ forall t. Expr t -&gt; (Expr t, [(Expr t, t)])
 </span><a href="#local-6989586621679521717"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679521716"><span class="annot"><span class="annottext">[(Expr t, t)]
 </span><a href="#local-6989586621679521716"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
 forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
-</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#foldApp"><span class="hs-identifier hs-var">I.foldApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#New"><span class="hs-identifier hs-var">I.New</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t
@@ -79,7 +79,7 @@ forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="#local-6989586621679521711"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679521710"><span class="annot"><span class="annottext">[(Expr t, t)]
 </span><a href="#local-6989586621679521710"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
 forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
-</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#foldApp"><span class="hs-identifier hs-var">I.foldApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Dup"><span class="hs-identifier hs-var">I.Dup</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t
@@ -96,7 +96,7 @@ forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="#local-6989586621679521705"><span class="hs-identifier hs-var">ats</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-45"></span><span>    </span><span class="annot"><span class="annottext">Expr t -&gt; [(Expr t, t)] -&gt; Expr t
 forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
-</span><a href="IR.IR.html#zipApp"><span class="hs-identifier hs-var">I.zipApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#foldApp"><span class="hs-identifier hs-var">I.foldApp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Drop"><span class="hs-identifier hs-var">I.Drop</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr t

@@ -1966,8 +1966,8 @@ inject :: t -> Expr t -> Expr t
 
 -- | Apply a function to zero or more arguments.
 --   
---   <a>zipApp</a> is the inverse of <a>unzipApp</a>.
-zipApp :: Expr t -> [(Expr t, t)] -> Expr t
+--   <a>foldApp</a> is the inverse of <a>unfoldApp</a>.
+foldApp :: Expr t -> [(Expr t, t)] -> Expr t
 
 -- | Collect a curried application into the function and argument list.
 --   
@@ -1984,8 +1984,8 @@ zipApp :: Expr t -> [(Expr t, t)] -> Expr t
 --   @<tt> (Var f (A -&gt; B -&gt; C)) [(Var a A, B -&gt; C), (Var b B, C)]
 --   </tt>@
 --   
---   <a>unzipApp</a> is the inverse of <a>zipApp</a>.
-unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
+--   <a>unfoldApp</a> is the inverse of <a>foldApp</a>.
+unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
 
 -- | Whether an expression is a value.
 isValue :: Expr t -> Bool
