@@ -158,14 +158,14 @@ tokens :-
     do                  { reserved TDo }
 
     -- Other stringy tokens.
-    @operator           { strTok (TOp . fromString) }
-    \` @identifier \`   { strTok (TOp . fromString . dropEnds 1 1) }
-    @identifier         { strTok (TId . fromString) }
-    $digit+             { strTok (TInteger . read) }
+    @operator           { strTok (return . TOp . fromString) }
+    \` @identifier \`   { strTok (return . TOp . fromString . dropEnds 1 1) }
+    @identifier         { strTok (return . TId . fromString) }
+    $digit+             { strTok (return . TInteger . read) }
     \' @litChar \'      { charTok }
 
     -- InlineC C code
-    @cSym @identifier   { strTok (TCSym . fromString . dropEnds 1 0) }
+    @cSym @identifier   { strTok (return . TCSym . fromString . dropEnds 1 0) }
     @cQuoteL            { cInlineBegin cQuoteBody }
     @cBlockL            { cInlineBegin cBlockBody }
   }
@@ -571,20 +571,30 @@ reserved ttype i _ = lexErr i $ "keyword is reserved: '" ++ show ttype ++ "'"
 
 
 -- | Arbitrary string token helper, which uses @f@ to produce 'TokenType'.
-strTok :: (String -> TokenType) -> AlexAction Token
+strTok :: (String -> Alex TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = do
-  return $ Token (alexInputSpan i len, f $ take len s)
+  t <- f $ take len s
+  return $ Token (alexInputSpan i len, t)
 
 
 -- | Parse a char literal into the corresponding literal.
 charTok :: AlexAction Token
-charTok i@(_,_,_,s) len =
-  let charStr = dropEnds 1 1 $ take len s in
-  case readLitChar charStr of
-    [(c, [])] ->
-      return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
-    _ ->
-      internalErr $ "Could not unescape char literal: '" ++ charStr ++ "'"
+charTok i@(_,_,_,s) len = do
+  let charStr = dropEnds 1 1 $ take len s
+  str <- unescape charStr
+  case str of
+    [c] -> return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+    _ -> internalErr $ "Could not unescape char literal: '" ++ charStr ++ "'"
+
+
+-- | Unescape the escaped characters in a String.
+unescape :: String -> Alex String
+unescape s = case readLitChar s of
+  [(c, s')] -> do
+    cs <- unescape s'
+    return (c:cs)
+  []  -> syntaxErr $ "Could not escape string: '" ++ s ++ "'"
+  _:_ -> internalErr $ "Ambiguous escape for string: '" ++ s ++ "'"
 
 
 -- | Start scanning token of inline C code.
