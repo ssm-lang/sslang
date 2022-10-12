@@ -16,3 +16,4 @@
 
 main cin cout =
  let lst = []
+ () // main must return unit
