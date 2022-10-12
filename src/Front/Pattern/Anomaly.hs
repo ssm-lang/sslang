@@ -118,6 +118,7 @@ checkExpr (A.Match e arms) =
   let (ps, es) = unzip arms in checkExpr e >> checkExprs es >> checkPats ps
 checkExpr (A.CQuote _  ) = return ()
 checkExpr (A.CCall _ es) = mapM_ checkExpr es
+checkExpr (A.ListExpr _)    = return ()
 
 checkOpRegion :: A.OpRegion -> AnomalyFn ()
 checkOpRegion (A.NextOp _ e opRegion) = checkExpr e >> checkOpRegion opRegion

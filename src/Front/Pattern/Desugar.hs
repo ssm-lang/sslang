@@ -90,6 +90,7 @@ desugarExprs = mapM desugarExpr
 desugarExpr :: A.Expr -> DesugarFn A.Expr
 desugarExpr e@(A.Id  _       ) = return e
 desugarExpr e@(A.Lit _       ) = return e
+desugarExpr e@(A.ListExpr _       ) = return e
 desugarExpr (  A.Apply  e1 e2) = A.Apply <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr (  A.Lambda ps e ) = A.Lambda ps <$> desugarExpr e -- WARN: patterns here are not checked
 desugarExpr (A.OpRegion e opRegion) =
