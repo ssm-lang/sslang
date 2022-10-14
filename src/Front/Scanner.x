@@ -29,7 +29,7 @@ module Front.Scanner
   ) where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
-import Control.Monad (when)
+import Control.Monad (when, (<=<))
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf)
@@ -163,6 +163,7 @@ tokens :-
     @identifier         { strTok (return . TId . fromString) }
     $digit+             { strTok (return . TInteger . read) }
     \' @litChar \'      { charTok }
+    \" @litChar+ \"     { strTok ((return . TString . fromString) <=< (unescape . dropEnds 1 1)) }
 
     -- InlineC C code
     @cSym @identifier   { strTok (return . TCSym . fromString . dropEnds 1 0) }
