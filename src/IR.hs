@@ -1,34 +1,30 @@
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
-
 -- | Intermediate representation (IR) stages of the compiler pipeline.
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module IR where
 
-import Common.Compiler
-import Common.Default (Default (..))
-import Constraint.Elab (elab)
-import Control.Monad
-  ( when,
-    (>=>),
-  )
-import Debug.Trace (trace)
-import qualified Front.Ast as A
-import IR.ClassInstantiation (instProgram)
-import IR.DConToFunc (dConToFunc)
-import IR.ExternToCall (externToCall)
-import IR.IR (Program (..))
-import qualified IR.IR as I
-import IR.InsertRefCounting (insertRefCounting)
-import IR.LambdaLift (liftProgramLambdas)
-import IR.LowerAst (lowerProgram)
-import IR.SegmentLets (segmentLets)
-import IR.Types
-  ( fromAnnotations,
-    typecheckProgram,
-  )
-import System.Console.GetOpt
-  ( ArgDescr (..),
-    OptDescr (..),
-  )
+import           Common.Compiler
+import           Common.Default                 ( Default(..) )
+import qualified Front.Ast                     as A
+import qualified IR.IR                         as I
+
+import           IR.ClassInstantiation          ( instProgram )
+import           IR.DConToFunc                  ( dConToFunc )
+import           IR.ExternToCall                ( externToCall )
+import           IR.InsertRefCounting           ( insertRefCounting )
+import           IR.LambdaLift                  ( liftProgramLambdas )
+import           IR.LowerAst                    ( lowerProgram )
+import           IR.SegmentLets                 ( segmentLets )
+import           IR.Types                       ( fromAnnotations
+                                                , typecheckProgram
+                                                )
+
+import           Common.Pretty                  ( spaghetti )
+import           Control.Monad                  ( (>=>)
+                                                , when
+                                                )
+import           System.Console.GetOpt          ( ArgDescr(..)
+                                                , OptDescr(..)
+                                                )
 
 -- | Operation modes for the IR compiler stage.
 --
@@ -38,48 +34,47 @@ data Mode
   | DumpIR
   | DumpIRAnnotated
   | DumpIRTyped
+  | DumpIRTypedUgly
   | DumpIRLifted
   | DumpIRFinal
   deriving (Eq, Show)
 
 -- | Compiler options for the IR compiler stage.
-newtype Options = Options {mode :: Mode}
+newtype Options = Options { mode :: Mode }
   deriving (Eq, Show)
 
 instance Default Options where
-  def = Options {mode = Continue}
+  def = Options { mode = Continue }
 
 -- | CLI options for the IR compiler stage.
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option
-      ""
-      ["dump-ir"]
-      (NoArg $ setMode DumpIR)
-      "Print the IR immediately after lowering",
-    Option
-      ""
-      ["dump-ir-annotated"]
-      (NoArg $ setMode DumpIRTyped)
-      "Print the fully-typed IR just before type inference",
-    Option
-      ""
-      ["dump-ir-typed"]
-      (NoArg $ setMode DumpIRTyped)
-      "Print the fully-typed IR after type inference",
-    Option
-      ""
-      ["dump-ir-lifted"]
-      (NoArg $ setMode DumpIRLifted)
-      "Print the IR after lambda lifting",
-    Option
-      ""
-      ["dump-ir-final"]
-      (NoArg $ setMode DumpIRFinal)
-      "Print the last IR representation before code generation"
+  [ Option ""
+           ["dump-ir"]
+           (NoArg $ setMode DumpIR)
+           "Print the IR immediately after lowering"
+  , Option ""
+           ["dump-ir-annotated"]
+           (NoArg $ setMode DumpIRTyped)
+           "Print the fully-typed IR just before type inference"
+  , Option ""
+           ["dump-ir-typed"]
+           (NoArg $ setMode DumpIRTyped)
+           "Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-typed-ugly"]
+           (NoArg $ setMode DumpIRTypedUgly)
+           "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-lifted"]
+           (NoArg $ setMode DumpIRLifted)
+           "Print the IR after lambda lifting"
+  , Option ""
+           ["dump-ir-final"]
+           (NoArg $ setMode DumpIRFinal)
+           "Print the last IR representation before code generation"
   ]
-  where
-    setMode m o = o {mode = m}
+  where setMode m o = o { mode = m }
 
 -- | Lower from AST to IR (with annotations).
 lower :: Options -> A.Program -> Pass (I.Program I.Annotations)
@@ -93,11 +88,10 @@ lower opt p = do
 -- After this stage, no compiler errors should be thrown.
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
-  -- trace (show $ programDefs p) (return ())
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  p <- elab p
-  -- trace (show $ programDefs p) (return ())
+  p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
+  when (mode opt == DumpIRTypedUgly) $ (throwError . Dump . show . spaghetti) p
   return p
 
 -- | IR transformations to prepare for codegen.
