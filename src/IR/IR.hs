@@ -18,7 +18,7 @@ module IR.IR
   , VarId(..)
   , TConId(..)
   , DConId(..)
-  , Type
+  , Type(..)
   , Annotation
   , Annotations
   , variantFields
@@ -53,7 +53,7 @@ import           Data.Set                       ( (\\) )
 import           IR.Types.Type                  ( Annotation
                                                 , Annotations
                                                 , pattern Arrow
-                                                , Type
+                                                , Type(..)
                                                 , unfoldArrow
                                                 )
 

@@ -19,6 +19,7 @@ import           IR.Types                       ( fromAnnotations
                                                 )
 
 import           Common.Pretty                  ( spaghetti )
+import           Constraint.Elab                ( elab )
 import           Control.Monad                  ( (>=>)
                                                 , when
                                                 )
@@ -61,11 +62,10 @@ options =
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
-  , Option
-    ""
-    ["dump-ir-typed-ugly"]
-    (NoArg $ setMode DumpIRTypedUgly)
-    "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-typed-ugly"]
+           (NoArg $ setMode DumpIRTypedUgly)
+           "Ugly-Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-typed-ugly"]
            (NoArg $ setMode DumpIRTypedUgly)
@@ -94,7 +94,7 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  p <- typecheckProgram p
+  p <- elab p
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedUgly) $ (throwError . Dump . show . spaghetti) p
   return p
