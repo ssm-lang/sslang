@@ -61,6 +61,11 @@ options =
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
+  , Option
+    ""
+    ["dump-ir-typed-ugly"]
+    (NoArg $ setMode DumpIRTypedUgly)
+    "Ugly-Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-typed-ugly"]
            (NoArg $ setMode DumpIRTypedUgly)

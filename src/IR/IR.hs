@@ -258,6 +258,7 @@ which, when unzipped, gives:
 @@
 (Var f (A -> B -> C)) [(Var a A, B -> C), (Var b B, C)]
 @@
+
 'unfoldApp' is the inverse of 'foldApp'.
 -}
 unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
@@ -266,6 +267,7 @@ unfoldApp (App lhs rhs t) =
 unfoldApp e = (e, [])
 
 {- | Apply a function to zero or more arguments.
+
 'foldApp' is the inverse of 'unfoldApp'.
 -}
 foldApp :: Expr t -> [(Expr t, t)] -> Expr t

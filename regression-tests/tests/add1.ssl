@@ -1,0 +1,10 @@
+add a b = a + b
+
+main cin cout =
+  let x = 2
+      y = 3
+      r = add x y
+  after 1, cout <- r + 48    // Should print 5
+  wait cout
+  after 1, cout <- 10
+  wait cout

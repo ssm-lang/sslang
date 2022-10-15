@@ -9,6 +9,7 @@ import qualified IR
 import qualified IR.IR                         as I
 
 import           Control.Monad                  ( (>=>) )
+import Debug.Trace (traceM)
 
 infer :: HasCallStack => String -> Pass (I.Program I.Type)
 infer = Front.run def >=> IR.lower def >=> IR.typecheck def
@@ -129,7 +130,7 @@ spec = do
         addOne (x: a) = x + 1
       |]
     it "rejects a type annotation that over-generalizes a variable" $ do
-      pendingWith "FIXME"
+      pendingWith "some kind of generalization bug"
       typeErrors [here|
         addOne x = (x: a) + 1
       |]
@@ -297,6 +298,40 @@ spec = do
     it "treats type variables the same modulo alpha-equivalence" $ do
       a2a `shouldPassAs` b2b
 
+  describe "checks kindness of type constructors" $ do
+    it "rejects partially-applied, user-defined type constructos" $ do
+      typeErrors [here|
+        type MyEither a b
+          MyLeft a
+          MyRight b
+
+        l : MyEither () = MyLeft ()
+      |]
+
+      typeErrors [here|
+        type MyEither a b
+          MyLeft a
+          MyRight b
+
+        l : MyEither () = MyLeft
+      |]
+
+      typeErrors [here|
+        type MyEither a b
+          MyLeft a
+          MyRight b
+
+        l : MyEither = MyLeft
+      |]
+
+      typeErrors [here|
+        type MyEither a b
+          MyLeft a
+          MyRight b
+
+        l : MyEither () MyEither = MyLeft ()
+      |]
+
   -------- Larger, full test cases --------
 
   describe "larger, full-program test cases" $ do
@@ -375,3 +410,47 @@ spec = do
                 Two   = isOdd One
                 Three = isOdd Two
             |]
+
+    it "typechecks a program with complicated patterns" $ do
+      typeChecks [here|
+            type MyEither a b
+              MyLeft a
+              MyRight b
+
+            flattenEither x: MyEither (MyEither a b) (MyEither b a) -> MyEither a b =
+              match x
+                MyLeft  (MyRight a) = MyLeft a
+                MyLeft  (MyLeft b)  = MyRight b
+                MyRight (MyLeft a)  = MyLeft a
+                MyRight (MyRight b) = MyRight b
+            |]
+
+    it "typechecks a program with a specialized complicated pattern match" $ do
+      pendingWith "some kind of generalization bug"
+      typeChecks [here|
+            type MyEither a b
+              MyLeft a
+              MyRight b
+
+            flattenEither x: MyEither (MyEither a ()) (MyEither () a) -> MyEither a () =
+              match x
+                MyLeft  (MyRight a) = MyLeft a
+                MyLeft  (MyLeft b)  = MyRight b
+                MyRight (MyLeft a)  = MyLeft a
+                MyRight (MyRight b) = MyRight b
+            |]
+
+    it "typechecks a program with complicated patterns and annotations" $ do
+      typeChecks [here|
+            type MyEither a b
+              MyLeft a
+              MyRight b
+
+            flattenEither x: MyEither (MyEither Int ()) (MyEither () Int) -> MyEither () Int =
+              match x
+                MyLeft  (MyRight a: MyEither Int ()) = MyLeft a
+                MyLeft  (MyLeft b:  MyEither Int ())  = MyRight b
+                MyRight (MyLeft a:  MyEither () Int)  = MyLeft a
+                MyRight (MyRight b: MyEither () Int) = MyRight b
+            |]
+

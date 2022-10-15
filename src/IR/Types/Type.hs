@@ -38,6 +38,7 @@ import           Data.Set                       ( (\\) )
 
 
 {- | Encoding of sslang types.
+
 Structurally speaking, these are very simple. Types are either type variables or
 type constructors applied to some other types.
 Builtin types (and type constructors) include 'Arrow', 'Unit', 'Ref', 'List',
@@ -61,6 +62,7 @@ data Constraint = CTrue -- ^ The trivial constraint, i.e., always satisfied.
   deriving (Eq, Show, Typeable, Data)
 
 {- | Schemes quantify over 'Type' variables and impose some 'Constraint'.
+
 'SchemeOf' is implemented as functor over some kind of type so we can easily
 substitute in 'Type' vs 'UType' when performing type inference/unification.
 -}
@@ -84,7 +86,7 @@ newtype Scheme = Scheme (SchemeOf Type)
   deriving (Eq, Show, Typeable, Data)
 
 instance HasFreeVars Scheme TVarId where
-  freeVars (Scheme (Forall s _ t)) = freeVars t \\ s
+
 
 -- | An annotation records the annotated portion of a pattern.
 data Annotation

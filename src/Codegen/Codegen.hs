@@ -526,8 +526,10 @@ genYield = do
 -- passes to optimize this.
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
 genExpr (I.Var n _) = do
-  Just v <- M.lookup n <$> gets fnVars
+  mv <- M.lookup n <$> gets fnVars
+  v <- maybe err return mv
   return (v, [])
+  where err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
@@ -548,7 +550,7 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr e@(I.App _ _ ty) = do
-  let (fn, args) = second (map fst) $ I.unzipApp e
+  let (fn, args) = second (map fst) $ I.unfoldApp e
   -- args must be non-empty because a is an App
   case fn of
     -- I.Var _ _ -> do
