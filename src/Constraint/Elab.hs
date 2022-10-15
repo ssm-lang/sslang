@@ -2,25 +2,28 @@
 
 module Constraint.Elab where
 
-import qualified Common.Compiler as Compiler
-import Common.Identifiers (VarId (..))
-import Constraint.Datatype
-  ( AstEnv,
-    emptyEnv,
-  )
-import Constraint.Generation (genConstraints)
-import Constraint.Solver (solveAndElab)
-import Constraint.SolverM
-  ( SolverM,
-    initSolverCtx,
-  )
-import Control.Monad.ST.Trans (runSTT)
-import Control.Monad.State.Lazy (evalStateT)
-import IR.IR (Annotations, Expr, Program (..), Type)
+import qualified Common.Compiler               as Compiler
+import           Common.Identifiers             ( VarId(..) )
+import           Constraint.Datatype            ( AstEnv
+                                                , emptyEnv
+                                                )
+import           Constraint.Generation          ( genConstraints )
+import           Constraint.Solver              ( solveAndElab )
+import           Constraint.SolverM             ( SolverM
+                                                , initSolverCtx
+                                                )
+import           Control.Monad.ST.Trans         ( runSTT )
+import           Control.Monad.State.Lazy       ( evalStateT )
+import           IR.IR                          ( Annotations
+                                                , Expr
+                                                , Program(..)
+                                                , Type
+                                                )
 
 -- | Elaborate implicitly typed AST program to explicitly typed IR program
 elab :: Program Annotations -> Compiler.Pass (Program Type)
-elab prog = evalStateT (runSTT (genConstraints >>= solveAndElab)) (initSolverCtx prog)
+elab prog =
+  evalStateT (runSTT (genConstraints >>= solveAndElab)) (initSolverCtx prog)
 
 -- elab aprog =
 --   -- let ast = letify aprog

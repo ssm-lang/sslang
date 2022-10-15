@@ -1,9 +1,13 @@
 module Constraint.ShadowMap where
 
-import Constraint.SolverM (SolverM)
-import Constraint.Utils (modifySTRef)
-import Control.Monad.ST.Trans (STRef, newSTRef, readSTRef, writeSTRef)
-import qualified Data.Map.Strict as M
+import           Constraint.SolverM             ( SolverM )
+import           Constraint.Utils               ( modifySTRef )
+import           Control.Monad.ST.Trans         ( STRef
+                                                , newSTRef
+                                                , readSTRef
+                                                , writeSTRef
+                                                )
+import qualified Data.Map.Strict               as M
 
 newtype Map s k a = ShadowMap (STRef s (M.Map k [a]))
 
@@ -33,9 +37,9 @@ replace (ShadowMap ref) k v = modifySTRef ref (M.insert k [v])
 remove :: Ord k => Map s k a -> k -> SolverM s ()
 remove (ShadowMap ref) k = do
   let remove' m = case M.lookup k m of
-        Nothing -> m
-        Just [] -> M.delete k m
-        Just [_] -> M.delete k m
+        Nothing       -> m
+        Just []       -> M.delete k m
+        Just [_     ] -> M.delete k m
         Just (_ : vs) -> M.insert k vs m
   modifySTRef ref remove'
 

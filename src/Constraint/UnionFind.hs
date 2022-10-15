@@ -1,23 +1,22 @@
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 
 module Constraint.UnionFind
-  ( Point,
-    fresh,
-    repr,
-    union,
-    union',
-    equivalent,
-    redundant,
-    descriptor,
-    setDescriptor,
-    modifyDescriptor,
-  )
-where
+  ( Point
+  , fresh
+  , repr
+  , union
+  , union'
+  , equivalent
+  , redundant
+  , descriptor
+  , setDescriptor
+  , modifyDescriptor
+  ) where
 
-import Constraint.SolverM (SolverM)
-import Constraint.Utils (modifySTRef)
-import Control.Monad (when)
-import Control.Monad.ST.Trans
+import           Constraint.SolverM             ( SolverM )
+import           Constraint.Utils               ( modifySTRef )
+import           Control.Monad                  ( when )
+import           Control.Monad.ST.Trans
 
 -- | The abstract type of an element of the sets we work on.  It is
 -- parameterised over the type of the descriptor.
@@ -32,17 +31,17 @@ data Link s a
 
 data Info a = MkInfo
   { -- | The size of the equivalence class, used by 'union'.
-    weight :: {-# UNPACK #-} !Int,
-    descr :: a
+    weight :: {-# UNPACK #-} !Int
+  , descr  :: a
   }
-  deriving (Eq)
+  deriving Eq
 
 -- | /O(1)/. Create a fresh point and return it.  A fresh point is in
 -- the equivalence class that contains only itself.
 fresh :: a -> SolverM s (Point s a)
 fresh desc = do
-  info <- newSTRef (MkInfo {weight = 1, descr = desc})
-  l <- newSTRef (Info info)
+  info <- newSTRef (MkInfo { weight = 1, descr = desc })
+  l    <- newSTRef (Info info)
   return (Pt l)
 
 -- | /O(1)/. @repr point@ returns the representative point of
@@ -53,7 +52,7 @@ repr :: Point s a -> SolverM s (Point s a)
 repr point@(Pt l) = do
   link <- readSTRef l
   case link of
-    Info _ -> return point
+    Info _           -> return point
     Link pt'@(Pt l') -> do
       pt'' <- repr pt'
       when (pt'' /= pt') $ do
@@ -72,12 +71,12 @@ descrRef :: Point s a -> SolverM s (STRef s (Info a))
 descrRef point@(Pt link_ref) = do
   link <- readSTRef link_ref
   case link of
-    Info info -> return info
+    Info info           -> return info
     Link (Pt link'_ref) -> do
       link' <- readSTRef link'_ref
       case link' of
         Info info -> return info
-        _ -> descrRef =<< repr point
+        _         -> descrRef =<< repr point
 
 -- | /O(1)/. Return the descriptor associated with argument point's
 -- equivalence class.
@@ -90,12 +89,12 @@ descriptor point = do
 setDescriptor :: Point s a -> a -> SolverM s ()
 setDescriptor point new_descr = do
   r <- descrRef point
-  modifySTRef r $ \i -> i {descr = new_descr}
+  modifySTRef r $ \i -> i { descr = new_descr }
 
 modifyDescriptor :: Point s a -> (a -> a) -> SolverM s ()
 modifyDescriptor point f = do
   r <- descrRef point
-  modifySTRef r $ \i -> i {descr = f (descr i)}
+  modifySTRef r $ \i -> i { descr = f (descr i) }
 
 -- | /O(1)/. Join the equivalence classes of the points (which must be
 -- distinct).  The resulting equivalence class will get the descriptor
@@ -116,9 +115,9 @@ union' p1 p2 update = do
   when (point1 /= point2) $ do
     Info info_ref1 <- readSTRef link_ref1
     Info info_ref2 <- readSTRef link_ref2
-    MkInfo w1 d1 <- readSTRef info_ref1 -- d1 is discarded
-    MkInfo w2 d2 <- readSTRef info_ref2
-    d2' <- update d1 d2
+    MkInfo w1 d1   <- readSTRef info_ref1 -- d1 is discarded
+    MkInfo w2 d2   <- readSTRef info_ref2
+    d2'            <- update d1 d2
     -- Make the smaller tree a a subtree of the bigger one.  The idea
     -- is this: We increase the path length of one set by one.
     -- Assuming all elements are accessed equally often, this means

@@ -2,8 +2,10 @@
 
 module Constraint.Structure where
 
-import Common.Identifiers (TConId (..))
-import Data.Maybe (fromJust, isNothing)
+import           Common.Identifiers             ( TConId(..) )
+import           Data.Maybe                     ( fromJust
+                                                , isNothing
+                                                )
 
 -- TODO: is deriving really ok here?
 data Structure a = TyConS TConId [a]
