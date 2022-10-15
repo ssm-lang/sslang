@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {- | Front end of the compiler pipeline.
 
 Throughout this stage, high-level syntax is progressively parsed and desugared
@@ -78,11 +79,23 @@ parseAst opt src = do
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
   -- TODO: other desugaring
-  Pattern.checkAnomaly astP
-  astD <- Pattern.desugarProgram astP
+  let astP_insert = insertTypeDef pairdeff astP
+
+  Pattern.checkAnomaly astP_insert
+  astD <- Pattern.desugarProgram astP_insert
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD
+
+pairdeff = A.TypeDef
+  { A.typeName = "Pair"     -- ^ The name of the type, e.g., @Option@
+  , A.typeParams = ["a","b"]
+  , A.typeVariants = [A.VariantUnnamed "Pair" [A.TCon "a", A.TCon "b"]]
+  }
+
+-- | insert a typedef into a AST.
+insertTypeDef :: A.TypeDef -> A.Program -> A.Program
+insertTypeDef typedef (A.Program xs) = A.Program ((A.TopType typedef) : xs)
 
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()

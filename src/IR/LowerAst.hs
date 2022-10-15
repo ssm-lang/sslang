@@ -162,6 +162,14 @@ lowerExpr (A.OpRegion _ _) =
 lowerExpr (A.Match s ps) =
   I.Match <$> lowerExpr s <*> mapM lowerArm ps <*> pure untyped
   where lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
+lowerExpr (A.Tuple es) =
+  apply_recurse (I.Data "Pair" untyped) <$> mapM lowerExpr es
+
+
+apply_recurse :: I.Expr I.Annotations -> [I.Expr I.Annotations] -> I.Expr I.Annotations
+apply_recurse e [] = e
+apply_recurse e (x:xs) = apply_recurse (I.App e x untyped) xs
+
 
 -- | Lower an A.Pat into an I.Alt
 lowerPatAlt :: A.Pat -> Compiler.Pass I.Alt

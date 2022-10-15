@@ -18,9 +18,6 @@ printl_ puti putc p =
                putc 32
                puti y
 
-type Pair a b
-    Pair a b
-
 
 main cin cout = 
     let putc c = after 1, cout <- c
