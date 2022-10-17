@@ -12,6 +12,7 @@ module IR.LambdaLift
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
 import qualified IR.IR                         as I
+import           IR.MangleNames                 ( pickId )
 import qualified IR.Types                      as I
 
 import           Control.Monad                  ( forM_ )
@@ -55,6 +56,10 @@ data LiftCtx = LiftCtx
   {- ^ 'anonCount' is a monotonically increasing counter used for creating
   unique identifiers for lifted lambdas.
   -}
+  , varNames     :: M.Map I.VarId I.VarId
+  {- ^ 'varNames' keeps track of all identifiers, for the purposes of ensure
+  globaly unique identifiers.
+  -}
   }
 
 -- | Lift Monad
@@ -76,6 +81,7 @@ runLiftFn (LiftFn m) = evalStateT
           , lifted       = []
           , trail        = []
           , anonCount    = 0
+          , varNames     = M.empty
           }
 
 -- | Extract top level definition names that compose program's global scope.
@@ -103,8 +109,12 @@ prependTrail cur = do
 getFresh :: LiftFn Identifier
 getFresh = do
   curCount <- gets anonCount
-  modify $ \st -> st { anonCount = anonCount st + 1 }
-  return $ "anon" <> fromString (show curCount)
+  vns      <- gets varNames
+  let (_, i) = pickId vns $ "__anon" <> fromString (show curCount)
+      l      = "__generated_lambda_name__"
+  modify
+    $ \st -> st { anonCount = anonCount st + 1, varNames = M.insert l i vns }
+  return $ fromId i
 
 -- | Store a new lifted lambda to later add to the program's top level definitions.
 addLifted :: Identifier -> I.Expr I.Type -> LiftFn ()
@@ -121,7 +131,6 @@ newScope vs = modify $ \st -> st
   { currentScope = S.union (globalScope st) (S.fromList vs)
   , freeTypes    = M.empty
   }
-
 
 -- | Optionally append to the scope trail.
 maybeTrailAppend :: Maybe Identifier -> [Identifier] -> LiftFn ()
@@ -165,10 +174,12 @@ Program with the relative order of user definitions preserved.
 -}
 liftProgramLambdas :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 liftProgramLambdas p = runLiftFn $ do
+  modify $ \st -> st { varNames = I.varNames p }
   let defs = I.programDefs p
   populateGlobalScope defs
   liftedProgramDefs <- mapM liftLambdasTop defs
-  return $ p { I.programDefs = concat liftedProgramDefs }
+  vns               <- gets varNames
+  return $ p { I.programDefs = concat liftedProgramDefs, I.varNames = vns }
 
 -- | Given a top-level definition, lift out any lambda definitions.
 liftLambdasTop :: (I.VarId, I.Expr I.Type) -> LiftFn [(I.VarId, I.Expr I.Type)]

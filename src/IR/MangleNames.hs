@@ -3,6 +3,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module IR.MangleNames
   ( mangleProgram
+  , pickId
   ) where
 
 import qualified Common.Compiler               as Compiler
@@ -24,6 +25,25 @@ import           Data.Maybe                     ( catMaybes
                                                 , fromJust
                                                 )
 import qualified Data.Set                      as S
+
+normalize :: I.VarId -> I.VarId
+normalize = fromString . map m . ident
+ where
+  m '\'' = '_'
+  m a    = a
+
+pickId :: M.Map I.VarId I.VarId -> I.VarId -> (I.VarId, I.VarId)
+pickId globals v =
+  let v' = normalize v in if alreadyInUse v' then pick 1 else (v, v')
+ where
+  pick :: Int -> (I.VarId, I.VarId)
+  pick i =
+    let v' = normalize (v <> "___" <> fromString (show i))
+    in  if alreadyInUse v' then pick (i + 1) else (v, v')
+
+  alreadyInUse :: I.VarId -> Bool
+  alreadyInUse v' = M.member v' globals
+
 
 data MangleCtx = MangleCtx
   { localScope  :: M.Map I.VarId I.VarId
@@ -56,39 +76,23 @@ tellGlobals vs = do
   let vs' = map (\(a, b) -> (b, a)) vs
   modify $ \st -> st { globalScope = M.fromList vs' `M.union` globalScope st }
 
-normalize :: I.VarId -> I.VarId
-normalize = fromString . map m . ident
- where
-  m '\'' = '_'
-  m a    = a
-
-pickId :: I.VarId -> Mangle (I.VarId, I.VarId)
-pickId v = do
-  let v' = normalize v
-  inUse <- alreadyInUse v'
-  if inUse then pick 1 else return (v, v')
- where
-  pick :: Int -> Mangle (I.VarId, I.VarId)
-  pick i = do
-    let v' = normalize (v <> "___" <> fromString (show i))
-    inUse <- alreadyInUse v'
-    if inUse then pick (i + 1) else return (v, v')
-
-  alreadyInUse :: I.VarId -> Mangle Bool
-  alreadyInUse v' = gets (M.member v' . globalScope)
-
 withMangled :: [I.Binder] -> Mangle a -> Mangle ([I.Binder], a)
 withMangled vs m = do
   vs' <- mapM pickBinder vs
   tellGlobals $ catMaybes vs'
   withLocals (catMaybes vs') $ do
     a <- m
-    return (map getBinder vs', a)
+    return (map toBinder vs', a)
  where
-  pickBinder (Just v) = Just <$> pickId v
-  pickBinder Nothing  = return Nothing
-  getBinder (Just (_, v')) = Just v'
-  getBinder Nothing        = Nothing
+  pickBinder :: I.Binder -> Mangle (Maybe (I.VarId, I.VarId))
+  pickBinder (Just v) = do
+    globals <- gets globalScope
+    return $ Just $ pickId globals v
+  pickBinder Nothing = return Nothing
+
+  toBinder :: Maybe (I.VarId, I.VarId) -> I.Binder
+  toBinder (Just (_, v')) = Just v'
+  toBinder Nothing        = Nothing
 
 mangleProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 mangleProgram p = runMangle $ do
