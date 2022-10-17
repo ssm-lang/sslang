@@ -13,6 +13,7 @@ import           IR.ExternToCall                ( externToCall )
 import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
+import           IR.MangleNames                 ( mangleProgram )
 import           IR.SegmentLets                 ( segmentLets )
 import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
@@ -35,6 +36,7 @@ data Mode
   | DumpIRAnnotated
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRMangled
   | DumpIRLifted
   | DumpIRFinal
   deriving (Eq, Show)
@@ -55,17 +57,20 @@ options =
            "Print the IR immediately after lowering"
   , Option ""
            ["dump-ir-annotated"]
-           (NoArg $ setMode DumpIRTyped)
+           (NoArg $ setMode DumpIRAnnotated)
            "Print the fully-typed IR just before type inference"
   , Option ""
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
-  , Option
-    ""
-    ["dump-ir-typed-ugly"]
-    (NoArg $ setMode DumpIRTypedUgly)
-    "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-typed-ugly"]
+           (NoArg $ setMode DumpIRTypedUgly)
+           "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-mangled"]
+           (NoArg $ setMode DumpIRMangled)
+           "Print the IR after mangling"
   , Option ""
            ["dump-ir-lifted"]
            (NoArg $ setMode DumpIRLifted)
@@ -98,6 +103,8 @@ typecheck opt p = do
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
+  p <- mangleProgram p
+  when (mode opt == DumpIRMangled) $ dump p
   p <- instProgram p
   p <- segmentLets p
   p <- dConToFunc p

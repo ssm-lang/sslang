@@ -30,6 +30,7 @@ module IR.IR
   , foldApp
   , unfoldApp
   , isValue
+  , altBinders
   ) where
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
@@ -57,16 +58,18 @@ import           IR.Types.Type                  ( Annotation
                                                 , unfoldArrow
                                                 )
 
-{- | Top-level compilation unit.
+{- | Top-level compilation unit, parameterized by the type system.
 
-@t@ is the type system in use, e.g., "IR.Types.Flat"
+After name-mangling, all variable names should be globally unique, and will be
+kept track of in @varNames@.
 -}
 data Program t = Program
-  { programEntry :: VarId
-  , cDefs        :: String
-  , externDecls  :: [(VarId, Type)]
-  , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef)]
+  { programEntry :: VarId               -- ^ name of entry point
+  , cDefs        :: String              -- ^ top-level literal C code
+  , externDecls  :: [(VarId, Type)]     -- ^ top-level extern symbols
+  , programDefs  :: [(VarId, Expr t)]   -- ^ top-level sslang definitions
+  , typeDefs     :: [(TConId, TypeDef)] -- ^ sslang type definitions
+  , varNames     :: S.Set VarId         -- ^ set of all variable names
   }
   deriving (Eq, Show, Typeable, Data, Functor)
 
@@ -299,6 +302,12 @@ foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
 foldLambda args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `Arrow` extract b
 
+-- | Obtain the set of binders from an 'Alt'.
+altBinders :: Alt -> S.Set VarId
+altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
+altBinders (AltLit     _                 ) = S.empty
+altBinders (AltDefault (maybeToList -> v)) = S.fromList v
+
 -- | Whether an expression is a value.
 isValue :: Expr t -> Bool
 isValue Var{}    = True
@@ -320,9 +329,6 @@ instance HasFreeVars (Expr t) VarId where
    where
     freeAltVars :: (Alt, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
-    altBinders (AltLit     _                 ) = S.empty
-    altBinders (AltDefault (maybeToList -> v)) = S.fromList v
 
 {- | Predicate of whether an expression "looks about right".
 
