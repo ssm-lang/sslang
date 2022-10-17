@@ -70,7 +70,7 @@ pickId v = do
  where
   pick :: Int -> Mangle (I.VarId, I.VarId)
   pick i = do
-    let v' = normalize (v <> fromString (show i))
+    let v' = normalize (v <> "___" <> fromString (show i))
     inUse <- alreadyInUse v'
     if inUse then pick (i + 1) else return (v, v')
 
