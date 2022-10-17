@@ -97,7 +97,10 @@ mangleProgram p = runMangle $ do
   withLocals eds $ do
     let (tvs, tes) = unzip $ map (first Just) $ I.programDefs p
     (tvs', tes') <- withMangled tvs $ mapM mangleExpr tes
-    return p { I.programDefs = zip (map fromJust tvs') tes' }
+    names        <- gets globalScope
+    return p { I.programDefs = zip (map fromJust tvs') tes'
+             , I.varNames    = names `M.union` I.varNames p
+             }
 
 mangleExpr :: I.Expr I.Type -> Mangle (I.Expr I.Type)
 mangleExpr (I.Var i t) = do

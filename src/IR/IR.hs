@@ -46,6 +46,7 @@ import           Data.Data                      ( Data
                                                 , Typeable
                                                 )
 
+import qualified Data.Map                      as M
 import           Data.Maybe                     ( catMaybes
                                                 , maybeToList
                                                 )
@@ -69,7 +70,7 @@ data Program t = Program
   , externDecls  :: [(VarId, Type)]     -- ^ top-level extern symbols
   , programDefs  :: [(VarId, Expr t)]   -- ^ top-level sslang definitions
   , typeDefs     :: [(TConId, TypeDef)] -- ^ sslang type definitions
-  , varNames     :: S.Set VarId         -- ^ set of all variable names
+  , varNames     :: M.Map VarId VarId   -- ^ set of all variable names
   }
   deriving (Eq, Show, Typeable, Data, Functor)
 

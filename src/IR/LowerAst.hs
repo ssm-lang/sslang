@@ -27,7 +27,7 @@ import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
-import qualified Data.Set as S
+import qualified Data.Map                      as M
 
 -- | Unannotated terms appear as an empty stack.
 untyped :: I.Annotations
@@ -49,7 +49,7 @@ lowerProgram (A.Program ds) = do
                      , I.externDecls  = xds'
                      , I.typeDefs     = tds'
                      , I.cDefs        = concat cds
-                     , I.varNames     = S.empty
+                     , I.varNames     = M.empty
                      }
  where
   -- | Lower a top-level data definition into IR.
