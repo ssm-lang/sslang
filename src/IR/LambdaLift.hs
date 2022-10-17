@@ -105,21 +105,26 @@ prependTrail cur = do
   curTrail <- gets trail
   return $ mconcat $ intersperse "_" $ reverse $ cur : curTrail
 
+-- | Get the full name of a lambda, ensuring global uniqueness.
+getFullName :: Identifier -> LiftFn I.VarId
+getFullName cur = do
+  identifier <- prependTrail cur
+  vns <- gets varNames
+  let (_, name) = pickId vns $ fromId identifier
+      label      = "((__generated_lambda_name__))"
+  modify $ \st -> st { varNames = M.insert label name vns }
+  return name
+
 -- | Construct a fresh variable name for a new lifted lambda.
 getFresh :: LiftFn Identifier
 getFresh = do
   curCount <- gets anonCount
-  vns      <- gets varNames
-  let (_, i) = pickId vns $ "__anon" <> fromString (show curCount)
-      l      = "__generated_lambda_name__"
-  modify
-    $ \st -> st { anonCount = anonCount st + 1, varNames = M.insert l i vns }
-  return $ fromId i
+  modify $ \st -> st { anonCount = anonCount st + 1 }
+  return $ "anon" <> fromString (show curCount)
 
 -- | Store a new lifted lambda to later add to the program's top level definitions.
-addLifted :: Identifier -> I.Expr I.Type -> LiftFn ()
-addLifted name lam =
-  modify $ \st -> st { lifted = (fromId name, lam) : lifted st }
+addLifted :: I.VarId -> I.Expr I.Type -> LiftFn ()
+addLifted name lam = modify $ \st -> st { lifted = (name, lam) : lifted st }
 
 -- | Register a (free variable, type) mapping for the current program scope.
 addFreeVar :: I.VarId -> I.Type -> LiftFn ()
@@ -216,7 +221,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
   let (vs, body) = I.unfoldLambda lam
       vs'        = zip vs $ fst (I.unfoldArrow t)
   lamName                       <- getFresh
-  fullName                      <- prependTrail lamName
+  fullName                      <- getFullName lamName
   (liftedLamBody, lamFreeTypes) <- descend (Just lamName) $ do
     newScope (catMaybes vs)
     liftLambdas body
@@ -225,7 +230,7 @@ liftLambdas lam@(I.Lambda _ _ t) = do
         liftedLamBody
   addLifted fullName liftedLam
   return $ foldl applyFree
-                 (I.Var (fromId fullName) (I.extract liftedLam))
+                 (I.Var fullName (I.extract liftedLam))
                  (M.toList lamFreeTypes)
  where
   applyFree app (v', t') = case I.extract app of

@@ -8,12 +8,16 @@ import qualified IR
 import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
 
+import qualified Data.Map                      as M
+
 parseLift :: String -> Pass (I.Program I.Type)
 parseLift s =
   Front.run def s
     >>= IR.lower def
     >>= IR.typecheck def
     >>= liftProgramLambdas
+    >>= \p -> return p { I.varNames = M.empty }
+    -- we purge varNames before comparison because those don't matter here
 
 spec :: Spec
 spec = do
