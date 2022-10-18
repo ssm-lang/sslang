@@ -1,8 +1,6 @@
 {- | Unification of structures
 
-This is an implementation of unification specialised for
-unifying the structures. The unification uses the UnionFind
-module.
+This is an implementation of unification. It uses the UnionFind module.
 -}
 
 module IR.Types.Constraint.Unification
@@ -54,7 +52,7 @@ unify v1 v2 = do
 
 unify' :: Queue s -> UVar s -> UVar s -> Infer s ()
 unify' qref v1 v2 = do
-  union' v1 v2 (unifyDesc qref)
+  union' v1 v2 (unifyDescriptor qref)
   unifyPending qref
 
 
@@ -66,8 +64,12 @@ unifyPending qref = do
     Nothing       -> return ()
 
 
-unifyDesc :: Queue s -> Descriptor s -> Descriptor s -> Infer s (Descriptor s)
-unifyDesc q d1 d2 = do
+
+-- | Unify descriptors
+
+
+unifyDescriptor :: Queue s -> Descriptor s -> Descriptor s -> Infer s (Descriptor s)
+unifyDescriptor q d1 d2 = do
   struc  <- unifyStructure q d1 d2
   rank   <- unifyRank d1 d2
   status <- unifyStatus d1 d2 rank struc
@@ -79,7 +81,7 @@ unifyStructure
 unifyStructure q d1 d2 = do
   s1 <- getStructure d1
   s2 <- getStructure d2
-  mergeStructures (insert q) s1 s2
+  mergeStructure (insert q) s1 s2
 
 
 unifyRank :: Descriptor s -> Descriptor s -> Infer s Rank
@@ -120,22 +122,26 @@ unifyStatus d1 d2 rank struc = do
     return Rigid
 
 
-mergeStructures
+
+-- | Merge structures
+
+
+mergeStructure
   :: (UVar s -> UVar s -> Infer s ())
   -> Structure (UVar s)
   -> Structure (UVar s)
   -> Infer s (Structure (UVar s))
-mergeStructures _ Nothing   so        = return so
-mergeStructures _ so        Nothing   = return so
-mergeStructures f (Just s1) (Just s2) = Just <$> mergeUTypes f s1 s2
+mergeStructure _ Nothing   so        = return so
+mergeStructure _ so        Nothing   = return so
+mergeStructure f (Just s1) (Just s2) = Just <$> mergeUType f s1 s2
 
 
-mergeUTypes
+mergeUType
   :: (UVar s -> UVar s -> Infer s ())
   -> UType (UVar s)
   -> UType (UVar s)
   -> Infer s (UType (UVar s))
-mergeUTypes f s1@(UTCon m ls) (UTCon n rs)
+mergeUType f s1@(UTCon m ls) (UTCon n rs)
   | m /= n
   = throwError
     $  internalError
@@ -145,13 +151,13 @@ mergeUTypes f s1@(UTCon m ls) (UTCon n rs)
     ++ show n
   | otherwise
   = do
-    mergeLists f ls rs
+    mergeList f ls rs
     return s1
 
 
-mergeLists
+mergeList
   :: (UVar s -> UVar s -> Infer s ()) -> [UVar s] -> [UVar s] -> Infer s ()
-mergeLists f l1 l2
+mergeList f l1 l2
   | length l1 /= length l2 = throwError $ internalError
     "unable to unify due to different number of type constructor parameters"
   | otherwise = mapM_ (uncurry f) (zip l1 l2)
