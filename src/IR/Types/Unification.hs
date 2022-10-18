@@ -170,7 +170,7 @@ instance HasFreeUVars Type where
   freeUVars = fmap S.fromList . lift . lift . getFreeVars
 
 instance HasFreeUVars Scheme where
-  freeUVars (Forall _ _ t) = freeUVars t
+  freeUVars (Forall _ t) = freeUVars t
 
 instance HasFreeVars Type TVarId where
   freeVars (TCon _ ts) = S.unions $ map freeVars ts
@@ -230,7 +230,7 @@ freeze t =
 -- | Instantiate a 'Scheme' by replacing all quantified type varibles with fresh
 -- unification variables
 instantiate :: Scheme -> InferM ctx Type
-instantiate (Forall (S.toList -> xs) _ uty) = do
+instantiate (Forall (S.toList -> xs) uty) = do
   subs <- forM xs $ \v -> do
     fv <- fresh
     return (Left v, fv)
@@ -248,7 +248,7 @@ generalize uty = do
       xs   = take (length fvs) tvarNames
       subs = zip (map Right fvs) (map TVar xs)
       bty  = substU (M.fromList subs) uty'
-  return $ Forall (S.fromList xs) T.CTrue bty
+  return $ Forall (S.fromList xs) bty
  where
   -- TODO: generate prettier names
   tvarNames :: [TVarId]

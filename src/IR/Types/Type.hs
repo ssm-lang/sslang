@@ -34,7 +34,6 @@ import           Data.Generics                  ( Data
                                                 )
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
-import           Data.Set                       ( (\\) )
 
 
 {- | Encoding of sslang types.
@@ -55,29 +54,23 @@ instance HasFreeVars Type TVarId where
   freeVars Hole        = S.empty
   freeVars (TVar v)    = S.singleton v
 
-{- | Constraints on a type scheme.
-For now, we only support trivial constraints.
--}
-data Constraint = CTrue -- ^ The trivial constraint, i.e., always satisfied.
-  deriving (Eq, Show, Typeable, Data)
-
-{- | Schemes quantify over 'Type' variables and impose some 'Constraint'.
+{- | Schemes quantify over 'Type' variables
 
 'SchemeOf' is implemented as functor over some kind of type so we can easily
 substitute in 'Type' vs 'UType' when performing type inference/unification.
 -}
-data SchemeOf t = Forall (S.Set TVarId) Constraint t
+data SchemeOf t = Forall (S.Set TVarId) t
   deriving (Eq, Show, Functor, Foldable, Traversable, Typeable, Data)
 
 -- | Unwrap a scheme and obtain the underlying type.
 unScheme :: SchemeOf t -> t
-unScheme (Forall _ _ t) = t
+unScheme (Forall _ t) = t
 
--- | Construct a scheme with quantified type variables and a trivial constraint.
+-- | Construct a scheme with quantified type variables
 forall :: (Functor l, Foldable l) => l TVarId -> t -> SchemeOf t
-forall vs = Forall (S.fromList $ toList $ fmap fromId vs) CTrue
+forall vs = Forall (S.fromList $ toList $ fmap fromId vs)
 
--- | Construct a scheme from all free type variables and a trivial constraint.
+-- | Construct a scheme from all free type variables
 schemeOf :: Type -> Scheme
 schemeOf t = Scheme $ forall (S.toList $ freeVars t) t
 
@@ -120,7 +113,7 @@ instance HasType Type where
   getType = id
 
 instance HasType Scheme where
-  getType (Scheme (Forall _ _ t)) = t
+  getType (Scheme (Forall _ t)) = t
 
 -- | A fresh, free type variable; may appear in type annotations.
 pattern Hole :: Type
@@ -286,7 +279,7 @@ instance Dumpy Type where
   dumpy = pretty
 
 instance Pretty Scheme where
-  pretty (Scheme (Forall tvs CTrue t)) =
+  pretty (Scheme (Forall tvs t)) =
     pretty ("forall" :: String)
       <+> hsep (map pretty $ S.toList tvs)
       <>  comma

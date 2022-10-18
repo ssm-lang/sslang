@@ -14,7 +14,6 @@ import qualified Constraint.ShadowMap          as SM
 import           Constraint.SolverM             ( SolverM )
 import           Constraint.Structure           ( Structure(..) )
 import qualified Constraint.Unifier            as U
-import qualified Constraint.UnionFind          as U
 import           Constraint.Utils               ( modifySTRef
                                                 , throwTypeError
                                                 )
