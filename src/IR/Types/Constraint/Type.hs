@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveTraversable #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 {- | Type system from the constraint solver's perspective
 
@@ -105,6 +106,7 @@ type UVar s = Point s (Descriptor s)
 
 
 data UType a = UTCon TConId [a]
+  deriving (Eq, Show, Functor, Foldable, Traversable)
 
 
 
