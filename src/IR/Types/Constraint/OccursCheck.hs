@@ -1,6 +1,8 @@
 -- |
 
-module IR.Types.Constraint.OccursCheck where
+module IR.Types.Constraint.OccursCheck
+  ( newOccursCheck
+  ) where
 
 import           Control.Monad                  ( unless
                                                 , when
