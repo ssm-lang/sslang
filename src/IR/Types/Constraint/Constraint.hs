@@ -3,12 +3,9 @@
 {- | Constraint definition and related utilities -}
 
 module IR.Types.Constraint.Constraint where
-import IR.Types.Constraint.Type (UType)
+import IR.Types.Constraint.Type (UType, CVar)
 import IR.Types.Type (Type, Scheme)
 import Common.Identifiers (VarId(..), TVarId (..))
-
-newtype CVar = CVar Int
- deriving (Eq, Show)
 
 data Co a where
   CTrue     :: Co ()

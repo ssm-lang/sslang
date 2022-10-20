@@ -12,6 +12,7 @@ module IR.Types.Constraint.Type
   , Status(..)
   , Mark
   , dummyMark
+  , CVar(..)
   , Structure
   , Rank
   , outermostRank
@@ -50,9 +51,10 @@ module IR.Types.Constraint.Type
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( DConId(..)
                                                 , TConId(..)
-                                                , TVarId(..)
-                                                
+                                                , TVarId(..), VarId (..)
+
                                                 )
+import qualified IR.Types.Constraint.ShadowMap as SM
 import           Control.Monad.ST.Trans         ( STRef
                                                 , STT
                                                 , newSTRef
@@ -83,6 +85,12 @@ import           IR.Types.Type                  ( Annotations
                                                 
                                                 , Type
                                                 )
+
+-- | Type variable in constraints
+
+
+newtype CVar = CVar Int
+ deriving (Eq, Show)
 
 
 
@@ -127,7 +135,6 @@ isLeaf = isNothing
 
 projectNonLeaf :: Structure a -> UType a
 projectNonLeaf = fromJust
-
 
 
 
@@ -225,7 +232,7 @@ setStructure d = writeSTRef (_descStructure d)
 
 
 type Infer s a
-  = STT s (StateT (InferCtx s) (ExceptT Compiler.Error Compiler.Pass)) a
+  = STT s (StateT (InferCtx s) Compiler.Pass) a
 
 -- | Internal state used during the entire inference procedure
 data InferCtx s = InferCtx
@@ -237,9 +244,13 @@ data InferCtx s = InferCtx
   , _dconEnv    :: M.Map DConId DConInfo
 
     -- Solver
+  , _cvar     :: Int
+  , _env  :: SM.Map s VarId (UScheme s)
+  , _cvarMap  :: SM.Map s CVar (UVar s)
+
+    -- Unification
   , _tag        :: Int
   , _mark       :: Int
-  , _tvarId     :: Int
 
     -- Generalization
   , _pool       :: IA.InfiniteArray s [UVar s]
