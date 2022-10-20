@@ -18,6 +18,7 @@ import           Control.Monad.ST.Trans         ( STRef
                                                 )
 import qualified Data.Map.Strict               as M
 import           IR.Types.Constraint.Type       ( Infer )
+import           IR.Types.Constraint.Utils      ( modifySTRef )
 import           Prelude                 hiding ( lookup )
 
 newtype Map s k a = ShadowMap (STRef s (M.Map k [a]))
@@ -64,7 +65,3 @@ notMember (ShadowMap ref) k = do
   m <- readSTRef ref
   return $ M.notMember k m
 
-modifySTRef :: STRef s a -> (a -> a) -> Infer s ()
-modifySTRef ref f = do
-  x <- readSTRef ref
-  writeSTRef ref (f x)

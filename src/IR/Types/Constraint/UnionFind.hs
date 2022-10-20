@@ -15,24 +15,39 @@ module IR.Types.Constraint.UnionFind
   , descriptor
   , setDescriptor
   , modifyDescriptor
+  , Point
   ) where
 
 import           Control.Monad                  ( when )
 import           Control.Monad.ST.Trans         ( STRef
+                                                , STT
                                                 , newSTRef
                                                 , readSTRef
                                                 , writeSTRef
                                                 )
-import           IR.Types.Constraint.Type       ( Infer
-                                                , Info(..)
-                                                , Link(..)
-                                                , Point(..)
-                                                )
+import           IR.Types.Constraint.Utils      ( modifySTRef )
 
+-- | The abstract type of an element of the sets we work on.  It is
+-- parameterised over the type of the descriptor.
+newtype Point s a = Pt (STRef s (Link s a)) deriving (Eq)
+
+data Link s a
+  = -- | This is the descriptive element of the equivalence class.
+    Info {-# UNPACK #-} !(STRef s (Info a))
+  | -- | Pointer to some other element of the equivalence class.
+    Link {-# UNPACK #-} !(Point s a)
+  deriving (Eq)
+
+data Info a = MkInfo
+  { -- | The size of the equivalence class, used by 'union'.
+    weight :: {-# UNPACK #-} !Int
+  , descr  :: a
+  }
+  deriving Eq
 
 -- | /O(1)/. Create a fresh point and return it.  A fresh point is in
 -- the equivalence class that contains only itself.
-fresh :: a -> Infer s (Point s a)
+fresh :: Monad m => a -> STT s m (Point s a)
 fresh desc = do
   info <- newSTRef (MkInfo { weight = 1, descr = desc })
   l    <- newSTRef (Info info)
@@ -42,7 +57,7 @@ fresh desc = do
 -- @point@'s equivalence class.
 --
 -- This method performs the path compresssion.
-repr :: Point s a -> Infer s (Point s a)
+repr :: Monad m => Point s a -> STT s m (Point s a)
 repr point@(Pt l) = do
   link <- readSTRef l
   case link of
@@ -61,7 +76,7 @@ repr point@(Pt l) = do
 
 -- | Return the reference to the point's equivalence class's
 -- descriptor.
-descrRef :: Point s a -> Infer s (STRef s (Info a))
+descrRef :: Monad m => Point s a -> STT s m (STRef s (Info a))
 descrRef point@(Pt link_ref) = do
   link <- readSTRef link_ref
   case link of
@@ -74,18 +89,18 @@ descrRef point@(Pt link_ref) = do
 
 -- | /O(1)/. Return the descriptor associated with argument point's
 -- equivalence class.
-descriptor :: Point s a -> Infer s a
+descriptor :: Monad m => Point s a -> STT s m a
 descriptor point = do
   descr <$> (readSTRef =<< descrRef point)
 
 -- | /O(1)/. Replace the descriptor of the point's equivalence class
 -- with the second argument.
-setDescriptor :: Point s a -> a -> Infer s ()
+setDescriptor :: Monad m => Point s a -> a -> STT s m ()
 setDescriptor point new_descr = do
   r <- descrRef point
   modifySTRef r $ \i -> i { descr = new_descr }
 
-modifyDescriptor :: Point s a -> (a -> a) -> Infer s ()
+modifyDescriptor :: Monad m => Point s a -> (a -> a) -> STT s m ()
 modifyDescriptor point f = do
   r <- descrRef point
   modifySTRef r $ \i -> i { descr = f (descr i) }
@@ -93,7 +108,7 @@ modifyDescriptor point f = do
 -- | /O(1)/. Join the equivalence classes of the points (which must be
 -- distinct).  The resulting equivalence class will get the descriptor
 -- of the second argument.
-union :: Point s a -> Point s a -> Infer s ()
+union :: MonadFail m => Point s a -> Point s a -> STT s m ()
 union p1 p2 = union' p1 p2 (\_ d2 -> return d2)
 
 -- | Like 'union', but sets the descriptor returned from the callback.
@@ -101,7 +116,12 @@ union p1 p2 = union' p1 p2 (\_ d2 -> return d2)
 -- The intention is to keep the descriptor of the second argument to
 -- the callback, but the callback might adjust the information of the
 -- descriptor or perform side effects.
-union' :: Point s a -> Point s a -> (a -> a -> Infer s a) -> Infer s ()
+union'
+  :: MonadFail m
+  => Point s a
+  -> Point s a
+  -> (a -> a -> STT s m a)
+  -> STT s m ()
 union' p1 p2 update = do
   point1@(Pt link_ref1) <- repr p1
   point2@(Pt link_ref2) <- repr p2
@@ -127,7 +147,7 @@ union' p1 p2 update = do
 
 -- | /O(1)/. Return @True@ if both points belong to the same
 -- | equivalence class.
-equivalent :: Point s a -> Point s a -> Infer s Bool
+equivalent :: Monad m => Point s a -> Point s a -> STT s m Bool
 equivalent p1 p2 = (==) <$> repr p1 <*> repr p2
 
 -- | /O(1)/. Returns @True@ for all but one element of an equivalence
@@ -139,14 +159,9 @@ equivalent p1 p2 = (==) <$> repr p1 <*> repr p2
 --
 -- It is unspecified for which element function returns @False@, so be
 -- really careful when using this.
-redundant :: Point s a -> Infer s Bool
+redundant :: Monad m => Point s a -> STT s m Bool
 redundant (Pt link_r) = do
   link <- readSTRef link_r
   case link of
     Info _ -> return False
     Link _ -> return True
-
-modifySTRef :: STRef s a -> (a -> a) -> Infer s ()
-modifySTRef ref f = do
-  x <- readSTRef ref
-  writeSTRef ref (f x)

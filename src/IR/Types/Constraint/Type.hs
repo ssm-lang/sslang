@@ -1,5 +1,5 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE DeriveTraversable #-}
-{-# OPTIONS_GHC -funbox-strict-fields #-}
 {- | Type system from the constraint solver's perspective
 
 The constraint system works with flat types (non-recursive types),
@@ -9,7 +9,7 @@ constraints and variables (represented with integers).
 module IR.Types.Constraint.Type
   ( UVar
   , UType(..)
-  -- , Co(..)
+  , Co(..)
   , Status(..)
   , Mark
   , dummyMark
@@ -17,11 +17,8 @@ module IR.Types.Constraint.Type
   , Rank
   , outermostRank
   , Descriptor(..)
-  , Point(..)
-  , Link(..)
-  , Info(..)
   , makeDescriptor
-  , adjustRank
+  , setRank
   , Infer
   , occursError
   , mismatchError
@@ -36,12 +33,26 @@ module IR.Types.Constraint.Type
   , isLeaf
   , leaf
   , internalError
-  , initInferCtx) where
+  , initInferCtx
+  , getDecoderMap
+  , putDecoderMap
+  , getPool
+  , getYoungRank
+  , decYoungRank
+  , incYoungRank
+  , makeUVar
+  , getDescriptor
+  , setMark
+  , setStatus
+  , UScheme(..)
+  , setStructure
+  ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( DConId(..)
                                                 , TConId(..)
                                                 , TVarId(..)
+                                                , VarId(..)
                                                 )
 import           Control.Monad.ST.Trans         ( STRef
                                                 , STT
@@ -56,7 +67,6 @@ import           Control.Monad.State.Lazy       ( StateT(..)
 import qualified Data.Map                      as M
 
 import           Common.Compiler                ( fromString )
-import qualified Constraint.InfiniteArray      as IA
 import           Control.Monad                  ( unless
                                                 , when
                                                 )
@@ -67,40 +77,26 @@ import           Data.Maybe                     ( fromJust
                                                 , isNothing
                                                 )
 import           IR.IR                          ( Program(..) )
+import qualified IR.Types.Constraint.InfiniteArray
+                                               as IA
+import qualified IR.Types.Constraint.UnionFind as UF
 import           IR.Types.Type                  ( Annotations
+                                                , Scheme
                                                 , Type
                                                 )
-
-
--- | Union find data types
-
-
--- | The abstract type of an element of the sets we work on.  It is
--- parameterised over the type of the descriptor.
-newtype Point s a = Pt (STRef s (Link s a)) deriving (Eq)
-
-data Link s a
-  = -- | This is the descriptive element of the equivalence class.
-    Info {-# UNPACK #-} !(STRef s (Info a))
-  | -- | Pointer to some other element of the equivalence class.
-    Link {-# UNPACK #-} !(Point s a)
-  deriving (Eq)
-
-data Info a = MkInfo
-  { -- | The size of the equivalence class, used by 'union'.
-    weight :: {-# UNPACK #-} !Int
-  , descr  :: a
-  }
-  deriving Eq
 
 
 
 -- | Unificiation variable, represented as a point in union-find
 
 
-type UVar s = Point s (Descriptor s)
+type UVar s = UF.Point s (Descriptor s)
 
+makeUVar :: Descriptor s -> Infer s (UVar s)
+makeUVar = UF.fresh
 
+getDescriptor :: UVar s -> Infer s (Descriptor s)
+getDescriptor = UF.descriptor
 
 -- | Flat type for unification
 
@@ -108,6 +104,15 @@ type UVar s = Point s (Descriptor s)
 data UType a = UTCon TConId [a]
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
+
+
+-- | Scheme in the unification world
+
+data UScheme s = UScheme
+  { uschemeRoot        :: UVar s
+  , uschemeGenerics    :: [UVar s]
+  , uschemeQuantifiers :: [UVar s]
+  }
 
 
 -- | Structure is either a leaf (Nothing) or a flat type (Just UType)
@@ -128,19 +133,51 @@ projectNonLeaf = fromJust
 
 -- | Constraints
 
+newtype CVar = CVar Int
+ deriving (Eq, Show)
 
--- data Co a where
---   CTrue         :: Co ()
---   CMap          :: Co a -> (a -> b) -> Co b
---   CPure         :: a -> Co a
---   CConj         :: Co a -> Co b -> Co (a, b)
---   CEq           :: UVar -> UVar -> Co ()
---   CExist        :: UVar -> Maybe (UType UVar) -> Co a -> Co a
---   CDecode       :: UVar -> Co Type
---   CInstance     :: VarId -> UVar -> Co (Scheme, [Type])
---   CDef          :: VarId -> UVar -> Co a -> Co a
---   CLet          :: [UVar] -> [VarId] -> [UVar] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
+data Co a where
+  CTrue     :: Co ()
+  CMap      :: Co a -> (a -> b) -> Co b
+  CPure     :: a -> Co a
+  CConj     :: Co a -> Co b -> Co (a, b)
+  CEq       :: CVar -> CVar -> Co ()
+  CExist    :: CVar -> Maybe (UType CVar) -> Co a -> Co a
+  CDecode   :: CVar -> Co Type
+  CInstance :: VarId -> CVar -> Co (Scheme, [Type])
+  CDef      :: VarId -> CVar -> Co a -> Co a
+  CLet      :: [CVar] -> [VarId] -> [CVar] -> Co a -> Co b -> Co ([TVarId], [Scheme], a, b)
 
+instance Show (Co a) where
+  show CTrue             = "(CTrue)"
+  show (CMap c _       ) = "(CMap " ++ show c ++ ")"
+  show (CPure _        ) = "(CPure)"
+  show (CConj c1 c2    ) = "(" ++ show c1 ++ " ^& " ++ show c2 ++ ")"
+  show (CEq   v1 v2    ) = "(CEq " ++ show v1 ++ " " ++ show v2 ++ ")"
+  show (CExist v _ c   ) = "(CExist " ++ show v ++ " " ++ show c ++ ")"
+  show (CDecode v      ) = "(CDecode " ++ show v ++ ")"
+  show (CInstance vid v) = "(CInstance " ++ show vid ++ " " ++ show v ++ ")"
+  show (CDef vid v c) =
+    "(CDef " ++ show vid ++ " " ++ show v ++ " " ++ show c ++ ")"
+  show (CLet vs vids vs' c1 c2) =
+    "(CLet "
+      ++ show vs
+      ++ " "
+      ++ show vids
+      ++ " "
+      ++ show vs'
+      ++ " "
+      ++ show c1
+      ++ " "
+      ++ show c2
+      ++ ")"
+
+instance Functor Co where
+  fmap f c = CMap c f
+
+instance Applicative Co where
+  pure = CPure
+  mf <*> mx = fmap (\(f, x) -> f x) (CConj mf mx)
 
 
 -- | Unification variable status
@@ -214,8 +251,8 @@ getMark :: Descriptor s -> Infer s Mark
 getMark d = readSTRef $ _descMark d
 
 -- set
-adjustRank :: Descriptor s -> Rank -> Infer s ()
-adjustRank d k = do
+setRank :: Descriptor s -> Rank -> Infer s ()
+setRank d k = do
   st <- getStatus d
   unless (st /= Generic) $ throwError mismatchError
   oldk <- readSTRef $ _descRank d
@@ -223,6 +260,14 @@ adjustRank d k = do
     unless (st == Flexible) $ throwError scopeEscapeError
     writeSTRef (_descRank d) k
 
+setMark :: Descriptor s -> Mark -> Infer s ()
+setMark d = writeSTRef (_descMark d)
+
+setStatus :: Descriptor s -> Status -> Infer s ()
+setStatus d = writeSTRef (_descStatus d)
+
+setStructure :: Descriptor s -> Structure (UVar s) -> Infer s ()
+setStructure d = writeSTRef (_descStructure d)
 
 
 -- | Infer Monad
@@ -235,19 +280,22 @@ type Infer s a
 data InferCtx s = InferCtx
   {
     -- General
-    _prog    :: Program Annotations
+    _prog       :: Program Annotations
 
     -- Generation
-  , _dconEnv :: M.Map DConId DConInfo
+  , _dconEnv    :: M.Map DConId DConInfo
 
     -- Solver
-  , _tag     :: Int
-  , _mark    :: Int
-  , _tvarId  :: Int
+  , _tag        :: Int
+  , _mark       :: Int
+  , _tvarId     :: Int
 
     -- Generalization
-  , _pool    :: IA.InfiniteArray s [UVar s]
-  , _young   :: Int
+  , _pool       :: IA.InfiniteArray s [UVar s]
+  , _youngRank  :: Rank
+
+    -- Decoder
+  , _decoderMap :: M.Map Int Type
   }
 
 type DConInfo = (DConId, TConId, [TVarId], [Type])
@@ -267,7 +315,29 @@ freshMark = do
   put ctx { _mark = _mark ctx + 1 }
   return $ _mark ctx
 
+getPool :: Infer s (IA.InfiniteArray s [UVar s])
+getPool = _pool <$> get
 
+getYoungRank :: Infer s Rank
+getYoungRank = _youngRank <$> get
+
+decYoungRank :: Infer s ()
+decYoungRank = do
+  ctx <- get
+  put ctx { _youngRank = _youngRank ctx - 1 }
+
+incYoungRank :: Infer s ()
+incYoungRank = do
+  ctx <- get
+  put ctx { _youngRank = _youngRank ctx + 1 }
+
+getDecoderMap :: Infer s (M.Map Int Type)
+getDecoderMap = _decoderMap <$> get
+
+putDecoderMap :: M.Map Int Type -> Infer s ()
+putDecoderMap m = do
+  ctx <- get
+  put ctx { _decoderMap = m }
 
 -- | Error reporting in Infer monad
 

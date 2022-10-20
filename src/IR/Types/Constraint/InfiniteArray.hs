@@ -8,12 +8,12 @@ module IR.Types.Constraint.InfiniteArray
   , update
   ) where
 
-import           Constraint.SolverM             ( SolverM )
 import           Control.Monad                  ( forM_
                                                 , when
                                                 )
 import           Control.Monad.ST.Trans         ( STArray
                                                 , STRef
+                                                , STT
                                                 , boundsSTArray
                                                 , newSTArray
                                                 , newSTRef
@@ -22,31 +22,32 @@ import           Control.Monad.ST.Trans         ( STArray
                                                 , writeSTArray
                                                 , writeSTRef
                                                 )
+-- import           IR.Types.Constraint.Type       ( Infer )
 
 data InfiniteArray s a = InfiniteArray
   { defa  :: a
   , table :: STRef s (STArray s Int a)
   }
 
-new :: Int -> a -> SolverM s (InfiniteArray s a)
+new :: Monad m => Int -> a -> STT s m (InfiniteArray s a)
 new defaultSize x = do
   t <- newSTArray (0, defaultSize) x
   r <- newSTRef t
   return $ InfiniteArray x r
 
-get :: InfiniteArray s b -> Int -> SolverM s b
+get :: Monad m => InfiniteArray s b -> Int -> STT s m b
 get a i = do
   ensure a i
   t <- readSTRef (table a)
   readSTArray t i
 
-set :: InfiniteArray s e -> Int -> e -> SolverM s ()
+set :: Monad m => InfiniteArray s e -> Int -> e -> STT s m ()
 set a i x = do
   ensure a i
   t <- readSTRef (table a)
   writeSTArray t i x
 
-update :: InfiniteArray s e -> Int -> (e -> e) -> SolverM s ()
+update :: Monad m => InfiniteArray s e -> Int -> (e -> e) -> STT s m ()
 update a i f = do
   ensure a i
   t <- get a i
@@ -55,7 +56,7 @@ update a i f = do
 newLength :: Int -> Int -> Int
 newLength l i = if i < l then l else newLength (2 * l) i
 
-ensure :: InfiniteArray s a -> Int -> SolverM s ()
+ensure :: Monad m => InfiniteArray s a -> Int -> STT s m ()
 ensure a i = do
   t <- readSTRef (table a)
   let (_, l) = boundsSTArray t
