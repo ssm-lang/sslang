@@ -3,20 +3,22 @@
 
 module IR.Types.Constraint.Solver where
 
-import           IR.Types.Constraint.Type       ( Infer, Co(..), internalError)
-import IR.IR (Program(..), Type)
-import Control.Monad (unless)
-import Control.Monad.Except (throwError)
+import           Control.Monad                  ( unless )
+import           Control.Monad.Except           ( throwError )
+import           IR.IR                          ( Program(..)
+                                                , Type
+                                                )
+import           IR.Types.Constraint.Constraint ( Co(..) )
+import           IR.Types.Constraint.Type       ( Infer
+                                                , internalError
+                                                )
 
 solveAndElab :: Co (Program Type) -> Infer s (Program Type)
 solveAndElab c = do
   unless
     (ok c)
-    ( throwError
-    $ internalError
-    $ "Solver: ill-formed toplevel constraint"
-    )
-  r   <- solve c
+    (throwError $ internalError "Solver: ill-formed toplevel constraint")
+  r <- solve c
   r
 
 ok :: Co a -> Bool
