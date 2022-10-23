@@ -1,3 +1,4 @@
+// checking that 2-tuples can be declared with new syntax
 putip_ putc x =
   if x < 10
     putc (x + 48)
@@ -33,5 +34,3 @@ main cin cout =
     printl x
     putnl ()
     printl y
-
-    

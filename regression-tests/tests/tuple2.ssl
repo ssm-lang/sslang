@@ -1,3 +1,4 @@
+// tests whether a 2-tuple(Pair) can be implemented in Ssland with ADTs
 putip_ putc x =
   if x < 10
     putc (x + 48)
@@ -33,16 +34,3 @@ main cin cout =
     printl x
     putnl ()
     printl y
-
-
-
-
-
-
-
-
-
-
-
-    
-    

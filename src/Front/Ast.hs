@@ -219,6 +219,7 @@ instance Pretty Typ where
 
 
 instance Pretty Expr where
+  pretty (Tuple elts) = parens $ hsep (punctuate comma $ map pretty elts)
   pretty (Let defs body) =
     pretty "let"
       <+> braces (hsep $ punctuate dbar $ map pretty defs)

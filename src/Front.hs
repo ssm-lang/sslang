@@ -79,24 +79,16 @@ parseAst opt src = do
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
   -- TODO: other desugaring
-  let astP_insert = insertTypeDef pairdeff astP
+  let astTuple = insertTypeDef pairDef astP
 
-  Pattern.checkAnomaly astP_insert
-  astD <- Pattern.desugarProgram astP_insert
+  Pattern.checkAnomaly astTuple
+  astD <- Pattern.desugarProgram astTuple
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD
-
-pairdeff = A.TypeDef
-  { A.typeName = "Pair"     -- ^ The name of the type, e.g., @Option@
-  , A.typeParams = ["a","b"]
-  , A.typeVariants = [A.VariantUnnamed "Pair" [A.TCon "a", A.TCon "b"]]
-  }
-
--- | insert a typedef into a AST.
-insertTypeDef :: A.TypeDef -> A.Program -> A.Program
-insertTypeDef typedef (A.Program xs) = A.Program ((A.TopType typedef) : xs)
-
+  where insertTypeDef typedef (A.Program xs) = A.Program (A.TopType typedef : xs)
+        pairDef = A.TypeDef { A.typeName = "Pair", A.typeParams = ["a","b"], A.typeVariants = [A.VariantUnnamed "Pair" [A.TCon "a", A.TCon "b"]]}
+    
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
