@@ -61,7 +61,7 @@ spaghetti :: Dumpy t => t -> String
 spaghetti = renderString . layoutPretty opts . dumpy
   where opts = LayoutOptions { layoutPageWidth = Unbounded }
 
-{- | Lengthy Typeclass: print an ugly but parseable representation of the AST
+{- | Dumpy Typeclass: print an ugly but parseable representation of the AST
 
 * Translates from IR to Doc representation in one-to-one fashion
 * No simplifications 

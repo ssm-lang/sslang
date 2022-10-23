@@ -214,7 +214,7 @@ createFunc tcon (dconid, I.VariantNamed params) = Just (func_name, lambda)
  where
   func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
   lambda    = I.foldLambda (first Just <$> params) body
-  body      = I.zipApp dcon args
+  body      = I.foldApp dcon args
   dcon      = I.Data (fromId dconid) t
   args      = reverse $ zip (uncurry I.Var <$> params) ts
   tconTyp   = I.TCon tcon []
