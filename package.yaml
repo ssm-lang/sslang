@@ -30,6 +30,7 @@ library:
   - comonad
   - syb
   - unification-fd
+  - vector
 
 executables:
   sslc:
