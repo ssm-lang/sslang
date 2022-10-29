@@ -10,18 +10,7 @@ import           Data.Map.Strict                ( (!) )
 import qualified Data.Vector                   as Vector
 import qualified Data.Vector.Mutable           as MVector
 import           GHC.Base                       ( liftM )
-import           IR.Constraint.Constraint       ( Constraint(..)
-                                                , Content(..)
-                                                , Descriptor(..)
-                                                , FlatType(..)
-                                                , Mark
-                                                , Type(..)
-                                                , Variable
-                                                , nextMark
-                                                , noMark
-                                                , noRank
-                                                , outermostRank
-                                                )
+import           IR.Constraint.Constraint
 import qualified IR.Constraint.Occurs          as Occurs
 import qualified IR.Constraint.Type            as Type
 import qualified IR.Constraint.Unify           as Unify
