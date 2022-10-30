@@ -11,6 +11,7 @@ import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
 import           IR.ExternToCall                ( externToCall )
 import           IR.InsertRefCounting           ( insertRefCounting )
+import           IR.OptimizeDupDrop             ( optimizeDupDrop )
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.LowerAst                    ( lowerProgram )
 import           IR.SegmentLets                 ( segmentLets )
@@ -36,6 +37,7 @@ data Mode
   | DumpIRTyped
   | DumpIRTypedUgly
   | DumpIRLifted
+  | DumpIRRefCounting
   | DumpIRFinal
   deriving (Eq, Show)
 
@@ -71,6 +73,10 @@ options =
            (NoArg $ setMode DumpIRLifted)
            "Print the IR after lambda lifting"
   , Option ""
+           ["dump-ir-ref-counting"]
+           (NoArg $ setMode DumpIRRefCounting)
+           "Print the IR after inserting ref counting"
+  , Option ""
            ["dump-ir-final"]
            (NoArg $ setMode DumpIRFinal)
            "Print the last IR representation before code generation"
@@ -105,6 +111,8 @@ transform opt p = do
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
   p <- insertRefCounting p
+  when (mode opt == DumpIRRefCounting) $ dump p
+  p <- optimizeDupDrop p
   when (mode opt == DumpIRFinal) $ dump p
   return p
 
