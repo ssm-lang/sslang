@@ -34,7 +34,7 @@ emptyState = State Map.empty (nextMark noMark) []
 
 -- | SOLVER
 
-type Env = Map.Map Ident.VarId Variable
+type Env = Map.Map Ident.Identifier Variable
 
 type Pools = MVector.IOVector [Variable]
 
@@ -117,7 +117,7 @@ solve env rank pools state constraint = case constraint of
     foldM occurs state2 $ Map.toList locals
 
   CLet rigids flexs header headerCon subCon -> do
-        -- work in the next pool to localize header
+    -- work in the next pool to localize header
     let nextRank    = rank + 1
     let poolsLength = MVector.length pools
     nextPools <- if nextRank < poolsLength
@@ -170,7 +170,7 @@ addError (State savedEnv rank errors) err = State savedEnv rank (err : errors)
 
 -- | OCCURS CHECK
 
-occurs :: State -> (Ident.VarId, Variable) -> TC State
+occurs :: State -> (Ident.Identifier, Variable) -> TC State
 occurs state (name, variable) = do
   hasOccurred <- Occurs.occurs variable
   if hasOccurred

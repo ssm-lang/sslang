@@ -20,7 +20,7 @@ data Type
 data Error
   = BadExpr Type Type
   | BadPattern Type Type
-  | InfiniteType Ident.VarId Type
+  | InfiniteType Ident.Identifier Type
 
 toCompilerError :: Error -> Compiler.Error
 toCompilerError err = case err of

@@ -20,12 +20,12 @@ data Constraint
   | CSaveTheEnvironment
   | CEqual Type Type
   | CPattern Type Type
-  | CLocal Ident.VarId Type
-  | CForeign Ident.VarId Can.Scheme Type
+  | CLocal Ident.Identifier Type
+  | CForeign Ident.Identifier Can.Scheme Type
   | CAnd [Constraint]
   | CLet { _rigidVars :: [Variable]
          , _flexVars :: [Variable]
-         , _header :: Map.Map Ident.VarId Type
+         , _header :: Map.Map Ident.Identifier Type
          , _headerCon :: Constraint
          , _bodyCon :: Constraint
          }
@@ -145,23 +145,16 @@ u8 = TConN "UInt8" []
 
 -- | MAKE FLEX VARIABLES
 
+-- TODO: clean up this name thing
 mkFlexVar :: TC Variable
-mkFlexVar = UF.fresh flexVarDescriptor
+mkFlexVar = do
+  name <- freshName
+  UF.fresh $ mkDescriptor $ FlexVar $ Just name
 
-flexVarDescriptor :: Descriptor
-flexVarDescriptor = mkDescriptor unnamedFlexVar
-
-unnamedFlexVar :: Content
-unnamedFlexVar = FlexVar Nothing
-
-
--- | MAKE NAMED VARIABLES
-nameToFlex :: Ident.TVarId -> TC Variable
-nameToFlex name = UF.fresh $ mkDescriptor $ FlexVar (Just name)
-
-nameToRigid :: Ident.TVarId -> TC Variable
-nameToRigid name = UF.fresh $ mkDescriptor $ RigidVar name
-
+mkRigidVar :: TC Variable
+mkRigidVar = do
+  name <- freshName
+  UF.fresh $ mkDescriptor $ RigidVar name
 
 -- | TO CANONICAL TYPE
 
