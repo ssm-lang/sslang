@@ -18,7 +18,6 @@ import qualified IR.Constraint.UnionFind       as UF
 
 -- | RUN SOLVER
 
--- TODO: better error message/handling
 run :: Constraint -> IO (Either [ET.Error] ())
 run constraint = do
   pools              <- MVector.replicate 8 []
@@ -41,7 +40,7 @@ type Pools = MVector.IOVector [Variable]
 data State = State
   { _env    :: Env
   , _mark   :: Mark
-  , _errors :: [ET.Error] -- TODO: this needs to be changed for better error messages
+  , _errors :: [ET.Error]
   }
 
 solve :: Env -> Int -> Pools -> State -> Constraint -> IO State
@@ -159,13 +158,11 @@ isGeneric var = do
   if rank == noRank
     then return ()
     else do
-      -- TODO: better error message
       error "Compiler bug: unification variable should be generic"
 
 
 -- | ERROR HELPERS
 
--- TODO: better error message mechanism
 addError :: State -> ET.Error -> State
 addError (State savedEnv rank errors) err = State savedEnv rank (err : errors)
 
