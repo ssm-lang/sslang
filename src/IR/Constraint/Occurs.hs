@@ -4,6 +4,7 @@ module IR.Constraint.Occurs
 
 
 import           Data.Foldable                  ( foldrM )
+import           IR.Constraint.Monad            ( TC )
 import           IR.Constraint.Type             ( Content(..)
                                                 , Descriptor(..)
                                                 , FlatType(..)
@@ -16,11 +17,11 @@ import qualified IR.Constraint.UnionFind       as UF
 -- OCCURS
 
 
-occurs :: Variable -> IO Bool
+occurs :: Variable -> TC Bool
 occurs var = occursHelp [] var False
 
 
-occursHelp :: [Variable] -> Variable -> Bool -> IO Bool
+occursHelp :: [Variable] -> Variable -> Bool -> TC Bool
 occursHelp seen var foundCycle = if var `elem` seen
   then return True
   else do

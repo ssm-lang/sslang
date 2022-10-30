@@ -3,6 +3,7 @@
 module IR.Constraint.Unify where
 
 import qualified IR.Constraint.Error           as ET
+import           IR.Constraint.Monad            ( TC )
 import           IR.Constraint.Type            as Type
 import qualified IR.Constraint.UnionFind       as UF
 
@@ -12,7 +13,7 @@ data Answer
   = Ok
   | Err ET.Type ET.Type
 
-unify :: Variable -> Variable -> IO Answer
+unify :: Variable -> Variable -> TC Answer
 unify v1 v2 = case guardedUnify v1 v2 of
   Unify k -> k onSuccess $ \() -> do
     t1 <- Type.toErrorType v1
@@ -20,7 +21,7 @@ unify v1 v2 = case guardedUnify v1 v2 of
     UF.union v1 v2 errorDescriptor
     return $ Err t1 t2
 
-onSuccess :: () -> IO Answer
+onSuccess :: () -> TC Answer
 onSuccess () = return Ok
 
 errorDescriptor :: Descriptor
@@ -31,9 +32,9 @@ errorDescriptor = Descriptor Error noRank noMark Nothing
 
 newtype Unify a =
   Unify (forall r.
-    (a -> IO r)
-    -> (() -> IO r)
-    -> IO r
+    (a -> TC r)
+    -> (() -> TC r)
+    -> TC r
   )
 
 mismatch :: Unify a
@@ -147,7 +148,7 @@ unifyStructure context flatType content otherContent = case otherContent of
 -- UNIFY ARGS
 
 unifyArgs
-  :: Context -> [Variable] -> [Variable] -> (() -> IO r) -> (() -> IO r) -> IO r
+  :: Context -> [Variable] -> [Variable] -> (() -> TC r) -> (() -> TC r) -> TC r
 unifyArgs context (arg1 : others1) (arg2 : others2) ok err =
   case subUnify arg1 arg2 of
     Unify k -> k (\() -> unifyArgs context others1 others2 ok err)

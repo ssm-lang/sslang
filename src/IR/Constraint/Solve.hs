@@ -11,6 +11,7 @@ import qualified Data.Vector.Mutable           as MVector
 import           GHC.Base                       ( liftM )
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Error           as ET
+import           IR.Constraint.Monad            ( TC )
 import qualified IR.Constraint.Occurs          as Occurs
 import           IR.Constraint.Type            as Type
 import qualified IR.Constraint.Unify           as Unify
@@ -18,7 +19,7 @@ import qualified IR.Constraint.UnionFind       as UF
 
 -- | RUN SOLVER
 
-run :: Constraint -> IO (Either [ET.Error] ())
+run :: Constraint -> TC (Either [ET.Error] ())
 run constraint = do
   pools              <- MVector.replicate 8 []
   (State _ _ errors) <- solve Map.empty
@@ -43,7 +44,7 @@ data State = State
   , _errors :: [ET.Error]
   }
 
-solve :: Env -> Int -> Pools -> State -> Constraint -> IO State
+solve :: Env -> Int -> Pools -> State -> Constraint -> TC State
 solve env rank pools state constraint = case constraint of
   CTrue                   -> return state
 
@@ -152,7 +153,7 @@ solve env rank pools state constraint = case constraint of
 
 
 -- Check that a variable has rank == noRank, meaning that it can be generalized
-isGeneric :: Variable -> IO ()
+isGeneric :: Variable -> TC ()
 isGeneric var = do
   (Descriptor _ rank _ _) <- UF.get var
   if rank == noRank
@@ -169,7 +170,7 @@ addError (State savedEnv rank errors) err = State savedEnv rank (err : errors)
 
 -- | OCCURS CHECK
 
-occurs :: State -> (Ident.VarId, Variable) -> IO State
+occurs :: State -> (Ident.VarId, Variable) -> TC State
 occurs state (name, variable) = do
   hasOccurred <- Occurs.occurs variable
   if hasOccurred
@@ -186,7 +187,7 @@ occurs state (name, variable) = do
 {-| Every variable has rank less than or equal to the maxRank of the pool.
 This sorts variables into the young and old pools accordingly.
 -}
-generalize :: Mark -> Mark -> Int -> Pools -> IO ()
+generalize :: Mark -> Mark -> Int -> Pools -> TC ()
 generalize youngMark visitMark youngRank pools = do
   youngVars <- MVector.read pools youngRank
   rankTable <- poolToRankTable youngMark youngRank youngVars
@@ -222,7 +223,7 @@ generalize youngMark visitMark youngRank pools = do
           else UF.set var $ Descriptor content noRank mark copy
 
 
-poolToRankTable :: Mark -> Int -> [Variable] -> IO (Vector.Vector [Variable])
+poolToRankTable :: Mark -> Int -> [Variable] -> TC (Vector.Vector [Variable])
 poolToRankTable youngMark youngRank youngInhabitants = do
   mutableTable <- MVector.replicate (youngRank + 1) []
 
@@ -241,7 +242,7 @@ poolToRankTable youngMark youngRank youngInhabitants = do
 -- Adjust variable ranks such that ranks never increase as you move deeper.
 -- This way the outermost rank is representative of the entire structure.
 --
-adjustRank :: Mark -> Mark -> Int -> Variable -> IO Int
+adjustRank :: Mark -> Mark -> Int -> Variable -> TC Int
 adjustRank youngMark visitMark groupRank var = do
   (Descriptor content rank mark copy) <- UF.get var
   if mark == youngMark
@@ -259,7 +260,7 @@ adjustRank youngMark visitMark groupRank var = do
         return minRank
 
 
-adjustRankContent :: Mark -> Mark -> Int -> Content -> IO Int
+adjustRankContent :: Mark -> Mark -> Int -> Content -> TC Int
 adjustRankContent youngMark visitMark groupRank content =
   let go = adjustRank youngMark visitMark groupRank
   in  case content of
@@ -276,7 +277,7 @@ adjustRankContent youngMark visitMark groupRank content =
 
 -- | REGISTER VARIABLES
 
-introduce :: Int -> Pools -> [Variable] -> IO ()
+introduce :: Int -> Pools -> [Variable] -> TC ()
 introduce rank pools variables = do
   MVector.modify pools (variables ++) rank
   forM_ variables $ \var -> UF.modify var
@@ -285,11 +286,11 @@ introduce rank pools variables = do
 
 -- | TYPE TO VARIABLE
 
-typeToVariable :: Int -> Pools -> Type -> IO Variable
+typeToVariable :: Int -> Pools -> Type -> TC Variable
 typeToVariable rank pools tipe = typeToVar rank pools Map.empty tipe
 
 typeToVar
-  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Type -> IO Variable
+  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Type -> TC Variable
 typeToVar rank pools aliasDict tipe =
   let go = typeToVar rank pools aliasDict
   in  case tipe of
@@ -299,7 +300,7 @@ typeToVar rank pools aliasDict tipe =
           argVars <- traverse go args
           register rank pools (Structure (TCon1 name argVars))
 
-register :: Int -> Pools -> Content -> IO Variable
+register :: Int -> Pools -> Content -> TC Variable
 register rank pools content = do
   var <- UF.fresh (Descriptor content rank noMark Nothing)
   MVector.modify pools (var :) rank
@@ -310,7 +311,7 @@ register rank pools content = do
 
 
 schemeToVariable
-  :: Int -> Pools -> Map.Map Ident.TVarId () -> Can.Type -> IO Variable
+  :: Int -> Pools -> Map.Map Ident.TVarId () -> Can.Type -> TC Variable
 schemeToVariable rank pools freeVars srcType =
   let nameToContent name = FlexVar (Just name)
 
@@ -323,7 +324,7 @@ schemeToVariable rank pools freeVars srcType =
 
 
 schemeToVar
-  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Can.Type -> IO Variable
+  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Can.Type -> TC Variable
 schemeToVar rank pools flexVars srcType =
   let go = schemeToVar rank pools flexVars
   in  case srcType of
@@ -337,14 +338,14 @@ schemeToVar rank pools flexVars srcType =
 
 -- | COPY
 
-makeCopy :: Int -> Pools -> Variable -> IO Variable
+makeCopy :: Int -> Pools -> Variable -> TC Variable
 makeCopy rank pools var = do
   copy <- makeCopyHelp rank pools var
   restore var
   return copy
 
 
-makeCopyHelp :: Int -> Pools -> Variable -> IO Variable
+makeCopyHelp :: Int -> Pools -> Variable -> TC Variable
 makeCopyHelp maxRank pools variable = do
   (Descriptor content rank _ maybeCopy) <- UF.get variable
 
@@ -386,7 +387,7 @@ makeCopyHelp maxRank pools variable = do
 -- RESTORE
 
 
-restore :: Variable -> IO ()
+restore :: Variable -> TC ()
 restore variable = do
   (Descriptor content _ _ maybeCopy) <- UF.get variable
   case maybeCopy of
@@ -397,7 +398,7 @@ restore variable = do
       restoreContent content
 
 
-restoreContent :: Content -> IO ()
+restoreContent :: Content -> TC ()
 restoreContent content = case content of
   FlexVar   _    -> return ()
 
@@ -413,6 +414,6 @@ restoreContent content = case content of
 --  | TRAVERSE FLAT TYPE
 
 
-traverseFlatType :: (Variable -> IO Variable) -> FlatType -> IO FlatType
+traverseFlatType :: (Variable -> TC Variable) -> FlatType -> TC FlatType
 traverseFlatType f flatType = case flatType of
   TCon1 name args -> liftM (TCon1 name) (traverse f args)

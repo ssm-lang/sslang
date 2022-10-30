@@ -28,6 +28,9 @@ Compared to the Haskell implementation, the major changes here include:
 
 
 import           Control.Monad                  ( when )
+import           Control.Monad.Trans            ( MonadIO
+                                                , liftIO
+                                                )
 import           Data.IORef                     ( IORef
                                                 , modifyIORef'
                                                 , newIORef
@@ -55,111 +58,111 @@ data PointInfo a
 -- HELPERS
 
 
-fresh :: a -> IO (Point a)
+fresh :: MonadIO m => a -> m (Point a)
 fresh value = do
-  weight <- newIORef 1
-  desc   <- newIORef value
-  link   <- newIORef (Info weight desc)
+  weight <- liftIO $ newIORef 1
+  desc   <- liftIO $ newIORef value
+  link   <- liftIO $ newIORef (Info weight desc)
   return (Pt link)
 
 
-repr :: Point a -> IO (Point a)
+repr :: MonadIO m => Point a -> m (Point a)
 repr point@(Pt ref) = do
-  pInfo <- readIORef ref
+  pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ _              -> return point
 
     Link point1@(Pt ref1) -> do
       point2 <- repr point1
       when (point2 /= point1) $ do
-        pInfo1 <- readIORef ref1
-        writeIORef ref pInfo1
+        pInfo1 <- liftIO $ readIORef ref1
+        liftIO $ writeIORef ref pInfo1
       return point2
 
 
-get :: Point a -> IO a
+get :: MonadIO m => Point a -> m a
 get point@(Pt ref) = do
-  pInfo <- readIORef ref
+  pInfo <- liftIO $ readIORef ref
   case pInfo of
-    Info _ descRef -> readIORef descRef
+    Info _ descRef -> liftIO $ readIORef descRef
 
     Link (Pt ref1) -> do
-      link' <- readIORef ref1
+      link' <- liftIO $ readIORef ref1
       case link' of
-        Info _ descRef -> readIORef descRef
+        Info _ descRef -> liftIO $ readIORef descRef
 
         Link _         -> get =<< repr point
 
 
-set :: Point a -> a -> IO ()
+set :: MonadIO m => Point a -> a -> m ()
 set point@(Pt ref) newDesc = do
-  pInfo <- readIORef ref
+  pInfo <- liftIO $ readIORef ref
   case pInfo of
-    Info _ descRef -> writeIORef descRef newDesc
+    Info _ descRef -> liftIO $ writeIORef descRef newDesc
 
     Link (Pt ref1) -> do
-      link' <- readIORef ref1
+      link' <- liftIO $ readIORef ref1
       case link' of
-        Info _ descRef -> writeIORef descRef newDesc
+        Info _ descRef -> liftIO $ writeIORef descRef newDesc
 
         Link _         -> do
           newPoint <- repr point
           set newPoint newDesc
 
 
-modify :: Point a -> (a -> a) -> IO ()
+modify :: MonadIO m => Point a -> (a -> a) -> m ()
 modify point@(Pt ref) func = do
-  pInfo <- readIORef ref
+  pInfo <- liftIO $ readIORef ref
   case pInfo of
-    Info _ descRef -> modifyIORef' descRef func
+    Info _ descRef -> liftIO $ modifyIORef' descRef func
 
     Link (Pt ref1) -> do
-      link' <- readIORef ref1
+      link' <- liftIO $ readIORef ref1
       case link' of
-        Info _ descRef -> modifyIORef' descRef func
+        Info _ descRef -> liftIO $ modifyIORef' descRef func
 
         Link _         -> do
           newPoint <- repr point
           modify newPoint func
 
 
-union :: Point a -> Point a -> a -> IO ()
+union :: (MonadIO m, MonadFail m) => Point a -> Point a -> a -> m ()
 union p1 p2 newDesc = do
   point1@(Pt ref1)  <- repr p1
   point2@(Pt ref2)  <- repr p2
 
-  Info    w1     d1 <- readIORef ref1
-  Info    w2     d2 <- readIORef ref2
+  Info    w1     d1 <- liftIO $ readIORef ref1
+  Info    w2     d2 <- liftIO $ readIORef ref2
 
   if point1 == point2
-    then writeIORef d1 newDesc
+    then liftIO $ writeIORef d1 newDesc
     else do
-      weight1 <- readIORef w1
-      weight2 <- readIORef w2
+      weight1 <- liftIO $ readIORef w1
+      weight2 <- liftIO $ readIORef w2
 
       let !newWeight = weight1 + weight2
 
       if weight1 >= weight2
         then do
-          writeIORef ref2 (Link point1)
-          writeIORef w1   newWeight
-          writeIORef d1   newDesc
+          liftIO $ writeIORef ref2 (Link point1)
+          liftIO $ writeIORef w1 newWeight
+          liftIO $ writeIORef d1 newDesc
         else do
-          writeIORef ref1 (Link point2)
-          writeIORef w2   newWeight
-          writeIORef d2   newDesc
+          liftIO $ writeIORef ref1 (Link point2)
+          liftIO $ writeIORef w2 newWeight
+          liftIO $ writeIORef d2 newDesc
 
 
-equivalent :: Point a -> Point a -> IO Bool
+equivalent :: MonadIO m => Point a -> Point a -> m Bool
 equivalent p1 p2 = do
   v1 <- repr p1
   v2 <- repr p2
   return (v1 == v2)
 
 
-redundant :: Point a -> IO Bool
+redundant :: MonadIO m => Point a -> m Bool
 redundant (Pt ref) = do
-  pInfo <- readIORef ref
+  pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ _ -> return False
 

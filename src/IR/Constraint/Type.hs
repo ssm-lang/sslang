@@ -3,13 +3,13 @@
 module IR.Constraint.Type where
 
 import qualified Common.Identifiers            as Ident
-import           Control.Monad.State.Strict     ( StateT
-                                                , liftIO
-                                                )
-import qualified Control.Monad.State.Strict    as State
+import           Control.Monad.Trans            ( liftIO )
 import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Error           as ET
+import           IR.Constraint.Monad            ( TC
+                                                , freshName
+                                                )
 import qualified IR.Constraint.UnionFind       as UF
 
 
@@ -145,7 +145,7 @@ u8 = TConN "UInt8" []
 
 -- | MAKE FLEX VARIABLES
 
-mkFlexVar :: IO Variable
+mkFlexVar :: TC Variable
 mkFlexVar = UF.fresh flexVarDescriptor
 
 flexVarDescriptor :: Descriptor
@@ -156,21 +156,17 @@ unnamedFlexVar = FlexVar Nothing
 
 
 -- | MAKE NAMED VARIABLES
-nameToFlex :: Ident.TVarId -> IO Variable
+nameToFlex :: Ident.TVarId -> TC Variable
 nameToFlex name = UF.fresh $ mkDescriptor $ FlexVar (Just name)
 
-nameToRigid :: Ident.TVarId -> IO Variable
+nameToRigid :: Ident.TVarId -> TC Variable
 nameToRigid name = UF.fresh $ mkDescriptor $ RigidVar name
 
 
 -- | TO CANONICAL TYPE
 
-toCanType :: Variable -> IO Can.Type
-toCanType variable = State.evalStateT (variableToCanType variable) mkNameState
-
-
-variableToCanType :: Variable -> StateT NameState IO Can.Type
-variableToCanType variable = do
+toCanType :: Variable -> TC Can.Type
+toCanType variable = do
   (Descriptor content _ _ _) <- liftIO $ UF.get variable
   case content of
     Structure term      -> termToCanType term
@@ -188,20 +184,15 @@ variableToCanType variable = do
 
     Error         -> error "cannot handle Error types in variableToCanType"
 
-termToCanType :: FlatType -> StateT NameState IO Can.Type
+termToCanType :: FlatType -> TC Can.Type
 termToCanType term = case term of
-  TCon1 name args -> Can.TCon name <$> traverse variableToCanType args
+  TCon1 name args -> Can.TCon name <$> traverse toCanType args
 
 
 -- | TO ERROR TYPE
 
-toErrorType :: Variable -> IO ET.Type
-toErrorType variable =
-  State.evalStateT (variableToErrorType variable) mkNameState
-
-
-variableToErrorType :: Variable -> StateT NameState IO ET.Type
-variableToErrorType variable = do
+toErrorType :: Variable -> TC ET.Type
+toErrorType variable = do
   descriptor <- liftIO $ UF.get variable
   let mark = _mark descriptor
   if mark == occursMark
@@ -213,7 +204,7 @@ variableToErrorType variable = do
       return errType
 
 
-contentToErrorType :: Variable -> Content -> StateT NameState IO ET.Type
+contentToErrorType :: Variable -> Content -> TC ET.Type
 contentToErrorType variable content = case content of
   Structure term      -> termToErrorType term
 
@@ -231,21 +222,6 @@ contentToErrorType variable content = case content of
   Error         -> return ET.Error
 
 
-termToErrorType :: FlatType -> StateT NameState IO ET.Type
+termToErrorType :: FlatType -> TC ET.Type
 termToErrorType term = case term of
-  TCon1 name args -> ET.Type name <$> traverse variableToErrorType args
-
--- | NAME STATE
-
-newtype NameState = NameState { _unique :: Int }
-
-mkNameState :: NameState
-mkNameState = NameState 0
-
-
--- | FRESH NAME
-freshName :: (Monad m) => StateT NameState m Ident.TVarId
-freshName = do
-  uni <- State.gets _unique
-  State.modify $ \state -> state { _unique = uni + 1 }
-  return $ Ident.fromString $ "_t" ++ show uni
+  TCon1 name args -> ET.Type name <$> traverse toErrorType args
