@@ -1,8 +1,12 @@
 module IR.Constraint.Elaborate where
 
-import           IR.Constraint.Constraint
-import qualified IR.IR                         as Type
+import qualified IR.Constraint.Canonical       as Can
+import           IR.Constraint.Type            as Type
 import qualified IR.IR                         as I
 
-run :: I.Program Variable -> IO (I.Program Type.Type)
-run = undefined
+run :: I.Program Variable -> IO (I.Program Can.Type)
+run pVar = do
+  let (names, exprs) = unzip $ I.programDefs pVar
+  exprs' <- mapM (mapM Type.toCanType) exprs
+  let pdefs' = zip names exprs'
+  return $ pVar { I.programDefs = pdefs' }

@@ -3,24 +3,28 @@ module IR.Constraint.Typechecking
   ) where
 
 import qualified Common.Compiler               as Compiler
+import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Constrain       as Constrain
 import qualified IR.Constraint.Elaborate       as Elaborate
+import qualified IR.Constraint.Error           as ET
 import qualified IR.Constraint.Solve           as Solve
-import qualified IR.Constraint.Type            as Type
 import qualified IR.IR                         as I
 
 import           System.IO.Unsafe               ( unsafePerformIO )
 
 typecheckProgram
-  :: I.Program Type.Annotations -> Compiler.Pass (I.Program Type.Type)
+  :: I.Program Can.Annotations -> Compiler.Pass (I.Program Can.Type)
 typecheckProgram pAnn = case unsafeTypecheckProgram pAnn of
-  Nothing ->
-    Compiler.throwError $ Compiler.TypeError $ Compiler.fromString "Type error"
-  Just pType -> return pType
+  Left [] -> Compiler.throwError $ Compiler.TypeError $ Compiler.fromString
+    "Some unknown type error occured, but this case should never happen."
+  Left  (e : _) -> Compiler.throwError e
+  Right pType   -> return pType
 
 unsafeTypecheckProgram
-  :: I.Program Type.Annotations -> Maybe (I.Program Type.Type)
+  :: I.Program Can.Annotations -> Either [Compiler.Error] (I.Program Can.Type)
 unsafeTypecheckProgram pAnn = unsafePerformIO $ do
   (constraint, pVar) <- Constrain.run pAnn
-  solved             <- Solve.run constraint
-  if solved then Just <$> Elaborate.run pVar else return Nothing
+  result             <- Solve.run constraint
+  case result of
+    Left  errors -> return $ Left (map ET.toCompilerError errors)
+    Right _      -> Right <$> Elaborate.run pVar

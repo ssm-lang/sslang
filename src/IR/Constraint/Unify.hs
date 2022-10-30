@@ -2,20 +2,23 @@
 
 module IR.Constraint.Unify where
 
-import           IR.Constraint.Constraint
+import qualified IR.Constraint.Error           as ET
+import           IR.Constraint.Type            as Type
 import qualified IR.Constraint.UnionFind       as UF
 
 -- | UNIFY
 
 data Answer
   = Ok
-  | Err -- this will be extended for better error messages
+  | Err ET.Type ET.Type
 
 unify :: Variable -> Variable -> IO Answer
 unify v1 v2 = case guardedUnify v1 v2 of
   Unify k -> k onSuccess $ \() -> do
+    t1 <- Type.toErrorType v1
+    t2 <- Type.toErrorType v2
     UF.union v1 v2 errorDescriptor
-    return Err
+    return $ Err t1 t2
 
 onSuccess :: () -> IO Answer
 onSuccess () = return Ok

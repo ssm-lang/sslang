@@ -1,6 +1,5 @@
 module IR.Constraint.Solve where
 
-import qualified Common.Compiler               as Compiler
 import qualified Common.Identifiers            as Ident
 import           Control.Monad                  ( foldM
                                                 , forM_
@@ -10,16 +9,17 @@ import           Data.Map.Strict                ( (!) )
 import qualified Data.Vector                   as Vector
 import qualified Data.Vector.Mutable           as MVector
 import           GHC.Base                       ( liftM )
-import           IR.Constraint.Constraint
+import qualified IR.Constraint.Canonical       as Can
+import qualified IR.Constraint.Error           as ET
 import qualified IR.Constraint.Occurs          as Occurs
-import qualified IR.Constraint.Type            as Type
+import           IR.Constraint.Type            as Type
 import qualified IR.Constraint.Unify           as Unify
 import qualified IR.Constraint.UnionFind       as UF
 
 -- | RUN SOLVER
 
 -- TODO: better error message/handling
-run :: Constraint -> IO Bool
+run :: Constraint -> IO (Either [ET.Error] ())
 run constraint = do
   pools              <- MVector.replicate 8 []
   (State _ _ errors) <- solve Map.empty
@@ -27,7 +27,7 @@ run constraint = do
                               pools
                               emptyState
                               constraint
-  return $ null errors
+  if null errors then return $ Right () else return $ Left errors
 
 emptyState :: State
 emptyState = State Map.empty (nextMark noMark) []
@@ -41,7 +41,7 @@ type Pools = MVector.IOVector [Variable]
 data State = State
   { _env    :: Env
   , _mark   :: Mark
-  , _errors :: [String] -- TODO: this needs to be changed for better error messages
+  , _errors :: [ET.Error] -- TODO: this needs to be changed for better error messages
   }
 
 solve :: Env -> Int -> Pools -> State -> Constraint -> IO State
@@ -59,9 +59,9 @@ solve env rank pools state constraint = case constraint of
         -- introduce rank pools vars
         return state
 
-      Unify.Err -> do
+      Unify.Err actualType expectedType -> do
         -- introduce rank pools vars
-        return $ addError state "Constraint solver: CEqual error"
+        return $ addError state $ ET.BadExpr actualType expectedType
 
   CLocal name expectation -> do
     actual   <- makeCopy rank pools (env ! name)
@@ -72,11 +72,11 @@ solve env rank pools state constraint = case constraint of
         -- introduce rank pools vars
         return state
 
-      Unify.Err -> do
+      Unify.Err actualType expectedType -> do
         -- introduce rank pools vars
-        return $ addError state "Constraint solver: CLocal error"
+        return $ addError state $ ET.BadExpr actualType expectedType
 
-  CForeign name (Type.Forall freeVars srcType) expectation -> do
+  CForeign name (Can.Forall freeVars srcType) expectation -> do
     actual   <- schemeToVariable rank pools freeVars srcType
     expected <- typeToVariable rank pools expectation
     answer   <- Unify.unify actual expected
@@ -85,9 +85,10 @@ solve env rank pools state constraint = case constraint of
         -- introduce rank pools vars
         return state
 
-      Unify.Err -> do
+      Unify.Err actualType expectedType -> do
         -- introduce rank pools vars
-        return $ addError state "Constraint solver: CForeign error"
+        return $ addError state $ ET.BadExpr actualType expectedType
+
 
   CPattern tipe expectation -> do
     actual   <- typeToVariable rank pools tipe
@@ -98,9 +99,9 @@ solve env rank pools state constraint = case constraint of
         -- introduce rank pools vars
         return state
 
-      Unify.Err -> do
+      Unify.Err actualType expectedType -> do
         -- introduce rank pools vars
-        return $ addError state "Constraint solver: CPattern error"
+        return $ addError state $ ET.BadPattern actualType expectedType
 
   CAnd constraints -> foldM (solve env rank pools) state constraints
 
@@ -165,7 +166,7 @@ isGeneric var = do
 -- | ERROR HELPERS
 
 -- TODO: better error message mechanism
-addError :: State -> String -> State
+addError :: State -> ET.Error -> State
 addError (State savedEnv rank errors) err = State savedEnv rank (err : errors)
 
 
@@ -176,10 +177,10 @@ occurs state (name, variable) = do
   hasOccurred <- Occurs.occurs variable
   if hasOccurred
     then do
-      -- errorType <- Type.toErrorType variable
+      errorType                     <- Type.toErrorType variable
       (Descriptor _ rank mark copy) <- UF.get variable
       UF.set variable (Descriptor Error rank mark copy)
-      return $ addError state $ "Infinite type for variable: " ++ show name
+      return $ addError state $ ET.InfiniteType name errorType
     else return state
 
 
@@ -312,7 +313,7 @@ register rank pools content = do
 
 
 schemeToVariable
-  :: Int -> Pools -> Map.Map Ident.TVarId () -> Type.Type -> IO Variable
+  :: Int -> Pools -> Map.Map Ident.TVarId () -> Can.Type -> IO Variable
 schemeToVariable rank pools freeVars srcType =
   let nameToContent name = FlexVar (Just name)
 
@@ -325,13 +326,13 @@ schemeToVariable rank pools freeVars srcType =
 
 
 schemeToVar
-  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Type.Type -> IO Variable
+  :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Can.Type -> IO Variable
 schemeToVar rank pools flexVars srcType =
   let go = schemeToVar rank pools flexVars
   in  case srcType of
-        Type.TVar name      -> return (flexVars ! name)
+        Can.TVar name      -> return (flexVars ! name)
 
-        Type.TCon name args -> do
+        Can.TCon name args -> do
           argVars <- traverse go args
           register rank pools (Structure (TCon1 name argVars))
 

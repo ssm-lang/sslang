@@ -4,7 +4,7 @@ module IR.Constraint.Occurs
 
 
 import           Data.Foldable                  ( foldrM )
-import           IR.Constraint.Constraint       ( Content(..)
+import           IR.Constraint.Type             ( Content(..)
                                                 , Descriptor(..)
                                                 , FlatType(..)
                                                 , Variable
