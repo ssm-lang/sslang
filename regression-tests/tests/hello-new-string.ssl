@@ -1,3 +1,4 @@
 main cin cout =
-    let s = "hello"
-    after 1 , cout <- s
+    let s = "hello\n"
+    ()
+    //after 1 , cout <- s
