@@ -10,15 +10,11 @@ import           IR.Constraint.Monad            ( TC )
 import           IR.Constraint.Type
 import qualified IR.IR                         as I
 
-constrain :: I.Program Can.Annotations -> TC (Constraint, I.Program Variable)
-constrain pAnn = do
-  (cExprs, exprs) <- Expr.constrainDefs (I.programDefs pAnn) CTrue
-  let pVar = pAnn { I.programDefs = exprs }
-
-  cExternDecls <- constrainExternDecls (I.externDecls pAnn) cExprs
-  cTypeDefs    <- constrainTypeDefs (I.typeDefs pAnn) cExternDecls
-
-  return (cTypeDefs, pVar)
+constrain :: I.Program (Can.Annotations, Variable) -> TC Constraint
+constrain prog = do
+  constrainTypeDefs (I.typeDefs prog)
+    =<< constrainExternDecls (I.externDecls prog)
+    =<< Expr.constrainDefs (I.programDefs prog) CTrue
 
 
 -- | EXTERN DECLS

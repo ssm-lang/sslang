@@ -9,8 +9,8 @@ import           GHC.IO.Unsafe                  ( unsafePerformIO )
 type TC a = StateT TCState IO a
 
 data TCState = TCState
-  { _freshName :: Int
-  , _freshVar  :: Int
+  { _freshName :: Int -- fresh tvar name
+  , _freshVar  :: Int -- fresh var name for replace binders in tc
   }
 
 runTC :: TC a -> a
