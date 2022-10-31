@@ -163,7 +163,7 @@ lowerExpr (A.Match s ps) =
   I.Match <$> lowerExpr s <*> mapM lowerArm ps <*> pure untyped
   where lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
 lowerExpr (A.ListExpr a) = 
-  Compiler.todo "ListExpr lowering not yet implemented"
+  Compiler.unexpected "lowerExpr: ListExprs should have already been desugared"
 
 -- | Lower an A.Pat into an I.Alt
 lowerPatAlt :: A.Pat -> Compiler.Pass I.Alt
