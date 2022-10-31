@@ -269,6 +269,7 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
+  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
   pretty NoExpr = error "Unexpected NoExpr"
 
 instance Pretty Literal where

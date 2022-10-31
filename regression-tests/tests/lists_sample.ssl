@@ -15,5 +15,5 @@
 */
 
 main cin cout =
- let lst = []
+ // let lst = [] // will uncomment this when list syntax works end-to-end
  () // main must return unit
