@@ -115,24 +115,11 @@ Performs the following desugaring inline:
 -   Desugars 'A.IfElse' to 'I.Match'
 -   Unrolls 'A.Constraint' to annotate sub-expressions
 -}
-buildAppList :: A.Expr -> [(I.Expr I.Annotations, I.Annotations)]
-buildAppList (A.Lit (A.LitString "")) = [I.App (I.Data "Cons"  typ) (I.Data "Nil" typ) typ, typ]
-  where
-  typ = I.Annotations []
-buildAppList (A.Lit (A.LitString (h:t)))  = (I.App (I.Data "Cons" typ)(I.Lit (I.LitIntegral (toEnum h)) typ), typ) : buildAppList (A.Lit (A.LitString t))
-    where 
-      typ = I.Annotations []
-
 lowerExpr :: A.Expr -> Compiler.Pass (I.Expr I.Annotations)
 lowerExpr (lowerPrim -> Just p) = return $ I.Prim p [] untyped
 lowerExpr (A.Id v) | isCons v  = return $ I.Data (fromId v) untyped
                    | otherwise = return $ I.Var (fromId v) untyped
 lowerExpr (  A.Lit l    ) = I.Lit <$> lowerLit l <*> pure untyped
-
-lowerExpr (A.Lit (A.LitString (h:t))) = return $ I.foldApp (I.App (I.Data "Cons" typ)(I.Lit (I.LitIntegral (fromEnum h)) typ) typ) (buildAppList (A.Lit (A.LitString t)))
-    where
-      typ = I.Annotations []
-
 lowerExpr a@(A.Apply l r) = case first lowerPrim (A.collectApp a) of
   (Just prim, args) -> I.Prim prim <$> mapM lowerExpr args <*> pure untyped
   (Nothing  , _   ) -> I.App <$> lowerExpr l <*> lowerExpr r <*> pure untyped
