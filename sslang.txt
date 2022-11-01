@@ -870,6 +870,7 @@ Break :: Expr
 Match :: Expr -> [(Pat, Expr)] -> Expr
 CQuote :: String -> Expr
 CCall :: Identifier -> [Expr] -> Expr
+ListExpr :: [Expr] -> Expr
 
 -- | An operator region: a flat list of alternating expressions and
 --   operators that is initially parsed flat but will be restructured into
@@ -890,6 +891,15 @@ LitEvent :: Literal
 data Fixity
 Infixl :: Int -> Identifier -> Fixity
 Infixr :: Int -> Identifier -> Fixity
+
+-- | Apply a function to zero or more arguments.
+--   
+--   Suppose we have as source code <tt> type Color = RGB Int Int Int ...
+--   let x = RGB 203 200 100 </tt> and rgb = Id <a>RGB</a> r = Lit
+--   (A.LitInt 203) g = Lit (A.LitInt 200) b = Lit (A.LitInt 100), then
+--   foldApp rgb [r, g, b] returns <tt> Apply (Apply (Apply (Id RGB) (Lit
+--   (LitInt 100))) (Lit (LitInt 200))) (Lit (LitInt 203)) </tt>
+foldApp :: Expr -> [Expr] -> Expr
 
 -- | Collect a type application into the type constructor and its
 --   arguments.
@@ -952,6 +962,20 @@ instance Prettyprinter.Internal.Pretty Front.Ast.TypeDef
 instance Prettyprinter.Internal.Pretty Front.Ast.TypeVariant
 instance Prettyprinter.Internal.Pretty Front.Ast.TypFn
 instance Prettyprinter.Internal.Pretty Front.Ast.Typ
+
+
+-- | Desugar ListExpr nodes into App nodes
+module Front.DesugarLists
+
+-- | Desugar ListExpr nodes inside of an AST <a>Program</a>.
+desugarLists :: Program -> Pass Program
+
+
+-- | Desugar String Literal nodes into ListExpr nodes
+module Front.DesugarStrings
+
+-- | Desugar String Literal nodes inside of an AST <a>Program</a>.
+desugarStrings :: Program -> Pass Program
 
 
 -- | Identifiers, associated metadata, and reserved identifiers.

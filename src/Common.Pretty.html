@@ -21,16 +21,16 @@
 
 Only used by spaghetti so constrained by Dumpy instead of Pretty for now.
 -}</span><span>
-</span><span id="line-24"></span><span id="local-6989586621679499557"><span id="local-6989586621679499558"><span class="annot"><a href="Common.Pretty.html#typeAnn"><span class="hs-identifier hs-type">typeAnn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-type">Dumpy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679499558"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679499558"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499557"><span class="hs-identifier hs-type">ann</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499557"><span class="hs-identifier hs-type">ann</span></a></span></span></span><span>
+</span><span id="line-24"></span><span id="local-6989586621679499808"><span id="local-6989586621679499809"><span class="annot"><a href="Common.Pretty.html#typeAnn"><span class="hs-identifier hs-type">typeAnn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-type">Dumpy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679499809"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679499809"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499808"><span class="hs-identifier hs-type">ann</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499808"><span class="hs-identifier hs-type">ann</span></a></span></span></span><span>
 </span><span id="line-25"></span><span id="typeAnn"><span class="annot"><span class="annottext">typeAnn :: t -&gt; Doc ann -&gt; Doc ann
-</span><a href="Common.Pretty.html#typeAnn"><span class="hs-identifier hs-var hs-var">typeAnn</span></a></span></span><span> </span><span id="local-6989586621679499556"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679499556"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679499555"><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679499555"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
+</span><a href="Common.Pretty.html#typeAnn"><span class="hs-identifier hs-var hs-var">typeAnn</span></a></span></span><span> </span><span id="local-6989586621679499807"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679499807"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679499806"><span class="annot"><span class="annottext">Doc ann
+</span><a href="#local-6989586621679499806"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann) -&gt; Doc ann -&gt; Doc ann
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679499555"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679499806"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
 forall ann. Doc ann
@@ -39,10 +39,10 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">t -&gt; Doc ann
 forall a ann. Dumpy a =&gt; a -&gt; Doc ann
 </span><a href="Common.Pretty.html#dumpy"><span class="hs-identifier hs-var">dumpy</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679499556"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621679499807"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-26"></span><span>
 </span><span id="line-27"></span><span class="hs-comment">-- | @=&gt;@</span><span>
-</span><span id="line-28"></span><span id="local-6989586621679499551"><span class="annot"><a href="Common.Pretty.html#drarrow"><span class="hs-identifier hs-type">drarrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499551"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-28"></span><span id="local-6989586621679499802"><span class="annot"><a href="Common.Pretty.html#drarrow"><span class="hs-identifier hs-type">drarrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499802"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-29"></span><span id="drarrow"><span class="annot"><span class="annottext">drarrow :: Doc ann
 </span><a href="Common.Pretty.html#drarrow"><span class="hs-identifier hs-var hs-var">drarrow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -50,7 +50,7 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;=&gt;&quot;</span></span><span>
 </span><span id="line-30"></span><span>
 </span><span id="line-31"></span><span class="hs-comment">-- | @&lt;-@</span><span>
-</span><span id="line-32"></span><span id="local-6989586621679499549"><span class="annot"><a href="Common.Pretty.html#larrow"><span class="hs-identifier hs-type">larrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499549"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-32"></span><span id="local-6989586621679499800"><span class="annot"><a href="Common.Pretty.html#larrow"><span class="hs-identifier hs-type">larrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499800"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-33"></span><span id="larrow"><span class="annot"><span class="annottext">larrow :: Doc ann
 </span><a href="Common.Pretty.html#larrow"><span class="hs-identifier hs-var hs-var">larrow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -58,7 +58,7 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;&lt;-&quot;</span></span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-comment">-- | @-&gt;@</span><span>
-</span><span id="line-36"></span><span id="local-6989586621679499548"><span class="annot"><a href="Common.Pretty.html#rarrow"><span class="hs-identifier hs-type">rarrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499548"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-36"></span><span id="local-6989586621679499799"><span class="annot"><a href="Common.Pretty.html#rarrow"><span class="hs-identifier hs-type">rarrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499799"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-37"></span><span id="rarrow"><span class="annot"><span class="annottext">rarrow :: Doc ann
 </span><a href="Common.Pretty.html#rarrow"><span class="hs-identifier hs-var hs-var">rarrow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -66,7 +66,7 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;-&gt;&quot;</span></span><span>
 </span><span id="line-38"></span><span>
 </span><span id="line-39"></span><span class="hs-comment">-- | @||@</span><span>
-</span><span id="line-40"></span><span id="local-6989586621679499547"><span class="annot"><a href="Common.Pretty.html#dbar"><span class="hs-identifier hs-type">dbar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499547"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-40"></span><span id="local-6989586621679499798"><span class="annot"><a href="Common.Pretty.html#dbar"><span class="hs-identifier hs-type">dbar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499798"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-41"></span><span id="dbar"><span class="annot"><span class="annottext">dbar :: Doc ann
 </span><a href="Common.Pretty.html#dbar"><span class="hs-identifier hs-var hs-var">dbar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -74,7 +74,7 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;||&quot;</span></span><span>
 </span><span id="line-42"></span><span>
 </span><span id="line-43"></span><span class="hs-comment">-- | @|@</span><span>
-</span><span id="line-44"></span><span id="local-6989586621679499546"><span class="annot"><a href="Common.Pretty.html#bar"><span class="hs-identifier hs-type">bar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499546"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679499797"><span class="annot"><a href="Common.Pretty.html#bar"><span class="hs-identifier hs-type">bar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499797"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-45"></span><span id="bar"><span class="annot"><span class="annottext">bar :: Doc ann
 </span><a href="Common.Pretty.html#bar"><span class="hs-identifier hs-var hs-var">bar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -82,7 +82,7 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-string">&quot;|&quot;</span></span><span>
 </span><span id="line-46"></span><span>
 </span><span id="line-47"></span><span class="hs-comment">-- | @&amp;@</span><span>
-</span><span id="line-48"></span><span id="local-6989586621679499545"><span class="annot"><a href="Common.Pretty.html#amp"><span class="hs-identifier hs-type">amp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499545"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-48"></span><span id="local-6989586621679499796"><span class="annot"><a href="Common.Pretty.html#amp"><span class="hs-identifier hs-type">amp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499796"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-49"></span><span id="amp"><span class="annot"><span class="annottext">amp :: Doc ann
 </span><a href="Common.Pretty.html#amp"><span class="hs-identifier hs-var hs-var">amp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
@@ -96,10 +96,10 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-number">2</span></span><span>
 </span><span id="line-54"></span><span>
 </span><span id="line-55"></span><span class="hs-comment">-- | Constructs a separator-delimited block 'Doc' out of a list of 'Doc's.</span><span>
-</span><span id="line-56"></span><span id="local-6989586621679499544"><span class="annot"><a href="Common.Pretty.html#block"><span class="hs-identifier hs-type">block</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499544"><span class="hs-identifier hs-type">ann</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499544"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499544"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-56"></span><span id="local-6989586621679499795"><span class="annot"><a href="Common.Pretty.html#block"><span class="hs-identifier hs-type">block</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499795"><span class="hs-identifier hs-type">ann</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499795"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499795"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-57"></span><span id="block"><span class="annot"><span class="annottext">block :: Doc ann -&gt; [Doc ann] -&gt; Doc ann
-</span><a href="Common.Pretty.html#block"><span class="hs-identifier hs-var hs-var">block</span></a></span></span><span> </span><span id="local-6989586621679499543"><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679499543"><span class="hs-identifier hs-var">separator</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
+</span><a href="Common.Pretty.html#block"><span class="hs-identifier hs-var hs-var">block</span></a></span></span><span> </span><span id="local-6989586621679499794"><span class="annot"><span class="annottext">Doc ann
+</span><a href="#local-6989586621679499794"><span class="hs-identifier hs-var">separator</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">braces</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann)
 -&gt; ([Doc ann] -&gt; Doc ann) -&gt; [Doc ann] -&gt; Doc ann
@@ -112,10 +112,10 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; [Doc ann] -&gt; [Doc ann]
 forall ann. Doc ann -&gt; [Doc ann] -&gt; [Doc ann]
 </span><span class="hs-identifier hs-var">punctuate</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679499543"><span class="hs-identifier hs-var">separator</span></a></span><span>
+</span><a href="#local-6989586621679499794"><span class="hs-identifier hs-var">separator</span></a></span><span>
 </span><span id="line-58"></span><span>
 </span><span id="line-59"></span><span class="hs-comment">-- | Format with a document of infinite width, preventing wraparound.</span><span>
-</span><span id="line-60"></span><span id="local-6989586621679499538"><span class="annot"><a href="Common.Pretty.html#spaghetti"><span class="hs-identifier hs-type">spaghetti</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-type">Dumpy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679499538"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679499538"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span></span><span>
+</span><span id="line-60"></span><span id="local-6989586621679499789"><span class="annot"><a href="Common.Pretty.html#spaghetti"><span class="hs-identifier hs-type">spaghetti</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-type">Dumpy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679499789"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679499789"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span></span><span>
 </span><span id="line-61"></span><span id="spaghetti"><span class="annot"><span class="annottext">spaghetti :: t -&gt; [Char]
 </span><a href="Common.Pretty.html#spaghetti"><span class="hs-identifier hs-var hs-var">spaghetti</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SimpleDocStream Any -&gt; [Char]
 forall ann. SimpleDocStream ann -&gt; [Char]
@@ -125,14 +125,14 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">LayoutOptions -&gt; Doc Any -&gt; SimpleDocStream Any
 forall ann. LayoutOptions -&gt; Doc ann -&gt; SimpleDocStream ann
 </span><span class="hs-identifier hs-var">layoutPretty</span></span><span> </span><span class="annot"><span class="annottext">LayoutOptions
-</span><a href="#local-6989586621679499534"><span class="hs-identifier hs-var">opts</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc Any -&gt; SimpleDocStream Any)
+</span><a href="#local-6989586621679499785"><span class="hs-identifier hs-var">opts</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc Any -&gt; SimpleDocStream Any)
 -&gt; (t -&gt; Doc Any) -&gt; t -&gt; SimpleDocStream Any
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">t -&gt; Doc Any
 forall a ann. Dumpy a =&gt; a -&gt; Doc ann
 </span><a href="Common.Pretty.html#dumpy"><span class="hs-identifier hs-var">dumpy</span></a></span><span>
-</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679499534"><span class="annot"><span class="annottext">opts :: LayoutOptions
-</span><a href="#local-6989586621679499534"><span class="hs-identifier hs-var hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LayoutOptions :: PageWidth -&gt; LayoutOptions
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679499785"><span class="annot"><span class="annottext">opts :: LayoutOptions
+</span><a href="#local-6989586621679499785"><span class="hs-identifier hs-var hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LayoutOptions :: PageWidth -&gt; LayoutOptions
 </span><span class="hs-identifier hs-type">LayoutOptions</span></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">layoutPageWidth :: PageWidth
 </span><span class="hs-identifier hs-var">layoutPageWidth</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PageWidth
 </span><span class="hs-identifier hs-var">Unbounded</span></span><span> </span><span class="hs-special">}</span><span>
@@ -144,6 +144,6 @@ forall a ann. Dumpy a =&gt; a -&gt; Doc ann
 * No whitespace formatting
 * Type annotates everything
 -}</span><span>
-</span><span id="line-71"></span><span class="hs-keyword">class</span><span> </span><span id="Dumpy"><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-var">Dumpy</span></a></span></span><span> </span><span id="local-6989586621679499593"><span class="annot"><a href="#local-6989586621679499593"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-72"></span><span>  </span><span id="local-6989586621679499591"><span id="dumpy"><span class="annot"><a href="Common.Pretty.html#dumpy"><span class="hs-identifier hs-type">dumpy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679499593"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499591"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">class</span><span> </span><span id="Dumpy"><span class="annot"><a href="Common.Pretty.html#Dumpy"><span class="hs-identifier hs-var">Dumpy</span></a></span></span><span> </span><span id="local-6989586621679499844"><span class="annot"><a href="#local-6989586621679499844"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679499842"><span id="dumpy"><span class="annot"><a href="Common.Pretty.html#dumpy"><span class="hs-identifier hs-type">dumpy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679499844"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679499842"><span class="hs-identifier hs-type">ann</span></a></span></span><span>
 </span><span id="line-73"></span></pre></body></html>
