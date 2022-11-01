@@ -95,6 +95,7 @@ data Expr
   | Match Expr [(Pat, Expr)]
   | CQuote String
   | CCall Identifier [Expr]
+  | ListExpr [Expr]
   deriving (Eq, Show)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -132,8 +133,8 @@ collectApp t               = (t, [])
 
 -- | Collect a pattern application into the destructor and arguments.
 collectPApp :: Pat -> (Pat, [Pat])
-collectPApp (PatApp (p:ps)) = (p, ps)
-collectPApp p = (p, []) -- Note that @PatApp []@ is probably malformed!
+collectPApp (PatApp (p : ps)) = (p, ps)
+collectPApp p                 = (p, []) -- Note that @PatApp []@ is probably malformed!
 
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
@@ -268,7 +269,8 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
-  pretty NoExpr = error "Unexpected NoExpr"
+  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i

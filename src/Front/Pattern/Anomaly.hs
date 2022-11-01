@@ -97,8 +97,9 @@ checkExprs :: [A.Expr] -> AnomalyFn ()
 checkExprs = mapM_ checkExpr
 
 checkExpr :: A.Expr -> AnomalyFn ()
-checkExpr (A.Id  _               ) = return ()
-checkExpr (A.Lit _               ) = return ()
+checkExpr (A.Id       _          ) = return ()
+checkExpr (A.Lit      _          ) = return ()
+checkExpr (A.ListExpr es         ) = checkExprs es
 checkExpr (A.Apply    e1 e2      ) = checkExprs [e1, e2]
 checkExpr (A.Lambda   _  e       ) = checkExpr e -- WARN: patterns here are not checked
 checkExpr (A.OpRegion e  opRegion) = checkExpr e >> checkOpRegion opRegion
