@@ -336,8 +336,8 @@ scopeExpr (A.After  d l r   ) = mapM_ scopeExpr [d, l, r]
 scopeExpr (A.Assign l r     ) = mapM_ scopeExpr [l, r]
 scopeExpr (A.Wait es        ) = mapM_ scopeExpr es
 scopeExpr (A.Seq e e'       ) = mapM_ scopeExpr [e, e']
-scopeExpr (A.Lit _          ) = return ()
-scopeExpr (A.ListExpr l          ) = mapM_ scopeExpr l
+scopeExpr (A.Lit      _     ) = return ()
+scopeExpr (A.ListExpr l     ) = mapM_ scopeExpr l
 scopeExpr A.Break             = return ()
 scopeExpr (A.OpRegion e o) =
   throwError

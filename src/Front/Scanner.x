@@ -33,6 +33,7 @@ import Control.Monad (when)
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf)
+import Data.Char (readLitChar)
 }
 
 %wrapper "monadUserState"
@@ -157,14 +158,14 @@ tokens :-
     do                  { reserved TDo }
 
     -- Other stringy tokens.
-    @operator           { strTok (TOp . fromString) }
-    \` @identifier \`   { strTok (TOp . fromString . dropEnds 1 1) }
-    @identifier         { strTok (TId . fromString) }
-    $digit+             { strTok (TInteger . read) }
+    @operator           { strTok (return . TOp . fromString) }
+    \` @identifier \`   { strTok (return . TOp . fromString . dropEnds 1 1) }
+    @identifier         { strTok (return . TId . fromString) }
+    $digit+             { strTok (return . TInteger . read) }
     \' @litChar \'      { charTok }
 
     -- InlineC C code
-    @cSym @identifier   { strTok (TCSym . fromString . dropEnds 1 0) }
+    @cSym @identifier   { strTok (return . TCSym . fromString . dropEnds 1 0) }
     @cQuoteL            { cInlineBegin cQuoteBody }
     @cBlockL            { cInlineBegin cBlockBody }
   }
@@ -231,7 +232,7 @@ ctxMargin (InlineC _ _         ) = 0
 data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
-  , lastCtxCode :: Int            -- ^ last seen scanning code before special block
+  , lastCtxCode :: Int            -- ^ last seen scanning code before block
   }
 
 -- | Initial Alex monad state.
@@ -443,8 +444,8 @@ lBrace i len = do
 -- | Left delimiting token, along with its (closing) right delimiter.
 lDelimeter :: TokenType -> TokenType -> AlexAction Token
 lDelimeter ttype closer i len = do
-  -- Push 'ExplicitBlock' to remember the alexColumn where this block was started,
-  -- and what closing token to look for.
+  -- Push 'ExplicitBlock' to remember the alexColumn where this block was
+  -- started, and what closing token to look for.
   let sp = alexInputSpan i len
   alexPushContext $ ExplicitBlock (tokCol sp) closer
   return $ Token (sp, ttype)
@@ -491,8 +492,11 @@ closeBrace i _ = do
 
     -- If somehow in ExplicitBlock for different closer, then we there must be
     -- a delimiter mismatch, e.g., @( ]@.
-    ExplicitBlock _ closer' -> lexErr i $
-      "mismatched delimiter: expected '" ++ show closer' ++ "', got '" ++ show closer ++ "'"
+    ExplicitBlock _ closer' -> lexErr i $ unlines
+      [ "mismatched delimiter:"
+      , "expected '" ++ show closer' ++ "'"
+      , "got '" ++ show closer ++ "'"
+      ]
 
     -- If pending block, then user wrote something like @loop )@ or -- @if x )@,
     -- both of which are syntax errors.
@@ -567,25 +571,30 @@ reserved ttype i _ = lexErr i $ "keyword is reserved: '" ++ show ttype ++ "'"
 
 
 -- | Arbitrary string token helper, which uses @f@ to produce 'TokenType'.
-strTok :: (String -> TokenType) -> AlexAction Token
+strTok :: (String -> Alex TokenType) -> AlexAction Token
 strTok f i@(_,_,_,s) len = do
-  return $ Token (alexInputSpan i len, f $ take len s)
+  t <- f $ take len s
+  return $ Token (alexInputSpan i len, t)
 
 
 -- | Parse a char literal into the corresponding literal.
 charTok :: AlexAction Token
-charTok i@(_,_,_,s) len =
-  case dropEnds 1 1 $ take len s of
-    "\\\\"  -> retOrd '\\'
-    "\\'"   -> retOrd '\''
-    "\\\""  -> retOrd '"'
-    "\\n"   -> retOrd '\n'
-    "\\r"   -> retOrd '\r'
-    "\\t"   -> retOrd '\t'
-    c:[]    -> retOrd c
-    c       -> internalErr $ "Encountered unreachable empty char: " ++ show c
-  where retOrd c =
-          return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+charTok i@(_,_,_,s) len = do
+  let charStr = dropEnds 1 1 $ take len s
+  str <- unescape charStr
+  case str of
+    [c] -> return $ Token (alexInputSpan i len, TInteger $ toInteger $ ord c)
+    _ -> internalErr $ "Could not unescape char literal: '" ++ charStr ++ "'"
+
+
+-- | Unescape the escaped characters in a String.
+unescape :: String -> Alex String
+unescape s = case readLitChar s of
+  [(c, s')] -> do
+    cs <- unescape s'
+    return (c:cs)
+  []  -> syntaxErr $ "Could not escape string: '" ++ s ++ "'"
+  _:_ -> internalErr $ "Ambiguous escape for string: '" ++ s ++ "'"
 
 
 -- | Start scanning token of inline C code.

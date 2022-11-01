@@ -550,7 +550,7 @@ genExpr (I.Let [(Nothing, d)] b _) = do
   return (bodyVal, defStms ++ bodyStms)
 genExpr I.Let{}          = fail "Cannot handle mutually recursive bindings"
 genExpr e@(I.App _ _ ty) = do
-  let (fn, args) = second (map fst) $ I.unzipApp e
+  let (fn, args) = second (map fst) $ I.unfoldApp e
   -- args must be non-empty because a is an App
   case fn of
     -- I.Var _ _ -> do

@@ -27,8 +27,8 @@ module IR.IR
   , unfoldLambda
   , extract
   , inject
-  , zipApp
-  , unzipApp
+  , foldApp
+  , unfoldApp
   , isValue
   ) where
 import           Common.Identifiers             ( Binder
@@ -51,7 +51,7 @@ import           Data.Maybe                     ( catMaybes
 import qualified Data.Set                      as S
 import           Data.Set                       ( (\\) )
 import           IR.Types.Type                  ( Annotation
-  , Annotations
+                                                , Annotations
                                                 , pattern Arrow
                                                 , Type
                                                 , unfoldArrow
@@ -274,19 +274,19 @@ which, when unzipped, gives:
 (Var f (A -> B -> C)) [(Var a A, B -> C), (Var b B, C)]
 @@
 
-'unzipApp' is the inverse of 'zipApp'.
+'unfoldApp' is the inverse of 'foldApp'.
 -}
-unzipApp :: Expr t -> (Expr t, [(Expr t, t)])
-unzipApp (App lhs rhs t) =
-  let (fn, args) = unzipApp lhs in (fn, args ++ [(rhs, t)])
-unzipApp e = (e, [])
+unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
+unfoldApp (App lhs rhs t) =
+  let (fn, args) = unfoldApp lhs in (fn, args ++ [(rhs, t)])
+unfoldApp e = (e, [])
 
 {- | Apply a function to zero or more arguments.
 
-'zipApp' is the inverse of 'unzipApp'.
+'foldApp' is the inverse of 'unfoldApp'.
 -}
-zipApp :: Expr t -> [(Expr t, t)] -> Expr t
-zipApp = foldr $ \(a, t) f -> App f a t
+foldApp :: Expr t -> [(Expr t, t)] -> Expr t
+foldApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
 unfoldLambda :: Expr t -> ([Binder], Expr t)
@@ -429,7 +429,7 @@ instance Pretty (Program Type) where
 instance Pretty (Expr ()) where
   pretty a@App{} = pretty nm <+> hsep (parenz . fst <$> args)
    where
-    (nm, args) = unzipApp a
+    (nm, args) = unfoldApp a
     -- insert (usually) necessary parens
     parenz :: Expr () -> Doc ann
     parenz v@(Var _ _) = pretty v  -- variables
@@ -463,7 +463,9 @@ instance Pretty (Expr ()) where
   pretty (Prim New [r] _           ) = pretty "new" <+> pretty r
   pretty (Prim Dup [r] _           ) = pretty "__dup" <+> parens (pretty r)
   pretty (Prim Drop [e, r] _) =
-    pretty "__drop" <+> parens (line <> indent 2 (pretty e) <> line) <+> pretty r
+    pretty "__drop"
+      <+> parens (line <> indent 2 (pretty e) <> line)
+      <+> pretty r
   pretty (Prim Deref [r] _) = pretty "deref" <+> parens (pretty r)
   pretty (Prim Par   es  _) = pretty "par" <+> block dbar (map pretty es)
   pretty (Prim Break []  _) = pretty "break"
@@ -561,9 +563,10 @@ instance Dumpy (Expr Type) where
     -- Where to add binder?
     arms = block bar (map arm as)
     arm (a, e) = dumpy a <+> pretty "=" <+> braces (dumpy e)
-  dumpy (Prim New   [r] t) = typeAnn t $ pretty "new" <+> dumpy r
-  dumpy (Prim Dup   [r] t) = typeAnn t $ pretty "__dup" <+> dumpy r
-  dumpy (Prim Drop  [e, r] t) = typeAnn t $ pretty "__drop" <+> parens (dumpy e) <+> parens (dumpy r)
+  dumpy (Prim New [r] t) = typeAnn t $ pretty "new" <+> dumpy r
+  dumpy (Prim Dup [r] t) = typeAnn t $ pretty "__dup" <+> dumpy r
+  dumpy (Prim Drop [e, r] t) =
+    typeAnn t $ pretty "__drop" <+> parens (dumpy e) <+> parens (dumpy r)
   dumpy (Prim Deref [r] t) = typeAnn t $ pretty "deref" <+> dumpy r
   dumpy (Prim Assign [l, r] t) =
     typeAnn t $ parens $ dumpy l <+> larrow <+> braces (dumpy r)
