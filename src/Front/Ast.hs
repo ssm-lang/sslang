@@ -120,6 +120,26 @@ data Literal
 data Fixity = Infixl Int Identifier
             | Infixr Int Identifier
 
+{- | Apply a function to zero or more arguments.
+
+Suppose we have as source code
+@
+type Color = RGB Int Int Int
+...
+    let x = RGB 203 200 100
+@
+and rgb = Id "RGB"
+    r = Lit (A.LitInt 203)
+    g = Lit (A.LitInt 200)
+    b = Lit (A.LitInt 100),
+then foldApp rgb [r, g, b] returns
+@
+Apply (Apply (Apply (Id RGB) (Lit (LitInt 100))) (Lit (LitInt 200))) (Lit (LitInt 203))
+@
+-}
+foldApp :: Expr -> [Expr] -> Expr
+foldApp = foldr $ \a f -> Apply f a
+
 -- | Collect a type application into the type constructor and its arguments.
 collectTApp :: Typ -> (Typ, [Typ])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
