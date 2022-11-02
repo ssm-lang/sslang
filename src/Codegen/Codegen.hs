@@ -651,7 +651,9 @@ genExpr (I.Match s as t) = do
       destruct <- getsDCon dconDestruct dcon
       cas      <- getsDCon dconCase dcon
       let fieldBinds =
-            zipWith (\field i -> (field, destruct i scrut)) fields [0 ..]
+            zipWith (\field i -> (getAltDefault field, destruct i scrut)) fields [0 ..]
+            where getAltDefault (I.AltDefault b) = b
+                  getAltDefault _ = Nothing
       blk <- withBindings fieldBinds m
       return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do

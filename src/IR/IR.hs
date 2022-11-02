@@ -222,7 +222,7 @@ data Expr t
 
 -- | An alternative in a pattern-match.
 data Alt
-  = AltData DConId [Binder]
+  = AltData DConId [Alt]
   -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
   | AltLit Literal
   -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
@@ -320,7 +320,7 @@ instance HasFreeVars (Expr t) VarId where
    where
     freeAltVars :: (Alt, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
+    altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
     altBinders (AltLit     _                 ) = S.empty
     altBinders (AltDefault (maybeToList -> v)) = S.fromList v
 

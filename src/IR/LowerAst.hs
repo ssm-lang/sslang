@@ -172,9 +172,9 @@ lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltDefault (Just $ I.VarId i)
                         | otherwise = return $ I.AltData (I.DConId i) []
 lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l
 lowerPatAlt (A.PatTup ps) =
-  I.AltData (I.tupleId $ length ps) <$> mapM lowerPatBinder ps
+  I.AltData (I.tupleId $ length ps) <$> mapM lowerPatAlt ps
 lowerPatAlt p@(A.PatApp _) = case A.collectPApp p of
-  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatBinder ps
+  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps
   _ -> Compiler.unexpected "lowerPatAlt: app head should be a data constructor"
 lowerPatAlt (A.PatAnn _ p) = lowerPatAlt p
 lowerPatAlt (A.PatAs _ _) =
