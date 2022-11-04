@@ -95,6 +95,7 @@ data Expr
   | Match Expr [(Pat, Expr)]
   | CQuote String
   | CCall Identifier [Expr]
+  | ListExpr [Expr]
   deriving (Eq, Show)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -119,6 +120,26 @@ data Literal
 data Fixity = Infixl Int Identifier
             | Infixr Int Identifier
 
+{- | Apply a function to zero or more arguments.
+
+Suppose we have as source code
+@
+type Color = RGB Int Int Int
+...
+    let x = RGB 203 200 100
+@
+and rgb = Id "RGB"
+    r = Lit (A.LitInt 203)
+    g = Lit (A.LitInt 200)
+    b = Lit (A.LitInt 100),
+then foldApp rgb [r, g, b] returns
+@
+Apply (Apply (Apply (Id RGB) (Lit (LitInt 100))) (Lit (LitInt 200))) (Lit (LitInt 203))
+@
+-}
+foldApp :: Expr -> [Expr] -> Expr
+foldApp = foldr $ \a f -> Apply f a
+
 -- | Collect a type application into the type constructor and its arguments.
 collectTApp :: Typ -> (Typ, [Typ])
 collectTApp (TApp lhs rhs) = (lf, la ++ [rhs])
@@ -132,8 +153,8 @@ collectApp t               = (t, [])
 
 -- | Collect a pattern application into the destructor and arguments.
 collectPApp :: Pat -> (Pat, [Pat])
-collectPApp (PatApp (p:ps)) = (p, ps)
-collectPApp p = (p, []) -- Note that @PatApp []@ is probably malformed!
+collectPApp (PatApp (p : ps)) = (p, ps)
+collectPApp p                 = (p, []) -- Note that @PatApp []@ is probably malformed!
 
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
@@ -268,7 +289,8 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
-  pretty NoExpr = error "Unexpected NoExpr"
+  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i
