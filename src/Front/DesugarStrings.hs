@@ -8,8 +8,10 @@ import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
                                                 , Program(..)
                                                 , TopDef(..)
+                                                , Literal(..)
                                                 )
-
+import           Data.Char                    ( ord
+                                                )
 -- | Desugar String Literal nodes inside of an AST 'Program'.
 desugarStrings :: Program -> Compiler.Pass Program
 desugarStrings (Program decls) = return $ Program $ desugarTop <$> decls
@@ -23,4 +25,8 @@ desugarStrings (Program decls) = return $ Program $ desugarTop <$> decls
 -- | Transform a node of type LitString into a node of type ListExpr
 -- For ex, (Lit (LitString "abc")) turns into (ListExpr [97, 98, 99])
 desugarExpr :: Expr -> Expr
-desugarExpr e = e -- TODO: actually implement transformation
+desugarExpr (Lit (LitString s)) = ListExpr (convertList s)
+desugarExpr e = e
+
+convertList :: [Char] -> [Expr]
+convertList ls = [Lit (LitInt (toInteger i)) | i <- map ord ls]
