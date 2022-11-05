@@ -61,15 +61,15 @@ segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
   ungenVar (Just v) = ungenId v
   ungenVar Nothing  = Nothing
 
-type VarIdDef t = (VarId, I.Expr t)
+type Def' t = (VarId, I.Expr t)
 
-segmentDefs' :: [VarIdDef t] -> [[VarIdDef t]]
+segmentDefs' :: [Def' t] -> [[Def' t]]
 segmentDefs' = map fromSCC . stronglyConnComp . map toGraph
  where
-  toGraph :: VarIdDef t -> (VarIdDef t, I.VarId, [I.VarId])
+  toGraph :: Def' t -> (Def' t, I.VarId, [I.VarId])
   toGraph d@(v, e) = (d, v, S.toList $ freeVars e)
 
-  fromSCC :: SCC (VarIdDef t) -> [VarIdDef t]
+  fromSCC :: SCC (Def' t) -> [Def' t]
   fromSCC = from
    where
     from (AcyclicSCC d ) = [d]

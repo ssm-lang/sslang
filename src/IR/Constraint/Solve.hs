@@ -313,7 +313,7 @@ register rank pools content = do
 schemeToVariable
   :: Int -> Pools -> Map.Map Ident.TVarId () -> Can.Type -> TC Variable
 schemeToVariable rank pools freeVars srcType =
-  let nameToContent name = FlexVar (Just name)
+  let nameToContent name = FlexVar name
 
       makeVar name _ =
         UF.fresh (Descriptor (nameToContent name) rank noMark Nothing)
@@ -377,7 +377,7 @@ makeCopyHelp maxRank pools variable = do
           FlexVar  _    -> return copy
 
           RigidVar name -> do
-            UF.set copy $ makeDescriptor $ FlexVar (Just name)
+            UF.set copy $ makeDescriptor $ FlexVar name
             return copy
 
           Error -> return copy

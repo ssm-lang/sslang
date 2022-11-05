@@ -55,7 +55,7 @@ data Descriptor = Descriptor
   }
 
 data Content
-  = FlexVar (Maybe Ident.TVarId)
+  = FlexVar Ident.TVarId
   | RigidVar Ident.TVarId
   | Structure FlatType
   | Error
@@ -145,11 +145,10 @@ u8 = TConN "UInt8" []
 
 -- | MAKE FLEX VARIABLES
 
--- TODO: clean up this name thing
 mkFlexVar :: TC Variable
 mkFlexVar = do
   name <- freshName
-  UF.fresh $ mkDescriptor $ FlexVar $ Just name
+  UF.fresh $ mkDescriptor $ FlexVar name
 
 mkRigidVar :: TC Variable
 mkRigidVar = do
@@ -162,20 +161,13 @@ toCanType :: Variable -> TC Can.Type
 toCanType variable = do
   (Descriptor content _ _ _) <- liftIO $ UF.get variable
   case content of
-    Structure term      -> termToCanType term
+    Structure term -> termToCanType term
 
-    FlexVar   maybeName -> case maybeName of
-      Just name -> return (Can.TVar name)
+    FlexVar   name -> return (Can.TVar name)
 
-      Nothing   -> do
-        name <- freshName
-        liftIO $ UF.modify variable
-                           (\desc -> desc { _content = FlexVar (Just name) })
-        return (Can.TVar name)
+    RigidVar  name -> return (Can.TVar name)
 
-    RigidVar name -> return (Can.TVar name)
-
-    Error         -> error "cannot handle Error types in variableToCanType"
+    Error          -> error "cannot handle Error types in variableToCanType"
 
 termToCanType :: FlatType -> TC Can.Type
 termToCanType term = case term of
@@ -199,20 +191,13 @@ toErrorType variable = do
 
 contentToErrorType :: Variable -> Content -> TC ET.Type
 contentToErrorType variable content = case content of
-  Structure term      -> termToErrorType term
+  Structure term -> termToErrorType term
 
-  FlexVar   maybeName -> case maybeName of
-    Just name -> return (ET.FlexVar name)
+  FlexVar   name -> return (ET.FlexVar name)
 
-    Nothing   -> do
-      name <- freshName
-      liftIO $ UF.modify variable
-                         (\desc -> desc { _content = FlexVar (Just name) })
-      return (ET.FlexVar name)
+  RigidVar  name -> return (ET.RigidVar name)
 
-  RigidVar name -> return (ET.RigidVar name)
-
-  Error         -> return ET.Error
+  Error          -> return ET.Error
 
 
 termToErrorType :: FlatType -> TC ET.Type
