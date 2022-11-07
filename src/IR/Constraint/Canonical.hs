@@ -26,6 +26,7 @@ module IR.Constraint.Canonical
   , pattern I8
   , pattern U8
   , tuple
+  , unAnnotations
   ) where
 
 import qualified Common.Identifiers            as Ident
@@ -37,6 +38,7 @@ import           IR.Types.Type                  ( Annotation(..)
                                                 , Type(..)
                                                 , foldArrow
                                                 , tupleId
+                                                , unAnnotations
                                                 , unfoldArrow
                                                 )
 

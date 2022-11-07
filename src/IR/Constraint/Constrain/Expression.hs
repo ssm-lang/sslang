@@ -7,6 +7,8 @@ import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can
 import           IR.Constraint.Canonical        ( (-->) )
+import qualified IR.Constraint.Constrain.Annotation
+                                               as Ann
 import qualified IR.Constraint.Constrain.Pattern
                                                as Pattern
 import           IR.Constraint.Monad            ( TC
@@ -84,8 +86,27 @@ constrainExpr expr expected = do
       I.Prim  prim args     _ -> constrainPrim prim args expected
 
 constrainAttachment :: Attachment -> Type -> Constraint -> TC Constraint
-constrainAttachment (_, u) expected finalConstraint =
-  return $ exists [u] $ CAnd [CEqual (TVarN u) expected, finalConstraint]
+constrainAttachment (anns, u) expected finalConstraint = do
+  (tipe, annotatedCons) <- constrainAnnotations
+    (reverse $ Can.unAnnotations anns)
+    expected
+    finalConstraint
+  return $ exists [u] $ CAnd [CEqual (TVarN u) tipe, annotatedCons]
+
+constrainAnnotations
+  :: [Can.Annotation] -> Type -> Constraint -> TC (Type, Constraint)
+constrainAnnotations annotations expected finalConstraint = case annotations of
+  []           -> return (expected, finalConstraint)
+  (ann : anns) -> do
+    (innerType, innerConstraint) <- constrainAnnotations anns
+                                                         expected
+                                                         finalConstraint
+    (Ann.State rigidMap flexs, tipe) <- Ann.add ann Ann.emptyState
+    let rigids = map snd $ Map.toList rigidMap
+    let bodyCons = CAnd [innerConstraint, CEqual innerType tipe]
+        annCons  = CLet rigids flexs Map.empty bodyCons CTrue
+    return (tipe, annCons)
+
 
 constrainLit :: I.Literal -> Type -> TC Constraint
 constrainLit (I.LitIntegral _) expected = return $ CEqual Type.i32 expected
