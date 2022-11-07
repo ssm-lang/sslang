@@ -88,8 +88,9 @@ desugarExprs :: [A.Expr] -> DesugarFn [A.Expr]
 desugarExprs = mapM desugarExpr
 
 desugarExpr :: A.Expr -> DesugarFn A.Expr
-desugarExpr e@(A.Id  _       ) = return e
-desugarExpr e@(A.Lit _       ) = return e
+desugarExpr e@(A.Id       _  ) = return e
+desugarExpr e@(A.Lit      _  ) = return e
+desugarExpr (  A.ListExpr es ) = A.ListExpr <$> mapM desugarExpr es
 desugarExpr (  A.Apply  e1 e2) = A.Apply <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr (  A.Lambda ps e ) = A.Lambda ps <$> desugarExpr e -- WARN: patterns here are not checked
 desugarExpr (A.OpRegion e opRegion) =
@@ -302,8 +303,9 @@ substId old new = substExpr
     (substExpr e)
     (substOpRegion opRegion)
   substOpRegion A.EOR = A.EOR
-  substExpr e@(A.Id  i       ) = if i == old then A.Id new else e
-  substExpr e@(A.Lit _       ) = e
+  substExpr e@(A.Id       i  ) = if i == old then A.Id new else e
+  substExpr e@(A.Lit      _  ) = e
+  substExpr (  A.ListExpr es ) = A.ListExpr $ map substExpr es
   substExpr (  A.Apply  e1 e2) = A.Apply (substExpr e1) (substExpr e2)
   substExpr (  A.Lambda ps e ) = A.Lambda ps (substExpr e)
   substExpr (A.OpRegion e opRegion) =
