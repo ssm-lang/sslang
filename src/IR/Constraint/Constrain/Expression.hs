@@ -13,6 +13,7 @@ import qualified IR.Constraint.Constrain.Pattern
                                                as Pattern
 import           IR.Constraint.Monad            ( TC
                                                 , freshVar
+                                                , getExtern
                                                 )
 import           IR.Constraint.Type            as Type
 import qualified IR.IR                         as I
@@ -56,9 +57,10 @@ constrainRecDefs defs finalConstraint = do
         defs
         flexVars
       flexHeaders = Map.fromList flexHeaderList
-  headerConstraints <- zipWithM (\(_, e) (_, tipe) -> constrainExpr e tipe)
-                                defs
-                                flexHeaderList
+  headerConstraints <- zipWithM
+    (\(_, e) (_, tipe) -> constrainExprAttached e tipe)
+    defs
+    flexHeaderList
   return $ CLet []
                 flexVars
                 flexHeaders
@@ -68,44 +70,43 @@ constrainRecDefs defs finalConstraint = do
 
 -- | CONSTRAIN EXPRESSIONS
 
+constrainExprAttached :: I.Expr Attachment -> Type -> TC Constraint
+constrainExprAttached expr expected = do
+  let (annotations, u) = I.extract expr
+      anns             = Can.unAnnotations annotations
+  constraint <- constrainExprAnnotated expr anns expected
+  return $ exists [u] $ CAnd [CEqual (TVarN u) expected, constraint]
+
+constrainExprAnnotated
+  :: I.Expr Attachment -> [Can.Annotation] -> Type -> TC Constraint
+constrainExprAnnotated expr [] expected = constrainExpr expr expected
+constrainExprAnnotated expr (Can.AnnDCon _ _ : anns) expected =
+  constrainExprAnnotated expr anns expected
+constrainExprAnnotated expr (ann : anns) expected = do
+  dummyId                          <- Ident.fromId <$> freshVar
+  (Ann.State rigidMap flexs, tipe) <- Ann.add ann
+  innerConstraint                  <- constrainExprAnnotated expr anns tipe
+  return $ CLet { _rigidVars = Map.elems rigidMap
+                , _flexVars  = flexs
+                , _header    = Map.singleton dummyId tipe
+                , _headerCon = innerConstraint
+                , _bodyCon   = CLocal dummyId expected
+                }
+
+
+
 constrainExpr :: I.Expr Attachment -> Type -> TC Constraint
 constrainExpr expr expected = do
-  constraint <- exprConstraint
-  constrainAttachment (I.extract expr) expected constraint
- where
-  exprConstraint = do
-    case expr of
-      I.Var  name _              -> return $ CLocal (Ident.fromId name) expected
-      I.Data name _              -> return $ CLocal (Ident.fromId name) expected
-      I.Lit  lit  _              -> constrainLit lit expected
-      I.App    func       arg  _ -> constrainApp func arg expected
-      I.Lambda binder     body _ -> constrainLambda binder body expected
-      I.Let    binderDefs body _ -> do
-        constrainBinderDefs binderDefs =<< constrainExpr body expected
-      I.Match e    branches _ -> constrainMatch e branches expected
-      I.Prim  prim args     _ -> constrainPrim prim args expected
-
-constrainAttachment :: Attachment -> Type -> Constraint -> TC Constraint
-constrainAttachment (anns, u) expected finalConstraint = do
-  (tipe, annotatedCons) <- constrainAnnotations
-    (reverse $ Can.unAnnotations anns)
-    expected
-    finalConstraint
-  return $ exists [u] $ CAnd [CEqual (TVarN u) tipe, annotatedCons]
-
-constrainAnnotations
-  :: [Can.Annotation] -> Type -> Constraint -> TC (Type, Constraint)
-constrainAnnotations annotations expected finalConstraint = case annotations of
-  []           -> return (expected, finalConstraint)
-  (ann : anns) -> do
-    (innerType, innerConstraint) <- constrainAnnotations anns
-                                                         expected
-                                                         finalConstraint
-    (Ann.State rigidMap flexs, tipe) <- Ann.add ann Ann.emptyState
-    let rigids = map snd $ Map.toList rigidMap
-    let bodyCons = CAnd [innerConstraint, CEqual innerType tipe]
-        annCons  = CLet rigids flexs Map.empty bodyCons CTrue
-    return (tipe, annCons)
+  case expr of
+    I.Var  name _              -> return $ CLocal (Ident.fromId name) expected
+    I.Data name _              -> return $ CLocal (Ident.fromId name) expected
+    I.Lit  lit  _              -> constrainLit lit expected
+    I.App    func       arg  _ -> constrainApp func arg expected
+    I.Lambda binder     body _ -> constrainLambda binder body expected
+    I.Let    binderDefs body _ -> do
+      constrainBinderDefs binderDefs =<< constrainExprAttached body expected
+    I.Match e    branches _ -> constrainMatch e branches expected
+    I.Prim  prim args     _ -> constrainPrim prim args expected
 
 
 constrainLit :: I.Literal -> Type -> TC Constraint
@@ -117,8 +118,8 @@ constrainApp func arg resultType = do
   argVar <- mkFlexVar
   let argType  = TVarN argVar
       funcType = argType ==> resultType
-  funcCon <- constrainExpr func funcType
-  argCon  <- constrainExpr arg argType
+  funcCon <- constrainExprAttached func funcType
+  argCon  <- constrainExprAttached arg argType
   return $ exists [argVar] (CAnd [funcCon, argCon])
 
 constrainLambda :: I.Binder -> I.Expr Attachment -> Type -> TC Constraint
@@ -130,7 +131,7 @@ constrainLambda binder body expected = do
   let argType    = TVarN argVar
       resultType = TVarN resultVar
 
-  bodyCon <- constrainExpr body resultType
+  bodyCon <- constrainExprAttached body resultType
 
   return $ exists [argVar, resultVar] $ CAnd
     [ CLet [] [] (Map.singleton (Ident.fromId argName) argType) CTrue bodyCon
@@ -142,7 +143,7 @@ constrainMatch
 constrainMatch expr branches expected = do
   exprVar <- mkFlexVar
   let exprType = TVarN exprVar
-  exprCon    <- constrainExpr expr exprType
+  exprCon    <- constrainExprAttached expr exprType
 
   branchCons <- mapM
     (\(alt, branchExpr) -> constrainBranch alt branchExpr exprType expected)
@@ -157,13 +158,14 @@ constrainBranch alt expr pExpect bExpect = do
                                                        pExpect
                                                        Pattern.emptyState
 
-  CLet [] pvars headers (CAnd (reverse revCons)) <$> constrainExpr expr bExpect
+  CLet [] pvars headers (CAnd (reverse revCons))
+    <$> constrainExprAttached expr bExpect
 
 constrainPrim :: I.Primitive -> [I.Expr Attachment] -> Type -> TC Constraint
 constrainPrim prim args expected = do
   argVars <- mapM (const mkFlexVar) args
   let argTypes = map TVarN argVars
-  argCons <- zipWithM constrainExpr args argTypes
+  argCons <- zipWithM constrainExprAttached args argTypes
   let fromArgs = foldArrow (argTypes, expected)
   fromPrim <- lookupPrim (length args) prim
   return $ exists argVars $ CAnd (CForeign fromPrim fromArgs : argCons)
@@ -182,13 +184,17 @@ lookupPrim len prim = do
     I.Assign -> return $ Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
     I.After ->
       return $ Can.I32 --> Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
-    I.Now            -> return $ Can.Unit --> Can.I32
-    I.CQuote _       -> return $ Can.TVar "a"
-    I.Loop           -> return $ Can.TVar "a" --> Can.Unit
-    I.Break          -> return Can.Unit
-    I.FfiCall _      -> error "not supporting FfiCall in type-checking yet"
-    I.CCall   _      -> return $ Can.TVar "a"
-    I.PrimOp  primOp -> return $ primOpType primOp
+    I.Now          -> return $ Can.Unit --> Can.I32
+    I.CQuote _     -> return $ Can.TVar "a"
+    I.Loop         -> return $ Can.TVar "a" --> Can.Unit
+    I.Break        -> return Can.Unit
+    I.FfiCall name -> do
+      maybeType <- getExtern name
+      case maybeType of
+        Just canType -> return canType
+        Nothing      -> error $ "Unknown ffi call: " ++ show name
+    I.CCall  _      -> return $ Can.TVar "a"
+    I.PrimOp primOp -> return $ primOpType primOp
     I.Par ->
       let tvs  = take len $ map (("a" <>) . Ident.showId) [(1 :: Int) ..]
           args = map Can.TVar tvs

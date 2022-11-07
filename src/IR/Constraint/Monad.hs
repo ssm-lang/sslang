@@ -8,6 +8,7 @@ import           Common.Identifiers             ( DConId(..)
 import qualified Common.Identifiers            as Ident
 import           Control.Monad.State            ( StateT )
 import qualified Control.Monad.State           as State
+import           Data.Bifunctor                 ( second )
 import qualified Data.Map.Strict               as Map
 import           GHC.IO.Unsafe                  ( unsafePerformIO )
 import qualified IR.Constraint.Canonical       as Can
@@ -24,6 +25,8 @@ data TCState = TCState
   { _freshName :: Int -- fresh tvar name
   , _freshVar  :: Int -- fresh var name for replace binders in tc
   , _dconMap   :: DConMap
+  , _kindMap   :: Map.Map TConId Can.Kind
+  , _externMap :: Map.Map VarId Can.Type
   }
 
 runTC :: TCState -> TC a -> a
@@ -31,7 +34,13 @@ runTC state m = unsafePerformIO $ State.evalStateT m state
 
 mkTCState :: I.Program Can.Annotations -> TCState
 mkTCState prog =
-  TCState { _freshName = 0, _freshVar = 0, _dconMap = mkDConMap prog }
+  let kenv = Map.fromList $ map (second $ length . I.targs) $ I.typeDefs prog
+  in  TCState { _freshName = 0
+              , _freshVar  = 0
+              , _dconMap   = mkDConMap prog
+              , _kindMap   = Map.union kenv Can.builtinKinds
+              , _externMap = Map.fromList $ I.externDecls prog
+              }
 
 mkDConMap :: I.Program Can.Annotations -> DConMap
 mkDConMap I.Program { I.typeDefs = tdefs } = foldl
@@ -63,3 +72,13 @@ getDConInfo :: DConId -> TC (Maybe DConInfo)
 getDConInfo dcon = do
   dconMap <- State.gets _dconMap
   return $ Map.lookup dcon dconMap
+
+getKind :: TConId -> TC (Maybe Can.Kind)
+getKind tcon = do
+  kenv <- State.gets _kindMap
+  return $ Map.lookup tcon kenv
+
+getExtern :: VarId -> TC (Maybe Can.Type)
+getExtern var = do
+  externs <- State.gets _externMap
+  return $ Map.lookup var externs

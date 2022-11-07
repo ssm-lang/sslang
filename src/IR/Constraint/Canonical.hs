@@ -27,6 +27,8 @@ module IR.Constraint.Canonical
   , pattern U8
   , tuple
   , unAnnotations
+  , annToType
+  , builtinKinds
   ) where
 
 import qualified Common.Identifiers            as Ident
@@ -36,6 +38,7 @@ import qualified IR.IR                         as I
 import           IR.Types.Type                  ( Annotation(..)
                                                 , Annotations(..)
                                                 , Type(..)
+                                                , builtinKinds
                                                 , foldArrow
                                                 , tupleId
                                                 , unAnnotations
@@ -120,3 +123,15 @@ pattern U8 = TCon "UInt8" []
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
 tuple ts = TCon (tupleId $ length ts) ts
+
+
+-- | ANNOTATION
+
+annToType :: Annotation -> Type
+annToType ann = case ann of
+  AnnDCon _ _     -> error "No need for AnnDCon anymore."
+  AnnType canType -> canType
+  AnnArrows paramAnns retAnn ->
+    let paramCanTypes = map annToType paramAnns
+        retCanType    = annToType retAnn
+    in  foldArrow (paramCanTypes, retCanType)
