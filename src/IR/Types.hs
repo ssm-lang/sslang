@@ -4,6 +4,6 @@ module IR.Types
   , typecheckProgram
   ) where
 
--- import           IR.Constraint.Typechecking     ( typecheckProgram )
+import           IR.Constraint.Typechecking     ( typecheckProgram )
 import           IR.Types.Type
-import           IR.Types.Typechecking          ( typecheckProgram )
+-- import           IR.Types.Typechecking          ( typecheckProgram )
