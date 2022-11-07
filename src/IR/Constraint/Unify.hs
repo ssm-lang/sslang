@@ -97,7 +97,7 @@ actuallyUnify context@(Context _ (Descriptor firstContent _ _ _) _ (Descriptor s
 
 
 unifyFlex :: Context -> Content -> Content -> Unify ()
-unifyFlex context content otherContent = case otherContent of
+unifyFlex context _ otherContent = case otherContent of
   Error       -> merge context Error
 
   FlexVar   _ -> merge context otherContent

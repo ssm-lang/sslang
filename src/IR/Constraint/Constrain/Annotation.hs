@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module IR.Constraint.Constrain.Annotation where
 
-import qualified Common.Compiler               as Compiler
 import qualified Common.Identifiers            as Ident
-import qualified Control.Monad.Except          as Except
 import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can

@@ -195,7 +195,7 @@ toErrorType variable = do
 
 
 contentToErrorType :: Variable -> Content -> TC ET.Type
-contentToErrorType variable content = case content of
+contentToErrorType _ content = case content of
   Structure term -> termToErrorType term
 
   FlexVar   name -> return (ET.FlexVar name)
