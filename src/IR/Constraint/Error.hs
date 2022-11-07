@@ -2,7 +2,6 @@
 
 module IR.Constraint.Error where
 
-import qualified Common.Compiler               as Compiler
 import qualified Common.Identifiers            as Ident
 
 data Type
@@ -22,28 +21,22 @@ data Error
   | BadPattern Type Type
   | InfiniteType Ident.Identifier Type
 
-toCompilerError :: Error -> Compiler.Error
-toCompilerError err = case err of
+toErrorString :: Error -> String
+toErrorString err = case err of
   BadExpr actualType expectedType ->
-    Compiler.TypeError
-      $  Compiler.fromString
-      $  "Ill-typed expression. Expected "
+    "Ill-typed expression. Expected "
       ++ show expectedType
       ++ ", but got "
       ++ show actualType
 
   BadPattern actualType expectedType ->
-    Compiler.TypeError
-      $  Compiler.fromString
-      $  "Ill-typed pattern. Expected "
+    "Ill-typed pattern. Expected "
       ++ show expectedType
       ++ ", but got "
       ++ show actualType
 
   InfiniteType name overallType ->
-    Compiler.TypeError
-      $  Compiler.fromString
-      $  "Infinite type for variable "
+    "Infinite type for variable "
       ++ show name
       ++ ", which has the infinite type: "
       ++ show overallType

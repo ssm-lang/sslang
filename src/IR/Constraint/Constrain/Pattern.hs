@@ -11,6 +11,7 @@ import qualified IR.Constraint.Instantiate     as Inst
 import           IR.Constraint.Monad            ( TC
                                                 , freshVar
                                                 , getDConInfo
+                                                , throwError
                                                 )
 import           IR.Constraint.Type            as Type
 import qualified IR.IR                         as I
@@ -39,7 +40,7 @@ add alt expected state = case alt of
         addData typeName typeVarNames dcon argTypes bs expected state
       Nothing ->
         -- this should already be found in scope checking
-        error $ "Pattern: data constructor does not exist - " ++ show dcon
+        throwError $ "Pattern: data constructor does not exist - " ++ show dcon
 
 emptyState :: State
 emptyState = State Map.empty [] []
@@ -59,12 +60,8 @@ addData
   -> State
   -> TC State
 addData typeName typeVarNames ctorName ctorArgTypes bs expected state = do
-  -- TODO: this error is not checked by any previous passes
-  -- need to throw this error with Compiler.throwError instead
-  -- but we are not inside Compiler.Pass right now
-  -- should I actually just add a ExceptT inside TC monad?
   unless (length ctorArgTypes == length bs)
-    $  error
+    $  throwError
     $  "Pattern: wrong number of argument - "
     ++ show ctorName
   varPairs <- mapM (\var -> (,) var <$> mkFlexVar) typeVarNames

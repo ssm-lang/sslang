@@ -1,11 +1,14 @@
 module IR.Constraint.Monad where
 
+import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( DConId(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , VarId(..)
                                                 )
 import qualified Common.Identifiers            as Ident
+import qualified Control.Monad.Except          as Except
+import           Control.Monad.Except           ( ExceptT )
 import           Control.Monad.State            ( StateT )
 import qualified Control.Monad.State           as State
 import           Data.Bifunctor                 ( second )
@@ -15,7 +18,7 @@ import qualified IR.Constraint.Canonical       as Can
 import qualified IR.IR                         as I
 
 
-type TC a = StateT TCState IO a
+type TC a = StateT TCState (ExceptT Compiler.Error IO) a
 
 type DConInfo = (DConId, TConId, [TVarId], [Can.Type])
 
@@ -29,8 +32,8 @@ data TCState = TCState
   , _externMap :: Map.Map VarId Can.Type
   }
 
-runTC :: TCState -> TC a -> a
-runTC state m = unsafePerformIO $ State.evalStateT m state
+runTC :: TCState -> TC a -> Either Compiler.Error a
+runTC state m = unsafePerformIO $ Except.runExceptT $ State.evalStateT m state
 
 mkTCState :: I.Program Can.Annotations -> TCState
 mkTCState prog =
@@ -82,3 +85,6 @@ getExtern :: VarId -> TC (Maybe Can.Type)
 getExtern var = do
   externs <- State.gets _externMap
   return $ Map.lookup var externs
+
+throwError :: String -> TC a
+throwError s = Except.throwError $ Compiler.TypeError $ Compiler.fromString s

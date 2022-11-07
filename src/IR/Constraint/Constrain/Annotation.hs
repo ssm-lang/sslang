@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module IR.Constraint.Constrain.Annotation where
 
+import qualified Common.Compiler               as Compiler
 import qualified Common.Identifiers            as Ident
+import qualified Control.Monad.Except          as Except
 import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can
 import           IR.Constraint.Monad            ( TC
                                                 , getKind
+                                                , throwError
                                                 )
 import           IR.Constraint.Type            as Type
 
@@ -49,9 +52,9 @@ addTypeWithHoles canType state@(State rigidMap flexes) = case canType of
             (state, [])
             args
           return (state', TConN tcon ts)
-        else error $ "Wrong arity in type annotation for " ++ show tcon
+        else throwError $ "Wrong arity in type annotation for " ++ show tcon
       Nothing ->
-        error
+        throwError
           $  "In type annotation, type constructore does not exists: "
           ++ show tcon
 

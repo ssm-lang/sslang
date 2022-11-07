@@ -14,6 +14,7 @@ import qualified IR.Constraint.Constrain.Pattern
 import           IR.Constraint.Monad            ( TC
                                                 , freshVar
                                                 , getExtern
+                                                , throwError
                                                 )
 import           IR.Constraint.Type            as Type
 import qualified IR.IR                         as I
@@ -192,7 +193,7 @@ lookupPrim len prim = do
       maybeType <- getExtern name
       case maybeType of
         Just canType -> return canType
-        Nothing      -> error $ "Unknown ffi call: " ++ show name
+        Nothing      -> throwError $ "Unknown ffi call: " ++ show name
     I.CCall  _      -> return $ Can.TVar "a"
     I.PrimOp primOp -> return $ primOpType primOp
     I.Par ->

@@ -19,6 +19,7 @@ constrain prog = do
 
 -- | EXTERN DECLS
 
+-- TODO: do I still need this? depends on whether these are only used in fficall prim
 constrainExternDecls
   :: [(Ident.VarId, Can.Type)] -> Constraint -> TC Constraint
 constrainExternDecls decls finalConstraint =

@@ -11,7 +11,9 @@ import qualified Data.Vector.Mutable           as MVector
 import           GHC.Base                       ( liftM )
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Error           as ET
-import           IR.Constraint.Monad            ( TC )
+import           IR.Constraint.Monad            ( TC
+                                                , throwError
+                                                )
 import qualified IR.Constraint.Occurs          as Occurs
 import           IR.Constraint.Type            as Type
 import qualified IR.Constraint.Unify           as Unify
@@ -19,7 +21,7 @@ import qualified IR.Constraint.UnionFind       as UF
 
 -- | RUN SOLVER
 
-run :: Constraint -> TC (Either [ET.Error] ())
+run :: Constraint -> TC ()
 run constraint = do
   pools              <- MVector.replicate 8 []
   (State _ _ errors) <- solve Map.empty
@@ -27,7 +29,11 @@ run constraint = do
                               pools
                               emptyState
                               constraint
-  if null errors then return $ Right () else return $ Left errors
+  -- throw all the errors
+  -- if null errors then return $ Right () else return $ Left errors
+  case errors of
+    []   -> return ()
+    errs -> throwError (concatMap ET.toErrorString errs)
 
 emptyState :: State
 emptyState = State Map.empty (nextMark noMark) []
@@ -112,7 +118,7 @@ solve env rank pools state constraint = case constraint of
   CLet [] [] header headerCon subCon -> do
     state1 <- solve env rank pools state headerCon
     locals <- traverse (typeToVariable rank pools) header
-    let newEnv = Map.union env locals
+    let newEnv = Map.union locals env
     state2 <- solve newEnv rank pools state1 subCon
     foldM occurs state2 $ Map.toList locals
 
@@ -145,7 +151,7 @@ solve env rank pools state constraint = case constraint of
     -- check that things went well
     mapM_ isGeneric rigids
 
-    let newEnv    = Map.union env locals
+    let newEnv    = Map.union locals env
     let tempState = State savedEnv finalMark errors
     newState <- solve newEnv rank nextPools tempState subCon
 
