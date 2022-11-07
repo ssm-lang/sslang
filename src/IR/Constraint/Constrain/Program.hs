@@ -72,4 +72,4 @@ constrainDeclaration name scheme finalConstraint = do
   v <- mkFlexVar
   let t      = TVarN v
   let header = Map.singleton (Ident.fromId name) t
-  return $ CLet [] [v] header (CForeign name scheme t) finalConstraint
+  return $ CLet [] [v] header (CForeign scheme t) finalConstraint

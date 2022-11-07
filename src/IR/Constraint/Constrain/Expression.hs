@@ -1,9 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IR.Constraint.Constrain.Expression where
 
 import qualified Common.Identifiers            as Ident
 import           Control.Monad                  ( zipWithM )
 import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
+import qualified IR.Constraint.Canonical       as Can
+import           IR.Constraint.Canonical        ( (-->) )
 import qualified IR.Constraint.Constrain.Pattern
                                                as Pattern
 import           IR.Constraint.Monad            ( TC
@@ -77,8 +80,8 @@ constrainExpr expr expected = do
       I.Lambda binder     body _ -> constrainLambda binder body expected
       I.Let    binderDefs body _ -> do
         constrainBinderDefs binderDefs =<< constrainExpr body expected
-      I.Match expr branches _ -> constrainMatch expr branches expected
-      I.Prim _ _ _ -> error "Prim constraint generation not supported yet"
+      I.Match e    branches _ -> constrainMatch e branches expected
+      I.Prim  prim args     _ -> constrainPrim prim args expected
 
 constrainAttachment :: Attachment -> Type -> Constraint -> TC Constraint
 constrainAttachment (_, u) expected finalConstraint =
@@ -135,6 +138,66 @@ constrainBranch alt expr pExpect bExpect = do
 
   CLet [] pvars headers (CAnd (reverse revCons)) <$> constrainExpr expr bExpect
 
+constrainPrim :: I.Primitive -> [I.Expr Attachment] -> Type -> TC Constraint
+constrainPrim prim args expected = do
+  argVars <- mapM (const mkFlexVar) args
+  let argTypes = map TVarN argVars
+  argCons <- zipWithM constrainExpr args argTypes
+  let fromArgs = foldArrow (argTypes, expected)
+  fromPrim <- lookupPrim (length args) prim
+  return $ exists argVars $ CAnd (CForeign fromPrim fromArgs : argCons)
+
+
+lookupPrim :: Int -> I.Primitive -> TC Can.Scheme
+lookupPrim len prim = do
+  Can.schemeOf <$> primType
+ where
+  primType :: TC Can.Type
+  primType = case prim of
+    I.New    -> return $ Can.TVar "a" --> Can.Ref (Can.TVar "a")
+    I.Dup    -> return $ Can.TVar "a" --> Can.TVar "a"
+    I.Drop   -> return $ Can.TVar "a" --> Can.Unit
+    I.Deref  -> return $ Can.Ref (Can.TVar "a") --> Can.TVar "a"
+    I.Assign -> return $ Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
+    I.After ->
+      return $ Can.I32 --> Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
+    I.Now            -> return $ Can.Unit --> Can.I32
+    I.CQuote _       -> return $ Can.TVar "a"
+    I.Loop           -> return $ Can.TVar "a" --> Can.Unit
+    I.Break          -> return Can.Unit
+    I.FfiCall _      -> error "not supporting FfiCall in type-checking yet"
+    I.CCall   _      -> return $ Can.TVar "a"
+    I.PrimOp  primOp -> return $ primOpType primOp
+    I.Par ->
+      let tvs  = take len $ map (("a" <>) . Ident.showId) [(1 :: Int) ..]
+          args = map Can.TVar tvs
+          ret  = Can.tuple args
+      in  return $ Can.foldArrow (args, ret)
+
+    I.Wait ->
+      let tvs  = take len $ map (("a" <>) . Ident.showId) [(1 :: Int) ..]
+          args = map Can.TVar tvs
+          ret  = Can.Unit
+      in  return $ Can.foldArrow (args, ret)
+
+  primOpType :: I.PrimOp -> Can.Type
+  primOpType primOp = case primOp of
+    I.PrimNeg    -> Can.I32 --> Can.I32
+    I.PrimNot    -> Can.I32 --> Can.I32
+    I.PrimBitNot -> Can.I32 --> Can.I32
+    I.PrimAdd    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimSub    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimMul    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimDiv    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimMod    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimBitAnd -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimBitOr  -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimEq     -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimNeq    -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimGt     -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimGe     -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimLt     -> Can.I32 --> Can.I32 --> Can.I32
+    I.PrimLe     -> Can.I32 --> Can.I32 --> Can.I32
 
 -- | BINDER HELPERS
 

@@ -21,7 +21,7 @@ data Constraint
   | CEqual Type Type
   | CPattern Type Type
   | CLocal Ident.Identifier Type
-  | CForeign Ident.Identifier Can.Scheme Type
+  | CForeign Can.Scheme Type
   | CAnd [Constraint]
   | CLet { _rigidVars :: [Variable]
          , _flexVars :: [Variable]
@@ -101,6 +101,11 @@ nextMark (Mark mark) = Mark (mark + 1)
 
 
 -- | BUILT-IN TYPES
+
+-- | Fold a list of argument types and a return type into an 'Arrow' 'Type'.
+foldArrow :: ([Type], Type) -> Type
+foldArrow (a : as, rt) = a ==> foldArrow (as, rt)
+foldArrow ([]    , t ) = t
 
 infixr 0 ==>
 (==>) :: Type -> Type -> Type

@@ -76,7 +76,7 @@ solve env rank pools state constraint = case constraint of
         -- introduce rank pools vars
         return $ addError state $ ET.BadExpr actualType expectedType
 
-  CForeign name (Can.Forall freeVars srcType) expectation -> do
+  CForeign (Can.Forall freeVars srcType) expectation -> do
     actual   <- schemeToVariable rank pools freeVars srcType
     expected <- typeToVariable rank pools expectation
     answer   <- Unify.unify actual expected

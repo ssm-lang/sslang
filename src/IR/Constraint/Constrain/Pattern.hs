@@ -1,12 +1,10 @@
 module IR.Constraint.Constrain.Pattern where
 
-import qualified Common.Compiler               as Compiler
 import qualified Common.Identifiers            as Ident
 import           Control.Monad                  ( foldM
                                                 , unless
                                                 )
 import           Data.Bifunctor                 ( second )
-import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Instantiate     as Inst
