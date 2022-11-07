@@ -2,9 +2,10 @@ module IR.Constraint.Constrain.Expression where
 
 import qualified Common.Identifiers            as Ident
 import           Control.Monad                  ( zipWithM )
-import           Data.Bifunctor                 ( first )
 import           Data.Foldable                  ( foldrM )
 import qualified Data.Map.Strict               as Map
+import qualified IR.Constraint.Constrain.Pattern
+                                               as Pattern
 import           IR.Constraint.Monad            ( TC
                                                 , freshVar
                                                 )
@@ -29,7 +30,7 @@ constrainBinderDefs :: [BinderDef] -> Constraint -> TC Constraint
 constrainBinderDefs binderDefs finalConstraint = do
   defs <- mapM
     (\(binder, expr) -> do
-      name <- binderToVar binder
+      name <- binderToVarId binder
       return (name, expr)
     )
     binderDefs
@@ -76,7 +77,8 @@ constrainExpr expr expected = do
       I.Lambda binder     body _ -> constrainLambda binder body expected
       I.Let    binderDefs body _ -> do
         constrainBinderDefs binderDefs =<< constrainExpr body expected
-      _ -> error "Constraint generation not supported yet"
+      I.Match expr branches _ -> constrainMatch expr branches expected
+      I.Prim _ _ _ -> error "Prim constraint generation not supported yet"
 
 constrainAttachment :: Attachment -> Type -> Constraint -> TC Constraint
 constrainAttachment (_, u) expected finalConstraint =
@@ -97,7 +99,7 @@ constrainApp func arg resultType = do
 
 constrainLambda :: I.Binder -> I.Expr Attachment -> Type -> TC Constraint
 constrainLambda binder body expected = do
-  argName   <- binderToVar binder
+  argName   <- binderToVarId binder
 
   argVar    <- mkFlexVar
   resultVar <- mkFlexVar
@@ -111,9 +113,32 @@ constrainLambda binder body expected = do
     , CEqual (argType ==> resultType) expected
     ]
 
+constrainMatch
+  :: I.Expr Attachment -> [(I.Alt, I.Expr Attachment)] -> Type -> TC Constraint
+constrainMatch expr branches expected = do
+  exprVar <- mkFlexVar
+  let exprType = TVarN exprVar
+  exprCon    <- constrainExpr expr exprType
+
+  branchCons <- mapM
+    (\(alt, branchExpr) -> constrainBranch alt branchExpr exprType expected)
+    branches
+
+  return $ exists [exprVar] $ CAnd [exprCon, CAnd branchCons]
+
+
+constrainBranch :: I.Alt -> I.Expr Attachment -> Type -> Type -> TC Constraint
+constrainBranch alt expr pExpect bExpect = do
+  (Pattern.State headers pvars revCons) <- Pattern.add alt
+                                                       pExpect
+                                                       Pattern.emptyState
+
+  CLet [] pvars headers (CAnd (reverse revCons)) <$> constrainExpr expr bExpect
+
 
 -- | BINDER HELPERS
 
-binderToVar :: I.Binder -> TC I.VarId
-binderToVar Nothing    = freshVar
-binderToVar (Just var) = return var
+
+binderToVarId :: I.Binder -> TC Ident.VarId
+binderToVarId Nothing    = freshVar
+binderToVarId (Just var) = return var
