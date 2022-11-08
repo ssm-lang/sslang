@@ -62,11 +62,19 @@ constrainRecDefs defs finalConstraint = do
     (\(_, e) (_, tipe) -> constrainExprAttached e tipe)
     defs
     flexHeaderList
-  return $ CLet []
-                flexVars
-                flexHeaders
-                (CLet [] [] flexHeaders CTrue (CAnd headerConstraints))
-                finalConstraint
+  if shouldGeneralize
+    then return $ CLet []
+                       flexVars
+                       flexHeaders
+                       (CLet [] [] flexHeaders CTrue (CAnd headerConstraints))
+                       finalConstraint
+    else return $ exists flexVars $ CLet
+      []
+      []
+      flexHeaders
+      (CLet [] [] flexHeaders CTrue (CAnd headerConstraints))
+      finalConstraint
+  where shouldGeneralize = all (I.isValue . snd) defs -- see concept: value restriction
 
 
 -- | CONSTRAIN EXPRESSIONS

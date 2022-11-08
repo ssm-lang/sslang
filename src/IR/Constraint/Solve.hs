@@ -118,7 +118,7 @@ solve env rank pools state constraint = case constraint of
   CLet [] [] header headerCon subCon -> do
     state1 <- solve env rank pools state headerCon
     locals <- traverse (typeToVariable rank pools) header
-    let newEnv = Map.union env locals
+    let newEnv = Map.union locals env
     state2 <- solve newEnv rank pools state1 subCon
     foldM occurs state2 $ Map.toList locals
 
