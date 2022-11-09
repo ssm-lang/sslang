@@ -256,9 +256,7 @@ liftLambdasInArm (I.AltDefault b, arm) = do
   return (I.AltDefault b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ do
-    mapM_ addCurrentScope (mapMaybe getAltDefault bs)
+    mapM_ addCurrentScope (mapMaybe I.getAltDefault bs)
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltData d bs, liftedArm)
-  where getAltDefault (I.AltDefault b) = b
-        getAltDefault _ = Nothing
+  return (I.AltData d bs, liftedArm)   

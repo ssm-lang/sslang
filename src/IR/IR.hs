@@ -30,6 +30,7 @@ module IR.IR
   , foldApp
   , unfoldApp
   , isValue
+  , getAltDefault
   ) where
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
@@ -306,6 +307,12 @@ isValue Data{}   = True
 isValue Lit{}    = True
 isValue Lambda{} = True
 isValue _        = False
+
+-- £ü Retrieve binder from Alt, assuming it is AltDefault.
+getAltDefault :: Alt -> Binder
+getAltDefault (AltDefault b) = b
+getAltDefault _ = error 
+  "Compiler Error: Should not have recursive patterns here"
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
