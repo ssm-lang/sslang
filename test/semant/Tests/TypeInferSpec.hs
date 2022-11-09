@@ -9,7 +9,7 @@ import qualified IR
 import qualified IR.IR                         as I
 
 import           Control.Monad                  ( (>=>) )
-import           Debug.Trace                    ( traceM )
+import Debug.Trace (traceM)
 
 infer :: HasCallStack => String -> Pass (I.Program I.Type)
 infer = Front.run def >=> IR.lower def >=> IR.typecheck def
@@ -38,7 +38,7 @@ spec = do
       typeErrors [here|
         f (x: Int) = deref x
       |]
-    it "respects the annotated return type of a function" $ do
+    it "respects the annotated return type of a function" $ do 
       typeErrors [here|
         eof (cout : &Int) -> () =
           wait cout
@@ -101,10 +101,8 @@ spec = do
             let id x : Int -> Int = x
             id 3
       |]
-    it
-        "accepts stacked type annotations that gradually specialize the identity function"
-      $ do
-          typeChecks [here|
+    it "accepts stacked type annotations that gradually specialize the identity function" $ do
+      typeChecks [here|
         f _ =
             let id x = x
             (id : a -> a : () -> ()) ()
@@ -127,9 +125,8 @@ spec = do
       |]
 
   describe "bad type annotations" $ do
-    it "rejects a type annotation that over-generalizes a function argument"
-      $ do
-          typeErrors [here|
+    it "rejects a type annotation that over-generalizes a function argument" $ do
+      typeErrors [here|
         addOne (x: a) = x + 1
       |]
     it "rejects a type annotation that over-generalizes a variable" $ do
@@ -137,46 +134,36 @@ spec = do
       typeErrors [here|
         addOne x = (x: a) + 1
       |]
-    it
-        "rejects a stacked type annotations that generalize an already-specialized identity function"
-      $ do
-          typeErrors [here|
+    it "rejects a stacked type annotations that generalize an already-specialized identity function" $ do
+      typeErrors [here|
         f _ =
             let id x = x
             // Error: a -> a is not more specific than Int -> Int
             (id : Int -> Int : a -> a) 3
       |]
-    it
-        "rejects applying an incorrectly specialized identity function (annotated variable)"
-      $ do
-          typeErrors [here|
+    it "rejects applying an incorrectly specialized identity function (annotated variable)" $ do
+      typeErrors [here|
         f _ =
             let id x = x
             // Error: id is specialized to Int, cannot be applied to ()
             (id : Int -> Int) ()
       |]
-    it
-        "rejects applying an incorrectly specialized identity function (annotated type)"
-      $ do
-          typeErrors [here|
+    it "rejects applying an incorrectly specialized identity function (annotated type)" $ do
+      typeErrors [here|
         f _ =
             let id x : Int -> Int = x
             // Error: id is specialized to Int -> Int, cannot be applied to ()
             id ()
       |]
-    it
-        "rejects applying an incorrectly specialized identity function (annotated return type)"
-      $ do
-          typeErrors [here|
+    it "rejects applying an incorrectly specialized identity function (annotated return type)" $ do
+      typeErrors [here|
         f _ =
             let id x -> Int = x
             // Error: id is specialized to Int -> Int, cannot be applied to ()
             id ()
       |]
-    it
-        "rejects applying an incorrectly specialized identity function (annotated argument type)"
-      $ do
-          typeErrors [here|
+    it "rejects applying an incorrectly specialized identity function (annotated argument type)" $ do
+      typeErrors [here|
         f _ =
           let id (x: Int) = x
           // Error: id is specialized to Int -> Int, cannot be applied to ()
@@ -191,34 +178,28 @@ spec = do
         f x =
           let y = x
           y
-      |]
-        `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x: a) -> a =
           let y = x
           y
       |]
-    it "correctly captures non-free unification variable in nested functions"
-      $ do
-          pendingWith "Correct mangling of type variables"
-          [here|
+    it "correctly captures non-free unification variable in nested functions" $ do
+      pendingWith "Correct mangling of type variables"
+      [here|
         f x =
           let g y = x
           g
-      |]
-            `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x: a) -> (b -> a) =
           let g y = x
           g
       |]
-    it
-        "correctly captures non-free unification variables in nested functions with name shadowing"
-      $ do
-          [here|
+    it "correctly captures non-free unification variables in nested functions with name shadowing" $ do
+      [here|
         f x =
           let g x y = x
           g x
-      |]
-            `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x: a) -> (b -> a) =
           let g x y = x
           g x
@@ -229,21 +210,17 @@ spec = do
         f x =
           let g x = x
           g
-      |]
-        `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x : a) -> (b -> b) =
           let g x = x
           g
       |]
-    it
-        "correctly generalizes a nested function (with name shadowing) when possible"
-      $ do
-          [here|
+    it "correctly generalizes a nested function (with name shadowing) when possible" $ do
+      [here|
         f x =
           let g y x = x
           g x
-      |]
-            `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x : a) -> (b -> b) =
           let g y x = x
           g x
@@ -253,8 +230,7 @@ spec = do
         f x =
           let g y = x
           g g
-      |]
-        `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x : a) -> a =
           let g y = x
           g g
@@ -264,21 +240,17 @@ spec = do
         f x =
           let g x = x
           g g
-      |]
-        `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x : a) -> (b -> b) =
           let g x = x
           g g
       |]
-    it
-        "correctly generalizes a nested function (with name shadowing) when possible"
-      $ do
-          [here|
+    it "correctly generalizes a nested function (with name shadowing) when possible" $ do
+      [here|
         f x =
           let g y = x y
           g
-      |]
-            `typeChecksAs` [here|
+      |] `typeChecksAs` [here|
         f (x: (a -> b)) -> (a -> b) =
           let g y = x y
           g
@@ -311,21 +283,20 @@ spec = do
       unknown2int `shouldPassButNotAs` none
       int2int `shouldPassButNotAs` none
 
-  describe "identity function annotated with type variables (comparison-based)"
-    $ do
-        let a2a = infer [here|
+  describe "identity function annotated with type variables (comparison-based)" $ do
+    let a2a = infer [here|
           id (x: a) = x
         |]
-            b2b = infer [here|
+        b2b = infer [here|
           id (x: b) = x
         |]
-            none = infer [here|
+        none = infer [here|
           id x = x
         |]
-        it "correctly interprets type variables in annotations" $ do
-          a2a `shouldPassAs` none
-        it "treats type variables the same modulo alpha-equivalence" $ do
-          a2a `shouldPassAs` b2b
+    it "correctly interprets type variables in annotations" $ do
+      a2a `shouldPassAs` none
+    it "treats type variables the same modulo alpha-equivalence" $ do
+      a2a `shouldPassAs` b2b
 
   describe "checks kindness of type constructors" $ do
     it "rejects partially-applied, user-defined type constructos" $ do
@@ -383,8 +354,7 @@ spec = do
             main(led : &Int) -> ((), ()) =
               par ((slow: &Int -> ()) (led: &Int): ())
                   ((fast: &Int -> ()) (led: &Int): ())
-        |]
-        `typeChecksAs` [here|
+        |] `typeChecksAs` [here|
             toggle(led) =
               led <- 1 - deref led
             slow(led) =
@@ -449,10 +419,10 @@ spec = do
 
             flattenEither x: MyEither (MyEither a b) (MyEither b a) -> MyEither a b =
               match x
-                MyLeft  (MyLeft a) = MyLeft a
-                MyLeft  (MyRight b)  = MyRight b
-                MyRight (MyLeft b)  = MyRight b
-                MyRight (MyRight a) = MyLeft a
+                MyLeft  (MyRight a) = MyLeft a
+                MyLeft  (MyLeft b)  = MyRight b
+                MyRight (MyLeft a)  = MyLeft a
+                MyRight (MyRight b) = MyRight b
             |]
 
     it "typechecks a program with a specialized complicated pattern match" $ do
