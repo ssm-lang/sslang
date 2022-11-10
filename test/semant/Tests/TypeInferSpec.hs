@@ -9,7 +9,6 @@ import qualified IR
 import qualified IR.IR                         as I
 
 import           Control.Monad                  ( (>=>) )
-import Debug.Trace (traceM)
 
 infer :: HasCallStack => String -> Pass (I.Program I.Type)
 infer = Front.run def >=> IR.lower def >=> IR.typecheck def
@@ -419,10 +418,10 @@ spec = do
 
             flattenEither x: MyEither (MyEither a b) (MyEither b a) -> MyEither a b =
               match x
-                MyLeft  (MyRight a) = MyLeft a
-                MyLeft  (MyLeft b)  = MyRight b
-                MyRight (MyLeft a)  = MyLeft a
-                MyRight (MyRight b) = MyRight b
+                MyLeft  (MyLeft a) = MyLeft a
+                MyLeft  (MyRight b)  = MyRight b
+                MyRight (MyRight a)  = MyLeft a
+                MyRight (MyLeft b) = MyRight b
             |]
 
     it "typechecks a program with a specialized complicated pattern match" $ do
@@ -434,10 +433,10 @@ spec = do
 
             flattenEither x: MyEither (MyEither a ()) (MyEither () a) -> MyEither a () =
               match x
-                MyLeft  (MyRight a) = MyLeft a
-                MyLeft  (MyLeft b)  = MyRight b
-                MyRight (MyLeft a)  = MyLeft a
-                MyRight (MyRight b) = MyRight b
+                MyLeft  (MyLeft a) = MyLeft a
+                MyLeft  (MyRight b)  = MyRight b
+                MyRight (MyRight a)  = MyLeft a
+                MyRight (MyLeft b) = MyRight b
             |]
 
     it "typechecks a program with complicated patterns and annotations" $ do
