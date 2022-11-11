@@ -27,6 +27,7 @@ import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
+import IR.Types (tupleId)
 
 -- | Unannotated terms appear as an empty stack.
 untyped :: I.Annotations

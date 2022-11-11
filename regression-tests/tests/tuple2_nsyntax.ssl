@@ -15,9 +15,9 @@ puti_ putc x =
 
 printl_ puti putc p =
   match p
-   Pair x y = puti x
-              putc 32
-              puti y
+   (x,y) = puti x
+           putc 32
+           puti y
 
 
 main cin cout = 
