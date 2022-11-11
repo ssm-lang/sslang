@@ -11,7 +11,7 @@ import           Common.Compiler                ( Error(..)
 import           Common.Identifiers             ( Identifier(..)
                                                 , isCons
                                                 )
-import           Control.Monad                  ( replicateM )
+import           Control.Monad                  ( replicateM)
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
@@ -70,11 +70,47 @@ desugarProgram (A.Program defs) = runDesugarFn
   tds = mapMaybe A.getTopTypeDef defs
   ctx = buildCtx tds
 
+splitGroup :: [A.TopDef] -> [[A.TopDef]]
+splitGroup [] = []
+splitGroup (td:tds) = case td of
+  A.TopDef (A.DefFn i _ _ _) -> curr : splitGroup rest
+    where
+      (curr, rest) = span (helper i) tds
+      helper :: Identifier -> A.TopDef -> Bool
+      helper i' (A.TopDef (A.DefFn i'' _ _ _)) = i' == i''
+      helper _ _ = False
+  _ -> [td] : splitGroup tds
+
+
+
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
-desugarTopDefs = mapM desugarTopDef
+desugarTopDefs tds = mapM desugarTopDef groups
  where
-  desugarTopDef (A.TopDef d) = A.TopDef <$> desugarDef d
-  desugarTopDef d            = return d
+  desugarTopDef :: [A.TopDef] -> DesugarFn A.TopDef
+  desugarTopDef []  = error "can't happen"
+  desugarTopDef [d] = return d
+  desugarTopDef tdfds = A.TopDef <$> mergeDefFn (map myJoin tdfds)
+  groups = splitGroup tds
+  myJoin td = case td of
+    A.TopDef d -> d
+    _ -> error "can't happen"
+  mergeDefFn :: [A.Definition] -> DesugarFn A.Definition
+  mergeDefFn ds = return $ A.DefFn i' [A.PatId $ Identifier "x"] t' e'
+    where
+      getDefFnIdentifier (A.DefFn i'' _ _ _) = i''
+      getDefFnIdentifier _ = error "can't happen"
+      getDefFnType (A.DefFn _ _ t'' _) = t''
+      getDefFnType _ = error "can't happen"
+      getDefFnExpr (A.DefFn _ _ _ e) = e
+      getDefFnExpr _ = error "can't happen"
+      getDefFnPat (A.DefFn _ ps _ _) = A.PatTup ps
+      getDefFnPat _ = error "can't happen"
+      mergeExpr :: [A.Pat] -> [A.Expr] -> A.Expr
+      mergeExpr ps es = A.Match (A.Id $ Identifier "x") $ zip ps es
+      i' = getDefFnIdentifier $ head ds
+      t' = getDefFnType $ head ds
+      e' = mergeExpr (map getDefFnPat ds) (map getDefFnExpr ds)
+
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
