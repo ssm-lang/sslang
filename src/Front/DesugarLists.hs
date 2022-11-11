@@ -4,6 +4,7 @@ module Front.DesugarLists
   ) where
 
 import qualified Common.Compiler               as Compiler
+import Common.Identifiers                       (Identifier(Identifier))
 import           Front.Ast                      ( Definition(..)
                                                 , Expr(..)
                                                 , Program(..)
@@ -26,4 +27,10 @@ desugarLists (Program decls) = return $ Program $ desugarTop <$> decls
 --     (App (App (Id "Cons") (Lit (LitInt 2))) 
 --          (App (App (Id "Cons") (Lit (LitInt 3))) (id "Nil")))
 desugarExpr :: Expr -> Expr
-desugarExpr e = e -- TODO: actually implement transformation
+desugarExpr (ListExpr es) = func es
+desugarExpr e = e 
+
+func :: [Expr] -> Expr
+func [] = Id (Identifier "Nil")
+func (h:t) = Apply (Apply (Id (Identifier "Cons")) h) (func t)
+
