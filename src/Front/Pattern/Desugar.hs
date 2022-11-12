@@ -75,7 +75,7 @@ splitGroup [] = []
 splitGroup (td:tds) = case td of
   A.TopDef (A.DefFn i _ _ _) -> curr : splitGroup rest
     where
-      (curr, rest) = span (helper i) tds
+      (curr, rest) = span (helper i) (td:tds)
       helper :: Identifier -> A.TopDef -> Bool
       helper i' (A.TopDef (A.DefFn i'' _ _ _)) = i' == i''
       helper _ _ = False
