@@ -71,41 +71,42 @@ desugarProgram (A.Program defs) = runDesugarFn
   ctx = buildCtx tds
 
 splitGroup :: [A.TopDef] -> [[A.TopDef]]
-splitGroup [] = []
+splitGroup []         = []
 splitGroup (td : tds) = case td of
   A.TopDef (A.DefFn i _ _ _) -> curr : splitGroup rest
-    where 
-      (curr, rest) = span (`sameId` i) (td : tds)
-      sameId ::  A.TopDef -> Identifier -> Bool
-      sameId (A.TopDef (A.DefFn i' _ _ _)) = (==) i'
-      sameId _ = const False
+   where
+    (curr, rest) = span (`sameId` i) (td : tds)
+    sameId :: A.TopDef -> Identifier -> Bool
+    sameId (A.TopDef (A.DefFn i' _ _ _)) = (==) i'
+    sameId _                             = const False
   _ -> [td] : splitGroup tds
 
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
 desugarTopDefs tds = mapM desugarTopDef $ splitGroup tds
 
 desugarTopDef :: [A.TopDef] -> DesugarFn A.TopDef
-desugarTopDef []  = error "can't happen"
-desugarTopDef [d] = return d
+desugarTopDef []    = error "can't happen"
+desugarTopDef [d]   = return d
 desugarTopDef tdfds = A.TopDef <$> mergeDefFn (map unWrap tdfds)
-  where
-    unWrap td = case td of A.TopDef d -> d
-                           _ -> error "can't happen"
-  
+ where
+  unWrap td = case td of
+    A.TopDef d -> d
+    _          -> error "can't happen"
+
 mergeDefFn :: [A.Definition] -> DesugarFn A.Definition
-mergeDefFn ds = do 
-  fresh <- freshVar
+mergeDefFn ds = do
+  fresh         <- freshVar
   desugaredArms <- desugarExpr $ A.Match (A.Id fresh) arms
   return $ A.DefFn i' [A.PatId fresh] t' desugaredArms
-  where      
-    getDefArm (A.DefFn _ ps _ e) = (A.PatTup ps, e)
-    getDefArm _ = error "can't happen"
-    getDefIdType (A.DefFn i _ t _) = (i, t)
-    getDefIdType _ = error "can't happen"
+ where
+  getDefArm (A.DefFn _ ps _ e) = (A.PatTup ps, e)
+  getDefArm _                  = error "can't happen"
+  getDefIdType (A.DefFn i _ t _) = (i, t)
+  getDefIdType _                 = error "can't happen"
 
-    (pats, exprs) = unzip $ map getDefArm ds
-    (i', t') = getDefIdType $ head ds
-    arms = zip pats exprs
+  (pats, exprs) = unzip $ map getDefArm ds
+  (i'  , t'   ) = getDefIdType $ head ds
+  arms          = zip pats exprs
 
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
