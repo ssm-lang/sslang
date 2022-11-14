@@ -71,43 +71,38 @@ desugarProgram (A.Program defs) = runDesugarFn
   ctx = buildCtx tds
 
 splitGroup :: [A.TopDef] -> [[A.TopDef]]
-splitGroup []         = []
-splitGroup (td : tds) = case td of
-  A.TopDef (A.DefFn i _ _ _) -> curr : splitGroup rest
-   where
-    (curr, rest) = span (`sameId` i) (td : tds)
-    sameId :: A.TopDef -> Identifier -> Bool
-    sameId (A.TopDef (A.DefFn i' _ _ _)) = (==) i'
-    sameId _                             = const False
-  _ -> [td] : splitGroup tds
+splitGroup []             = []
+splitGroup lst@(td : tds) = curr : splitGroup rest
+ where
+  (curr, rest) = case td of
+    A.TopDef (A.DefFn i _ _ _) -> span (`sameId` i) lst
+    _                          -> ([td], tds)
+  sameId (A.TopDef (A.DefFn i' _ _ _)) = (i' ==)
+  sameId _                             = const False
 
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
-desugarTopDefs tds = mapM desugarTopDef $ splitGroup tds
+desugarTopDefs = mapM desugarTopDef . splitGroup
 
 desugarTopDef :: [A.TopDef] -> DesugarFn A.TopDef
-desugarTopDef []    = error "can't happen"
-desugarTopDef [d]   = return d
-desugarTopDef tdfds = A.TopDef <$> mergeDefFn (map unWrap tdfds)
+desugarTopDef []  = error "can't happen"
+desugarTopDef [d] = return d
+desugarTopDef tds = A.TopDef <$> mergeDefFn (map unWrap tds)
  where
-  unWrap td = case td of
-    A.TopDef d -> d
-    _          -> error "can't happen"
+  unWrap (A.TopDef d) = d
+  unWrap _            = error "can't happen"
 
 mergeDefFn :: [A.Definition] -> DesugarFn A.Definition
 mergeDefFn ds = do
-  fresh         <- freshVar
-  desugaredArms <- desugarExpr $ A.Match (A.Id fresh) arms
-  return $ A.DefFn i' [A.PatId fresh] t' desugaredArms
+  v  <- freshVar
+  e' <- desugarExpr $ A.Match (A.Id v) (zip ps' es)
+  return $ A.DefFn i' [A.PatId v] t' e'
  where
+  (ps', es) = unzip $ map getDefArm ds
+  (i' , t') = getDefIdType ds
   getDefArm (A.DefFn _ ps _ e) = (A.PatTup ps, e)
   getDefArm _                  = error "can't happen"
-  getDefIdType (A.DefFn i _ t _) = (i, t)
-  getDefIdType _                 = error "can't happen"
-
-  (pats, exprs) = unzip $ map getDefArm ds
-  (i'  , t'   ) = getDefIdType $ head ds
-  arms          = zip pats exprs
-
+  getDefIdType ((A.DefFn i _ t _) : _) = (i, t)
+  getDefIdType _                       = error "can't happen"
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
