@@ -81,35 +81,26 @@ splitGroup lst@(td : tds) = curr : splitGroup rest
   sameId _                             = const False
 
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
-desugarTopDefs = mapM desugarTopDef . splitGroup
+desugarTopDefs = mapM desugarTopDef
 
-desugarTopDef :: [A.TopDef] -> DesugarFn A.TopDef
-desugarTopDef []  = error "can't happen"
-desugarTopDef [d] = return d
-desugarTopDef tds = A.TopDef <$> mergeDefFn (map unWrap tds)
- where
-  unWrap (A.TopDef d) = d
-  unWrap _            = error "can't happen"
-
-mergeDefFn :: [A.Definition] -> DesugarFn A.Definition
-mergeDefFn ds = do
-  v  <- freshVar
-  e' <- desugarExpr $ A.Match (A.Id v) (zip ps' es)
-  return $ A.DefFn i' [A.PatId v] t' e'
- where
-  (ps', es) = unzip $ map getDefArm ds
-  (i' , t') = getDefIdType ds
-  getDefArm (A.DefFn _ ps _ e) = (A.PatTup ps, e)
-  getDefArm _                  = error "can't happen"
-  getDefIdType ((A.DefFn i _ t _) : _) = (i, t)
-  getDefIdType _                       = error "can't happen"
+desugarTopDef :: A.TopDef -> DesugarFn A.TopDef
+desugarTopDef (A.TopDef d) = A.TopDef <$> desugarDef d
+desugarTopDef d = return d
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
 
 -- WARN: only body is desugared
+-- toplevel DefFn is desugared
 desugarDef :: A.Definition -> DesugarFn A.Definition
-desugarDef (A.DefFn i ps t e) = A.DefFn i ps t <$> desugarExpr e
+desugarDef (A.DefFn i ps t e) = do
+  ps' <- mapM genNewPat ps
+  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)] -- will work after Tuple is added to Expr
+  return $ A.DefFn i ps' t e'
+  where
+    genNewPat :: A.Pat -> DesugarFn A.Pat
+    genNewPat _ = do
+      A.PatId <$> freshVar
 desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
 
 desugarExprs :: [A.Expr] -> DesugarFn [A.Expr]
