@@ -92,10 +92,11 @@ desugarDefs = mapM desugarDef
 
 -- WARN: only body is desugared
 -- toplevel DefFn is desugared
+-- WARN: fail building until tuple implementation is merged
 desugarDef :: A.Definition -> DesugarFn A.Definition
 desugarDef (A.DefFn i ps t e) = do
   ps' <- mapM genNewPat ps
-  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)] -- will work after Tuple is added to Expr
+  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)] 
   return $ A.DefFn i ps' t e'
   where
     genNewPat :: A.Pat -> DesugarFn A.Pat
