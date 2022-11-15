@@ -85,7 +85,7 @@ desugarTopDefs = mapM desugarTopDef
 
 desugarTopDef :: A.TopDef -> DesugarFn A.TopDef
 desugarTopDef (A.TopDef d) = A.TopDef <$> desugarDef d
-desugarTopDef d = return d
+desugarTopDef d            = return d
 
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
@@ -96,13 +96,13 @@ desugarDefs = mapM desugarDef
 desugarDef :: A.Definition -> DesugarFn A.Definition
 desugarDef (A.DefFn i ps t e) = do
   ps' <- mapM genNewPat ps
-  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)] 
+  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)]
   return $ A.DefFn i ps' t e'
-  where
-    genNewPat :: A.Pat -> DesugarFn A.Pat
-    genNewPat _ = do
-      A.PatId <$> freshVar
-desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
+ where
+  genNewPat :: A.Pat -> DesugarFn A.Pat
+  genNewPat _ = do
+    A.PatId <$> freshVar
+desugarDef (A.DefPat p e) = A.DefPat p <$> desugarExpr e
 
 desugarExprs :: [A.Expr] -> DesugarFn [A.Expr]
 desugarExprs = mapM desugarExpr
