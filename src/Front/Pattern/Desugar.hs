@@ -70,16 +70,6 @@ desugarProgram (A.Program defs) = runDesugarFn
   tds = mapMaybe A.getTopTypeDef defs
   ctx = buildCtx tds
 
-splitGroup :: [A.TopDef] -> [[A.TopDef]]
-splitGroup []             = []
-splitGroup lst@(td : tds) = curr : splitGroup rest
- where
-  (curr, rest) = case td of
-    A.TopDef (A.DefFn i _ _ _) -> span (`sameId` i) lst
-    _                          -> ([td], tds)
-  sameId (A.TopDef (A.DefFn i' _ _ _)) = (i' ==)
-  sameId _                             = const False
-
 desugarTopDefs :: [A.TopDef] -> DesugarFn [A.TopDef]
 desugarTopDefs = mapM desugarTopDef
 
