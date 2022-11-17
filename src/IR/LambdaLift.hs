@@ -27,8 +27,9 @@ import           Control.Monad.State.Lazy       ( MonadState
 import           Data.Bifunctor                 ( first )
 import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( catMaybes 
-                                                , mapMaybe)
+import           Data.Maybe                     ( catMaybes
+                                                , mapMaybe
+                                                )
 import qualified Data.Set                      as S
 
 -- | Lifting Environment
@@ -259,4 +260,4 @@ liftLambdasInArm (I.AltData d bs, arm) = do
     mapM_ addCurrentScope (mapMaybe I.getAltDefault bs)
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltData d bs, liftedArm)   
+  return (I.AltData d bs, liftedArm)
