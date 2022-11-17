@@ -216,8 +216,7 @@ inferAlt t (AltData d as) = do
       , "Expected: " <> show (length ats)
       , "Got: " <> show (length as)
       ]
-  let as' = map AltDefault as -- TODO: remove for nested patterns, just use as
-  concat <$> zipWithM inferAlt ats as'
+  concat <$> zipWithM inferAlt ats as
 inferAlt t (AltLit l) = do
   t' <- U.instantiate =<< inferLit l
   t =:= t'

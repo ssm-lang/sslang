@@ -331,7 +331,7 @@ insertAlt (I.AltDefault v      , e   ) = (I.AltDefault v, ) <$> insertExpr e
 insertAlt (I.AltLit     l      , e   ) = (I.AltLit l, ) <$> insertExpr e
 insertAlt (I.AltData dcon binds, body) = do
   body' <- insertExpr body
-  return (I.AltData dcon binds, foldr dropDupLet body' binds)
+  return (I.AltData dcon binds, foldr (dropDupLet . I.getAltDefault) body' binds)
  where
   dropDupLet Nothing  e = e
   dropDupLet (Just v) e = makeDrop

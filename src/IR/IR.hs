@@ -30,6 +30,7 @@ module IR.IR
   , foldApp
   , unfoldApp
   , isValue
+  , getAltDefault
   ) where
 import           Common.Identifiers             ( Binder
                                                 , CSym(..)
@@ -222,7 +223,7 @@ data Expr t
 
 -- | An alternative in a pattern-match.
 data Alt
-  = AltData DConId [Binder]
+  = AltData DConId [Alt]
   -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
   | AltLit Literal
   -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
@@ -307,6 +308,12 @@ isValue Lit{}    = True
 isValue Lambda{} = True
 isValue _        = False
 
+-- Retrieve binder from Alt, assuming it is AltDefault.
+getAltDefault :: Alt -> Binder
+getAltDefault (AltDefault b) = b
+getAltDefault _ = error 
+  "Compiler Error: Should not have recursive patterns here"
+
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
   freeVars Data{}                           = S.empty
@@ -320,7 +327,7 @@ instance HasFreeVars (Expr t) VarId where
    where
     freeAltVars :: (Alt, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                 ) = S.fromList $ catMaybes bs
+    altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
     altBinders (AltLit     _                 ) = S.empty
     altBinders (AltDefault (maybeToList -> v)) = S.fromList v
 
