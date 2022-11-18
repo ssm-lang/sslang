@@ -79,12 +79,12 @@ parseAst opt src = do
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
-  astDS <- desugarStrings astP
-  astDL <- desugarLists astDS
+  astS <- desugarStrings astP
+  astL <- desugarLists astS
 
   -- TODO: other desugaring
-  Pattern.checkAnomaly astDL
-  astD <- Pattern.desugarProgram astP
+  Pattern.checkAnomaly astL
+  astD <- Pattern.desugarProgram astL
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD
