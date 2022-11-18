@@ -5,16 +5,16 @@ module Front.DesugarLists
 where
 
 import qualified Common.Compiler as Compiler
-import Front.Ast as A
+import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..), Literal(..))
 import Common.Identifiers as I
 
 -- | Desugar ListExpr nodes inside of an AST 'Program'.
 desugarLists :: Program -> Compiler.Pass Program
-desugarLists (Program decls) = test -- $ return Program $ desugarTop <$> decls 
+desugarLists (Program decls) = return $ Program $ desugarTop <$> decls 
   where
     desugarTop (TopDef d) = TopDef $ desugarDef d
     desugarTop t = t
-    test = Compiler.unexpected $ show $ (appidhelper [(Lit (LitInt 1)), (Lit (LitInt 2))]) 
+    --test = Compiler.unexpected $ show $ (appidhelper [(Lit (LitInt 1)), (Lit (LitInt 2))]) 
     desugarDef (DefFn v bs t e) = DefFn v bs t $ desugarExpr e
     desugarDef (DefPat b e) = DefPat b $ desugarExpr e
 
@@ -40,13 +40,16 @@ Then you can special case on instance of ListExpr.
 I think this is what you wanted to do.
 -}
 
-appidhelper:: [A.Expr] -> A.Expr
-appidhelper (A.ListExpr []) = (A.Id (I.Identifier "Nil"))
-appidhelper (A.ListExpr (h:t)) = A.Apply (A.Apply (A.Id (I.Identifier "Cons") h)) (appidhelper t)
+appidhelper:: [Expr] -> Expr
+appidhelper ([]) = (Id (I.Identifier "Nil"))
+appidhelper ((h:t)) = Apply (Apply (Id (I.Identifier "Cons")) h) (appidhelper t)
 
 --[(A.Id (I.Identifier "App")) (A.Id (I.Identifier "Cons")) | i <- a] 
 desugarExpr :: Expr -> Expr
 --desugarExpr _ = Compiler.unexpected $ (show (A.Lit(A.LitInt 5)))
-desugarExpr (A.ListExpr es) = appidhelper es
-desugarExpr (A.ListExpr []) = (A.Id (I.Identifier "Nil"))
+desugarExpr (ListExpr es) = appidhelper es
+desugarExpr (ListExpr []) = (Id (I.Identifier "Nil"))
 desugarExpr e = e -- if it's not a listExpr instance, don't do anything
+
+
+-- Not on literal, no expr, break, cquote
