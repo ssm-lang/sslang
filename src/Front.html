@@ -264,22 +264,22 @@ forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><a href="#local-6989586621679519956"><span class="hs-identifier hs-var">astP</span></a></span><span>
 </span><span id="line-81"></span><span>
 </span><span id="line-82"></span><span>  </span><span id="local-6989586621679519955"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679519955"><span class="hs-identifier hs-var">astDS</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><a href="#local-6989586621679519955"><span class="hs-identifier hs-var">astS</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.DesugarStrings.html#desugarStrings"><span class="hs-identifier hs-var">desugarStrings</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679519956"><span class="hs-identifier hs-var">astP</span></a></span><span>
 </span><span id="line-83"></span><span>  </span><span id="local-6989586621679519954"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679519954"><span class="hs-identifier hs-var">astDL</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><a href="#local-6989586621679519954"><span class="hs-identifier hs-var">astL</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.DesugarLists.html#desugarLists"><span class="hs-identifier hs-var">desugarLists</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679519955"><span class="hs-identifier hs-var">astDS</span></a></span><span>
+</span><a href="#local-6989586621679519955"><span class="hs-identifier hs-var">astS</span></a></span><span>
 </span><span id="line-84"></span><span>
 </span><span id="line-85"></span><span>  </span><span class="hs-comment">-- TODO: other desugaring</span><span>
 </span><span id="line-86"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass ()
 </span><a href="Front.Pattern.html#checkAnomaly"><span class="hs-identifier hs-var">Pattern.checkAnomaly</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679519954"><span class="hs-identifier hs-var">astDL</span></a></span><span>
+</span><a href="#local-6989586621679519954"><span class="hs-identifier hs-var">astL</span></a></span><span>
 </span><span id="line-87"></span><span>  </span><span id="local-6989586621679519952"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679519952"><span class="hs-identifier hs-var">astD</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.Pattern.html#desugarProgram"><span class="hs-identifier hs-var">Pattern.desugarProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679519956"><span class="hs-identifier hs-var">astP</span></a></span><span>
+</span><a href="#local-6989586621679519954"><span class="hs-identifier hs-var">astL</span></a></span><span>
 </span><span id="line-88"></span><span>
 </span><span id="line-89"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
