@@ -219,6 +219,7 @@ data Expr t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
+  | NoExpr t
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 -- | An alternative in a pattern-match.
@@ -246,6 +247,7 @@ extract (Lambda _ _ t) = t
 extract (App    _ _ t) = t
 extract (Match  _ _ t) = t
 extract (Prim   _ _ t) = t
+extract (NoExpr t    ) = t
 
 -- | Replace the top-level type carried by an 'Expr'.
 inject :: t -> Expr t -> Expr t
@@ -257,6 +259,7 @@ inject t (Lambda xs b  _) = Lambda xs b t
 inject t (App    h  a  _) = App h a t
 inject t (Match  s  as _) = Match s as t
 inject t (Prim   p  es _) = Prim p es t
+inject t (NoExpr _      ) = NoExpr t
 
 {- | Collect a curried application into the function and argument list.
 
@@ -311,8 +314,8 @@ isValue _        = False
 -- Retrieve binder from Alt, assuming it is AltDefault.
 getAltDefault :: Alt -> Binder
 getAltDefault (AltDefault b) = b
-getAltDefault _ = error 
-  "Compiler Error: Should not have recursive patterns here"
+getAltDefault _ =
+  error "Compiler Error: Should not have recursive patterns here"
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
@@ -330,6 +333,7 @@ instance HasFreeVars (Expr t) VarId where
     altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
     altBinders (AltLit     _                 ) = S.empty
     altBinders (AltDefault (maybeToList -> v)) = S.fromList v
+  freeVars (NoExpr _) = S.empty
 
 {- | Predicate of whether an expression "looks about right".
 
@@ -378,6 +382,7 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp  PrimLt    ) [_, _]    = True
   wfPrim (PrimOp  PrimLe    ) [_, _]    = True
   wfPrim _                    _         = False
+wellFormed (NoExpr _) = True
 
 {- | Pretty Typeclass: pretty print the IR
 
@@ -479,7 +484,8 @@ instance Pretty (Expr ()) where
   pretty (Prim (CCall s) es _) =
     pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
   pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
-  pretty (Prim (CQuote s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+  pretty (Prim (CQuote  s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+  pretty (NoExpr _             ) = error "can't happen"
 
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
@@ -595,6 +601,7 @@ instance Dumpy (Expr Type) where
   dumpy (Prim (PrimOp po) [l, r] t) =
     typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
   dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
+  dumpy (NoExpr _  ) = error "can't happen"
 
 instance Dumpy Alt where
   dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
