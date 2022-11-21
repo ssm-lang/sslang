@@ -926,28 +926,40 @@ getTopExtern :: TopDef -> Maybe ExternDecl
 
 -- | Unzip a list of top-level declarations into their counterparts.
 getTops :: [TopDef] -> ([TypeDef], [String], [ExternDecl], [Definition])
+instance Data.Data.Data Front.Ast.Typ
 instance GHC.Show.Show Front.Ast.Typ
 instance GHC.Classes.Eq Front.Ast.Typ
+instance Data.Data.Data Front.Ast.TypFn
 instance GHC.Show.Show Front.Ast.TypFn
 instance GHC.Classes.Eq Front.Ast.TypFn
+instance Data.Data.Data Front.Ast.TypeVariant
 instance GHC.Show.Show Front.Ast.TypeVariant
 instance GHC.Classes.Eq Front.Ast.TypeVariant
+instance Data.Data.Data Front.Ast.TypeDef
 instance GHC.Show.Show Front.Ast.TypeDef
 instance GHC.Classes.Eq Front.Ast.TypeDef
+instance Data.Data.Data Front.Ast.ExternDecl
 instance GHC.Show.Show Front.Ast.ExternDecl
 instance GHC.Classes.Eq Front.Ast.ExternDecl
+instance Data.Data.Data Front.Ast.Literal
 instance GHC.Show.Show Front.Ast.Literal
 instance GHC.Classes.Eq Front.Ast.Literal
+instance Data.Data.Data Front.Ast.Pat
 instance GHC.Show.Show Front.Ast.Pat
 instance GHC.Classes.Eq Front.Ast.Pat
+instance Data.Data.Data Front.Ast.OpRegion
 instance GHC.Show.Show Front.Ast.OpRegion
 instance GHC.Classes.Eq Front.Ast.OpRegion
+instance Data.Data.Data Front.Ast.Expr
 instance GHC.Show.Show Front.Ast.Expr
 instance GHC.Classes.Eq Front.Ast.Expr
+instance Data.Data.Data Front.Ast.Definition
 instance GHC.Show.Show Front.Ast.Definition
 instance GHC.Classes.Eq Front.Ast.Definition
+instance Data.Data.Data Front.Ast.TopDef
 instance GHC.Show.Show Front.Ast.TopDef
 instance GHC.Classes.Eq Front.Ast.TopDef
+instance Data.Data.Data Front.Ast.Program
 instance GHC.Show.Show Front.Ast.Program
 instance GHC.Classes.Eq Front.Ast.Program
 instance Prettyprinter.Internal.Pretty Front.Ast.Program
