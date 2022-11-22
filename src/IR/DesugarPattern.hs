@@ -2,9 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module IR.DesugarPattern
-  ( desugarPattern
-  ) where
+    ( desugarPattern
+    ) where
 
+import           Codegen.Typegen                ( TConInfo(typeScrut) )
 import           Common.Compiler               as Compiler
 import           Common.Compiler                ( Error(..)
                                                 , MonadError(..)
@@ -25,20 +26,74 @@ import           Data.Bifunctor                 ( Bifunctor(second)
                                                 , first
                                                 )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( mapMaybe, isJust, isNothing )
-import qualified Data.Set                      as S
-import           Front.Pattern.Common           ( CInfo(..)
-                                                , TInfo(..)
-                                                , buildConsMap
-                                                , buildTypeMap
+import           Data.Maybe                     ( isJust
+                                                , isNothing
+                                                , mapMaybe
                                                 )
+import qualified Data.Set                      as S
 import qualified IR.IR                         as I
 
 type Equation = ([I.Alt], I.Expr I.Type)
 
-data DesugarCtx = DesugarCtx
-    { anonCount :: Int
+data CInfo = CInfo
+    { cName    :: I.DConId
+    , cType    :: I.TConId
+    , argsType :: [I.Type]
+    , cArity   :: Int
     }
+    deriving (Eq, Show)
+
+data TInfo = TInfo
+    { tName :: I.TConId
+    , tCSet :: S.Set I.DConId
+    }
+    deriving (Eq, Show)
+
+data DesugarCtx = DesugarCtx
+    { typeMap   :: M.Map I.TConId TInfo
+    , consMap   :: M.Map I.DConId CInfo
+    , anonCount :: Int
+    }
+
+{-
+I.TypeDef = { variants :: [(DConId, TypeVariant)]
+  , targs    :: [TVarId]
+  }
+TypeVariant = VariantUnnamed [Type] 
+-}
+
+buildTypeMap :: [(I.TConId, I.TypeDef)] -> M.Map I.TConId TInfo
+buildTypeMap = foldr tAcc M.empty
+  where
+    tAcc td tmap' =
+        let typ   = fst td
+            clist = map fst (I.variants $ snd td)
+            cset  = S.fromList clist
+        in  M.insert typ (TInfo { tName = typ, tCSet = cset }) tmap'
+
+buildConsMap :: [(I.TConId, I.TypeDef)] -> M.Map I.DConId CInfo
+buildConsMap args = foldr buildConsMap' M.empty args'
+    where args' = map (second I.variants) args
+
+buildConsMap'
+    :: (I.TConId, [(I.DConId, I.TypeVariant)])
+    -> M.Map I.DConId CInfo
+    -> M.Map I.DConId CInfo
+buildConsMap' arg m = foldr cAcc m (snd arg)
+  where
+    typ = fst arg
+    getTypes (_, I.VariantUnnamed typs) = typs
+    getTypes _                          = error "cannot happen"
+    cAcc cd cmap' = M.insert cid c cmap'
+      where
+        cid       = fst cd
+        argsType' = getTypes cd
+        c         = CInfo { cName    = cid
+                          , cType    = typ
+                          , argsType = argsType'
+                          , cArity   = length argsType'
+                          }
+
 
 newtype DesugarFn a = DesugarFn (StateT DesugarCtx Compiler.Pass a)
   deriving Functor                      via (StateT DesugarCtx Compiler.Pass)
@@ -57,48 +112,56 @@ freshVar = do
     modify $ \ctx -> ctx { anonCount = anonCount ctx + 1 }
     return $ fromString ("__pat_anon" ++ show currCount)
 
-buildCtx :: DesugarCtx
-buildCtx = DesugarCtx { anonCount = 0 }
+buildCtx :: [(I.TConId, I.TypeDef)] -> DesugarCtx
+buildCtx tds = DesugarCtx { anonCount = 0
+                          , typeMap   = buildTypeMap tds
+                          , consMap   = buildConsMap tds
+                          }
 
 
 desugarPattern :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-desugarPattern p@I.Program { I.programDefs = defs } = runDesugarFn
-    (do
-        defs' <- desugarExprsDefs defs
-        return $ p { I.programDefs = defs' }
-    )
-    ctx
-    where
-    -- tds = mapMaybe A.getTopTypeDef defs
-          ctx = buildCtx
+desugarPattern p@I.Program { I.programDefs = defs, I.typeDefs = tds } =
+    runDesugarFn
+        (do
+            defs' <- desugarExprsDefs defs
+            return $ p { I.programDefs = defs' }
+        )
+        ctx
+    where ctx = buildCtx tds
 
-desugarExprsDefs :: [(I.VarId, I.Expr I.Type)] -> DesugarFn [(I.VarId, I.Expr I.Type)]
+desugarExprsDefs
+    :: [(I.VarId, I.Expr I.Type)] -> DesugarFn [(I.VarId, I.Expr I.Type)]
 desugarExprsDefs defs = do
     es' <- mapM desugarExpr es
     return $ zip vs es'
-    where
-        (vs, es) = unzip defs
+    where (vs, es) = unzip defs
 -- desugarExprs = mapM (Data.Bifunctor.second desugarExpr)
 
 
 desugarExpr :: I.Expr I.Type -> DesugarFn (I.Expr I.Type)
-desugarExpr e@(I.Var _ _) = return e
+desugarExpr e@(I.Var  _ _) = return e
 desugarExpr e@(I.Data _ _) = return e
-desugarExpr e@(I.Lit _ _) = return e
-desugarExpr (I.App e1 e2 t) = I.App <$> desugarExpr e1 <*> desugarExpr e2 <*> do return t
+desugarExpr e@(I.Lit  _ _) = return e
+desugarExpr (I.App e1 e2 t) =
+    I.App <$> desugarExpr e1 <*> desugarExpr e2 <*> do
+        return t
 desugarExpr (I.Let bins e t) =
     I.Let
         <$> (do
-            let (bs,es) = unzip bins
-            es' <- mapM desugarExpr es
-            return $ zip bs es'
+                let (bs, es) = unzip bins
+                es' <- mapM desugarExpr es
+                return $ zip bs es'
             )
         -- <$> mapM (Data.Bifunctor.second desugarExpr) bins
         <*> desugarExpr e
-        <*> (do return t)
-desugarExpr (I.Lambda b e    t) = I.Lambda b <$> desugarExpr e <*> do return t
-desugarExpr (I.Prim   p es   t) = I.Prim p <$> mapM desugarExpr es <*> do return t
-desugarExpr (I.Match  e arms t) = do
+        <*> (do
+                return t
+            )
+desugarExpr (I.Lambda b e t) = I.Lambda b <$> desugarExpr e <*> do
+    return t
+desugarExpr (I.Prim p es t) = I.Prim p <$> mapM desugarExpr es <*> do
+    return t
+desugarExpr (I.Match e arms t) = do
     arms' <- mapM
         (\(a, body) -> do
             body' <- desugarExpr body
@@ -106,52 +169,73 @@ desugarExpr (I.Match  e arms t) = do
         )
         arms
     let armsForDesugar = map (first (: [])) arms'
-    case e of
-        I.Var v t' -> desugarMatch [I.Var v t'] armsForDesugar (I.NoExpr t) -- should this be t?? considering put t back?
-        _         -> do
-            v <- I.VarId <$> freshVar
-            singleLet v e <$> desugarMatch [I.Var v (I.extract e)] armsForDesugar (I.NoExpr t) <*> do return t-- INFO: for now, default expression is NoExpr
+    -- case e of
+    --     I.Var v t' -> desugarMatch [I.Var v t'] armsForDesugar (I.NoExpr t) -- should this be t?? considering put t back?
+    --     _         -> do
+    --         v <- I.VarId <$> freshVar
+    -- singleLet v e <$> desugarMatch [I.Var v (I.extract e)] armsForDesugar (I.NoExpr t) <*> do return t-- INFO: for now, default expression is NoExpr
+
+    desugarMatch [e] armsForDesugar (I.NoExpr t)
 desugarExpr e@(I.NoExpr _) = return e
 
-desugarMatch :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type-> DesugarFn (I.Expr I.Type)
+desugarMatch
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
 desugarMatch [] [] def = case def of
     I.NoExpr _ -> error "can't happen" -- INFO: for now, can't handle inexhaustive patterns
-    _        -> return def
+    _          -> return def
 desugarMatch []         (([], e) : _) _   = return e
 desugarMatch []         _             _   = error "can't happen"
 desugarMatch us@(_ : _) qs            def = do
     foldrM (desugarMatchGen us) def (partitionEqs qs)
 
-desugarMatchGen :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
+desugarMatchGen
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | isConsEq (head qs) = desugarMatchCons us qs def
                           | isLitEq (head qs)  = desugarMatchLit us qs def
+                          |
                         --   | isTupEq (head qs)  = desugarMatchTup us qs def
-                          | isWildEq (head qs) = desugarMatchWild us qs def
+                            isWildEq (head qs) = desugarMatchWild us qs def
                           | otherwise          = error "can't happen"
   where
     isWildEq (as, _) = case head as of
         I.AltDefault b -> isNothing b
-        _ -> False
+        _              -> False
     isVarEq (as, _) = case head as of
         I.AltDefault b -> isJust b
-        _         -> False
+        _              -> False
     isConsEq (as, _) = case head as of
         I.AltData _ _ -> True
-        _          -> False
+        _             -> False
     isLitEq (as, _) = case head as of
         I.AltLit _ -> True
         _          -> False
 
-desugarMatchVar :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
-desugarMatchVar [] _ _ = error "can't happen"
-desugarMatchVar (u : us) qs def =
-    desugarMatch us [ (ps, singleAlias v u e) | (I.AltDefault v : ps, e) <- qs ] def
+desugarMatchVar
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
+desugarMatchVar []       _  _   = error "can't happen"
+desugarMatchVar (u : us) qs def = desugarMatch
+    us
+    [ (ps, singleAlias v u e) | (I.AltDefault v : ps, e) <- qs ]
+    def
 
 {-
 To make life easier: transform PatWildcard into variable PatId
 -}
-desugarMatchWild :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
+desugarMatchWild
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
 desugarMatchWild [] _ _ = error "can't happen"
 desugarMatchWild (_ : us) qs def =
     desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
@@ -167,33 +251,45 @@ desugarMatchWild (_ : us) qs def =
 {-
 Assume only having PatApp
 -}
-desugarMatchCons :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
-desugarMatchCons _ _ _ = error "TODO"
--- desugarMatchCons (u : us) qs def = do
---     cs   <- getConstructors . getCon . head $ qs
---     arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
---     return $ A.Match (A.Id u) arms
---   where
---     getCon ((A.PatApp (A.PatId i : _)) : _, _) = i
---     getCon _ = error "can't happen"
---     choose c = [ q | q <- qs, getCon q == c ]
---     desugarArm c qs' = do
---         k    <- getArity c
---         us'  <- replicateM k freshVar
---         body <- desugarMatch
---             (us' ++ us)
---             [ (ps' ++ ps, e) | (A.PatApp ((A.PatId _) : ps') : ps, e) <- qs' ]
---             def
---         if k == 0
---             then return (A.PatId c, body)
---             else return (A.PatApp (A.PatId c : map A.PatId us'), body)
--- desugarMatchCons _ _ _ = error "can't happen"
+desugarMatchCons
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
+desugarMatchCons (u : us) qs def = do
+    -- cs   <- getConstructors . getCon . head $ qs
+
+    -- arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
+    arms <- mapM desugarArm qs
+    return $ I.Match u arms (I.extract def)
+  where
+    -- getCon ((A.PatApp (A.PatId i : _)) : _, _) = i
+    -- getCon _ = error "can't happen"
+    -- choose c = [ q | q <- qs, getCon q == c ]
+    desugarArm qs' = do
+        alt <- head (fst head qs')
+        k   <- case alt of
+            I.AltData _ lst -> lst
+            _               -> error "cannot happen"
+        us'  <- mapM (\i -> I.Var i t) (replicateM k freshVar)
+        body <- desugarMatch (us' ++ us)
+                             [ (ps' ++ ps, e) | ((_ : ps') : ps, e) <- qs' ]
+                             def
+        -- if k == 0
+        --     then return (I.AltData , body)
+
+        return (alt : map I.AltData us', body)
+desugarMatchCons _ _ _ = error "can't happen"
 
 {-
 Simple pass for PatLit; no special desugaring
 (Assuming that the patterns are exhaustive)
 -}
-desugarMatchLit :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
+desugarMatchLit
+    :: [I.Expr I.Type]
+    -> [Equation]
+    -> I.Expr I.Type
+    -> DesugarFn (I.Expr I.Type)
 desugarMatchLit _ _ _ = error "TODO"
 -- desugarMatchLit (u : us) qs def = do
 --     arms <- sequence [ desugarArm p ps e | (p : ps, e) <- qs ]
@@ -267,7 +363,8 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
         _ -> False
 
 
-singleLet :: I.VarId ->I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
+singleLet
+    :: I.VarId -> I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
 singleLet i e = I.Let [(Just i, e)]
 
 singleAlias :: I.Binder -> I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
