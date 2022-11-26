@@ -97,6 +97,7 @@ data Expr
   | Match Expr [(Pat, Expr)]
   | CQuote String
   | CCall Identifier [Expr]
+  | Tuple [Expr]
   | ListExpr [Expr]
   deriving (Eq, Show, Typeable, Data)
 
@@ -241,6 +242,7 @@ instance Pretty Typ where
 
 
 instance Pretty Expr where
+  pretty (Tuple elts) = parens $ hsep (punctuate comma $ map pretty elts)
   pretty (Let defs body) =
     pretty "let"
       <+> braces (hsep $ punctuate dbar $ map pretty defs)

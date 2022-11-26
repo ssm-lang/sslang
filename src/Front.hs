@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {- | Front end of the compiler pipeline.
 
 Throughout this stage, high-level syntax is progressively parsed and desugared
@@ -83,12 +84,17 @@ parseAst opt src = do
   astL <- desugarLists astS
 
   -- TODO: other desugaring
-  Pattern.checkAnomaly astL
-  astD <- Pattern.desugarProgram astL
+  let astTuple = insertTypeDef pairDef astP
+
+  Pattern.checkAnomaly astTuple
+  astD <- Pattern.desugarProgram astTuple
+
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD
-
+  where insertTypeDef typedef (A.Program xs) = A.Program (A.TopType typedef : xs)
+        pairDef = A.TypeDef { A.typeName = "Pair", A.typeParams = ["a","b"], A.typeVariants = [A.VariantUnnamed "Pair" [A.TCon "a", A.TCon "b"]]}
+    
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do

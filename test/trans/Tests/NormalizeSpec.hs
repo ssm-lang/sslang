@@ -78,6 +78,7 @@ spec = do
         i3 = parseIR [here|
           id b : b -> b = b
         |]
+    pendingWith "name mangling pass needed"
     i0 `shouldPassAs` i1
     i0 `shouldPassAs` i2
     i0 `shouldPassAs` i3

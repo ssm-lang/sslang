@@ -1,0 +1,37 @@
+// checking that 2-tuples can be declared with new syntax
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+// tests the pattern match of pairs
+printl_ puti putc p =
+  match p
+   (x,y) = puti x
+           putc 32
+           puti y
+
+
+main cin cout = 
+    let putc c = after 1, cout <- c
+                 wait cout
+    let puti = puti_ putc
+    let putnl _ = putc 10
+    let printl l = printl_ puti putc l
+
+
+    let x = (1,2)
+    let y = (3,4)
+
+    printl x
+    putnl ()
+    printl y
