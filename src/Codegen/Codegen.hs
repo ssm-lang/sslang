@@ -36,6 +36,7 @@ import qualified Language.C.Syntax             as C
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( fromId
                                                 , fromString
+                                                , tempTuple
                                                 )
 import           Control.Monad                  ( foldM
                                                 , unless
@@ -142,7 +143,7 @@ getsTCon f i = do
 -- | Lookup some information associated with a data constructor.
 getsDCon :: (DConInfo -> a) -> I.DConId -> GenFn a
 getsDCon f (I.DConId "(,)") =  do 
-                             Just a <- fmap f . (`dconInfo` I.DConId "Pair") <$> gets fnTypeInfo
+                             Just a <- fmap f . (`dconInfo` I.DConId tempTuple) <$> gets fnTypeInfo
                              return a
 
 getsDCon f i = do 

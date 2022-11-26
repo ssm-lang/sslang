@@ -21,6 +21,7 @@ import           Common.Identifiers             ( TVarId(..)
                                                 , fromString
                                                 , isCons
                                                 , isVar
+                                                , tempTuple
                                                 )
 import qualified Front.Ast                     as A
 import qualified IR.IR                         as I
@@ -163,9 +164,10 @@ lowerExpr (A.Match s ps) =
   I.Match <$> lowerExpr s <*> mapM lowerArm ps <*> pure untyped
   where lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
 lowerExpr (A.Tuple es) =
-  apply_recurse (I.Data "Pair" untyped) <$> mapM lowerExpr es
-  where apply_recurse e [] = e
-        apply_recurse e (x:xs) = apply_recurse (I.App e x untyped) xs
+  apply_recurse (I.Data (I.DConId tempTuple) untyped) <$> mapM lowerExpr es
+ where
+  apply_recurse e []       = e
+  apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
 
 
 -- | Lower an A.Pat into an I.Alt

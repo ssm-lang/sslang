@@ -13,6 +13,7 @@ puti_ putc x =
   else
     putip_ putc x
 
+// tests the pattern match of pairs
 printl_ puti putc p =
   match p
    (x,y) = puti x
