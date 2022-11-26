@@ -216,6 +216,12 @@ genId :: Identifiable a => a -> a
 
 -- | Filter out generated identifiers.
 ungenId :: Identifiable a => a -> Maybe a
+
+-- | the tuple identifier
+tuple :: Identifier
+
+-- | we'll use this temp tuple name for now due to the naming issue
+tempTuple :: Identifier
 instance Data.Data.Data Common.Identifiers.Identifier
 instance GHC.Classes.Ord Common.Identifiers.Identifier
 instance GHC.Classes.Eq Common.Identifiers.Identifier
@@ -870,6 +876,7 @@ Break :: Expr
 Match :: Expr -> [(Pat, Expr)] -> Expr
 CQuote :: String -> Expr
 CCall :: Identifier -> [Expr] -> Expr
+Tuple :: [Expr] -> Expr
 ListExpr :: [Expr] -> Expr
 
 -- | An operator region: a flat list of alternating expressions and
