@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -- | Sslang abstract syntax tree.
 module Front.Ast where
 
@@ -6,12 +7,13 @@ import           Common.Identifiers             ( Identifiable(..)
                                                 )
 import           Common.Pretty
 
+import           Data.Generics
 import           Data.List                      ( intersperse )
 import           Data.Maybe                     ( mapMaybe )
 
 -- | A complete program: a list of top-level definitions.
 newtype Program = Program [TopDef]
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | A top-level definition.
 data TopDef
@@ -19,11 +21,11 @@ data TopDef
   | TopType TypeDef       -- ^ Define an algebraic data type
   | TopCDefs String       -- ^ Inlined block of C definitions
   | TopExtern ExternDecl  -- ^ Declare external symbol for FFI
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Associate a type with a symbol
 data ExternDecl = ExternDecl Identifier Typ
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | An algebraic data type definition.
 data TypeDef = TypeDef
@@ -31,17 +33,17 @@ data TypeDef = TypeDef
   , typeParams   :: [Identifier]    -- ^ List of type parameters, e.g., @a@
   , typeVariants :: [TypeVariant]   -- ^ List of variants, e.g., @Some@, @None@
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | A type variant, i.e., a data constructor.
 data TypeVariant = VariantUnnamed Identifier [Typ]
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | A value definition.
 data Definition
   = DefFn Identifier [Pat] TypFn Expr
   | DefPat Pat Expr
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | A pattern appearing on the LHS of a definition or match arm
 data Pat
@@ -52,14 +54,14 @@ data Pat
   | PatTup [Pat]          -- ^ Match on a tuple, e.g., @(<pat>, <pat>)@
   | PatApp [Pat]          -- ^ Match on multiple patterns, e.g., @Some a@
   | PatAnn Typ Pat        -- ^ Match with type annotation, e.g., @<pat>: Type@
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Function type annotation
 data TypFn
   = TypReturn TypAnn
   | TypProper TypAnn
   | TypNone
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | TODO: type classes
 type TypAnn = Typ
@@ -71,7 +73,7 @@ data Typ
   | TTuple [Typ]
   | TArrow Typ Typ
   -- TODO type variables
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | An expression
 data Expr
@@ -96,7 +98,8 @@ data Expr
   | CQuote String
   | CCall Identifier [Expr]
   | Tuple [Expr]
-  deriving (Eq, Show)
+  | ListExpr [Expr]
+  deriving (Eq, Show, Typeable, Data)
 
 {- | An operator region: a flat list of alternating expressions and operators
 that is initially parsed flat but will be restructured into a tree by
@@ -105,7 +108,7 @@ the operator precedence parser.
 data OpRegion
   = NextOp Identifier Expr OpRegion
   | EOR
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | A literal
 data Literal
@@ -114,11 +117,31 @@ data Literal
   | LitRat Rational
   | LitChar Char
   | LitEvent
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data)
 
 -- | Fixity declaration for binary operators.
 data Fixity = Infixl Int Identifier
             | Infixr Int Identifier
+
+{- | Apply a function to zero or more arguments.
+
+Suppose we have as source code
+@
+type Color = RGB Int Int Int
+...
+    let x = RGB 203 200 100
+@
+and rgb = Id "RGB"
+    r = Lit (A.LitInt 203)
+    g = Lit (A.LitInt 200)
+    b = Lit (A.LitInt 100),
+then foldApp rgb [r, g, b] returns
+@
+Apply (Apply (Apply (Id RGB) (Lit (LitInt 100))) (Lit (LitInt 200))) (Lit (LitInt 203))
+@
+-}
+foldApp :: Expr -> [Expr] -> Expr
+foldApp = foldr $ \a f -> Apply f a
 
 -- | Collect a type application into the type constructor and its arguments.
 collectTApp :: Typ -> (Typ, [Typ])
@@ -133,8 +156,8 @@ collectApp t               = (t, [])
 
 -- | Collect a pattern application into the destructor and arguments.
 collectPApp :: Pat -> (Pat, [Pat])
-collectPApp (PatApp (p:ps)) = (p, ps)
-collectPApp p = (p, []) -- Note that @PatApp []@ is probably malformed!
+collectPApp (PatApp (p : ps)) = (p, ps)
+collectPApp p                 = (p, []) -- Note that @PatApp []@ is probably malformed!
 
 -- | Unwrap a (potential) top-level data definition.
 getTopDataDef :: TopDef -> Maybe Definition
@@ -270,7 +293,8 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
-  pretty NoExpr = error "Unexpected NoExpr"
+  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where
   pretty (LitInt    i) = pretty i

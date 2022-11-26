@@ -13,6 +13,8 @@ import           Common.Default                 ( Default(..) )
 
 import qualified Front.Ast                     as A
 
+import           Front.DesugarLists             ( desugarLists )
+import           Front.DesugarStrings           ( desugarStrings )
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
 import qualified Front.Pattern                 as Pattern
@@ -78,11 +80,15 @@ parseAst opt src = do
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
+  astS <- desugarStrings astP
+  astL <- desugarLists astS
+
   -- TODO: other desugaring
   let astTuple = insertTypeDef pairDef astP
 
   Pattern.checkAnomaly astTuple
   astD <- Pattern.desugarProgram astTuple
+
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD

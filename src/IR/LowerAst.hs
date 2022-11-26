@@ -168,6 +168,8 @@ lowerExpr (A.Tuple es) =
  where
   apply_recurse e []       = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
+lowerExpr (A.ListExpr _) =
+  Compiler.unexpected "lowerExpr: ListExprs should have already been desugared"
 
 
 -- | Lower an A.Pat into an I.Alt
@@ -191,7 +193,7 @@ lowerLit (A.LitInt i)   = return $ I.LitIntegral i
 lowerLit A.LitEvent     = return I.LitEvent
 lowerLit (A.LitChar _c) = Compiler.todo "Char literals are not yet implemented"
 lowerLit (A.LitString _s) =
-  Compiler.todo "String literals are not yet implemented"
+  Compiler.unexpected "lowerLit: LitStrings should have already been desugared"
 lowerLit (A.LitRat _r) =
   Compiler.todo "Rational literals are not yet implemented"
 
