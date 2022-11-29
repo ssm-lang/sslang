@@ -191,7 +191,7 @@ desugarMatch [] [] def = case def of
     _          -> return def
 desugarMatch []         (([], e) : _) _   = return e
 desugarMatch []         _             _   = error "can't happen"
-desugarMatch us@(_ : _) qs            def = do
+desugarMatch us qs            def = do
     foldrM (desugarMatchGen us) def (partitionEqs qs)
 
 desugarMatchGen
@@ -202,7 +202,6 @@ desugarMatchGen
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | isConsEq (head qs) = desugarMatchCons us qs def
                           | isLitEq (head qs)  = desugarMatchLit us qs def
-                        --   | isTupEq (head qs)  = desugaratchTup us qs def
                           | isWildEq (head qs) = desugarMatchWild us qs def
                           | otherwise          = error "can't happen"
   where
@@ -260,28 +259,31 @@ desugarMatchCons
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
 desugarMatchCons (u : us) qs def = do
-    -- cs   <- getConstructors . getCon . head $ qs
-
-    -- arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
-    arms <- mapM desugarArm qs
+    cs <- getConstructors . getCon . head $ qs
+    arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
+    --arms <- mapM desugarArm qs
     return $ I.Match u arms (I.extract def)
   where
-    -- getCon ((A.PatApp (A.PatId i : _)) : _, _) = i
-    -- getCon _ = error "can't happen"
-    -- choose c = [ q | q <- qs, getCon q == c ]
-    desugarArm qs' = do
-        alt <- head (fst head qs')
-        k   <- case alt of
-            I.AltData _ lst -> lst
-            _               -> error "cannot happen"
-        us'  <- mapM (\i -> I.Var i t) (replicateM k freshVar)
+    getCon ((I.AltData dcon _) : _, _) = dcon
+    getCon _ = error "can't happen"
+    choose c = [ q | q <- qs, getCon q == c ]
+    desugarArm :: I.DConId -> [Equation] -> DesugarFn (I.Alt, I.Expr I.Type)
+    desugarArm dcon qs' = do
+        --alt <- head (fst head qs')
+        k   <- getArity dcon
+        newIds <- replicateM k freshVar
+        cinfo <- getCInfo dcon
+        let newVars = map I.VarId newIds
+            argsTyps  =  argsType cinfo
+            makeVar (i, t) = do return (I.Var i t)
+        us'  <- mapM makeVar $ zip newVars argsTyps
         body <- desugarMatch (us' ++ us)
-                             [ (ps' ++ ps, e) | ((_ : ps') : ps, e) <- qs' ]
+                             [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
                              def
         -- if k == 0
         --     then return (I.AltData , body)
-
-        return (alt : map I.AltData us', body)
+        let makeBinder (I.Var vid _) = I.AltDefault $ Just vid
+        return (I.AltData dcon (map makeBinder us'), body)
 desugarMatchCons _ _ _ = error "can't happen"
 
 {-
@@ -293,16 +295,15 @@ desugarMatchLit
     -> [Equation]
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
-desugarMatchLit _ _ _ = error "TODO"
--- desugarMatchLit (u : us) qs def = do
---     arms <- sequence [ desugarArm p ps e | (p : ps, e) <- qs ]
---     let arms' = arms ++ [(A.PatWildcard, def)] -- WARN: assuming that PatLit is never exhaustive, adding a default case
---     return $ A.Match (A.Id u) arms'
---   where
---     desugarArm p ps e = do
---         body <- desugarMatch us [(ps, e)] def
---         return (p, body)
--- desugarMatchLit _ _ _ = error "can't happen"
+desugarMatchLit (u : us) qs def = do
+    arms <- sequence [ desugarArm a as e | (a : as, e) <- qs ]
+    --let arms' = arms ++ [(A.PatWildcard, def)] -- WARN: assuming that PatLit is never exhaustive, adding a default case
+    return $ I.Match u arms (I.extract def)
+  where
+    desugarArm a as e = do
+        body <- desugarMatch us [(as, e)] def
+        return (a, body)
+desugarMatchLit _ _ _ = error "can't happen"
 
 {-
 Similar to PatApp, but with only one kind of constructor
@@ -362,7 +363,7 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
     sameGroup (as, _) (as', _) = case (head as, head as') of
         (I.AltLit _, I.AltLit _) -> True
         (I.AltDefault _, I.AltDefault _) -> True
-        (I.AltData dc _, I.AltData dc' _) -> dc == dc'
+        (I.AltData dc _, I.AltData dc' _) -> True --dc == dc'
         _ -> False
 
 
@@ -380,26 +381,29 @@ singleAlias alias i e = I.Let [(alias, i)] e (I.extract e) -- what's t here?
 -- singleAliasWithTyp alias i t =
 --     A.Let [A.DefFn alias [] (A.TypProper t) (A.Id i)]
 
--- getConstructors :: Identifier -> DesugarFn (S.Set Identifier)
--- getConstructors i = do
---     c <- getCInfo i
---     t <- getTInfo (cType c)
---     return $ tCSet t
+getConstructors :: I.DConId -> DesugarFn (S.Set I.DConId)
+getConstructors dcon = do
+    c <- getCInfo dcon
+    t <- getTInfo (cType c)
+    return $ tCSet t
 
--- getArity :: Identifier -> DesugarFn Int
--- getArity i = do
---     c <- getCInfo i
---     return $ cArity c
+getArity :: I.DConId -> DesugarFn Int
+getArity dcon = do
+    c <- getCInfo dcon
+    return $ cArity c
 
--- getCInfo :: Identifier -> DesugarFn CInfo
--- getCInfo i = do
---     cm <- gets $ M.lookup i . consMap
---     maybe throwDesugarError return cm
+getCInfo :: I.DConId -> DesugarFn CInfo
+getCInfo dcon = do
+    cm <- gets $ M.lookup dcon . consMap
+    maybe throwDesugarError return cm
 
--- getTInfo :: Identifier -> DesugarFn TInfo
--- getTInfo i = do
---     tm <- gets $ M.lookup i . typeMap
---     maybe throwDesugarError return tm
+getTInfo :: I.TConId -> DesugarFn TInfo
+getTInfo tcon = do
+    tm <- gets $ M.lookup tcon . typeMap
+    maybe throwDesugarError return tm
+
+throwDesugarError :: DesugarFn a
+throwDesugarError = throwError $ PatternError "Can't desugar pattern match"
 
 foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
 foldrM _ d []       = return d
