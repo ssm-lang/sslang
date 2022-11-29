@@ -85,17 +85,15 @@ desugarDefs = mapM desugarDef
 -- WARN: fail building until tuple implementation is merged
 desugarDef :: A.Definition -> DesugarFn A.Definition
 desugarDef (A.DefFn i ps t e) = do
-  psI <- mapM genNewId ps
-  ps' <- mapM genNewPat ps
+  newIdsPats <- mapM genNewIdNewPat ps
+  let (psI,ps') = unzip newIdsPats
   e'  <- desugarExpr $ A.Match (A.Tuple psI) [(A.PatTup ps, e)]
   return $ A.DefFn i ps' t e'
  where
-  genNewId :: A.Pat -> DesugarFn A.Expr
-  genNewId _ = do
-    A.Id <$> freshVar
-  genNewPat :: A.Pat -> DesugarFn A.Pat
-  genNewPat _ = do
-    A.PatId <$> freshVar
+  genNewIdNewPat :: A.Pat -> DesugarFn (A.Expr,A.Pat)
+  genNewIdNewPat _ = do
+    newVar <- freshVar
+    return (A.Id newVar, A.PatId newVar)
 desugarDef (A.DefPat p e) = A.DefPat p <$> desugarExpr e
 
 desugarExprs :: [A.Expr] -> DesugarFn [A.Expr]
