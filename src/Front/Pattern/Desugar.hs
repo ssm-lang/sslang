@@ -85,10 +85,14 @@ desugarDefs = mapM desugarDef
 -- WARN: fail building until tuple implementation is merged
 desugarDef :: A.Definition -> DesugarFn A.Definition
 desugarDef (A.DefFn i ps t e) = do
+  psI <- mapM genNewId ps
   ps' <- mapM genNewPat ps
-  e'  <- desugarExpr $ A.Match (A.Tuple ps') [(A.PatTup ps, e)]
+  e'  <- desugarExpr $ A.Match (A.Tuple psI) [(A.PatTup ps, e)]
   return $ A.DefFn i ps' t e'
  where
+  genNewId :: A.Pat -> DesugarFn A.Expr
+  genNewId _ = do
+    A.Id <$> freshVar
   genNewPat :: A.Pat -> DesugarFn A.Pat
   genNewPat _ = do
     A.PatId <$> freshVar
@@ -117,7 +121,7 @@ desugarExpr (A.After e1 e2 e3) =
 desugarExpr (A.Assign e1 e2) = A.Assign <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr (A.Constraint e typann) =
   A.Constraint <$> desugarExpr e <*> return typann
-desugarExpr (A.Wait es  )    = A.Wait <$> desugarExprs es
+desugarExpr (A.Wait  es )    = A.Wait <$> desugarExprs es
 desugarExpr (A.Tuple es )    = A.Tuple <$> desugarExprs es
 desugarExpr (A.Seq e1 e2)    = A.Seq <$> desugarExpr e1 <*> desugarExpr e2
 desugarExpr A.Break          = return A.Break
@@ -342,8 +346,8 @@ substId old new = substExpr
     A.After (substExpr e1) (substExpr e2) (substExpr e3)
   substExpr (A.Assign     e1 e2    ) = A.Assign (substExpr e1) (substExpr e2)
   substExpr (A.Constraint e  typann) = A.Constraint (substExpr e) typann
-  substExpr (A.Wait es             ) = A.Wait (map substExpr es)
-  substExpr (A.Tuple es)             = A.Tuple (map substExpr es)
+  substExpr (A.Wait  es            ) = A.Wait (map substExpr es)
+  substExpr (A.Tuple es            ) = A.Tuple (map substExpr es)
   substExpr (A.Seq e1 e2           ) = A.Seq (substExpr e1) (substExpr e2)
   substExpr A.Break                  = A.Break
   substExpr (A.Match e arms) =
