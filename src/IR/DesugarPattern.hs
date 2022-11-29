@@ -103,14 +103,17 @@ newtype DesugarFn a = DesugarFn (StateT DesugarCtx Compiler.Pass a)
   deriving (MonadError Error)  via (StateT DesugarCtx Compiler.Pass)
   deriving (MonadState DesugarCtx)     via (StateT DesugarCtx Compiler.Pass)
 
+
 runDesugarFn :: DesugarFn a -> DesugarCtx -> Compiler.Pass a
 runDesugarFn (DesugarFn m) = evalStateT m
+
 
 freshVar :: DesugarFn Identifier
 freshVar = do
     currCount <- gets anonCount
     modify $ \ctx -> ctx { anonCount = anonCount ctx + 1 }
     return $ fromString ("__pat_anon" ++ show currCount)
+
 
 buildCtx :: [(I.TConId, I.TypeDef)] -> DesugarCtx
 buildCtx tds = DesugarCtx { anonCount = 0
@@ -199,9 +202,8 @@ desugarMatchGen
 desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | isConsEq (head qs) = desugarMatchCons us qs def
                           | isLitEq (head qs)  = desugarMatchLit us qs def
-                          |
-                        --   | isTupEq (head qs)  = desugarMatchTup us qs def
-                            isWildEq (head qs) = desugarMatchWild us qs def
+                        --   | isTupEq (head qs)  = desugaratchTup us qs def
+                          | isWildEq (head qs) = desugarMatchWild us qs def
                           | otherwise          = error "can't happen"
   where
     isWildEq (as, _) = case head as of
@@ -216,6 +218,7 @@ desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
     isLitEq (as, _) = case head as of
         I.AltLit _ -> True
         _          -> False
+
 
 desugarMatchVar
     :: [I.Expr I.Type]
