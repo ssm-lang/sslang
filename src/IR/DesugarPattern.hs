@@ -5,16 +5,13 @@ module IR.DesugarPattern
     ( desugarPattern
     ) where
 
-import           Codegen.Typegen                ( TConInfo(typeScrut) )
 import           Common.Compiler               as Compiler
-import           Common.Compiler                ( Error(..)
-                                                , MonadError(..)
-                                                , Pass(..)
+                                                ( Error(PatternError)
+                                                , MonadError(throwError)
+                                                , Pass
                                                 , fromString
                                                 )
-import           Common.Identifiers             ( Identifier(..)
-                                                , isCons
-                                                )
+import           Common.Identifiers             ( Identifier(..) )
 import           Control.Monad                  ( replicateM )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
@@ -28,7 +25,6 @@ import           Data.Bifunctor                 ( Bifunctor(second)
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( isJust
                                                 , isNothing
-                                                , mapMaybe
                                                 )
 import qualified Data.Set                      as S
 import qualified IR.IR                         as I
@@ -54,13 +50,6 @@ data DesugarCtx = DesugarCtx
     , consMap   :: M.Map I.DConId CInfo
     , anonCount :: Int
     }
-
-{-
-I.TypeDef = { variants :: [(DConId, TypeVariant)]
-  , targs    :: [TVarId]
-  }
-TypeVariant = VariantUnnamed [Type] 
--}
 
 buildTypeMap :: [(I.TConId, I.TypeDef)] -> M.Map I.TConId TInfo
 buildTypeMap = foldr tAcc M.empty
@@ -107,7 +96,6 @@ newtype DesugarFn a = DesugarFn (StateT DesugarCtx Compiler.Pass a)
 runDesugarFn :: DesugarFn a -> DesugarCtx -> Compiler.Pass a
 runDesugarFn (DesugarFn m) = evalStateT m
 
-
 freshVar :: DesugarFn Identifier
 freshVar = do
     currCount <- gets anonCount
@@ -138,7 +126,6 @@ desugarExprsDefs defs = do
     es' <- mapM desugarExpr es
     return $ zip vs es'
     where (vs, es) = unzip defs
--- desugarExprs = mapM (Data.Bifunctor.second desugarExpr)
 
 
 desugarExpr :: I.Expr I.Type -> DesugarFn (I.Expr I.Type)
@@ -172,14 +159,9 @@ desugarExpr (I.Match e arms t) = do
         )
         arms
     let armsForDesugar = map (first (: [])) arms'
-    -- case e of
-    --     I.Var v t' -> desugarMatch [I.Var v t'] armsForDesugar (I.NoExpr t) -- should this be t?? considering put t back?
-    --     _         -> do
-    --         v <- I.VarId <$> freshVar
-    -- singleLet v e <$> desugarMatch [I.Var v (I.extract e)] armsForDesugar (I.NoExpr t) <*> do return t-- INFO: for now, default expression is NoExpr
-
     desugarMatch [e] armsForDesugar (I.NoExpr t)
 desugarExpr e@(I.NoExpr _) = return e
+
 
 desugarMatch
     :: [I.Expr I.Type]
@@ -187,12 +169,13 @@ desugarMatch
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
 desugarMatch [] [] def = case def of
-    I.NoExpr _ -> error "can't happen" -- INFO: for now, can't handle inexhaustive patterns
+    I.NoExpr _ -> error "can't happen"
     _          -> return def
-desugarMatch []         (([], e) : _) _   = return e
-desugarMatch []         _             _   = error "can't happen"
+desugarMatch [] (([], e) : _) _   = return e
+desugarMatch [] _             _   = error "can't happen"
 desugarMatch us qs            def = do
     foldrM (desugarMatchGen us) def (partitionEqs qs)
+
 
 desugarMatchGen
     :: [I.Expr I.Type]
@@ -230,9 +213,7 @@ desugarMatchVar (u : us) qs def = desugarMatch
     [ (ps, singleAlias v u e) | (I.AltDefault v : ps, e) <- qs ]
     def
 
-{-
-To make life easier: transform PatWildcard into variable PatId
--}
+
 desugarMatchWild
     :: [I.Expr I.Type]
     -> [Equation]
@@ -242,54 +223,39 @@ desugarMatchWild [] _ _ = error "can't happen"
 desugarMatchWild (_ : us) qs def =
     desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
 
--- desugarMatchWild :: [Equation] -> DesugarFn [Equation]
--- desugarMatchWild = mapM desugar
---  where
---   desugar (A.PatWildcard : rs, v) = do
---     i <- freshVar
---     return (A.PatId i : rs, v)
---   desugar eq = return eq
 
-{-
-Assume only having PatApp
--}
 desugarMatchCons
     :: [I.Expr I.Type]
     -> [Equation]
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
 desugarMatchCons (u : us) qs def = do
-    cs <- getConstructors . getCon . head $ qs
+    cs   <- getConstructors . getCon . head $ qs
     arms <- sequence [ desugarArm c (choose c) | c <- S.toList cs ]
-    --arms <- mapM desugarArm qs
     return $ I.Match u arms (I.extract def)
   where
     getCon ((I.AltData dcon _) : _, _) = dcon
-    getCon _ = error "can't happen"
+    getCon _                           = error "can't happen"
     choose c = [ q | q <- qs, getCon q == c ]
     desugarArm :: I.DConId -> [Equation] -> DesugarFn (I.Alt, I.Expr I.Type)
     desugarArm dcon qs' = do
-        --alt <- head (fst head qs')
-        k   <- getArity dcon
+        k      <- getArity dcon
         newIds <- replicateM k freshVar
-        cinfo <- getCInfo dcon
-        let newVars = map I.VarId newIds
-            argsTyps  =  argsType cinfo
-            makeVar (i, t) = do return (I.Var i t)
+        cinfo  <- getCInfo dcon
+        let newVars  = map I.VarId newIds
+            argsTyps = argsType cinfo
+            makeVar (i, t) = do
+                return (I.Var i t)
         us'  <- mapM makeVar $ zip newVars argsTyps
-        body <- desugarMatch (us' ++ us)
-                             [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
-                             def
-        -- if k == 0
-        --     then return (I.AltData , body)
+        body <- desugarMatch
+            (us' ++ us)
+            [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
+            def
         let makeBinder (I.Var vid _) = I.AltDefault $ Just vid
         return (I.AltData dcon (map makeBinder us'), body)
 desugarMatchCons _ _ _ = error "can't happen"
 
-{-
-Simple pass for PatLit; no special desugaring
-(Assuming that the patterns are exhaustive)
--}
+
 desugarMatchLit
     :: [I.Expr I.Type]
     -> [Equation]
@@ -305,53 +271,6 @@ desugarMatchLit (u : us) qs def = do
         return (a, body)
 desugarMatchLit _ _ _ = error "can't happen"
 
-{-
-Similar to PatApp, but with only one kind of constructor
--}
--- desugarMatchTup :: [Identifier] -> [Equation] -> A.Expr -> DesugarFn A.Expr
--- desugarMatchTup (u : us) qs@((A.PatTup rs : _, _) : _) def = do
---     arm <- desugarArm
---     return $ A.Match (A.Id u) [arm]
---   where
---     desugarArm = do
---         let k = length rs
---         us'  <- replicateM k freshVar
---         body <- desugarMatch
---             (us' ++ us)
---             [ (ps' ++ ps, e) | (A.PatTup ps' : ps, e) <- qs ]
---             def
---         return (A.PatTup $ map A.PatId us', body)
--- desugarMatchTup _ _ _ = error "can't happen"
-
-{-
-To make life easier: transform constructor PatId into PatApp [PatId]
--}
--- desugarMatchIdCons :: [Equation] -> DesugarFn [Equation]
--- desugarMatchIdCons []       = return []
--- desugarMatchIdCons (x : xs) = do
---     xs' <- desugarMatchIdCons xs
---     let x' = desugar x
---     return (x' : xs')
---   where
---     desugar eq@(A.PatId i : rs, v) =
---         if isCons i then (A.PatApp [A.PatId i] : rs, v) else eq
---     desugar eq = eq
-
-
-{-
-Desugar PatAs and PatAnn into its actual pattern,
-and propagate the 'as' or 'ann' part using let-bindings in the body
--}
--- desugarMatchAsAnn :: [Identifier] -> [Equation] -> DesugarFn [Equation]
--- desugarMatchAsAnn us@(u : _) (x : xs) = do
---     xs' <- desugarMatchAsAnn us xs
---     return (desugar x : xs')
---   where
---     desugar ((A.PatAs i r) : rs, v) = desugar (r : rs, singleAlias i u v)
---     desugar ((A.PatAnn t r) : rs, v) =
---         desugar (r : rs, singleAliasWithTyp u u t v)
---     desugar eq = eq
--- desugarMatchAsAnn _ _ = return []
 
 partitionEqs :: [Equation] -> [[Equation]]
 partitionEqs []  = []
@@ -363,7 +282,7 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
     sameGroup (as, _) (as', _) = case (head as, head as') of
         (I.AltLit _, I.AltLit _) -> True
         (I.AltDefault _, I.AltDefault _) -> True
-        (I.AltData dc _, I.AltData dc' _) -> True --dc == dc'
+        (I.AltData _ _, I.AltData _ _) -> True
         _ -> False
 
 
@@ -373,13 +292,6 @@ singleLet i e = I.Let [(Just i, e)]
 
 singleAlias :: I.Binder -> I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
 singleAlias alias i e = I.Let [(alias, i)] e (I.extract e) -- what's t here?
-
--- singleAlias :: Identifier -> Identifier -> A.Expr -> A.Expr
--- singleAlias alias i = A.Let [A.DefFn alias [] A.TypNone (A.Id i)]
-
--- singleAliasWithTyp :: Identifier -> Identifier -> A.Typ -> A.Expr -> A.Expr
--- singleAliasWithTyp alias i t =
---     A.Let [A.DefFn alias [] (A.TypProper t) (A.Id i)]
 
 getConstructors :: I.DConId -> DesugarFn (S.Set I.DConId)
 getConstructors dcon = do
