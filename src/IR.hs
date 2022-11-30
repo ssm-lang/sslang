@@ -22,6 +22,7 @@ import           Common.Pretty                  ( spaghetti )
 import           Control.Monad                  ( (>=>)
                                                 , when
                                                 )
+import           IR.Simplify                    ( simplifyProgram )
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
@@ -61,11 +62,10 @@ options =
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
-  , Option
-    ""
-    ["dump-ir-typed-ugly"]
-    (NoArg $ setMode DumpIRTypedUgly)
-    "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-typed-ugly"]
+           (NoArg $ setMode DumpIRTypedUgly)
+           "Ugly-Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-lifted"]
            (NoArg $ setMode DumpIRLifted)
@@ -104,6 +104,7 @@ transform opt p = do
   p <- externToCall p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
+  p <- simplifyProgram p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p
