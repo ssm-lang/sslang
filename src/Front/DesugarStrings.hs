@@ -13,6 +13,8 @@ import           Front.Ast                      ( Definition(..)
 import                                          Common.Identifiers
 import           Data.Char                      ( ord
                                                 )
+import Data.Generics                            ( mkT, everywhere )                                             
+
 -- | Desugar String Literal nodes inside of an AST 'Program'.
 desugarStrings :: Program -> Compiler.Pass Program
 desugarStrings (Program decls) = return $ Program $ desugarTop <$> decls
@@ -20,8 +22,8 @@ desugarStrings (Program decls) = return $ Program $ desugarTop <$> decls
   desugarTop (TopDef d) = TopDef $ desugarDef d
   desugarTop t          = t
 
-  desugarDef (DefFn v bs t e) = DefFn v bs t $ desugarExpr e
-  desugarDef (DefPat b e    ) = DefPat b $ desugarExpr e
+  desugarDef (DefFn v bs t e) = DefFn v bs t $ everywhere (mkT desugarExpr) e
+  desugarDef (DefPat b e    ) = DefPat b $ everywhere (mkT desugarExpr) e
   
 
 -- | Transform a node of type LitString into a node of type ListExpr
