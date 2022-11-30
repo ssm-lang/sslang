@@ -84,6 +84,11 @@ desugarDefs = mapM desugarDef
 -- toplevel DefFn is desugared
 -- WARN: fail building until tuple implementation is merged
 desugarDef :: A.Definition -> DesugarFn A.Definition
+desugarDef def@(A.DefFn _ [] _ _) = return def
+desugarDef (A.DefFn i [p] t e) = do
+  newId <- freshVar
+  e' <- desugarExpr $ A.Match (A.Id newId) [(p, e)]
+  return $ A.DefFn i [A.PatId newId] t e'
 desugarDef (A.DefFn i ps t e) = do
   newIdsPats <- mapM genNewIdNewPat ps
   let (psI,ps') = unzip newIdsPats
