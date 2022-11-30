@@ -166,9 +166,7 @@ desugarMatch
     -> [Equation]
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
-desugarMatch [] [] def = case def of
-    I.NoExpr _ -> error "can't happen"
-    _          -> return def
+desugarMatch [] [] def = return def
 desugarMatch [] (([], e) : _) _   = return e
 desugarMatch [] _             _   = error "can't happen"
 desugarMatch us qs            def = do
