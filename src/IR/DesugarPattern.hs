@@ -127,7 +127,6 @@ desugarExprsDefs defs = do
     return $ zip vs es'
     where (vs, es) = unzip defs
 
-
 desugarExpr :: I.Expr I.Type -> DesugarFn (I.Expr I.Type)
 desugarExpr e@(I.Var  _ _) = return e
 desugarExpr e@(I.Data _ _) = return e
@@ -142,7 +141,6 @@ desugarExpr (I.Let bins e t) =
                 es' <- mapM desugarExpr es
                 return $ zip bs es'
             )
-        -- <$> mapM (Data.Bifunctor.second desugarExpr) bins
         <*> desugarExpr e
         <*> (do
                 return t
@@ -223,7 +221,6 @@ desugarMatchWild [] _ _ = error "can't happen"
 desugarMatchWild (_ : us) qs def =
     desugarMatch us [ (ps, e) | (_ : ps, e) <- qs ] def
 
-
 desugarMatchCons
     :: [I.Expr I.Type]
     -> [Equation]
@@ -252,6 +249,7 @@ desugarMatchCons (u : us) qs def = do
             [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
             def
         let makeBinder (I.Var vid _) = I.AltDefault $ Just vid
+            makeBinder _             = error "can't happen"
         return (I.AltData dcon (map makeBinder us'), body)
 desugarMatchCons _ _ _ = error "can't happen"
 
@@ -271,7 +269,6 @@ desugarMatchLit (u : us) qs def = do
         return (a, body)
 desugarMatchLit _ _ _ = error "can't happen"
 
-
 partitionEqs :: [Equation] -> [[Equation]]
 partitionEqs []  = []
 partitionEqs [x] = [[x]]
@@ -286,12 +283,12 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
         _ -> False
 
 
-singleLet
-    :: I.VarId -> I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
-singleLet i e = I.Let [(Just i, e)]
+-- singleLet
+--     :: I.VarId -> I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
+-- singleLet i e = I.Let [(Just i, e)]
 
 singleAlias :: I.Binder -> I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
-singleAlias alias i e = I.Let [(alias, i)] e (I.extract e) -- what's t here?
+singleAlias alias i e = I.Let [(alias, i)] e (I.extract e)
 
 getConstructors :: I.DConId -> DesugarFn (S.Set I.DConId)
 getConstructors dcon = do
