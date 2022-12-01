@@ -84,7 +84,7 @@ parseAst opt src = do
   astL <- desugarLists astS
 
   -- TODO: other desugaring
-  let astTuple = insertTypeDef pairDef astP
+  let astTuple = insertTypeDef pairDef astL
 
   Pattern.checkAnomaly astTuple
   astD <- Pattern.desugarProgram astTuple

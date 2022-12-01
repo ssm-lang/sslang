@@ -4,6 +4,7 @@ module Front.DesugarLists
   )
 where
 
+import Data.Generics
 import qualified Common.Compiler as Compiler
 import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..), Literal(..))
 import Common.Identifiers as I
@@ -15,8 +16,8 @@ desugarLists (Program decls) = return $ Program $ desugarTop <$> decls
     desugarTop (TopDef d) = TopDef $ desugarDef d
     desugarTop t = t
     --test = Compiler.unexpected $ show $ (appidhelper [(Lit (LitInt 1)), (Lit (LitInt 2))]) 
-    desugarDef (DefFn v bs t e) = DefFn v bs t $ desugarExpr e
-    desugarDef (DefPat b e) = DefPat b $ desugarExpr e
+    desugarDef (DefFn v bs t e) = DefFn v bs t $ everywhere (mkT desugarExpr) e
+    desugarDef (DefPat b e    ) = DefPat b $ everywhere (mkT desugarExpr) e
 
 -- | Transform a node of type ListExpr into a node of type App
 -- For ex, (ListExpr [1, 2, 3]) turns into
