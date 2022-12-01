@@ -120,6 +120,7 @@ checkExpr (A.Match e arms) =
 checkExpr (A.CQuote _  ) = return ()
 checkExpr (A.CCall _ es) = mapM_ checkExpr es
 checkExpr (A.ListExpr _)    = return ()
+checkExpr (A.Tuple es        )     = checkExprs es
 
 checkOpRegion :: A.OpRegion -> AnomalyFn ()
 checkOpRegion (A.NextOp _ e opRegion) = checkExpr e >> checkOpRegion opRegion
