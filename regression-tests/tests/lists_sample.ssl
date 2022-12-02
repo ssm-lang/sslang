@@ -13,6 +13,22 @@ puts cout s =
     Nil = ()
 
 main cin cout =
- let lst = [49,50,51] // will uncomment this when list syntax works end-to-end
- puts cout lst
- // () // main must return unit
+// check multi element list
+  let multi_lst = [49,50,51]
+  puts cout multi_lst
+  after 1, cout <- 10
+  wait cout
+
+// check singleton list
+  let single_lst = [49]
+  puts cout single_lst
+
+  after 1, cout <- 10
+  wait cout
+
+// check empty element list
+  let empty_lst = []
+  puts cout empty_lst
+  
+  after 1, cout <- 10
+  wait cout

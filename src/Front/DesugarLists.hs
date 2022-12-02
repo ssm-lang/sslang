@@ -15,15 +15,9 @@ desugarLists (Program decls) = return $ Program $ desugarTop <$> decls
   where
     desugarTop (TopDef d) = TopDef $ desugarDef d
     desugarTop t = t
-    --test = Compiler.unexpected $ show $ (appidhelper [(Lit (LitInt 1)), (Lit (LitInt 2))]) 
     desugarDef (DefFn v bs t e) = DefFn v bs t $ everywhere (mkT desugarExpr) e
     desugarDef (DefPat b e    ) = DefPat b $ everywhere (mkT desugarExpr) e
 
--- | Transform a node of type ListExpr into a node of type App
--- For ex, (ListExpr [1, 2, 3]) turns into
--- App (App (Id "Cons") (Lit (LitInt 1) ))
---     (App (App (Id "Cons") (Lit (LitInt 2)))
---          (App (App (Id "Cons") (Lit (LitInt 3))) (id "Nil")))
 
 {-
 appidhelper:: A.ListExpr -> A.ListExpr
@@ -46,11 +40,13 @@ appidhelper ([]) = (Id nil)
 appidhelper ((h:t)) = Apply (Apply (Id cons) h) (appidhelper t)
 
 --[(A.Id (I.Identifier "App")) (A.Id (I.Identifier "Cons")) | i <- a] 
+
+-- | Transform a node of type ListExpr into a node of type App
+-- For ex, (ListExpr [1, 2, 3]) turns into
+-- App (App (Id "Cons") (Lit (LitInt 1) ))
+--     (App (App (Id "Cons") (Lit (LitInt 2)))
+--          (App (App (Id "Cons") (Lit (LitInt 3))) (id "Nil")))
 desugarExpr :: Expr -> Expr
---desugarExpr _ = Compiler.unexpected $ (show (A.Lit(A.LitInt 5)))
 desugarExpr (ListExpr es) = appidhelper es
 desugarExpr (ListExpr []) = (Id nil)
 desugarExpr e = e -- if it's not a listExpr instance, don't do anything
-
-
--- Not on literal, no expr, break, cquote
