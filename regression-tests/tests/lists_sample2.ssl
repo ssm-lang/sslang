@@ -13,5 +13,5 @@ puts cout s =
     Nil = ()
 
 main cin cout =
- let lst = Cons '1' (Cons '2' (Cons '3' (Cons '4' (Cons '5' Nil))))
+ let lst = Cons 49 (Cons 50 (Cons 51 (Cons 52 (Cons 53 Nil))))
  puts cout lst

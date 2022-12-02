@@ -7,7 +7,7 @@ where
 import Data.Generics
 import qualified Common.Compiler as Compiler
 import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..), Literal(..))
-import Common.Identifiers as I
+import Common.Identifiers
 
 -- | Desugar ListExpr nodes inside of an AST 'Program'.
 desugarLists :: Program -> Compiler.Pass Program
@@ -42,14 +42,14 @@ I think this is what you wanted to do.
 -}
 
 appidhelper:: [Expr] -> Expr
-appidhelper ([]) = (Id (I.Identifier "Nil"))
-appidhelper ((h:t)) = Apply (Apply (Id (I.Identifier "Cons")) h) (appidhelper t)
+appidhelper ([]) = (Id nil)
+appidhelper ((h:t)) = Apply (Apply (Id cons) h) (appidhelper t)
 
 --[(A.Id (I.Identifier "App")) (A.Id (I.Identifier "Cons")) | i <- a] 
 desugarExpr :: Expr -> Expr
 --desugarExpr _ = Compiler.unexpected $ (show (A.Lit(A.LitInt 5)))
 desugarExpr (ListExpr es) = appidhelper es
-desugarExpr (ListExpr []) = (Id (I.Identifier "Nil"))
+desugarExpr (ListExpr []) = (Id nil)
 desugarExpr e = e -- if it's not a listExpr instance, don't do anything
 
 

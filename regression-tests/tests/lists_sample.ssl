@@ -1,9 +1,8 @@
-/*type List
+type List
   Cons Int List
   Nil
-*/
 
-/*puts cout s =
+puts cout s =
   match s
     Cons c ss =
       after 1, cout <- c
@@ -12,8 +11,8 @@
       wait cout
       puts cout ss
     Nil = ()
-*/
 
 main cin cout =
- let lst = [1,2,3] // will uncomment this when list syntax works end-to-end
- () // main must return unit
+ let lst = [49,50,51] // will uncomment this when list syntax works end-to-end
+ puts cout lst
+ // () // main must return unit
