@@ -33,5 +33,4 @@ desugarExpr e = e
 
 func :: [Expr] -> Expr
 func [] = Id (Identifier "Nil")
-func (h:t) = Apply (Apply (Id (Identifier "Cons")) h) (func t)
-
+func t = foldr (Apply . Apply (Id (Identifier "Cons"))) (Id (Identifier "Nil")) t
