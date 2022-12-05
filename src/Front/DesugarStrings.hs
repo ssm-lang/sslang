@@ -30,7 +30,5 @@ desugarStrings (Program decls) = return $ Program $ desugarTop <$> decls
 -- For ex, (Lit (LitString "abc")) turns into (ListExpr [97, 98, 99])
 desugarExpr :: Expr -> Expr
 desugarExpr (Lit (LitString s)) = ListExpr (convertList s)
-desugarExpr e                   = e
-
-convertList :: [Char] -> [Expr]
-convertList ls = [ Lit (LitInt (toInteger i)) | i <- map ord ls ]
+  where convertList ls = [ Lit (LitInt (toInteger i)) | i <- map ord ls ]
+desugarExpr e = e
