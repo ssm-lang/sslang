@@ -221,7 +221,7 @@ inferAlt t (AltLit l) = do
   t' <- U.instantiate =<< inferLit l
   t =:= t'
   return []
-inferAlt t (AltDefault b) = return [(b, T.forall [] t)]
+inferAlt t (AltBinder b) = return [(b, T.forall [] t)]
 
 -- | Type inference rules for primitives of a given arity.
 inferPrim :: Int -> Primitive -> Infer U.Scheme

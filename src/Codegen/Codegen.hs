@@ -657,7 +657,7 @@ genExpr (I.Match s as t) = do
     withAltScope label (I.AltLit l) m = do
       blk <- m
       return ([citem|case $exp:(genLiteralRaw l):;|], mkBlk label blk)
-    withAltScope label (I.AltDefault b) m = do
+    withAltScope label (I.AltBinder b) m = do
       blk <- withBindings [(b, scrut)] m
       addBinding b scrut
       return ([citem|default:;|], mkBlk label blk)

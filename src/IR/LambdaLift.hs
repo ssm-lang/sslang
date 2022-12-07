@@ -249,12 +249,12 @@ liftLambdasInArm (I.AltLit l, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
-liftLambdasInArm (I.AltDefault b, arm) = do
+liftLambdasInArm (I.AltBinder b, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ do
     forM_ b addCurrentScope
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltDefault b, liftedArm)
+  return (I.AltBinder b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ do
     mapM_ addCurrentScope (mapMaybe I.getAltDefault bs)
