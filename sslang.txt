@@ -1940,16 +1940,16 @@ Prim :: Primitive -> [Expr t] -> t -> Expr t
 -- | An alternative in a pattern-match.
 data Alt
 
--- | <tt>AltData d vs</tt> matches data constructor <tt>d</tt>, and names
---   dcon members <tt>vs</tt>.
-AltData :: DConId -> [Binder] -> Alt
+-- | <tt>AltData d vs</tt> matches data constructor <tt>d</tt>, and
+--   recursive patterns <tt>alts</tt>.
+AltData :: DConId -> [Alt] -> Alt
 
 -- | <tt>AltLit l</tt> matches against literal <tt>l</tt>, producing
 --   expression <tt>e</tt>.
 AltLit :: Literal -> Alt
 
--- | <tt>AltDefault v</tt> matches anything, and bound to name <tt>v</tt>.
-AltDefault :: Binder -> Alt
+-- | <tt>AltBinder v</tt> matches anything, and bound to name <tt>v</tt>.
+AltBinder :: Binder -> Alt
 
 -- | Identifier for data variables, e.g., <tt>x</tt>.
 newtype VarId
@@ -2032,6 +2032,9 @@ unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
 
 -- | Whether an expression is a value.
 isValue :: Expr t -> Bool
+
+-- | Retrieve binder from Alt, assuming it is AltBinder.
+getAltDefault :: Alt -> Binder
 instance Data.Data.Data IR.IR.TypeVariant
 instance GHC.Classes.Eq IR.IR.TypeVariant
 instance GHC.Show.Show IR.IR.TypeVariant
