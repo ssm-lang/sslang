@@ -99,7 +99,6 @@ checkExprs = mapM_ checkExpr
 checkExpr :: A.Expr -> AnomalyFn ()
 checkExpr (A.Id       _          ) = return ()
 checkExpr (A.Lit      _          ) = return ()
-checkExpr (A.ListExpr es         ) = checkExprs es
 checkExpr (A.Apply    e1 e2      ) = checkExprs [e1, e2]
 checkExpr (A.Lambda   _  e       ) = checkExpr e -- WARN: patterns here are not checked
 checkExpr (A.OpRegion e  opRegion) = checkExpr e >> checkOpRegion opRegion
@@ -119,7 +118,7 @@ checkExpr (A.Match e arms) =
   let (ps, es) = unzip arms in checkExpr e >> checkExprs es >> checkPats ps
 checkExpr (A.CQuote _  ) = return ()
 checkExpr (A.CCall _ es) = mapM_ checkExpr es
-checkExpr (A.ListExpr _)    = return ()
+checkExpr (A.ListExpr es)    = mapM_ checkExpr es
 checkExpr (A.Tuple es        )     = checkExprs es
 
 checkOpRegion :: A.OpRegion -> AnomalyFn ()

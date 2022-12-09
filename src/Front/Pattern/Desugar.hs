@@ -341,7 +341,6 @@ substId old new = substExpr
     in  A.Match (substExpr e) (map substArm arms)
   substExpr e@(A.CQuote _  ) = e
   substExpr (  A.CCall s es) = A.CCall s $ map substExpr es
-  substExpr (A.ListExpr es) = A.ListExpr $ map substExpr es
 
 singleLet :: Identifier -> A.Expr -> A.Expr -> A.Expr
 singleLet i e = A.Let [A.DefFn i [] A.TypNone e]

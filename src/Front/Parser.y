@@ -319,12 +319,12 @@ exprAtom
 
 -- | List Expression.
 exprList
-  :list                                           { $1 }
-  | {- empty list -}                               { [] }
+  :list                                 { $1 }
+  | {- empty list -}                    { [] }
 
 list
-  :exprAtom                                 { [$1] }
-  | exprAtom ',' list                       { $1 : $3 }
+  :exprAtom                             { [$1] }
+  | exprAtom ',' list                   { $1 : $3 }
 
 -- | Pipe-separated expressions, for parallel composition.
 exprPar                               --> [Expr]

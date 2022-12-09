@@ -6,7 +6,7 @@ where
 
 import Data.Generics
 import qualified Common.Compiler as Compiler
-import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..), Literal(..))
+import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..))
 import Common.Identifiers
 
 -- | Desugar ListExpr nodes inside of an AST 'Program'.
@@ -18,35 +18,14 @@ desugarLists (Program decls) = return $ Program $ desugarTop <$> decls
     desugarDef (DefFn v bs t e) = DefFn v bs t $ everywhere (mkT desugarExpr) e
     desugarDef (DefPat b e    ) = DefPat b $ everywhere (mkT desugarExpr) e
 
-
-{-
-appidhelper:: A.ListExpr -> A.ListExpr
-appidhelper [] = [(A.Id (I.Identifier "App")) (A.Id (I.Identifier "Cons")) (A.Id (I.Identifier "Nil"))]
-appidhelper (h:t) = A.Id (I.Identifier "App") (A.Id (I.Identifier "Cons")) h : appidhelper t
-
-ListExpr is not a type, it's a data constructor.
-Data constructors return an instance of a type. 
-ListExpr is a data constructor that returns an instance of type Expr.
-It's not possible to have a function that takes in
-something of type ListExpr and returns something of type ListExpr, because a ListExpr is not a type.
-It is possible to have a function that takes in 
-something of type Expr and returns something of type Expr!
-Then you can special case on instance of ListExpr.
-I think this is what you wanted to do.
--}
-
-appidhelper:: [Expr] -> Expr
-appidhelper ([]) = (Id nil)
-appidhelper ((h:t)) = Apply (Apply (Id cons) h) (appidhelper t)
-
---[(A.Id (I.Identifier "App")) (A.Id (I.Identifier "Cons")) | i <- a] 
-
 -- | Transform a node of type ListExpr into a node of type App
 -- For ex, (ListExpr [1, 2, 3]) turns into
 -- App (App (Id "Cons") (Lit (LitInt 1) ))
 --     (App (App (Id "Cons") (Lit (LitInt 2)))
 --          (App (App (Id "Cons") (Lit (LitInt 3))) (id "Nil")))
 desugarExpr :: Expr -> Expr
-desugarExpr (ListExpr es) = appidhelper es
-desugarExpr (ListExpr []) = (Id nil)
-desugarExpr e = e -- if it's not a listExpr instance, don't do anything
+desugarExpr (ListExpr es) = helper es
+  where helper :: [Expr] -> Expr
+        helper [] = (Id nil)
+        helper (h:t) = Apply (Apply (Id cons) h) (helper t)
+desugarExpr e = e

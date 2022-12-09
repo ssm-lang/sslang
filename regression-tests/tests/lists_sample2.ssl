@@ -1,3 +1,6 @@
+// Checking if list ADTs work as intended
+// Tests underlying construction of lists
+
 type List
   Cons Int List
   Nil
