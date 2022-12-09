@@ -1,0 +1,20 @@
+// Checking if list ADTs work as intended
+// Tests underlying construction of lists
+
+type List
+  Cons Int List
+  Nil
+
+puts cout s =
+  match s
+    Cons c ss =
+      after 1, cout <- c
+      wait cout
+      after 1, cout <- 32
+      wait cout
+      puts cout ss
+    Nil = ()
+
+main cin cout =
+ let lst = Cons 49 (Cons 50 (Cons 51 (Cons 52 (Cons 53 Nil))))
+ puts cout lst
