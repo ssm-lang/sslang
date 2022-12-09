@@ -18,8 +18,8 @@
 </span><span id="line-18"></span><span class="hs-comment">-- | Desugar String Literal nodes inside of an AST 'Program'.</span><span>
 </span><span id="line-19"></span><span class="annot"><a href="Front.DesugarStrings.html#desugarStrings"><span class="hs-identifier hs-type">desugarStrings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-20"></span><span id="desugarStrings"><span class="annot"><span class="annottext">desugarStrings :: Program -&gt; Pass Program
-</span><a href="Front.DesugarStrings.html#desugarStrings"><span class="hs-identifier hs-var hs-var">desugarStrings</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679508688"><span class="annot"><span class="annottext">[TopDef]
-</span><a href="#local-6989586621679508688"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><a href="Front.DesugarStrings.html#desugarStrings"><span class="hs-identifier hs-var hs-var">desugarStrings</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679515701"><span class="annot"><span class="annottext">[TopDef]
+</span><a href="#local-6989586621679515701"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Pass Program) -&gt; Program -&gt; Pass Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -27,33 +27,33 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="Front.Ast.html#Program"><span class="hs-identifier hs-var">Program</span></a></span><span> </span><span class="annot"><span class="annottext">([TopDef] -&gt; Program) -&gt; [TopDef] -&gt; Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TopDef -&gt; TopDef
-</span><a href="#local-6989586621679508687"><span class="hs-identifier hs-var">desugarTop</span></a></span><span> </span><span class="annot"><span class="annottext">(TopDef -&gt; TopDef) -&gt; [TopDef] -&gt; [TopDef]
+</span><a href="#local-6989586621679515700"><span class="hs-identifier hs-var">desugarTop</span></a></span><span> </span><span class="annot"><span class="annottext">(TopDef -&gt; TopDef) -&gt; [TopDef] -&gt; [TopDef]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[TopDef]
-</span><a href="#local-6989586621679508688"><span class="hs-identifier hs-var">decls</span></a></span><span>
+</span><a href="#local-6989586621679515701"><span class="hs-identifier hs-var">decls</span></a></span><span>
 </span><span id="line-21"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-22"></span><span>  </span><span id="local-6989586621679508687"><span class="annot"><span class="annottext">desugarTop :: TopDef -&gt; TopDef
-</span><a href="#local-6989586621679508687"><span class="hs-identifier hs-var hs-var">desugarTop</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#TopDef"><span class="hs-identifier hs-type">TopDef</span></a></span><span> </span><span id="local-6989586621679508684"><span class="annot"><span class="annottext">Definition
-</span><a href="#local-6989586621679508684"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Definition -&gt; TopDef
+</span><span id="line-22"></span><span>  </span><span id="local-6989586621679515700"><span class="annot"><span class="annottext">desugarTop :: TopDef -&gt; TopDef
+</span><a href="#local-6989586621679515700"><span class="hs-identifier hs-var hs-var">desugarTop</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#TopDef"><span class="hs-identifier hs-type">TopDef</span></a></span><span> </span><span id="local-6989586621679515697"><span class="annot"><span class="annottext">Definition
+</span><a href="#local-6989586621679515697"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Definition -&gt; TopDef
 </span><a href="Front.Ast.html#TopDef"><span class="hs-identifier hs-var">TopDef</span></a></span><span> </span><span class="annot"><span class="annottext">(Definition -&gt; TopDef) -&gt; Definition -&gt; TopDef
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Definition -&gt; Definition
-</span><a href="#local-6989586621679508683"><span class="hs-identifier hs-var">desugarDef</span></a></span><span> </span><span class="annot"><span class="annottext">Definition
-</span><a href="#local-6989586621679508684"><span class="hs-identifier hs-var">d</span></a></span><span>
-</span><span id="line-23"></span><span>  </span><span class="annot"><a href="#local-6989586621679508687"><span class="hs-identifier hs-var">desugarTop</span></a></span><span> </span><span id="local-6989586621679508682"><span class="annot"><span class="annottext">TopDef
-</span><a href="#local-6989586621679508682"><span class="hs-identifier hs-var">t</span></a></span></span><span>          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopDef
-</span><a href="#local-6989586621679508682"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621679515696"><span class="hs-identifier hs-var">desugarDef</span></a></span><span> </span><span class="annot"><span class="annottext">Definition
+</span><a href="#local-6989586621679515697"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="annot"><a href="#local-6989586621679515700"><span class="hs-identifier hs-var">desugarTop</span></a></span><span> </span><span id="local-6989586621679515695"><span class="annot"><span class="annottext">TopDef
+</span><a href="#local-6989586621679515695"><span class="hs-identifier hs-var">t</span></a></span></span><span>          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopDef
+</span><a href="#local-6989586621679515695"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-24"></span><span>
-</span><span id="line-25"></span><span>  </span><span id="local-6989586621679508683"><span class="annot"><span class="annottext">desugarDef :: Definition -&gt; Definition
-</span><a href="#local-6989586621679508683"><span class="hs-identifier hs-var hs-var">desugarDef</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#DefFn"><span class="hs-identifier hs-type">DefFn</span></a></span><span> </span><span id="local-6989586621679508680"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679508680"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679508679"><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679508679"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span id="local-6989586621679508678"><span class="annot"><span class="annottext">TypFn
-</span><a href="#local-6989586621679508678"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679508677"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508677"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; [Pat] -&gt; TypFn -&gt; Expr -&gt; Definition
+</span><span id="line-25"></span><span>  </span><span id="local-6989586621679515696"><span class="annot"><span class="annottext">desugarDef :: Definition -&gt; Definition
+</span><a href="#local-6989586621679515696"><span class="hs-identifier hs-var hs-var">desugarDef</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#DefFn"><span class="hs-identifier hs-type">DefFn</span></a></span><span> </span><span id="local-6989586621679515693"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679515693"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679515692"><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679515692"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span id="local-6989586621679515691"><span class="annot"><span class="annottext">TypFn
+</span><a href="#local-6989586621679515691"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679515690"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679515690"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; [Pat] -&gt; TypFn -&gt; Expr -&gt; Definition
 </span><a href="Front.Ast.html#DefFn"><span class="hs-identifier hs-var">DefFn</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679508680"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
-</span><a href="#local-6989586621679508679"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">TypFn
-</span><a href="#local-6989586621679508678"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Definition) -&gt; Expr -&gt; Definition
+</span><a href="#local-6989586621679515693"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">[Pat]
+</span><a href="#local-6989586621679515692"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">TypFn
+</span><a href="#local-6989586621679515691"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Definition) -&gt; Expr -&gt; Definition
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(forall a. Data a =&gt; a -&gt; a) -&gt; Expr -&gt; Expr
 (forall a. Data a =&gt; a -&gt; a) -&gt; forall a. Data a =&gt; a -&gt; a
@@ -61,12 +61,12 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (Typeable a, Typeable b) =&gt; (b -&gt; b) -&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">mkT</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
 </span><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var">desugarExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508677"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-26"></span><span>  </span><span class="annot"><a href="#local-6989586621679508683"><span class="hs-identifier hs-var">desugarDef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#DefPat"><span class="hs-identifier hs-type">DefPat</span></a></span><span> </span><span id="local-6989586621679508674"><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679508674"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679508673"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508673"><span class="hs-identifier hs-var">e</span></a></span></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; Expr -&gt; Definition
+</span><a href="#local-6989586621679515690"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="#local-6989586621679515696"><span class="hs-identifier hs-var">desugarDef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#DefPat"><span class="hs-identifier hs-type">DefPat</span></a></span><span> </span><span id="local-6989586621679515687"><span class="annot"><span class="annottext">Pat
+</span><a href="#local-6989586621679515687"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679515686"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679515686"><span class="hs-identifier hs-var">e</span></a></span></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pat -&gt; Expr -&gt; Definition
 </span><a href="Front.Ast.html#DefPat"><span class="hs-identifier hs-var">DefPat</span></a></span><span> </span><span class="annot"><span class="annottext">Pat
-</span><a href="#local-6989586621679508674"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Definition) -&gt; Expr -&gt; Definition
+</span><a href="#local-6989586621679515687"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Definition) -&gt; Expr -&gt; Definition
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(forall a. Data a =&gt; a -&gt; a) -&gt; Expr -&gt; Expr
 (forall a. Data a =&gt; a -&gt; a) -&gt; forall a. Data a =&gt; a -&gt; a
@@ -74,32 +74,32 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (Typeable a, Typeable b) =&gt; (b -&gt; b) -&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">mkT</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
 </span><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var">desugarExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508673"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621679515686"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="hs-comment">-- | Transform a node of type LitString into a node of type ListExpr</span><span>
 </span><span id="line-30"></span><span class="hs-comment">-- For ex, (Lit (LitString &quot;abc&quot;)) turns into (ListExpr [97, 98, 99])</span><span>
 </span><span id="line-31"></span><span class="annot"><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-type">desugarExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.Ast.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Ast.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
 </span><span id="line-32"></span><span id="desugarExpr"><span class="annot"><span class="annottext">desugarExpr :: Expr -&gt; Expr
-</span><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var hs-var">desugarExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#LitString"><span class="hs-identifier hs-type">LitString</span></a></span><span> </span><span id="local-6989586621679508670"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679508670"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Expr
+</span><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var hs-var">desugarExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#LitString"><span class="hs-identifier hs-type">LitString</span></a></span><span> </span><span id="local-6989586621679515683"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679515683"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Expr
 </span><a href="Front.Ast.html#ListExpr"><span class="hs-identifier hs-var">ListExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [Expr]
-</span><a href="#local-6989586621679508668"><span class="hs-identifier hs-var">convertList</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679508670"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679508668"><span class="annot"><span class="annottext">convertList :: String -&gt; [Expr]
-</span><a href="#local-6989586621679508668"><span class="hs-identifier hs-var hs-var">convertList</span></a></span></span><span> </span><span id="local-6989586621679508667"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679508667"><span class="hs-identifier hs-var">ls</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="#local-6989586621679515681"><span class="hs-identifier hs-var">convertList</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679515683"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679515681"><span class="annot"><span class="annottext">convertList :: String -&gt; [Expr]
+</span><a href="#local-6989586621679515681"><span class="hs-identifier hs-var hs-var">convertList</span></a></span></span><span> </span><span id="local-6989586621679515680"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679515680"><span class="hs-identifier hs-var">ls</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
 </span><a href="Front.Ast.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Literal
 </span><a href="Front.Ast.html#LitInt"><span class="hs-identifier hs-var">LitInt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Integer
 forall a. Integral a =&gt; a -&gt; Integer
 </span><span class="hs-identifier hs-var">toInteger</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679508665"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679508665"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679508665"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Int) -&gt; String -&gt; [Int]
+</span><a href="#local-6989586621679515678"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679515678"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515678"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Int) -&gt; String -&gt; [Int]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
 </span><span class="hs-identifier hs-var">ord</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679508667"><span class="hs-identifier hs-var">ls</span></a></span><span> </span><span class="hs-special">]</span><span>
-</span><span id="line-34"></span><span class="annot"><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var">desugarExpr</span></a></span><span> </span><span id="local-6989586621679508664"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508664"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679508664"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621679515680"><span class="hs-identifier hs-var">ls</span></a></span><span> </span><span class="hs-special">]</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Front.DesugarStrings.html#desugarExpr"><span class="hs-identifier hs-var">desugarExpr</span></a></span><span> </span><span id="local-6989586621679515677"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679515677"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679515677"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-35"></span></pre></body></html>

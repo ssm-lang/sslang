@@ -35,14 +35,14 @@ into simpler AST constructs.
 </span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpAst"><span class="annot"><a href="Front.html#DumpAst"><span class="hs-identifier hs-var">DumpAst</span></a></span></span><span>             </span><span class="hs-comment">-- ^ Print the initial parsed AST, before operators are parsed.</span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpAstParsed"><span class="annot"><a href="Front.html#DumpAstParsed"><span class="hs-identifier hs-var">DumpAstParsed</span></a></span></span><span>       </span><span class="hs-comment">-- ^ Print the AST after operators are parsed.</span><span>
 </span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DumpAstFinal"><span class="annot"><a href="Front.html#DumpAstFinal"><span class="hs-identifier hs-var">DumpAstFinal</span></a></span></span><span>        </span><span class="hs-comment">-- ^ Print the AST after all desugaring, just before lowering.</span><span>
-</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679526896"><span id="local-6989586621679526898"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535430"><span id="local-6989586621679535432"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 (Mode -&gt; Mode -&gt; Bool) -&gt; (Mode -&gt; Mode -&gt; Bool) -&gt; Eq Mode
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Mode -&gt; Mode -&gt; Bool
 $c/= :: Mode -&gt; Mode -&gt; Bool
 == :: Mode -&gt; Mode -&gt; Bool
 $c== :: Mode -&gt; Mode -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679526889"><span id="local-6989586621679526891"><span id="local-6989586621679526893"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535423"><span id="local-6989586621679535425"><span id="local-6989586621679535427"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
 [Mode] -&gt; ShowS
 Mode -&gt; String
 (Int -&gt; Mode -&gt; ShowS)
@@ -59,7 +59,7 @@ $cshowsPrec :: Int -&gt; Mode -&gt; ShowS
 </span><span id="line-39"></span><span>
 </span><span id="line-40"></span><span class="hs-comment">-- | Compiler options for the front end compiler stage.</span><span>
 </span><span id="line-41"></span><span class="hs-keyword">newtype</span><span> </span><span id="Options"><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Options"><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span> </span><span class="hs-special">{</span><span> </span><span id="optMode"><span class="annot"><span class="annottext">Options -&gt; Mode
-</span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679526882"><span id="local-6989586621679526884"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
+</span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span><span> </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535416"><span id="local-6989586621679535418"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
 (Options -&gt; Options -&gt; Bool)
 -&gt; (Options -&gt; Options -&gt; Bool) -&gt; Eq Options
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -67,7 +67,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: Options -&gt; Options -&gt; Bool
 == :: Options -&gt; Options -&gt; Bool
 $c== :: Options -&gt; Options -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679526876"><span id="local-6989586621679526878"><span id="local-6989586621679526880"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535410"><span id="local-6989586621679535412"><span id="local-6989586621679535414"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
 [Options] -&gt; ShowS
 Options -&gt; String
 (Int -&gt; Options -&gt; ShowS)
@@ -83,7 +83,7 @@ $cshowsPrec :: Int -&gt; Options -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-42"></span><span>
 </span><span id="line-43"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Default.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-44"></span><span>  </span><span id="local-6989586621679526873"><span class="annot"><span class="annottext">def :: Options
+</span><span id="line-44"></span><span>  </span><span id="local-6989586621679535407"><span class="annot"><span class="annottext">def :: Options
 </span><a href="Common.Default.html#def"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options :: Mode -&gt; Options
 </span><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">optMode :: Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var">optMode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mode
@@ -109,7 +109,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679526868"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679535402"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpTokens"><span class="hs-identifier hs-var">DumpTokens</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-52"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the token stream from the scanner&quot;</span></span><span>
@@ -129,7 +129,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679526868"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679535402"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAst"><span class="hs-identifier hs-var">DumpAst</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-56"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the initial parsed AST, before operators are parsed&quot;</span></span><span>
@@ -149,7 +149,7 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679526868"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679535402"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAstParsed"><span class="hs-identifier hs-var">DumpAstParsed</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-60"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the AST after operators are parsed&quot;</span></span><span>
@@ -169,58 +169,58 @@ forall a. a -&gt; ArgDescr a
 -&gt; (Options -&gt; Options) -&gt; ArgDescr (Options -&gt; Options)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679526868"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679535402"><span class="hs-identifier hs-var">setMode</span></a></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAstFinal"><span class="hs-identifier hs-var">DumpAstFinal</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-64"></span><span>           </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Print the AST after all desugaring, just before lowering to IR&quot;</span></span><span>
 </span><span id="line-65"></span><span>  </span><span class="hs-special">]</span><span>
 </span><span id="line-66"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-67"></span><span>  </span><span class="annot"><a href="#local-6989586621679526868"><span class="hs-identifier hs-type">setMode</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
-</span><span id="line-68"></span><span>  </span><span id="local-6989586621679526868"><span class="annot"><span class="annottext">setMode :: Mode -&gt; Options -&gt; Options
-</span><a href="#local-6989586621679526868"><span class="hs-identifier hs-var hs-var">setMode</span></a></span></span><span> </span><span id="local-6989586621679526867"><span class="annot"><span class="annottext">Mode
-</span><a href="#local-6989586621679526867"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679526866"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526866"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526866"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">optMode :: Mode
+</span><span id="line-67"></span><span>  </span><span class="annot"><a href="#local-6989586621679535402"><span class="hs-identifier hs-type">setMode</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621679535402"><span class="annot"><span class="annottext">setMode :: Mode -&gt; Options -&gt; Options
+</span><a href="#local-6989586621679535402"><span class="hs-identifier hs-var hs-var">setMode</span></a></span></span><span> </span><span id="local-6989586621679535401"><span class="annot"><span class="annottext">Mode
+</span><a href="#local-6989586621679535401"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679535400"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679535400"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679535400"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">optMode :: Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var">optMode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mode
-</span><a href="#local-6989586621679526867"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679535401"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-69"></span><span>
 </span><span id="line-70"></span><span class="hs-comment">-- | Parse a fully-formed AST from some String input.</span><span>
 </span><span id="line-71"></span><span class="annot"><a href="Front.html#parseAst"><span class="hs-identifier hs-type">parseAst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span>
 </span><span id="line-72"></span><span id="parseAst"><span class="annot"><span class="annottext">parseAst :: Options -&gt; String -&gt; Pass Program
-</span><a href="Front.html#parseAst"><span class="hs-identifier hs-var hs-var">parseAst</span></a></span></span><span> </span><span id="local-6989586621679526864"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526864"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679526863"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679526863"><span class="hs-identifier hs-var">src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Front.html#parseAst"><span class="hs-identifier hs-var hs-var">parseAst</span></a></span></span><span> </span><span id="local-6989586621679535398"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679535398"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679535397"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679535397"><span class="hs-identifier hs-var">src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-73"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526864"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679535398"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpTokens"><span class="hs-identifier hs-var">DumpTokens</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-74"></span><span>    </span><span id="local-6989586621679526862"><span class="annot"><span class="annottext">[Token]
-</span><a href="#local-6989586621679526862"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Pass [Token]
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621679535396"><span class="annot"><span class="annottext">[Token]
+</span><a href="#local-6989586621679535396"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Pass [Token]
 </span><a href="Front.Scanner.html#scanTokens"><span class="hs-identifier hs-var">scanTokens</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679526863"><span class="hs-identifier hs-var">src</span></a></span><span>
+</span><a href="#local-6989586621679535397"><span class="hs-identifier hs-var">src</span></a></span><span>
 </span><span id="line-75"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; Pass ()
 forall a x. Pretty a =&gt; a -&gt; Pass x
 </span><a href="Common.Compiler.html#dump"><span class="hs-identifier hs-var">dump</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Pass ()) -&gt; String -&gt; Pass ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Token] -&gt; String
 </span><a href="Front.Token.html#prettyTokens"><span class="hs-identifier hs-var">prettyTokens</span></a></span><span> </span><span class="annot"><span class="annottext">[Token]
-</span><a href="#local-6989586621679526862"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><a href="#local-6989586621679535396"><span class="hs-identifier hs-var">ts</span></a></span><span>
 </span><span id="line-76"></span><span>
-</span><span id="line-77"></span><span>  </span><span id="local-6989586621679526861"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526861"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Pass Program
+</span><span id="line-77"></span><span>  </span><span id="local-6989586621679535395"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535395"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Pass Program
 </span><a href="Front.Parser.html#parseProgram"><span class="hs-identifier hs-var">parseProgram</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679526863"><span class="hs-identifier hs-var">src</span></a></span><span>
+</span><a href="#local-6989586621679535397"><span class="hs-identifier hs-var">src</span></a></span><span>
 </span><span id="line-78"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526864"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679535398"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAst"><span class="hs-identifier hs-var">DumpAst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -236,17 +236,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Doc Any
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526861"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535395"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-79"></span><span>
-</span><span id="line-80"></span><span>  </span><span id="local-6989586621679526859"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526859"><span class="hs-identifier hs-var">astP</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679535393"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535393"><span class="hs-identifier hs-var">astP</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.ParseOperators.html#parseOperators"><span class="hs-identifier hs-var">parseOperators</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526861"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535395"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526864"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679535398"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAstParsed"><span class="hs-identifier hs-var">DumpAstParsed</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -262,37 +262,37 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Doc Any
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526859"><span class="hs-identifier hs-var">astP</span></a></span><span>
+</span><a href="#local-6989586621679535393"><span class="hs-identifier hs-var">astP</span></a></span><span>
 </span><span id="line-82"></span><span>
-</span><span id="line-83"></span><span>  </span><span id="local-6989586621679526858"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526858"><span class="hs-identifier hs-var">astS</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621679535392"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535392"><span class="hs-identifier hs-var">astS</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.DesugarStrings.html#desugarStrings"><span class="hs-identifier hs-var">desugarStrings</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526859"><span class="hs-identifier hs-var">astP</span></a></span><span>
-</span><span id="line-84"></span><span>  </span><span id="local-6989586621679526857"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526857"><span class="hs-identifier hs-var">astL</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><a href="#local-6989586621679535393"><span class="hs-identifier hs-var">astP</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679535391"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535391"><span class="hs-identifier hs-var">astL</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.DesugarLists.html#desugarLists"><span class="hs-identifier hs-var">desugarLists</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526858"><span class="hs-identifier hs-var">astS</span></a></span><span>
+</span><a href="#local-6989586621679535392"><span class="hs-identifier hs-var">astS</span></a></span><span>
 </span><span id="line-85"></span><span>
 </span><span id="line-86"></span><span>  </span><span class="hs-comment">-- TODO: other desugaring</span><span>
-</span><span id="line-87"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679526856"><span class="annot"><span class="annottext">astTuple :: Program
-</span><a href="#local-6989586621679526856"><span class="hs-identifier hs-var hs-var">astTuple</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef -&gt; Program -&gt; Program
-</span><a href="#local-6989586621679526855"><span class="hs-identifier hs-var">insertTypeDef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679526854"><span class="hs-identifier hs-var">pairDef</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526857"><span class="hs-identifier hs-var">astL</span></a></span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679535390"><span class="annot"><span class="annottext">astTuple :: Program
+</span><a href="#local-6989586621679535390"><span class="hs-identifier hs-var hs-var">astTuple</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef -&gt; Program -&gt; Program
+</span><a href="#local-6989586621679535389"><span class="hs-identifier hs-var">insertTypeDef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDef
+</span><a href="#local-6989586621679535388"><span class="hs-identifier hs-var">pairDef</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535391"><span class="hs-identifier hs-var">astL</span></a></span><span>
 </span><span id="line-88"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass ()
 </span><a href="Front.Pattern.html#checkAnomaly"><span class="hs-identifier hs-var">Pattern.checkAnomaly</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526856"><span class="hs-identifier hs-var">astTuple</span></a></span><span>
-</span><span id="line-89"></span><span>  </span><span id="local-6989586621679526852"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526852"><span class="hs-identifier hs-var">astD</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
+</span><a href="#local-6989586621679535390"><span class="hs-identifier hs-var">astTuple</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621679535386"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535386"><span class="hs-identifier hs-var">astD</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 </span><a href="Front.Pattern.html#desugarProgram"><span class="hs-identifier hs-var">Pattern.desugarProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526856"><span class="hs-identifier hs-var">astTuple</span></a></span><span>
+</span><a href="#local-6989586621679535390"><span class="hs-identifier hs-var">astTuple</span></a></span><span>
 </span><span id="line-90"></span><span>
 </span><span id="line-91"></span><span>
 </span><span id="line-92"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; Pass () -&gt; Pass ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Mode
 </span><a href="Front.html#optMode"><span class="hs-identifier hs-var hs-var">optMode</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526864"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><a href="#local-6989586621679535398"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mode
 </span><a href="Front.html#DumpAstFinal"><span class="hs-identifier hs-var">DumpAstFinal</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Pass () -&gt; Pass ()) -&gt; Pass () -&gt; Pass ()
@@ -308,23 +308,23 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Doc Any
 forall a ann. Pretty a =&gt; a -&gt; Doc ann
 </span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526852"><span class="hs-identifier hs-var">astD</span></a></span><span>
+</span><a href="#local-6989586621679535386"><span class="hs-identifier hs-var">astD</span></a></span><span>
 </span><span id="line-93"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526852"><span class="hs-identifier hs-var">astD</span></a></span><span>
-</span><span id="line-94"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679526855"><span class="annot"><span class="annottext">insertTypeDef :: TypeDef -&gt; Program -&gt; Program
-</span><a href="#local-6989586621679526855"><span class="hs-identifier hs-var hs-var">insertTypeDef</span></a></span></span><span> </span><span id="local-6989586621679526850"><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679526850"><span class="hs-identifier hs-var">typedef</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span> </span><span id="local-6989586621679526848"><span class="annot"><span class="annottext">[TopDef]
-</span><a href="#local-6989586621679526848"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TopDef] -&gt; Program
+</span><a href="#local-6989586621679535386"><span class="hs-identifier hs-var">astD</span></a></span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679535389"><span class="annot"><span class="annottext">insertTypeDef :: TypeDef -&gt; Program -&gt; Program
+</span><a href="#local-6989586621679535389"><span class="hs-identifier hs-var hs-var">insertTypeDef</span></a></span></span><span> </span><span id="local-6989586621679535384"><span class="annot"><span class="annottext">TypeDef
+</span><a href="#local-6989586621679535384"><span class="hs-identifier hs-var">typedef</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span> </span><span id="local-6989586621679535382"><span class="annot"><span class="annottext">[TopDef]
+</span><a href="#local-6989586621679535382"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TopDef] -&gt; Program
 </span><a href="Front.Ast.html#Program"><span class="hs-identifier hs-var">A.Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeDef -&gt; TopDef
 </span><a href="Front.Ast.html#TopType"><span class="hs-identifier hs-var">A.TopType</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679526850"><span class="hs-identifier hs-var">typedef</span></a></span><span> </span><span class="annot"><span class="annottext">TopDef -&gt; [TopDef] -&gt; [TopDef]
+</span><a href="#local-6989586621679535384"><span class="hs-identifier hs-var">typedef</span></a></span><span> </span><span class="annot"><span class="annottext">TopDef -&gt; [TopDef] -&gt; [TopDef]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[TopDef]
-</span><a href="#local-6989586621679526848"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-95"></span><span>        </span><span id="local-6989586621679526854"><span class="annot"><span class="annottext">pairDef :: TypeDef
-</span><a href="#local-6989586621679526854"><span class="hs-identifier hs-var hs-var">pairDef</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef :: Identifier -&gt; [Identifier] -&gt; [TypeVariant] -&gt; TypeDef
+</span><a href="#local-6989586621679535382"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>        </span><span id="local-6989586621679535388"><span class="annot"><span class="annottext">pairDef :: TypeDef
+</span><a href="#local-6989586621679535388"><span class="hs-identifier hs-var hs-var">pairDef</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef :: Identifier -&gt; [Identifier] -&gt; [TypeVariant] -&gt; TypeDef
 </span><a href="Front.Ast.html#TypeDef"><span class="hs-identifier hs-type">A.TypeDef</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">typeName :: Identifier
 </span><a href="Front.Ast.html#typeName"><span class="hs-identifier hs-var">A.typeName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;Pair&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">typeParams :: [Identifier]
@@ -342,33 +342,33 @@ forall a. a -&gt; [a] -&gt; [a]
 </span><span id="line-97"></span><span class="hs-comment">-- | Semantic checking on an AST.</span><span>
 </span><span id="line-98"></span><span class="annot"><a href="Front.html#checkAst"><span class="hs-identifier hs-type">checkAst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-99"></span><span id="checkAst"><span class="annot"><span class="annottext">checkAst :: Options -&gt; Program -&gt; Pass ()
-</span><a href="Front.html#checkAst"><span class="hs-identifier hs-var hs-var">checkAst</span></a></span></span><span> </span><span id="local-6989586621679526839"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526839"><span class="hs-identifier hs-var">_opt</span></a></span></span><span> </span><span id="local-6989586621679526838"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526838"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Front.html#checkAst"><span class="hs-identifier hs-var hs-var">checkAst</span></a></span></span><span> </span><span id="local-6989586621679535373"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679535373"><span class="hs-identifier hs-var">_opt</span></a></span></span><span> </span><span id="local-6989586621679535372"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535372"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-100"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass ()
 </span><a href="Front.Scope.html#scopeProgram"><span class="hs-identifier hs-var">scopeProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526838"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535372"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-101"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass ()
 </span><a href="Front.Pattern.html#checkAnomaly"><span class="hs-identifier hs-var">Pattern.checkAnomaly</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526838"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535372"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-102"></span><span>
 </span><span id="line-103"></span><span class="hs-comment">-- | Front end compiler stage.</span><span>
 </span><span id="line-104"></span><span class="annot"><a href="Front.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Front.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span class="annot"><a href="Front.Ast.html#Program"><span class="hs-identifier hs-type">A.Program</span></a></span><span>
 </span><span id="line-105"></span><span id="run"><span class="annot"><span class="annottext">run :: Options -&gt; String -&gt; Pass Program
-</span><a href="Front.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679526836"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526836"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679526835"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679526835"><span class="hs-identifier hs-var">src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-106"></span><span>  </span><span id="local-6989586621679526834"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526834"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Options -&gt; String -&gt; Pass Program
+</span><a href="Front.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679535370"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679535370"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679535369"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679535369"><span class="hs-identifier hs-var">src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-106"></span><span>  </span><span id="local-6989586621679535368"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535368"><span class="hs-identifier hs-var">ast</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Options -&gt; String -&gt; Pass Program
 </span><a href="Front.html#parseAst"><span class="hs-identifier hs-var">parseAst</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526836"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679526835"><span class="hs-identifier hs-var">src</span></a></span><span>
+</span><a href="#local-6989586621679535370"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679535369"><span class="hs-identifier hs-var">src</span></a></span><span>
 </span><span id="line-107"></span><span>  </span><span class="annot"><span class="annottext">Options -&gt; Program -&gt; Pass ()
 </span><a href="Front.html#checkAst"><span class="hs-identifier hs-var">checkAst</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679526836"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526834"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535370"><span class="hs-identifier hs-var">opt</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679535368"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-108"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; Pass Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679526834"><span class="hs-identifier hs-var">ast</span></a></span><span>
+</span><a href="#local-6989586621679535368"><span class="hs-identifier hs-var">ast</span></a></span><span>
 </span><span id="line-109"></span></pre></body></html>

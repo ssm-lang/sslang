@@ -222,6 +222,12 @@ tuple :: Identifier
 
 -- | we'll use this temp tuple name for now due to the naming issue
 tempTuple :: Identifier
+
+-- | Cons identifier for Lists
+cons :: Identifier
+
+-- | Nil identifier for Lists
+nil :: Identifier
 instance Data.Data.Data Common.Identifiers.Identifier
 instance GHC.Classes.Ord Common.Identifiers.Identifier
 instance GHC.Classes.Eq Common.Identifiers.Identifier
