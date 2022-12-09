@@ -4,7 +4,7 @@ module Front.DesugarLists
   ) where
 
 import qualified Common.Compiler               as Compiler
-import Common.Identifiers                       (Identifier(Identifier))
+import Common.Identifiers
 import Front.Ast                                ( Definition(..)
                                                 , Expr(..)
                                                 , Program(..)
