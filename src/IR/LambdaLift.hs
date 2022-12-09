@@ -27,7 +27,9 @@ import           Control.Monad.State.Lazy       ( MonadState
 import           Data.Bifunctor                 ( first )
 import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
-import           Data.Maybe                     ( catMaybes )
+import           Data.Maybe                     ( catMaybes
+                                                , mapMaybe
+                                                )
 import qualified Data.Set                      as S
 
 -- | Lifting Environment
@@ -247,15 +249,15 @@ liftLambdasInArm (I.AltLit l, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltLit l, liftedArm)
-liftLambdasInArm (I.AltDefault b, arm) = do
+liftLambdasInArm (I.AltBinder b, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ do
     forM_ b addCurrentScope
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
-  return (I.AltDefault b, liftedArm)
+  return (I.AltBinder b, liftedArm)
 liftLambdasInArm (I.AltData d bs, arm) = do
   (liftedArm, armFrees) <- descend Nothing $ do
-    mapM_ addCurrentScope (catMaybes bs)
+    mapM_ addCurrentScope (mapMaybe I.getAltDefault bs)
     liftLambdas arm
   modify $ \st -> st { freeTypes = armFrees }
   return (I.AltData d bs, liftedArm)

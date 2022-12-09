@@ -1,13 +1,16 @@
 -- | Desugar ListExpr nodes into App nodes
 module Front.DesugarLists
   ( desugarLists
-  )
-where
+  ) where
 
-import Data.Generics
-import qualified Common.Compiler as Compiler
-import Front.Ast (Definition(..), Expr(..), Program(..), TopDef(..))
-import Common.Identifiers
+import qualified Common.Compiler               as Compiler
+import Common.Identifiers                       (Identifier(Identifier))
+import Front.Ast                                ( Definition(..)
+                                                , Expr(..)
+                                                , Program(..)
+                                                , TopDef(..)
+                                                )
+import Data.Generics                            ( mkT, everywhere )                                             
 
 -- | Desugar ListExpr nodes inside of an AST 'Program'.
 desugarLists :: Program -> Compiler.Pass Program
