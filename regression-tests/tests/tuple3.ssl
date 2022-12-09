@@ -1,0 +1,55 @@
+// checking that 3-tuples and 4-tuples can be declared with new syntax
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+// tests the pattern match of 3-tuple
+printl3_ puti putc p =
+  match p
+   (x,y,z) = puti x
+             putc 32
+             puti y
+             putc 32
+             puti z
+
+// tests the pattern match of 3-tuple
+printl4_ puti putc p =
+  match p
+   (x,y,z,s) = puti x
+               putc 32
+               puti y
+               putc 32
+               puti z
+               putc 32
+               puti s
+
+
+main cin cout = 
+    let putc c = after 1, cout <- c
+                 wait cout
+    let puti = puti_ putc
+    let putnl _ = putc 10
+    let printl_3 l = printl3_ puti putc l
+    let printl_4 l = printl4_ puti putc l
+
+
+    let x = (1,2,3)
+    let y = (3,4,5)
+
+    let z = (4,5,6,7)
+
+    printl_3 x
+    putnl ()
+    printl_3 y
+    putnl ()
+    printl_4 z

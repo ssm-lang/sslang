@@ -84,15 +84,19 @@ parseAst opt src = do
   astL <- desugarLists astS
 
   -- TODO: other desugaring
-  let astTuple = insertTypeDef pairDef astL
-  Pattern.checkAnomaly astTuple
-  astD <- Pattern.desugarProgram astTuple
+  let astTuple2 = insertTypeDef pairDef astL
+  let astTuple3 = insertTypeDef pair3Def astTuple2
+  let astTuple4 = insertTypeDef pair4Def astTuple3
+  Pattern.checkAnomaly astTuple4
+  astD <- Pattern.desugarProgram astTuple4
 
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
   return astD
   where insertTypeDef typedef (A.Program xs) = A.Program (A.TopType typedef : xs)
         pairDef = A.TypeDef { A.typeName = "Pair", A.typeParams = ["a","b"], A.typeVariants = [A.VariantUnnamed "Pair" [A.TCon "a", A.TCon "b"]]}
+        pair3Def = A.TypeDef { A.typeName = "Pair3", A.typeParams = ["a","b","c"], A.typeVariants = [A.VariantUnnamed "Pair3" [A.TCon "a", A.TCon "b", A.TCon "c"]]}
+        pair4Def = A.TypeDef { A.typeName = "Pair4", A.typeParams = ["a","b","c","d"], A.typeVariants = [A.VariantUnnamed "Pair4" [A.TCon "a", A.TCon "b", A.TCon "c",A.TCon "d"]]}
     
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()

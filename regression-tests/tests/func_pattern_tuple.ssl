@@ -1,0 +1,48 @@
+
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+// test 2-tuple match on function parameters
+printl2_ puti putc (x,y) =
+        puti x
+        putc 32
+        puti y
+
+  
+// test 3-tuple match on function parameters
+printl3_ puti putc (x,y,z) =
+        puti x
+        putc 32
+        puti y
+        putc 32
+        puti z
+
+
+main cin cout = 
+    let putc c = after 1, cout <- c
+                 wait cout
+    let puti = puti_ putc
+    let putnl _ = putc 10
+    let printl2 l = printl2_ puti putc l
+    let printl3 l = printl3_ puti putc l
+
+    let x = (1,2)
+    let y = (3,4)
+    let z = (7,8,9)
+    printl2 x
+    putnl ()
+    printl2 y
+    putnl ()
+    printl3 z
+    

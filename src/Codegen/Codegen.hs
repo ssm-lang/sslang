@@ -36,7 +36,6 @@ import qualified Language.C.Syntax             as C
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( fromId
                                                 , fromString
-                                                , tempTuple
                                                 )
 import           Control.Monad                  ( foldM
                                                 , unless

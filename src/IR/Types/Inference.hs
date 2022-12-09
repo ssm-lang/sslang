@@ -23,7 +23,7 @@ import           Common.Identifiers             ( HasFreeVars(..)
                                                 , Identifier(..)
                                                 , IsString(..)
                                                 , fromId
-                                                , showId, tuple, tempTuple
+                                                , showId
                                                 )
 
 import           Control.Monad                  ( (<=<)
