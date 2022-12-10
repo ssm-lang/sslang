@@ -22,11 +22,14 @@ main =
 */
 
 // print digit; account for ascii offset
+/*
 putd cout c =
   after 1, cout <- (c + 48)
   wait cout
+*/
 
 main cin cout = 
   let q = 5
   let r = q + 1 
-  putd cout r
+  r
+  //putd cout r

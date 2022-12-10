@@ -28,6 +28,7 @@ import           Control.Monad.State.Lazy       ( MonadState
 import           Data.Bifunctor                 ( first, second )
 -- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
+import qualified GHC.IO.Exception as Compiler
 -- import           Data.Maybe                     ( catMaybes )
 -- import qualified Data.Set                      as S
 
@@ -74,7 +75,7 @@ updateOccVar :: I.VarId -> SimplFn ()
 updateOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
-        Nothing   -> error "Should have seen this binder before!"
+        Nothing   -> error ("UDPATE: We should already know about this binder " ++ show m ++"!")
         Just Dead -> M.insert binder OnceSafe m -- we only handle oncesafe currently
         _         -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
@@ -85,7 +86,7 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _       -> error "Should never have never seen this binder before!"
+        _       -> error ("ADD: Should never have never seen this binder "++ show binder ++" before!")
   modify $ \st -> st { occInfo = m' }
 
 
@@ -99,8 +100,10 @@ simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 simplifyProgram p = runSimplFn $ do -- everything in do expression will know about simplifier environment
                                     -- run this do expression and give it the knowledge of my simplifier environment
   -- run the occurrence analyzer
+  z@(p',info) <- runOccAnal p
   let defs = I.programDefs p
   simplifiedProgramDefs <- mapM simplTop defs
+  Compiler.unexpected $ show info
   return $ p { I.programDefs = simplifiedProgramDefs } -- this whole do expression returns a Compiler.Pass
 
 -- | Simplify a top-level definition
@@ -155,31 +158,40 @@ y-}
 3) {}
 -}
 
-runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type)
+runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type, String)
 runOccAnal p@I.Program { I.programDefs = defs } = do
-  let x = map (second occAnalExpr) defs
+  {-
+  stack build
+  cd regression-tests
+  ./runtests.sh -k tests/a-inlining-ex-1.ssl
+  -}
+  --let x = map (second occAnalExpr) defs
+  y <- snd$ second occAnalExpr (head defs)
+  --error $ show x
+ -- addOccVar "yo"
   m <- gets occInfo
-  error (show m)
-
---  return p
+ -- error (show m)
+  return (p,show y)
 
 -- plan: recurse first on rhs then go into body
-occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
+occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
 occAnalExpr (I.Let binders body t) = do
   mapM_
     (\(binder, rhs) -> case binder of
       (Just nm) -> do
         addOccVar nm
-        _ <- occAnalExpr rhs
+       -- _ <- occAnalExpr rhs
         pure ()
       Nothing -> pure ()
     )
     binders
-  _ <- occAnalExpr body
-  pure (I.Let binders body t)
+  --_ <- occAnalExpr body
+  m <- gets occInfo
+  --error (show m)
+  pure ((I.Let binders body t),show m)
 
 occAnalExpr var@(I.Var v _) = do updateOccVar v
-                                 return var
+                                 return (var,"other case")
 {-
   = Var VarId t
   {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
@@ -210,8 +222,9 @@ occAnalExpr var@(I.Var v _) = do updateOccVar v
   of type @t@.
   -}
   -}
+occAnalExpr l@(I.Lambda v b t) = pure (l, "im a lambda")
 -- --occAnalExpr (I.Var varId) = -- first time you see it, dead -> oncesafe
-occAnalExpr e = pure e
+occAnalExpr e = pure (e, "hello")
 
 
 {-
@@ -262,7 +275,7 @@ Probably want more documentation here eventually.
 -}
 simplExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
 simplExpr e = do
-  addOccVar "test"
+  --addOccVar "test"
   return e -- what a stub.
 
 {-
