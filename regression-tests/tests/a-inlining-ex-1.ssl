@@ -1,0 +1,32 @@
+/*
+NOTE:
+This file starts with the letter a so it is easy to find within the regression tests folder during development.
+We should rename this file without the "a-" before opening a PR for review.
+*/
+
+/*
+
+Example: r and q are oncesafe.
+Input:
+main = 
+  let q = 5
+  IN
+  let r = q + 1 
+  IN 
+  r
+
+Expected Output:
+main = 
+  5 + 1
+
+*/
+
+// print digit; account for ascii offset
+putd cout c =
+  after 1, cout <- (c + 48)
+  wait cout
+
+main cin cout = 
+  let q = 5
+  let r = q + 1 
+  putd cout r
