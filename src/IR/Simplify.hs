@@ -25,7 +25,7 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 -- , unless
                                                 )
 
--- import           Data.Bifunctor                 ( first )
+import           Data.Bifunctor                 ( first, second )
 -- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
 -- import           Data.Maybe                     ( catMaybes )
@@ -39,6 +39,7 @@ data OccInfo = Dead
              | OnceUnsafe
              | MultiUnsafe
              | Never
+  deriving Show
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
@@ -46,7 +47,7 @@ data SimplEnv = SimplEnv
   {- ^ 'occInfo' maps an identifier to its occurence category -}
   , runs    :: Int
   {- ^ 'runs' stores how many times the simplifier has run so far -}
-  }
+  } deriving (Show)
 
 -- | Simplifier Monad
 newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
@@ -69,7 +70,6 @@ runSimplFn :: SimplFn a -> Compiler.Pass a
   -- SimplCtx is initial state
 runSimplFn (SimplFn m) = evalStateT m SimplEnv { occInfo = M.empty, runs = 0 }
 
--- | Add a binder to occInfo with category Dead by default
 updateOccVar :: I.VarId -> SimplFn ()
 updateOccVar binder = do
   m <- gets occInfo
@@ -79,6 +79,7 @@ updateOccVar binder = do
         _         -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
 
+-- | Add a binder to occInfo with category Dead by default
 addOccVar :: I.VarId -> SimplFn ()
 addOccVar binder = do
   m <- gets occInfo
@@ -140,26 +141,75 @@ data Program t = Program
   
 -}
 
+{-
+main cin cout =
+let x = +5
+IN
+let y = x 4
+IN
+y-}
+
+{-
+1) {x: Dead }
+2) {x: Dead, y: Dead}
+3) {}
+-}
+
 runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type)
 runOccAnal p@I.Program { I.programDefs = defs } = do
+  let x = map (second occAnalExpr) defs
+  m <- gets occInfo
+  error (show m)
 
---(map . second) occAnalExpr defs
+--  return p
 
-  return p
-
+-- plan: recurse first on rhs then go into body
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
-occAnalExpr (I.Let binders body _) = do
+occAnalExpr (I.Let binders body t) = do
   mapM_
-    (\(binder, _) -> case binder of
+    (\(binder, rhs) -> case binder of
       (Just nm) -> do
         addOccVar nm
+        _ <- occAnalExpr rhs
+        pure ()
       Nothing -> pure ()
     )
     binders
-  occAnalExpr body
+  _ <- occAnalExpr body
+  pure (I.Let binders body t)
+
 occAnalExpr var@(I.Var v _) = do updateOccVar v
                                  return var
+{-
+  = Var VarId t
+  {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
+  | Data DConId t
+  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
+  | Lit Literal t
+  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
+  | App (Expr t) (Expr t) t
+  {- ^ @App f a t@ applies function @f@ to argument @a@, producing a value of
+  type @t@.
+  -}
+  | Let [(Binder, Expr t)] (Expr t) t
+  {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
 
+  The bindings list may only be of length greater than 1 for a set of mutually
+  co-recursive functions.
+  -}
+  | Lambda Binder (Expr t) t
+  {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
+  a value to parameter @v@ in its body @b@.
+  -}
+  | Match (Expr t) [(Alt, Expr t)] t
+  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
+  @alts@, each producing a value of type @t@.
+  -}
+  | Prim Primitive [Expr t] t
+  {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
+  of type @t@.
+  -}
+  -}
 -- --occAnalExpr (I.Var varId) = -- first time you see it, dead -> oncesafe
 occAnalExpr e = pure e
 
