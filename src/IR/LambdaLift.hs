@@ -234,6 +234,7 @@ liftLambdas (I.Match s arms t) = do
   return $ I.Match liftedMatch liftedArms t
 liftLambdas lit@I.Lit{}  = return lit
 liftLambdas dat@I.Data{} = return dat
+liftLambdas e@I.Exception{} = return e
 
 -- | Entry point for traversing let bindings.
 liftLambdasInLet :: (I.Binder, I.Expr I.Type) -> LiftFn (I.Expr I.Type)

@@ -304,6 +304,7 @@ insertExpr (I.Match scrutExpr alts typ) = do
   insertExpr $ I.Let [(Just scrutVar, scrutExpr)]
                      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
                      typ
+insertExpr e@(I.Exception _ _)       = return e
 
 {- | Insert dups and drops into pattern match arms
 

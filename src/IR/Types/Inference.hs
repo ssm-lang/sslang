@@ -205,6 +205,8 @@ inferExpr (Prim p es ts) = do
   t   <- U.instantiate =<< inferPrim (length es) p
   t =:= U.foldArrow (map extract es', rt)
   Prim p es' <$> checkAgainst ts rt
+-- Exception is brought in to program after type inference, which cannot happen here
+inferExpr (Exception _ _) = error "can't happen" 
 
 -- | Obtain bindings for a pattern match arm, according to the scrutinee's type.
 inferAlt :: U.Type -> Alt -> Infer [(Binder, U.Scheme)]
