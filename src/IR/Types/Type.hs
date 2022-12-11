@@ -227,6 +227,11 @@ tupleId i
   | i >= 2    = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
 
+tempTupleId :: (Integral i, Identifiable v) => i -> v
+tempTupleId i
+  | i >= 2 && i <= 4 = fromString $ "Pair" ++ show (toInteger i)
+  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
+
 -- | More convenient representation of tuple types, for pattern-matching.
 data TupleView
  = Tup2 (Type, Type)              -- ^ 2-tuples

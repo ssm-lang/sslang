@@ -29,7 +29,7 @@ module Front.Scanner
   ) where
 
 import Front.Token (Token(..), TokenType(..), Span(..), tokenType)
-import Control.Monad (when, (<=<))
+import Control.Monad (when)
 import Common.Compiler (Pass, Error(..), liftEither)
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf)

@@ -21,13 +21,13 @@ import           Common.Identifiers             ( TVarId(..)
                                                 , fromString
                                                 , isCons
                                                 , isVar
-                                                , tempTuple
                                                 )
 import qualified Front.Ast                     as A
 import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
+import IR.Types.Type (tempTupleId)
 
 -- | Unannotated terms appear as an empty stack.
 untyped :: I.Annotations
@@ -164,7 +164,7 @@ lowerExpr (A.Match s ps) =
   I.Match <$> lowerExpr s <*> mapM lowerArm ps <*> pure untyped
   where lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
 lowerExpr (A.Tuple es) =
-  apply_recurse (I.Data (I.DConId tempTuple) untyped) <$> mapM lowerExpr es
+  apply_recurse (I.Data (I.DConId (tempTupleId $ length es)) untyped) <$> mapM lowerExpr es
  where
   apply_recurse e []       = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
@@ -179,7 +179,7 @@ lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltBinder (Just $ I.VarId i)
                         | otherwise = return $ I.AltData (I.DConId i) []
 lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l
 lowerPatAlt (A.PatTup ps) =
-  I.AltData (I.tupleId $ length ps) <$> mapM lowerPatAlt ps
+  I.AltData (I.tempTupleId $ length ps) <$> mapM lowerPatAlt ps
 lowerPatAlt p@(A.PatApp _) = case A.collectPApp p of
   (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps
   _ -> Compiler.unexpected "lowerPatAlt: app head should be a data constructor"

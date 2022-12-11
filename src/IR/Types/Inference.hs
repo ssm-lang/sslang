@@ -23,7 +23,7 @@ import           Common.Identifiers             ( HasFreeVars(..)
                                                 , Identifier(..)
                                                 , IsString(..)
                                                 , fromId
-                                                , showId, tuple, tempTuple
+                                                , showId
                                                 )
 
 import           Control.Monad                  ( (<=<)
@@ -70,11 +70,6 @@ withBindings bs = U.local
 -- | Look up the 'U.Scheme' a data identifier in the variable environment.
 lookupBinding :: Identifiable i => i -> Infer U.Scheme
 lookupBinding x =
-  if fromId x == DConId tuple
-  then
-    do 
-    U.asks (M.lookup (fromId (DConId tempTuple)) . varEnv) >>= maybe (U.throwError unbound) return
-  else  
     do
     U.asks (M.lookup (fromId x) . varEnv) >>= maybe (U.throwError unbound) return
  where
