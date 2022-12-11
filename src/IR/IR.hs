@@ -219,7 +219,7 @@ data Expr t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
-  | Exception ExceptType t 
+  | Exception ExceptType t
   {- ^ @Exception et t@ produces a exception for the program. 
   
   TODO: Please turn this into a real exception.
@@ -250,14 +250,14 @@ variantFields (VariantUnnamed fields) = length fields
 
 -- | Extract the type carried by an 'Expr'.
 extract :: Expr t -> t
-extract (Var  _ t    ) = t
-extract (Data _ t    ) = t
-extract (Lit  _ t    ) = t
-extract (Let    _ _ t) = t
-extract (Lambda _ _ t) = t
-extract (App    _ _ t) = t
-extract (Match  _ _ t) = t
-extract (Prim   _ _ t) = t
+extract (Var  _ t     ) = t
+extract (Data _ t     ) = t
+extract (Lit  _ t     ) = t
+extract (Let    _ _ t ) = t
+extract (Lambda _ _ t ) = t
+extract (App    _ _ t ) = t
+extract (Match  _ _ t ) = t
+extract (Prim   _ _ t ) = t
 extract (Exception _ t) = t
 
 -- | Replace the top-level type carried by an 'Expr'.
@@ -495,13 +495,12 @@ instance Pretty (Expr ()) where
   pretty (Prim (CCall s) es _) =
     pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
   pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
-  pretty (Prim (CQuote s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+  pretty (Prim (CQuote  s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
 
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
-  pretty (Exception et _) = pretty "exception" <+> prettyet et
-    where 
-      prettyet (ExceptDefault l) = pretty l
+  pretty (Exception et _       ) = pretty "exception" <+> prettyet et
+    where prettyet (ExceptDefault l) = pretty l
 
 instance Pretty Alt where
   pretty (AltData a b        ) = pretty a <+> hsep (map pretty b)
@@ -615,8 +614,7 @@ instance Dumpy (Expr Type) where
     typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
   dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
   dumpy (Exception et t) = typeAnn t $ pretty "exception" <+> dumpyet et
-    where 
-      dumpyet (ExceptDefault l) = pretty l
+    where dumpyet (ExceptDefault l) = pretty l
 
 instance Dumpy Alt where
   dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)

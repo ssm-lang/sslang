@@ -527,9 +527,10 @@ genYield = do
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
 genExpr (I.Var n _) = do
   mv <- M.lookup n <$> gets fnVars
-  v <- maybe err return mv
+  v  <- maybe err return mv
   return (v, [])
-  where err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
+ where
+  err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
@@ -664,8 +665,8 @@ genExpr (I.Match s as t) = do
 
   (cases, blks) <- bimap concat concat . unzip <$> mapM genArm as
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
-genExpr I.Lambda{}      = fail "Cannot handle lambdas"
-genExpr (I.Prim p es t) = genPrim p es t
+genExpr I.Lambda{}        = fail "Cannot handle lambdas"
+genExpr (I.Prim p es t  ) = genPrim p es t
 genExpr (I.Exception _ _) = error "cannot happen" -- for me TODO
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.

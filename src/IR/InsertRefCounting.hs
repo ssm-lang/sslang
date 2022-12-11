@@ -96,14 +96,16 @@ getFresh str = do
   return $ fromString $ ("anon" <> show curCount) ++ str
 
 -- | Make a dup primitive that returns the type of its argument
-makeDup :: I.Expr I.Type -- ^ The variable to duplicate and return
-        -> I.Expr I.Type -- ^ The @dup@ call
+makeDup
+  :: I.Expr I.Type -- ^ The variable to duplicate and return
+  -> I.Expr I.Type -- ^ The @dup@ call
 makeDup e = I.Prim I.Dup [e] $ I.extract e
 
 -- | Make a drop primitive with unit type
-makeDrop :: I.Expr I.Type -- ^ The expression to evaluate and return
-         -> I.Expr I.Type -- ^ The variable to drop afterwards
-         -> I.Expr I.Type -- ^ The @drop@ call
+makeDrop
+  :: I.Expr I.Type -- ^ The expression to evaluate and return
+  -> I.Expr I.Type -- ^ The variable to drop afterwards
+  -> I.Expr I.Type -- ^ The @drop@ call
 makeDrop r e = I.Prim I.Drop [e, r] I.Unit
 
 
@@ -262,17 +264,17 @@ becomes
 --
 insertExpr :: I.Expr I.Type -> Fresh (I.Expr I.Type)
 
-insertExpr dcon@I.Data{}     = return dcon
+insertExpr dcon@I.Data{}          = return dcon
 
-insertExpr lit@I.Lit{}       = return lit
+insertExpr lit@I.Lit{}            = return lit
 
-insertExpr var@I.Var{}       = return $ makeDup var
+insertExpr var@I.Var{}            = return $ makeDup var
 
 insertExpr (I.App f x t) = I.App <$> insertExpr f <*> insertExpr x <*> pure t
 
-insertExpr (I.Prim p es typ) = I.Prim p <$> mapM insertExpr es <*> pure typ
+insertExpr (I.Prim p    es   typ) = I.Prim p <$> mapM insertExpr es <*> pure typ
 
-insertExpr (I.Let bins expr typ) = do
+insertExpr (I.Let  bins expr typ) = do
   bins' <- forM bins droppedBinder
   expr' <- insertExpr expr
   return $ I.Let bins' (foldr (makeDrop . varFromBind) expr' bins') typ
@@ -298,13 +300,13 @@ insertExpr lam@(I.Lambda _ _ typ) = do
 insertExpr (I.Match v@I.Var{} alts typ) = do
   alts' <- forM alts insertAlt
   return $ I.Match v alts' typ
-  
+
 insertExpr (I.Match scrutExpr alts typ) = do
   scrutVar <- getFresh "_scrutinee"
   insertExpr $ I.Let [(Just scrutVar, scrutExpr)]
                      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
                      typ
-insertExpr e@(I.Exception _ _)       = return e
+insertExpr e@(I.Exception _ _) = return e
 
 {- | Insert dups and drops into pattern match arms
 
