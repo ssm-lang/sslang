@@ -1650,6 +1650,7 @@ isTuple :: Type -> Bool
 -- | Construct the type constructor of a builtin tuple of given arity
 --   (&gt;= 2).
 tupleId :: (Integral i, Identifiable v) => i -> v
+tempTupleId :: (Integral i, Identifiable v) => i -> v
 
 -- | More convenient representation of tuple types, for pattern-matching.
 data TupleView
