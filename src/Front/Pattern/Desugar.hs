@@ -79,26 +79,10 @@ desugarTopDefs = mapM desugarTopDef
 desugarDefs :: [A.Definition] -> DesugarFn [A.Definition]
 desugarDefs = mapM desugarDef
 
-desugarDef :: A.Definition -> DesugarFn A.Definition
-desugarDef (A.DefFn i [] t e) = return (A.DefFn i [] t e)
-desugarDef (A.DefFn i ps t e) =
-  let (pats, rese) = helper ps e (0::Int) in
-    A.DefFn i pats t <$> desugarExpr rese
-  where helper [] ex _ = ([],ex)
-        helper (p:rps) ex n = 
-         case p of
-           A.PatTup _ -> let (pats, rese) = helper rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
-                         (A.PatId (Identifier ("_temp_id_" ++ show n)) : pats, rese)
-           _ -> let (pats, rese) = helper rps e (n+1) in
-                (p:pats, rese)
-
-desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
-
-
 -- WARN: only body is desugared
---desugarDef :: A.Definition -> DesugarFn A.Definition
---desugarDef (A.DefFn i ps t e) = A.DefFn i ps t <$> desugarExpr e
---desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
+desugarDef :: A.Definition -> DesugarFn A.Definition
+desugarDef (A.DefFn i ps t e) = A.DefFn i ps t <$> desugarExpr e
+desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
 
 desugarExprs :: [A.Expr] -> DesugarFn [A.Expr]
 desugarExprs = mapM desugarExpr
