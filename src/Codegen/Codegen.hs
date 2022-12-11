@@ -666,7 +666,7 @@ genExpr (I.Match s as t) = do
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
-genExpr (I.Exception _ _) = error "cannot happen"
+genExpr (I.Exception _ _) = error "cannot happen" -- for me TODO
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim
