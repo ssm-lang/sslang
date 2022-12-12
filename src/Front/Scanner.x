@@ -60,7 +60,7 @@ $symbolAny          = [$symbolBase\_\:\"\'\*]
 @cBlockR = \$\$\$
 @cInlineChunk = ( [^\$] | @newline )+ | \$
 
-$asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}]
+$asciiChar = [a-zA-Z0-9\!\#\$\%\&\*\+\.\/\<\=\>\?\@\^\|\-\~\:\[\]\(\)\{\}\ ]
 $escapable = [\\ \' \" n r t]
 @escapeChar = \\ $escapable
 @litChar = @escapeChar | $asciiChar
