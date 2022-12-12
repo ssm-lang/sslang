@@ -499,7 +499,7 @@ instance Pretty (Expr ()) where
 
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
-  pretty (Exception et _       ) = pretty "exception" <+> prettyet et
+  pretty (Exception et _       ) = pretty "__exception" <+> prettyet et
     where prettyet (ExceptDefault l) = pretty l
 
 instance Pretty Alt where
