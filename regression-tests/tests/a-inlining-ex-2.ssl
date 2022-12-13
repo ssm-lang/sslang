@@ -11,22 +11,6 @@ We should rename this file without the "a-" before opening a PR for review.
 -}
 */
 
-/*
-
-Example: r and q are oncesafe.
-Input:
-main = 
-  let q = 5
-  IN
-  let r = q + 1 
-  IN 
-  r
-
-Expected Output:
-main = 
-  5 + 1
-
-*/
 
 // print digit; account for ascii offset
 /*
@@ -35,8 +19,13 @@ putd cout c =
   wait cout
 */
 
+//g a b c d e f = fun arg0 {arg0 + 45}
+
 main cin cout = 
+  let z = fun a 
+              a + 4
   let q = 5
   let r = q + 1 
-  r
+  let w = (fun _ { r }) 2
+  (fun a1 {a1 + 5}) r
   //putd cout r
