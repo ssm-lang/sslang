@@ -82,15 +82,14 @@ desugarDefs = mapM desugarDef
 desugarDef :: A.Definition -> DesugarFn A.Definition
 desugarDef (A.DefFn i [] t e) = return (A.DefFn i [] t e)
 desugarDef (A.DefFn i ps t e) =
-  let (pats, rese) = helper ps e (0::Int) in
+  let (pats, rese) = desugarPatTup ps e (0::Int) in
     A.DefFn i pats t <$> desugarExpr rese
-  where helper [] ex _ = ([],ex)
-        helper (p:rps) ex n = 
+  where desugarPatTup [] ex _ = ([],ex)
+        desugarPatTup (p:rps) ex n = 
          case p of
-           A.PatTup _ -> let (pats, rese) = helper rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
+           A.PatTup _ -> let (pats, rese) = desugarPatTup rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
                          (A.PatId (Identifier ("_temp_id_" ++ show n)) : pats, rese)
-           _ -> let (pats, rese) = helper rps e (n+1) in
-                (p:pats, rese)
+           _ -> first (p:) $ desugarPatTup rps e (n+1)
 
 desugarDef (A.DefPat p e    ) = A.DefPat p <$> desugarExpr e
 
