@@ -62,6 +62,8 @@ module Common.Identifiers
   , ungenId
   , tuple
   , tempTuple
+  , cons
+  , nil
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
@@ -287,3 +289,11 @@ tuple = Identifier "(,)"
 -- | we'll use this temp tuple name for now due to the naming issue
 tempTuple :: Identifier
 tempTuple = Identifier "Pair"
+
+-- | Cons identifier for Lists
+cons :: Identifier
+cons = Identifier "Cons"
+
+-- | Nil identifier for Lists
+nil :: Identifier
+nil = Identifier "Nil"

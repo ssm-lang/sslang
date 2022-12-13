@@ -1,0 +1,34 @@
+type List
+  Cons Int List
+  Nil
+
+puts cout s =
+  match s
+    Cons c ss =
+      after 1, cout <- c
+      wait cout
+      after 1, cout <- 32
+      wait cout
+      puts cout ss
+    Nil = ()
+
+main cin cout =
+// check multi element list
+  let multi_lst = [49,50,51]
+  puts cout multi_lst
+  after 1, cout <- 10
+  wait cout
+
+// check singleton list
+  let single_lst = [49]
+  puts cout single_lst
+
+  after 1, cout <- 10
+  wait cout
+
+// check empty element list
+  let empty_lst = []
+  puts cout empty_lst
+  
+  after 1, cout <- 10
+  wait cout
