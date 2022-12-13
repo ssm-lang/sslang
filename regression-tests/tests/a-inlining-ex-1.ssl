@@ -35,8 +35,23 @@ putd cout c =
   wait cout
 */
 
+f y = y
+
 main cin cout = 
   let q = 5
   let r = q + 1 
   r
   //putd cout r
+
+/*
+main has arity 2, we know we only care about the 3rd lambda and onward
+ON top level functions: skip all starting lambdas until first body
+("main", lambda cin (lambda cout body))
+("main", (I.Lambda (Just "cin") (I.Lambda (Just cout) b t2)  t) )
+where body is "  let q = 5
+                 let r = q + 1 
+                 r"
+
+*/
+
+

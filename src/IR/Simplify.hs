@@ -19,9 +19,7 @@ import qualified IR.IR                         as I
 
 -- import           Control.Monad                  ( forM_ )
 -- import           Control.Monad                  ( forM_ )
-import           Control.Monad.Except           ( MonadError(..)
-                                                
-                                                )
+import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
@@ -60,12 +58,12 @@ data OccInfo = Dead
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
-  { occInfo      :: M.Map I.VarId OccInfo
+  { occInfo     :: M.Map I.VarId OccInfo
   {- ^ 'occInfo' maps an identifier to its occurence category -}
-  , runs         :: Int
+  , runs        :: Int
   {- ^ 'runs' stores how many times the simplifier has run so far -}
-  , insideLambda :: Bool
-  {- ^ 'insideLambda' whether ocurrence analyzer is currently inspecting a lambda -}
+  , countLambda :: Int
+  {- ^ 'countLambda' how many lambdas the occurence analyzer is inside -}
   }
   deriving Show
 
@@ -89,13 +87,13 @@ runSimplFn :: SimplFn a -> Compiler.Pass a
   -- m is state transformer monad (result of do inside simplifyProgram)
   -- SimplCtx is initial state
 runSimplFn (SimplFn m) =
-  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, insideLambda = False }
+  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0 }
 
 -- | Update occInfo for the binder since we just spotted it
 updateOccVar :: I.VarId -> SimplFn ()
 updateOccVar binder = do
-  m          <- gets occInfo
-  onceunsafe <- gets insideLambda
+  m      <- gets occInfo
+  inside <- insideLambda
   let m' = case M.lookup binder m of
         Nothing ->
           error
@@ -106,9 +104,7 @@ updateOccVar binder = do
         Just Dead -> do
           -- we only handle OnceSafe currently
           -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
-          if onceunsafe
-            then M.insert binder Never m
-            else M.insert binder OnceSafe m
+          if inside then M.insert binder Never m else M.insert binder OnceSafe m
         _ -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
 
@@ -128,12 +124,21 @@ addOccVar binder = do
 
 -- | Record that the ocurrence analyzer is looking inside a lambda
 recordEnteringLambda :: SimplFn ()
-recordEnteringLambda = modify $ \st -> st { insideLambda = True }
+recordEnteringLambda = do
+  curCount <- gets countLambda
+  modify $ \st -> st { countLambda = curCount + 1 }
 
 -- | Record that the ocurrence analyzer is no longer looking inside a lambda
 recordExitingLambda :: SimplFn ()
-recordExitingLambda = modify $ \st -> st { insideLambda = False }
+recordExitingLambda = do
+  curCount <- gets countLambda
+  modify $ \st -> st { countLambda = curCount - 1 }
 
+-- | Returns whether ocurrence analyzer is currently looking inside a lambda
+insideLambda :: SimplFn Bool
+insideLambda = do
+  curCount <- gets countLambda
+  return (curCount /= 0)
 
 {- | Entry-point to Simplifer.
 
@@ -146,7 +151,7 @@ simplifyProgram p = runSimplFn $ do -- everything in do expression will know abo
   -- run the occurrence analyzer
   (_, info) <- runOccAnal p
   -- fail and print out the results of the occurence analyzer
-  _ <- Compiler.unexpected $ show info
+  _         <- Compiler.unexpected $ show info
   -- I should always have at least one top-level func, main.
   -- let's see how many top level funcs I have!
   -- Compiler.unexpected $ show $ topLevelFunc <$> defs
@@ -227,7 +232,19 @@ y-}
 3) {}
 -}
 
+--unfoldLambda :: Expr t -> ([Binder], Expr t)
 
+{- | Given the RHS of a top level function, return first expr inside it that isn't a Lambda
+
+For each curried lambda expr I find, add binders to occurence info.
+Basically, "swallow up" the arguments to my top-level function.
+-}
+-- swallowArgs :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
+-- swallowArgs (I.Lambda Nothing b _) = swallowArgs b
+-- swallowArgs (I.Lambda (Just arg) b _)= do
+--   addOccVar arg 
+--   swallowArgs b
+-- swallowArgs e = pure e
 
 
 runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type, String)
@@ -292,6 +309,7 @@ occAnalExpr l@(I.Lambda Nothing b _) = do
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
+
 occAnalExpr l@(I.Lambda (Just binder) b _) = do
   recordEnteringLambda
   addOccVar binder
