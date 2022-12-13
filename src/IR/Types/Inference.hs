@@ -23,7 +23,7 @@ import           Common.Identifiers             ( HasFreeVars(..)
                                                 , Identifier(..)
                                                 , IsString(..)
                                                 , fromId
-                                                , showId, tuple, tempTuple
+                                                , showId
                                                 )
 
 import           Control.Monad                  ( (<=<)
@@ -70,11 +70,6 @@ withBindings bs = U.local
 -- | Look up the 'U.Scheme' a data identifier in the variable environment.
 lookupBinding :: Identifiable i => i -> Infer U.Scheme
 lookupBinding x =
-  if fromId x == DConId tuple
-  then
-    do 
-    U.asks (M.lookup (fromId (DConId tempTuple)) . varEnv) >>= maybe (U.throwError unbound) return
-  else  
     do
     U.asks (M.lookup (fromId x) . varEnv) >>= maybe (U.throwError unbound) return
  where
@@ -222,13 +217,12 @@ inferAlt t (AltData d as) = do
       , "Expected: " <> show (length ats)
       , "Got: " <> show (length as)
       ]
-  let as' = map AltDefault as -- TODO: remove for nested patterns, just use as
-  concat <$> zipWithM inferAlt ats as'
+  concat <$> zipWithM inferAlt ats as
 inferAlt t (AltLit l) = do
   t' <- U.instantiate =<< inferLit l
   t =:= t'
   return []
-inferAlt t (AltDefault b) = return [(b, T.forall [] t)]
+inferAlt t (AltBinder b) = return [(b, T.forall [] t)]
 
 -- | Type inference rules for primitives of a given arity.
 inferPrim :: Int -> Primitive -> Infer U.Scheme

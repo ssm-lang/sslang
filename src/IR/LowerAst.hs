@@ -21,13 +21,13 @@ import           Common.Identifiers             ( TVarId(..)
                                                 , fromString
                                                 , isCons
                                                 , isVar
-                                                , tempTuple
                                                 )
 import qualified Front.Ast                     as A
 import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
 import           Data.Bifunctor                 ( Bifunctor(..) )
+import IR.Types.Type (tempTupleId)
 
 -- | Unannotated terms appear as an empty stack.
 untyped :: I.Annotations
@@ -151,7 +151,7 @@ lowerExpr (A.Seq l r) = do
 lowerExpr A.Break          = return $ I.Prim I.Break [] untyped
 lowerExpr (A.IfElse c t e) = do
   c' <- lowerExpr c
-  t' <- (I.AltDefault Nothing, ) <$> lowerExpr t
+  t' <- (I.AltBinder Nothing, ) <$> lowerExpr t
   e' <- (I.AltLit (I.LitIntegral 0), ) <$> lowerExpr e
   return $ I.Match c' [e', t'] untyped
 lowerExpr (A.CQuote s) = return $ I.Prim (I.CQuote $ fromString s) [] untyped
@@ -164,7 +164,7 @@ lowerExpr (A.Match s ps) =
   I.Match <$> lowerExpr s <*> mapM lowerArm ps <*> pure untyped
   where lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
 lowerExpr (A.Tuple es) =
-  apply_recurse (I.Data (I.DConId tempTuple) untyped) <$> mapM lowerExpr es
+  apply_recurse (I.Data (I.DConId (tempTupleId $ length es)) untyped) <$> mapM lowerExpr es
  where
   apply_recurse e []       = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
@@ -174,14 +174,14 @@ lowerExpr (A.ListExpr _) =
 
 -- | Lower an A.Pat into an I.Alt
 lowerPatAlt :: A.Pat -> Compiler.Pass I.Alt
-lowerPatAlt A.PatWildcard = return $ I.AltDefault Nothing
-lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltDefault (Just $ I.VarId i)
+lowerPatAlt A.PatWildcard = return $ I.AltBinder Nothing
+lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltBinder (Just $ I.VarId i)
                         | otherwise = return $ I.AltData (I.DConId i) []
 lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l
 lowerPatAlt (A.PatTup ps) =
-  I.AltData (I.tupleId $ length ps) <$> mapM lowerPatBinder ps
+  I.AltData (I.tempTupleId $ length ps) <$> mapM lowerPatAlt ps
 lowerPatAlt p@(A.PatApp _) = case A.collectPApp p of
-  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatBinder ps
+  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps
   _ -> Compiler.unexpected "lowerPatAlt: app head should be a data constructor"
 lowerPatAlt (A.PatAnn _ p) = lowerPatAlt p
 lowerPatAlt (A.PatAs _ _) =
