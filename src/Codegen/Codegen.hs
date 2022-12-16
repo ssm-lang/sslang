@@ -141,9 +141,9 @@ getsTCon f i = do
 
 -- | Lookup some information associated with a data constructor.
 getsDCon :: (DConInfo -> a) -> I.DConId -> GenFn a
-getsDCon f i = do 
-              Just a <- fmap f . (`dconInfo` i) <$> gets fnTypeInfo
-              return a
+getsDCon f i = do
+  Just a <- fmap f . (`dconInfo` i) <$> gets fnTypeInfo
+  return a
 
 -- | Read and increment the number of cases in a procedure, i.e., @fnCases++@.
 nextCase :: GenFn Int
@@ -651,8 +651,10 @@ genExpr (I.Match s as t) = do
     withAltScope label (I.AltData dcon fields) m = do
       destruct <- getsDCon dconDestruct dcon
       cas      <- getsDCon dconCase dcon
-      let fieldBinds =
-            zipWith (\field i -> (I.getAltDefault field, destruct i scrut)) fields [0 ..]
+      let fieldBinds = zipWith
+            (\field i -> (I.getAltDefault field, destruct i scrut))
+            fields
+            [0 ..]
       blk <- withBindings fieldBinds m
       return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do
