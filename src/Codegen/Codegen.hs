@@ -667,7 +667,9 @@ genExpr (I.Match s as t) = do
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
 genExpr I.Lambda{}        = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t  ) = genPrim p es t
-genExpr (I.Exception _ _) = error "cannot happen" -- for me TODO
+genExpr (I.Exception _ t) = do
+  tmp <- genTmp t
+  return (tmp, [citems|$exp:(throw INTERNAL_ERROR);|]) -- unit instead of temp?
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim
