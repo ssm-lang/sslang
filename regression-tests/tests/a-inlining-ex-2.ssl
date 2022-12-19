@@ -24,8 +24,14 @@ putd cout c =
 main cin cout = 
   let z = fun a 
               a + 4
+  // z is equivalent \a -> a + 4
   let q = 5
   let r = q + 1 
+  
+  // w is equivalent to (\_ -> r) 2
   let w = (fun _ { r }) 2
+
+  let z = (fun _ { (fun _ { r }) + r }) 2
+
   (fun a1 {a1 + 5}) r
   //putd cout r
