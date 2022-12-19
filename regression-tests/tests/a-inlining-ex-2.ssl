@@ -13,25 +13,25 @@ We should rename this file without the "a-" before opening a PR for review.
 
 
 // print digit; account for ascii offset
-/*
+
 putd cout c =
   after 1, cout <- (c + 48)
   wait cout
-*/
+
 
 //g a b c d e f = fun arg0 {arg0 + 45}
 
 main cin cout = 
-  let z = fun a 
-              a + 4
-  // z is equivalent \a -> a + 4
-  let q = 5
-  let r = q + 1 
+ // let z = fun a 
+ //             a + 4
+ // z is equivalent \a -> a + 4
+ //let q = 5
+ // let r = q + 1 
   
-  // w is equivalent to (\_ -> r) 2
-  let w = (fun _ { r }) 2
+ // w is equivalent to (\_ -> r) 2
+ // let w = (fun _ { r }) 2
 
-  let z = (fun _ { (fun _ { r }) + r }) 2
+ // let z = (fun _ { (fun _ { r }) + r }) 2
 
-  (fun a1 {a1 + 5}) r
-  //putd cout r
+//(fun a1 {a1 + 5}) r
+  putd cout 6

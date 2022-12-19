@@ -31,6 +31,7 @@ import           Control.Monad.State.Lazy       ( MonadState
 import           Data.Bifunctor                 ( second )
 -- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
+import IR.IR (unfoldLambda)
 -- import qualified GHC.IO.Exception              as Compiler
 -- import           Data.Maybe                     ( catMaybes )
 -- import qualified Data.Set                      as S
@@ -219,12 +220,45 @@ data Program t = Program
 -}
 
 {-
-main cin cout =
+main cin cout = // has type int -> int -> int
 let x = +5
 IN
 let y = x 4
 IN
-y-}
+y
+
+FYI: Lambda Binder (Expr t) t
+FYI: Binder is a (Maybe VarId)
+Let [(Binder, Expr t)] (Expr t) t
+5 + 5 ==> App (App "Add" 5) 5
++5 ==> (App "Add" 5)
+
+'foldApp' is the inverse of 'unfoldApp'.
+foldApp :: Expr t -> [(Expr t, t)] -> Expr t
+foldApp = foldr $ \(a, t) f -> App f a t
+
+("main", Lambda cin -- FoldApp
+  (Lambda cout 
+    Lambda something something
+    (Let [(x, (App "+" 5))] (Let [(y, App "x" 4)] (y)))
+  )
+)
+
+("main", (Let [(x, (App "+" 5))] (Let [(y, App "x" 4)] (y)))) )
+where in our occurence info state monad thing, we have
+(cin, DEAD)
+(cout, DEAD) 
+
+main cin cout = // has type int -> int -> (int -> int)
+\z -> 
+let z' = z + 5 + 2 (\j -> j * 2)
+
+result of unfolding this will be: main [cin, cout, z] with type int -> int -> int -> int
+Does a top a top level function with two args that returns a lambda have the SAME TYPE
+as a top level function with three arguments?
+
+
+-}
 
 {-
 1) {x: Dead }
@@ -245,6 +279,29 @@ Basically, "swallow up" the arguments to my top-level function.
 --   addOccVar arg 
 --   swallowArgs b
 -- swallowArgs e = pure e
+
+--                  this is body> 
+--FYI: Lambda Binder (Expr t) t
+--FYI: Binder is a (Maybe VarId)
+-- 1)  _ <- blah -- compiler knows you want to throw away your result
+-- 2)    blah -- get warning
+
+{- | Take in a top level function, and "swallows" its arguments
+
+"Swallow" means to add the argument to our occurrence info state.
+It returns a top level function without curried arguments; just the body.
+unfoldLambda :: Expr t -> ([Binder], Expr t)
+-}
+swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
+swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
+  let (args, body) = unfoldLambda l
+  mapM_ addOccs args
+  pure (funcName, body)
+  where
+      addOccs (Just nm) = addOccVar nm
+      addOccs Nothing = pure ()
+  
+swallowArgs (name, e) = pure (name, e)
 
 
 runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type, String)
@@ -268,14 +325,15 @@ runOccAnal p@I.Program { I.programDefs = defs } = do
           ++ " has OccInfo: "
           ++ show occinfo
           ++ " END"
-
-  x <- mapM (getOccInfoForDef . second occAnalExpr) defs
+  defs' <- mapM swallowArgs defs
+  x <- mapM (getOccInfoForDef . second occAnalExpr) defs'
   --y <- snd $ second occAnalExpr (head defs)
   --error $ show x
  -- addOccVar "yo"
  -- m <- gets occInfo
  -- error (show m)
   return (p, show x)
+
 
 
 -- | Run the Ocurrence Analyzer over an IR expression node
@@ -287,7 +345,7 @@ occAnalExpr l@(I.Let binders body _) = do
     (\(binder, rhs) -> case binder of
       (Just nm) -> do
         addOccVar nm
-        _ <- occAnalExpr rhs
+        _ <- occAnalExpr rhs -- in case there is a let in the RHS
         pure ()
       Nothing -> pure ()
     )
@@ -317,6 +375,72 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
+
+-- application
+-- App (Expr t) (Expr t) t
+{-
+ let r = q + 1 
+ App (App "+" q) 1
+-}
+occAnalExpr a@(I.App lhs rhs _) = do
+  _ <- occAnalExpr lhs
+  _ <- occAnalExpr rhs
+  m <- gets occInfo
+  pure (a, show m)
+
+-- primitive operations
+{-
+  | Prim Primitive [Expr t] t
+  ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
+  of type @t@.
+  
+  data Primitive
+  = New
+  | PrimOp PrimOp
+  {- ^ Inlined C expression code. -}
+  | CQuote String
+  {- ^ Primitive operator. -}
+  | CCall CSym
+  {- ^ Direct call to arbitrary C function (NOTE: HACKY). -}
+  | FfiCall VarId
+  {- ^ Call to well-typed extern symbol. -}
+  deriving (Eq, Show, Typeable, Data)
+
+  when primitive is
+-}
+
+occAnalExpr p@(I.Prim _ args _) = do
+  mapM_ occAnalExpr args
+  m <- gets occInfo
+  pure (p, show m)
+
+-- data constructors
+{-
+According to section 2.3 in the paper, the trivial-constructor-argument-invariant says that
+if we have
+  x = (f y, g y)
+  h = \ z -> case x of 
+                 (a,b) -> ... 
+Normally we would want to inline x so we can could cancel the case statement, BUT
+because the arguments to the tuple data constructor are FUNCTIONS, this could duplicate work.
+Because if h appears in a bunch of places, we are redo-ing the work for f y and g y a bunch of times.
+trivial-constructor-argument-invariant: It's okay to inline a binder whose RHS 
+is an application of a data constructor IF the arguments to the data constructors
+are variable, literals, or type applications.
+
+let x = RGB (let y = 5 in y + 2) 4 5 //dumb but possible
+
+
+data Color =
+  RGB Int Int Int
+  Black
+  White
+-}
+
+-- occAnalExpr p@(I.Data args _) = do 
+--   pure ()
+
+-- match expressions???? 
 
 -- everything else
 occAnalExpr e = do
