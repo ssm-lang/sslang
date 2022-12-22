@@ -177,13 +177,36 @@ simplTop (v, e) = do
   (,) v <$> simplExpr e
 
 {- | Recursively simplify IR expressions.
-
 Probably want more documentation here eventually.
+
+WIP WIP WIP WIP WIPPPPPPPPPPPP
 -}
 simplExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
-simplExpr e = do
-  --addOccVar "test" <- cursed
-  return e -- what a stub.
+simplExpr l@(I.Let binders body _) = do
+  m <- gets occInfo
+  mapM_
+    (\(binder, rhs) -> case binder of
+      (Just something) -> case M.lookup something m of
+        Just Dead -> pure ()
+        -- inline x unconditionally in B
+        -- -> binds x to E in current substitution, discard binding completely, simplifies B using this extended substitution
+        Just OnceSafe -> pure ()
+        _ -> pure ()
+      Nothing -> pure ()
+    )
+    binders
+  -- _ :: (Maybe VarId, Expr Type) -> SimplFn ()
+--  mapM_
+--    ( \(binder, rhs) -> case binder of
+--        Just something -> pure (binder, rhs)
+--    )
+    -- (\(binder, rhs) -> case M.lookup binder m of 
+      -- Just Dead -> pure ()
+      -- Just OnceSafe -> pure rhs
+      -- _ -> pure (binder, rhs)
+    -- )
+--  binders
+  pure l
 
 {-
 data Program t = Program
