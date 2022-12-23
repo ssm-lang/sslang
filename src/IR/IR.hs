@@ -320,8 +320,8 @@ isValue _        = False
 -- | Retrieve binder from Alt, assuming it is AltBinder.
 getAltDefault :: Alt -> Binder
 getAltDefault (AltBinder b) = b
-getAltDefault _ = error 
-  "Compiler Error: Should not have recursive patterns here"
+getAltDefault _ =
+  error "Compiler Error: Should not have recursive patterns here"
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
@@ -336,8 +336,8 @@ instance HasFreeVars (Expr t) VarId where
    where
     freeAltVars :: (Alt, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
-    altBinders (AltLit     _                 ) = S.empty
+    altBinders (AltData _ bs                ) = S.unions $ map altBinders bs
+    altBinders (AltLit    _                 ) = S.empty
     altBinders (AltBinder (maybeToList -> v)) = S.fromList v
   freeVars Exception{} = S.empty
 
@@ -498,8 +498,8 @@ instance Pretty (Expr ()) where
     where prettyet (ExceptDefault l) = pretty l
 
 instance Pretty Alt where
-  pretty (AltData a b        ) = pretty a <+> hsep (map pretty b)
-  pretty (AltLit     a       ) = pretty a
+  pretty (AltData a b       ) = pretty a <+> hsep (map pretty b)
+  pretty (AltLit    a       ) = pretty a
   pretty (AltBinder (Just v)) = pretty v
   pretty (AltBinder Nothing ) = pretty '_'
 
@@ -612,8 +612,8 @@ instance Dumpy (Expr Type) where
     where dumpyet (ExceptDefault l) = pretty l
 
 instance Dumpy Alt where
-  dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
-  dumpy (AltLit     a       ) = pretty a
+  dumpy (AltData a b       ) = parens $ pretty a <+> hsep (map pretty b)
+  dumpy (AltLit    a       ) = pretty a
   dumpy (AltBinder (Just v)) = pretty v
   dumpy (AltBinder Nothing ) = pretty '_'
 
