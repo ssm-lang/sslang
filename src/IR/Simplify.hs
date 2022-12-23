@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -16,7 +17,12 @@ module IR.Simplify
 import qualified Common.Compiler               as Compiler
 -- import           Common.Identifiers
 import qualified IR.IR                         as I
-
+import           Data.Generics                  ( everywhere
+                                                , mkT,
+                                                everywhereM,
+                                                mkM,
+                                                Typeable
+                                                )
 -- import           Control.Monad                  ( forM_ )
 -- import           Control.Monad                  ( forM_ )
 import           Control.Monad.Except           ( MonadError(..) )
@@ -33,6 +39,8 @@ import           Data.Bifunctor                 ( second )
 import qualified Data.Map                      as M
 import qualified Data.Maybe                    as Ma
 import           IR.IR                          ( unfoldLambda )
+import Data.Text.Prettyprint.Doc.Render.String (renderShowS)
+
 -- import qualified GHC.IO.Exception              as Compiler
 -- import           Data.Maybe                     ( catMaybes )
 -- import qualified Data.Set                      as S
@@ -58,7 +66,9 @@ type InScopeSet = String
 type Context = String
 
 type Subst = M.Map InVar SubstRng
+
 data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
+ deriving Typeable
 
 data OccInfo = Dead
              | LoopBreaker -- TBD
@@ -68,6 +78,7 @@ data OccInfo = Dead
              | MultiUnsafe
              | Never
   deriving Show
+  deriving Typeable
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
@@ -77,8 +88,11 @@ data SimplEnv = SimplEnv
   {- ^ 'runs' stores how many times the simplifier has run so far -}
   , countLambda :: Int
   {- ^ 'countLambda' how many lambdas the occurence analyzer is inside -}
+  , countMatch :: Int
+  {- ^ 'countLambda' how many matches the occurence analyzer is inside -}
   }
   deriving Show
+  deriving Typeable
 
 -- | Simplifier Monad
 newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
@@ -88,6 +102,7 @@ newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
   deriving MonadFail                    via (StateT SimplEnv Compiler.Pass)
   deriving (MonadError Compiler.Error)  via (StateT SimplEnv Compiler.Pass)
   deriving (MonadState SimplEnv)        via (StateT SimplEnv Compiler.Pass)
+  deriving Typeable
 
 -- | Run a SimplFn computation.
 runSimplFn :: SimplFn a -> Compiler.Pass a
@@ -100,13 +115,14 @@ runSimplFn :: SimplFn a -> Compiler.Pass a
   -- m is state transformer monad (result of do inside simplifyProgram)
   -- SimplCtx is initial state
 runSimplFn (SimplFn m) =
-  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0 }
+  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0, countMatch = 0 }
 
 -- | Update occInfo for the binder since we just spotted it
 updateOccVar :: I.VarId -> SimplFn ()
 updateOccVar binder = do
   m      <- gets occInfo
-  inside <- insideLambda
+  insidel <- insideLambda
+  insidem <- insideMatch
   let m' = case M.lookup binder m of
         Nothing ->
           error
@@ -117,7 +133,7 @@ updateOccVar binder = do
         Just Dead -> do
           -- we only handle OnceSafe currently
           -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
-          if inside then M.insert binder Never m else M.insert binder OnceSafe m
+          if insidel || insidem then M.insert binder Never m else M.insert binder OnceSafe m
         _ -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
 
@@ -153,6 +169,24 @@ insideLambda = do
   curCount <- gets countLambda
   return (curCount /= 0)
 
+-- | Record that the ocurrence analyzer is looking inside a lambda
+recordEnteringMatch :: SimplFn ()
+recordEnteringMatch = do
+  curCount <- gets countMatch
+  modify $ \st -> st { countMatch = curCount + 1 }
+
+-- | Record that the ocurrence analyzer is no longer looking inside a lambda
+recordExitingMatch :: SimplFn ()
+recordExitingMatch = do
+  curCount <- gets countMatch
+  modify $ \st -> st { countMatch = curCount - 1 }
+
+-- | Returns whether ocurrence analyzer is currently looking inside a lambda
+insideMatch :: SimplFn Bool
+insideMatch = do
+  curCount <- gets countMatch
+  return (curCount /= 0)
+
 {- | Entry-point to Simplifer.
 
 Maps over top level definitions to create a new simplified Program
@@ -164,7 +198,7 @@ simplifyProgram p = runSimplFn $ do -- everything in do expression will know abo
   -- run the occurrence analyzer
   (_, info) <- runOccAnal p
   -- fail and print out the results of the occurence analyzer
- -- _ <- Compiler.unexpected $ show info
+  -- _ <- Compiler.unexpected $ show info
   -- I should always have at least one top-level func, main.
   -- let's see how many top level funcs I have!
 
@@ -199,14 +233,12 @@ simpleExpr :: Subst -> InScopeSet
 -}
 
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
-simplExpr sub ins (I.App lhs rhs t) cont = do
-  lhs' <- simplExpr sub ins lhs cont
-  rhs' <- simplExpr sub ins rhs cont
-  return (I.App lhs' rhs' t)
-
-simplExpr sub ins (I.Lambda binder body t) cont = do
-  body' <- simplExpr sub ins body cont
-  return (I.Lambda binder body' t)
+-- simplExpr sub ins m@(I.Match scrutinee arms@(alt, body) t) cont = do
+--   scrutinee' <- simplExpr sub ins scrutinee cont
+--   body' <- mapM (simplExpr sub ins) body
+--   let x = mapM (simplExpr sub ins) arms <*> cont
+--   return (I.Match scrutinee' (alt, body') t)
+ -- where f :: 
 
 {- 
 p: q + 1
@@ -216,16 +248,48 @@ lookup args in the substitution
 
 -}
 simplExpr sub ins p@(I.Prim prim args t) cont = do
---  let test = mapM (simplExpr sub ins) args cont 
-  -- [SimplFn OutExpt] --> SimplFn [OutExpr]
-  -- simplified <- mapM (simplExpr sub ins) args cont
-  -- sequence test
-  args' <- sequence $ mapM (simplExpr sub ins) args cont 
+  args' <- sequence $ mapM (simplExpr sub ins) args cont
   pure (I.Prim prim args' t)
+
+
   -- where
    -- f :: [SimplFn OutExpr] -> SimplFn [OutExpr]
-    
+-- Match (Expr t) [(Alt, Expr t)] t
+simplExpr sub ins (I.Match scrutinee arms t) cont = do
+  scrutinee' <- simplExpr sub ins scrutinee cont
+  let (pats,rhss ) = unzip arms
+  rhss' <- sequence $ mapM (simplExpr sub ins) rhss cont
+  let results = zip pats rhss'
+  return (I.Match scrutinee' results t)
+    -- let new = sequence $ mapM (\(alt, e) -> simplExpr sub ins e) arms cont
+  -- let j = 
+    --let y = zipwith ($) (repeat cont) mapM (simplExpr sub ins) es
+  --z' <- sequence $ mapM ((simplExpr sub ins).second) arms cont
+  -- let y' = map (\x -> x cont) y
+  -- x <- sequence $ mapM (\(a,b) -> do b' <- simplExpr sub ins b cont
+  --                                    pure (a, b')) arms <*> cont
+-- f :: (Atl, Expr t) -> SimplFn (Atl, Expr t)
+  --pure (I.Match scrutinee' x t)
+{-
+ • Couldn't match expected type ‘[(I.Alt, I.Expr I.Type)]’
+                  with actual type ‘SimplFn [OutExpr]’
+-}
+--  scrutinee' <- simplExpr sub ins scrutinee cont
+--  body' <- mapM (simplExpr sub ins) body
+--  return m
+--   let x = mapM (simplExpr sub ins) arms <*> cont
+--   return (I.Match scrutinee' (alt, body') t)
 
+ -- where f :: 
+
+simplExpr sub ins (I.App lhs rhs t) cont = do
+  lhs' <- simplExpr sub ins lhs cont
+  rhs' <- simplExpr sub ins rhs cont
+  return (I.App lhs' rhs' t)
+
+simplExpr sub ins (I.Lambda binder body t) cont = do
+  body' <- simplExpr sub ins body cont
+  pure (I.Lambda binder body' t)
 
 simplExpr sub ins var@(I.Var v _) cont = case M.lookup v sub of
   Nothing           -> pure var -- callsite inline, future work
@@ -302,6 +366,7 @@ simplExpr sub ins (I.Let binders body t) cont = do
         _ -> do -- preinline test FAILS, so do post inline unconditionally
           e' <- simplExpr sub ins rhs cont -- process the RHS
           case e' of
+            -- x goes here. 
             (I.Lit _ _) -> pure (Nothing, M.singleton v (DoneEx e')) -- PASSES postinline
             (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
             _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
@@ -336,7 +401,7 @@ where body = let (_, "cout <- x") (let (_, "wait cout") (let (_, (let y = 5 in x
 
 -- catch all
 --simplExpr _ _ e _ = pure (I.Var (I.VarId "catch all simplExpr") (I.extract e))
-simplExpr _ _ e _ = pure e 
+simplExpr _ _ e _ = pure e
 
 
 {-
@@ -560,12 +625,11 @@ occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
 -- let expressions
 occAnalExpr l@(I.Let binders body _) = do
   mapM_
-    (\(binder, rhs) -> case binder of
-      (Just nm) -> do
-        addOccVar nm
-        _ <- occAnalExpr rhs -- in case there is a let in the RHS
-        pure ()
-      Nothing -> pure ()
+    (\(binder, rhs) -> do
+      _ <- occAnalExpr rhs
+      case binder of 
+        (Just nm) -> addOccVar nm
+        _ -> pure ()
     )
     binders
   _ <- occAnalExpr body
@@ -627,8 +691,22 @@ occAnalExpr a@(I.App lhs rhs _) = do
   when primitive is
 -}
 
+-- primitives
 occAnalExpr p@(I.Prim _ args _) = do
   mapM_ occAnalExpr args
+  m <- gets occInfo
+  pure (p, show m)
+
+-- match
+occAnalExpr p@(I.Match scrutinee arms _) = do
+  recordEnteringMatch
+  _ <-  occAnalExpr scrutinee
+  --let (alts, rhss) = unzip arms
+  mapM_ (occAnalExpr . snd) arms
+  --let x = everywhereM (mkM addOccExprNever) p
+ -- let x = everywhereM (mkM addOccExprNever) p
+  --addOccVarNever scrutinee
+  recordExitingMatch
   m <- gets occInfo
   pure (p, show m)
 
@@ -666,39 +744,35 @@ occAnalExpr e = do
   pure (e, show m)
 
 {-
-  = Var VarId t
-  {- ^ @Var n t@ is a variable named @n@ of type @t@. -}
-  | Data DConId t
-  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
-  | Lit Literal t
-  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
-  | App (Expr t) (Expr t) t
-  {- ^ @App f a t@ applies function @f@ to argument @a@, producing a value of
-  type @t@.
-  -}
+data Expr t
+  = Var VarId t                                DONE
+  | Data DConId t                              DONE
+  | Lit Literal t                              DONE
+  | App (Expr t) (Expr t) t                    DONE
   | Let [(Binder, Expr t)] (Expr t) t
-  {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
-
-  The bindings list may only be of length greater than 1 for a set of mutually
-  co-recursive functions.
-  -}
   | Lambda Binder (Expr t) t
-  {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
-  a value to parameter @v@ in its body @b@.
-  -}
   | Match (Expr t) [(Alt, Expr t)] t
-  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
-  @alts@, each producing a value of type @t@.
-  -}
   | Prim Primitive [Expr t] t
-  {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
-  of type @t@.
-  -}
-  -}
+-}
 
--- --occAnalExpr (I.Var varId) = -- first time you see it, dead -> oncesafe
-
-
+-- -- | Add a binder to occInfo with category Never
+-- addOccExprNever :: I.Expr t-> SimplFn ()
+-- addOccExprNever e@(I.Var v _) = do
+--   m <- gets occInfo
+--   let m' = M.insert v Never m
+--   modify $ \st -> st {occInfo = m'}
+--   pure ()
+-- addOccExprNever (I.Lit _ _) = pure ()
+-- addOccExprNever (I.Data _ _) = pure ()
+-- -- nullary data constructor
+-- addOccExprNever a@(I.App rhs lhs t) = do
+--   _ <- addOccExprNever lhs
+--   _ <- addOccExprNever rhs
+--   pure ()
+-- addOccExprNever a@(I.Let bindings@[(binder, rhs)] body t) = do
+--   _ <- addOccExprNever body
+--   pure ()
+-- addOccExprNever _ = pure () -- to get rid of warnings; delete later
 
 {-
 main cin cout =

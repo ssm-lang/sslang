@@ -1,13 +1,17 @@
+// print digit; account for ascii offset
+
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
 main cin cout = 
   let n = 5
   //  Match (Expr t) [(Alt, Expr t)] t
   match n
     5 = 
-      after 1, cout <- 48
-      wait cout
+      putd cout 3
     _ = 
-      after 3, cout <- 2
-      wait cout
+      putd cout 5
 
 /*
 main cin cout = 
