@@ -221,11 +221,6 @@ data Expr t
   -}
   | Exception ExceptType t
   {- ^ @Exception et t@ produces a exception for the program. 
-  
-  TODO: Please turn this into a real exception.
-  Current implementation is very dumb but indeed works. It just print out some 
-  string, which works fine because this is now only used in a dead arm for 
-  match statement, which will never be reached in run time
   -}
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
