@@ -47,16 +47,16 @@ main =
 
 // print digit; account for ascii offset
 
-putd cout' c =
-  after 1, cout' <- (c + 48)
-  wait cout'
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
 
 
 main cin cout = 
   let q = 5
   let r = q + 1 
-  -- we need simplExpr on App
-  putd cout r // IR node is (App (App putd "cout") (r))
+  // we need simplExpr on App
+  putd cout r // IR node is let _ = (App (App putd "cout") (r))
 
   
 

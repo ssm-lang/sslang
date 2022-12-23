@@ -199,6 +199,11 @@ simpleExpr :: Subst -> InScopeSet
 -}
 
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
+simplExpr sub ins (I.App lhs rhs t) cont = do
+  lhs' <- simplExpr sub ins lhs cont
+  rhs' <- simplExpr sub ins rhs cont
+  return (I.App lhs' rhs' t)
+
 simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   return (I.Lambda binder body' t)
@@ -300,7 +305,34 @@ simplExpr sub ins (I.Let binders body t) cont = do
             (I.Lit _ _) -> pure (Nothing, M.singleton v (DoneEx e')) -- PASSES postinline
             (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
             _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
-      _ -> pure (Nothing, M.empty) -- can't inline wildcards
+      _ -> do
+        e' <- simplExpr sub ins rhs cont
+        pure (Just (binder, e'), sub) -- can't inline wildcards
+
+{-
+inside ghci:
+import Data.Map
+let x = singleton "x" 5
+let y = singleton "x" 7
+let zz = Prelude.foldr1 (<>) [x,y]
+zz
+ Output:
+ Prelude Data.Map> zz
+fromList [("x",5)]
+
+
+
+
+main cin cout = 
+  let x = 5
+  cout <- x
+  wait cout
+  cout <- (let y = 5 in x + y)
+  ()
+
+Let ("x",5) body
+where body = let (_, "cout <- x") (let (_, "wait cout") (let (_, (let y = 5 in x + y)) ())
+-}
 
 -- catch all
 --simplExpr _ _ e _ = pure (I.Var (I.VarId "catch all simplExpr") (I.extract e))
