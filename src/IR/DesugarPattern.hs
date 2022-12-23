@@ -157,7 +157,16 @@ desugarExpr (I.Match e arms t) = do
         )
         arms
     let armsForDesugar = map (first (: [])) arms'
-    desugarMatch [e] armsForDesugar (I.NoExpr t)
+    case e of
+        I.Var _ _ -> desugarMatch [e] armsForDesugar (I.NoExpr t)   -- TODO: add let alias
+        _         -> do
+            v <- freshVar
+            singleLet (I.VarId v) e
+                <$> desugarMatch [e] armsForDesugar (I.NoExpr t)
+                <*> do
+                        return (I.extract e)
+
+
 desugarExpr e@(I.NoExpr _) = return e
 
 
@@ -166,7 +175,7 @@ desugarMatch
     -> [Equation]
     -> I.Expr I.Type
     -> DesugarFn (I.Expr I.Type)
-desugarMatch [] [] def = return def
+desugarMatch [] []            def = return def
 desugarMatch [] (([], e) : _) _   = return e
 desugarMatch [] _             _   = error "can't happen"
 desugarMatch us qs            def = do
@@ -241,14 +250,21 @@ desugarMatchCons (u : us) qs def = do
             argsTyps = argsType cinfo
             makeVar (i, t) = do
                 return (I.Var i t)
-        us'  <- mapM makeVar $ zip newVars argsTyps
-        body <- desugarMatch
-            (us' ++ us)
-            [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
-            def
-        let makeBinder (I.Var vid _) = I.AltDefault $ Just vid
+            makeBinder (I.Var vid _) = I.AltDefault $ Just vid
             makeBinder _             = error "can't happen"
-        return (I.AltData dcon (map makeBinder us'), body)
+        us' <- mapM makeVar $ zip newVars argsTyps
+        case qs' of
+            [] ->
+                return
+                    ( I.AltData dcon (map makeBinder us')
+                    , I.NoExpr (I.extract def)
+                    )
+            _ -> do
+                body <- desugarMatch
+                    (us' ++ us)
+                    [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
+                    def
+                return (I.AltData dcon (map makeBinder us'), body)
 desugarMatchCons _ _ _ = error "can't happen"
 
 
@@ -281,9 +297,9 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
         _ -> False
 
 
--- singleLet
---     :: I.VarId -> I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
--- singleLet i e = I.Let [(Just i, e)]
+singleLet
+    :: I.VarId -> I.Expr I.Type -> I.Expr I.Type -> I.Type -> I.Expr I.Type
+singleLet i e = I.Let [(Just i, e)]
 
 singleAlias :: I.Binder -> I.Expr I.Type -> I.Expr I.Type -> I.Expr I.Type
 singleAlias alias i e = I.Let [(alias, i)] e (I.extract e)
