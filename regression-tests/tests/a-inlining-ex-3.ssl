@@ -1,5 +1,6 @@
 main cin cout = 
   let n = 5
+  //  Match (Expr t) [(Alt, Expr t)] t
   match n
     5 = 
       after 1, cout <- 48
@@ -7,3 +8,35 @@ main cin cout =
     _ = 
       after 3, cout <- 2
       wait cout
+
+/*
+main cin cout = 
+  let n = 5
+  //  Match (Expr t) [(Alt, Expr t)] t
+  match n
+    5 = 
+      let  _ = (after 1, cout <- 48) IN
+      (wait cout)
+    _ = 
+      after 3, cout <- 2
+      after 4, cout <- 77
+      after 4, cout <- 75
+      wait cout
+
+main cin cout = 
+  let n = 5
+  //  Match (Expr t) [(Alt, Expr t)] t
+  match n
+    5 = 
+      let  _ = (after 1, cout <- 48) IN
+      (wait cout)
+    _ = 
+      let _ = (after 3, cout <- 2) IN // (Prim "after" [(Literal 3), (Prim "assign" [])]))
+      let _ = (after 4, cout <- 77) IN
+      let _ = (after 4, cout <- 75) IN
+      (wait cout)
+
+      5 + 4 + 3 + 2 +1 // this can be reprsented in the IR as
+      Prim ("add") []
+
+*/

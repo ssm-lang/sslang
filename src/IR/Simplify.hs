@@ -31,7 +31,8 @@ import           Control.Monad.State.Lazy       ( MonadState
 import           Data.Bifunctor                 ( second )
 -- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
-import IR.IR (unfoldLambda)
+import qualified Data.Maybe                    as Ma
+import           IR.IR                          ( unfoldLambda )
 -- import qualified GHC.IO.Exception              as Compiler
 -- import           Data.Maybe                     ( catMaybes )
 -- import qualified Data.Set                      as S
@@ -48,6 +49,17 @@ Multisafe: Binder may occur many times, including inside lambdas.
 LoopBreaker: Chosen to break dependency between mutually recursive defintions. 
 Never: Never inline; we use this to develop our inliner incrementally.
 -}
+
+type InVar = I.VarId
+type OutVar = I.VarId
+type InExpr = I.Expr I.Type
+type OutExpr = I.Expr I.Type
+type InScopeSet = String
+type Context = String
+
+type Subst = M.Map InVar SubstRng
+data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
+
 data OccInfo = Dead
              | LoopBreaker -- TBD
              | OnceSafe
@@ -152,10 +164,10 @@ simplifyProgram p = runSimplFn $ do -- everything in do expression will know abo
   -- run the occurrence analyzer
   (_, info) <- runOccAnal p
   -- fail and print out the results of the occurence analyzer
-  _         <- Compiler.unexpected $ show info
+  -- _ <- Compiler.unexpected $ show info
   -- I should always have at least one top-level func, main.
   -- let's see how many top level funcs I have!
-  -- Compiler.unexpected $ show $ topLevelFunc <$> defs
+
   let defs = I.programDefs p
   simplifiedProgramDefs <- mapM simplTop defs
   return $ p { I.programDefs = simplifiedProgramDefs } -- this whole do expression returns a Compiler.Pass
@@ -174,39 +186,148 @@ Every top level defintion is either
 -- | Simplify a top-level definition
 simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
 simplTop (v, e) = do
-  (,) v <$> simplExpr e
+  (,) v <$> simplExpr M.empty "inscopeset" e "context"
 
 {- | Recursively simplify IR expressions.
 Probably want more documentation here eventually.
 
 WIP WIP WIP WIP WIPPPPPPPPPPPP
+simpleExpr :: Subst -> InScopeSet
+           -> InExpr -> Context
+           -> OutExpr
+
 -}
-simplExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
-simplExpr l@(I.Let binders body _) = do
-  m <- gets occInfo
+
+simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
+simplExpr sub ins (I.Lambda binder body t) cont = do -- very bad lambda
+  body' <- simplExpr sub ins body cont
+  return (I.Lambda binder body' t)
+
+simplExpr sub ins var@(I.Var v _) cont = case M.lookup v sub of
+  Nothing           -> pure var -- callsite inline, future work
+  Just (SuspEx e s) -> simplExpr s ins e cont
+  Just (DoneEx e  ) -> simplExpr M.empty ins e cont
+
+simplExpr sub ins (I.Let binders body t) cont = do
+  simplified <- mapM simplBinder binders
+  let (simplBinders, subs) = unzip simplified
+  let binders'             = Ma.catMaybes simplBinders
+  let subs'                = foldr1 (<>) subs
+  body' <- simplExpr subs' ins body cont
+  pure (I.Let binders' body' t)
+
+
+  -- recurse on body
+  -- return a Let containing our new binders and the simplified body??
+
+  -- let f = (\(binder, rhs) -> case binder of
+  --            (Just v) -> case M.lookup v m of
+  --             Just Dead -> 
+  --         )
+ -- mapM_ 
+--  type Subst = M.Map InVar SubstRng
+-- data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
+
+  --pure l
+ where
+    {-
+    let x = 5
+        y = 7
+        z = x + 4
+        in 
+          x
+    
+    
+    -}
+    --filterM :: Applicative m => (a -> m Bool) -> [a] -> m [a]
+    -- where the initial value of the accumulator is ([],sub)
+    -- f :: (I.Binder, I.Expr I.Type) -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
+  simplBinder
+    :: (I.Binder, I.Expr I.Type)
+    -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
+  simplBinder (binder, rhs) = do
+    m <- gets occInfo
+    case binder of
+      (Just v) -> case M.lookup v m of
+        (Just Dead    ) -> pure (Nothing, M.empty)  -- get rid of this binding
+        (Just OnceSafe) -> do -- preinline test PASSES
+          -- bind x to E singleton :: k -> a -> Map k a
+          let sub' = M.singleton v (SuspEx rhs sub)
+          pure (Nothing, sub')
+        _ -> do -- preinline test FAILS, so do post inline unconditionally
+          e' <- simplExpr sub ins rhs cont -- process the RHS
+          case e' of
+            (I.Lit _ _) -> pure (Nothing, M.singleton v (DoneEx e')) -- PASSES postinline
+            (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
+            _           -> pure (Nothing, M.empty) -- FAIL postinline; someday callsite inline
+      _ -> pure (Nothing, M.empty) -- can't inline wildcards
+
+-- catch all
+simplExpr _ _ e _ = pure e 
+
+
+{-
+--   m <- gets occInfo
+--   mapM_
+--     (\(binder, rhs) -> case binder of
+--       (Just something) -> case M.lookup something m of
+--         Just Dead -> get rid of this binding
+--         -- inline x unconditionally in B
+--         -- -> binds x to E substitution, discard binding completely, simplifies B using this extended substitution
+--         Just OnceSafe -> get rid of binding, add substitution and that's it
+--         _ ->  do -- post inline unconditionallly
+              E' <- simplExpr rhs 
+              if E' == literal/value:
+                bind x to E' substitution, discard binding completely 
+              else
+                do nothing
+--       Nothing -> pure ()
+--     )
+--     binders
+If post inline unconditionally fails, we don't do anything. 
+Someday, we will add the binder to the inscope instead of the substitution
+-- let expressions
+occAnalExpr l@(I.Let binders body _) = do
   mapM_
     (\(binder, rhs) -> case binder of
-      (Just something) -> case M.lookup something m of
-        Just Dead -> pure ()
-        -- inline x unconditionally in B
-        -- -> binds x to E in current substitution, discard binding completely, simplifies B using this extended substitution
-        Just OnceSafe -> pure ()
-        _ -> pure ()
+      (Just nm) -> do
+        addOccVar nm
+        _ <- occAnalExpr rhs -- in case there is a let in the RHS
+        pure ()
       Nothing -> pure ()
     )
     binders
-  -- _ :: (Maybe VarId, Expr Type) -> SimplFn ()
---  mapM_
---    ( \(binder, rhs) -> case binder of
---        Just something -> pure (binder, rhs)
---    )
-    -- (\(binder, rhs) -> case M.lookup binder m of 
-      -- Just Dead -> pure ()
-      -- Just OnceSafe -> pure rhs
-      -- _ -> pure (binder, rhs)
-    -- )
---  binders
-  pure l
+  _ <- occAnalExpr body
+  m <- gets occInfo
+  pure (l, show m)
+
+-}
+-- simplExpr _ _ e _ = pure e -- catch all case; delete later
+-- simplExpr l@(I.Let binders body _) = do
+--   m <- gets occInfo
+--   mapM_
+--     (\(binder, rhs) -> case binder of
+--       (Just something) -> case M.lookup something m of
+--         Just Dead -> pure ()
+--         -- inline x unconditionally in B
+--         -- -> binds x to E in current substitution, discard binding completely, simplifies B using this extended substitution
+--         Just OnceSafe -> pure ()
+--         _ -> pure ()
+--       Nothing -> pure ()
+--     )
+--     binders
+--   -- _ :: (Maybe VarId, Expr Type) -> SimplFn ()
+-- --  mapM_
+-- --    ( \(binder, rhs) -> case binder of
+-- --        Just something -> pure (binder, rhs)
+-- --    )
+--     -- (\(binder, rhs) -> case M.lookup binder m of 
+--       -- Just Dead -> pure ()
+--       -- Just OnceSafe -> pure rhs
+--       -- _ -> pure (binder, rhs)
+--     -- )
+-- --  binders
+--   pure l
 
 {-
 data Program t = Program
@@ -320,10 +441,10 @@ swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
   let (args, body) = unfoldLambda l
   mapM_ addOccs args
   pure (funcName, body)
-  where
-      addOccs (Just nm) = addOccVar nm
-      addOccs Nothing = pure ()
-  
+ where
+  addOccs (Just nm) = addOccVar nm
+  addOccs Nothing   = pure ()
+
 swallowArgs (name, e) = pure (name, e)
 
 
@@ -349,7 +470,7 @@ runOccAnal p@I.Program { I.programDefs = defs } = do
           ++ show occinfo
           ++ " END"
   defs' <- mapM swallowArgs defs
-  x <- mapM (getOccInfoForDef . second occAnalExpr) defs'
+  x     <- mapM (getOccInfoForDef . second occAnalExpr) defs'
   --y <- snd $ second occAnalExpr (head defs)
   --error $ show x
  -- addOccVar "yo"
@@ -595,3 +716,26 @@ Basically, "swallow up" the arguments to my top-level function.
 --   addOccVar arg 
 --   swallowArgs b
 -- swallowArgs e = pure e
+
+
+{-
+Mututally Recursive:
+g a = f a
+
+
+f x = match x 
+            5 = 5
+            _ = g (x-1)
+
+main cin cout = 
+  let x = 5
+      y = x + 2
+      
+
+
+Not mutually Recursive
+main cin cout =
+  let x = 5
+      y = 3
+      x + y
+-}

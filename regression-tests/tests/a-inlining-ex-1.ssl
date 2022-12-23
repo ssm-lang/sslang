@@ -8,6 +8,23 @@ We should rename this file without the "a-" before opening a PR for review.
   ./runtests.sh -k tests/a-inlining-ex-1.ssl
   stack exec sslc -- --dump-ir-typed tests/a-inlining-ex-1.ssl
   stack exec sslc -- --dump-ir-lifted tests/a-inlining-ex-1.ssl
+  stack exec sslc -- tests/a-inlining-ex-1.ssl
+
+CORRECT OUTPUT
+  UnexpectedError (ErrorMsg "\"
+  [\\\"START topdef VarId main has OccInfo: \\\\\\\"fromList 
+  [(VarId cin,Dead),
+  (VarId cout,Dead),
+  (VarId q,OnceSafe),
+  (VarId r,OnceSafe),
+  (VarId y,Dead)]\\\\\\\" END\\\",
+
+  \\\"START topdef VarId f has OccInfo: \\\\\\\"fromList [
+    (VarId cin,Dead),
+    (VarId cout,Dead),
+    (VarId q,OnceSafe),
+    (VarId r,OnceSafe),
+    (VarId y,OnceSafe)]\\\\\\\" END\\\"]\"")
 -}
 */
 
