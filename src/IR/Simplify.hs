@@ -110,7 +110,7 @@ updateOccVar binder = do
   let m' = case M.lookup binder m of
         Nothing ->
           error
-            (  "UDPATE: We should already know about this binder "
+            (  "UDPATE: We should already know about this binder " ++ show binder ++ " :"
             ++ show m
             ++ "!"
             )
@@ -164,7 +164,7 @@ simplifyProgram p = runSimplFn $ do -- everything in do expression will know abo
   -- run the occurrence analyzer
   (_, info) <- runOccAnal p
   -- fail and print out the results of the occurence analyzer
-  -- _ <- Compiler.unexpected $ show info
+ -- _ <- Compiler.unexpected $ show info
   -- I should always have at least one top-level func, main.
   -- let's see how many top level funcs I have!
 
@@ -479,6 +479,7 @@ unfoldLambda :: Expr t -> ([Binder], Expr t)
 -}
 swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
 swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
+  addOccs (Just funcName) -- HACKY
   let (args, body) = unfoldLambda l
   mapM_ addOccs args
   pure (funcName, body)
