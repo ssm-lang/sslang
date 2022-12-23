@@ -199,9 +199,28 @@ simpleExpr :: Subst -> InScopeSet
 -}
 
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
-simplExpr sub ins (I.Lambda binder body t) cont = do -- very bad lambda
+simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   return (I.Lambda binder body' t)
+
+{- 
+p: q + 1
+sub: {Map q (SuspEx 5 {})}
+
+lookup args in the substitution
+
+-}
+simplExpr sub ins p@(I.Prim prim args t) cont = do
+--  let test = mapM (simplExpr sub ins) args cont 
+  -- [SimplFn OutExpt] --> SimplFn [OutExpr]
+  -- simplified <- mapM (simplExpr sub ins) args cont
+  -- sequence test
+  args' <- sequence $ mapM (simplExpr sub ins) args cont 
+  pure (I.Prim prim args' t)
+  -- where
+   -- f :: [SimplFn OutExpr] -> SimplFn [OutExpr]
+    
+
 
 simplExpr sub ins var@(I.Var v _) cont = case M.lookup v sub of
   Nothing           -> pure var -- callsite inline, future work
@@ -214,8 +233,22 @@ simplExpr sub ins (I.Let binders body t) cont = do
   let binders'             = Ma.catMaybes simplBinders
   let subs'                = foldr1 (<>) subs
   body' <- simplExpr subs' ins body cont
-  pure (I.Let binders' body' t)
+  -- if binders is all Nothing, then get rid of this Let statement
+  if null binders' then pure body'
+  else pure (I.Let binders' body' t)
 
+  -- level 1: let q = 5
+   -- simplBinders =  [Nothing]
+   -- subs =  [Map q (SuspEx 5 {}))]
+
+  -- level 2: let r = q + 1
+  -- simplBinders =  [Nothing]
+  -- subs = [Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
+
+  -- level 3: r , with substitution map [Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
+  -- We call simplExpr on r, which is a varId
+  -- -> matches on Just (SuspEx q+1 {Map q (SuspEx 5 {})}) -> simplExpr <same thing> q+1 cont
+  --    -> no pattern match for q+1 so go to catch all 
 
   -- recurse on body
   -- return a Let containing our new binders and the simplified body??
@@ -242,6 +275,13 @@ simplExpr sub ins (I.Let binders body t) cont = do
     --filterM :: Applicative m => (a -> m Bool) -> [a] -> m [a]
     -- where the initial value of the accumulator is ([],sub)
     -- f :: (I.Binder, I.Expr I.Type) -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
+    -- **************************
+    -- let q = 5
+    -- binders: [(Nothing, Map q (SuspEx 5 {}))]
+
+    -- *******
+    -- let r = q + 1 in r
+    -- binders: [(Nothing, Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
   simplBinder
     :: (I.Binder, I.Expr I.Type)
     -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
@@ -259,10 +299,11 @@ simplExpr sub ins (I.Let binders body t) cont = do
           case e' of
             (I.Lit _ _) -> pure (Nothing, M.singleton v (DoneEx e')) -- PASSES postinline
             (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
-            _           -> pure (Nothing, M.empty) -- FAIL postinline; someday callsite inline
+            _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
       _ -> pure (Nothing, M.empty) -- can't inline wildcards
 
 -- catch all
+--simplExpr _ _ e _ = pure (I.Var (I.VarId "catch all simplExpr") (I.extract e))
 simplExpr _ _ e _ = pure e 
 
 
