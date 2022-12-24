@@ -67,7 +67,6 @@ type InScopeSet = String
 type Context = String
 
 type Subst = M.Map InVar SubstRng
-  
 
 data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
  deriving Typeable
@@ -87,6 +86,8 @@ data OccInfo = Dead
 data SimplEnv = SimplEnv
   { occInfo     :: M.Map I.VarId OccInfo
   {- ^ 'occInfo' maps an identifier to its occurence category -}
+  , subst :: M.Map InVar SubstRng
+  {- ^ 'subst' maps an identifier to its substitution -}
   , runs        :: Int
   {- ^ 'runs' stores how many times the simplifier has run so far -}
   , countLambda :: Int
@@ -118,7 +119,7 @@ runSimplFn :: SimplFn a -> Compiler.Pass a
   -- m is state transformer monad (result of do inside simplifyProgram)
   -- SimplCtx is initial state
 runSimplFn (SimplFn m) =
-  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0, countMatch = 0 }
+  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0, countMatch = 0, subst = M.empty}
 
 -- | Update occInfo for the binder since we just spotted it
 updateOccVar :: I.VarId -> SimplFn ()
@@ -153,6 +154,12 @@ addOccVar binder = do
             ++ " before!"
             )
   modify $ \st -> st { occInfo = m' }
+
+insertSubst :: I.VarId -> SubstRng -> SimplFn ()
+insertSubst binder rng = do
+  m <- gets subst
+  let m' = M.insert binder rng m
+  modify $ \st -> st { subst = m' }
 
 -- | Record that the ocurrence analyzer is looking inside a lambda
 recordEnteringLambda :: SimplFn ()
@@ -262,12 +269,12 @@ simplExpr sub ins p@(I.Prim prim args t) cont = do
   zz <- sequence z
   -- error ("prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args')
 
-  args' <- mapM (\arg ->
-    simplExpr sub ins arg cont
-    ) args
-  
-  error ("sub"++ show sub ++ "\nlemon prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args' ++ "\ngrape prim" ++ show prim ++ "\nnew args: " ++ show zz)
-  pure (I.Prim prim args' t)
+--  args' <- mapM (\arg ->
+--    simplExpr sub ins arg cont
+--    ) args
+--  
+--  error ("sub"++ show sub ++ "\nlemon prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args' ++ "\ngrape prim" ++ show prim ++ "\nnew args: " ++ show zz)
+  pure (I.Prim prim zz t)
   --pure (I.Prim prim args' t)
 
 
@@ -312,10 +319,12 @@ simplExpr sub ins (I.Lambda binder body t) cont = do
 
 simplExpr sub ins var@(I.Var v _) cont = 
   -- error("variable is: " ++ show v ++ " ; subs: " ++ show sub )
-  case M.lookup v sub of
-  Nothing           -> pure var -- callsite inline, future work
-  Just (SuspEx e s) -> simplExpr s ins e cont
-  Just (DoneEx e  ) -> simplExpr M.empty ins e cont
+  do
+    m <- gets subst
+    case M.lookup v m of
+      Nothing           -> pure var -- callsite inline, future work
+      Just (SuspEx e s) -> simplExpr s ins e cont
+      Just (DoneEx e  ) -> simplExpr M.empty ins e cont
 
 simplExpr sub ins (I.Let binders body t) cont = do
   simplified <- mapM simplBinder binders
@@ -391,15 +400,22 @@ Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon I
         (Just Dead    ) -> pure (Nothing, sub)  -- get rid of this binding
         (Just OnceSafe) -> do -- preinline test PASSES
           -- bind x to E singleton :: k -> a -> Map k a
+          insertSubst v $ SuspEx rhs M.empty
           let sub' = M.singleton v (SuspEx rhs sub)
           pure (Nothing, sub')
         _ -> do -- preinline test FAILS, so do post inline unconditionally
           e' <- simplExpr sub ins rhs cont -- process the RHS
           case e' of
             -- x goes here. 
-            (I.Lit _ _) -> pure (Nothing, M.singleton v (DoneEx e')) -- PASSES postinline
-            (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
+            (I.Lit _ _) -> do
+              insertSubst v $ DoneEx e'
+              pure (Nothing, M.empty) -- PASSES postinline
+            (I.Var _ _) -> do
+              insertSubst v $ DoneEx e'
+              pure (Nothing, M.empty) -- PASSES postinline
             _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
+--            (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
+--            _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
       _ -> do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards

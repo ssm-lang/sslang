@@ -1,5 +1,7 @@
 putd cout_ c =
-  after 1, cout_ <- (c + 48)
+  after 1, cout_ <- c + 48    // Should print 5
+  wait cout_
+  after 1, cout_ <- 10
   wait cout_
 
 
@@ -9,9 +11,9 @@ putd cout_ c =
 // 
 
 main cin cout = 
-  let q = 5
-  let r = 6 + q
-  putd cout (r + q)
+  let q = 2
+  let r = 3 + q
+  putd cout (r + q - q)
   //      6 + 5 + __dup (q)
 
 // if binder is in rhs it knows. otherwise it doesnt 
@@ -22,3 +24,4 @@ main cin cout =
   wait cout
   //cout <- (let y = 5 in x + y)  // is this valid sslang??
   */
+  
