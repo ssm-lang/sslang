@@ -55,8 +55,9 @@ putd cout_ c =
 main cin cout = 
   let q = 5
   let r = q + 1 
+  putd cout r
   // we need simplExpr on App
-  putd cout r // IR node is let _ = (App (App putd "cout") (r))
+//  putd cout r // IR node is let _ = (App (App putd "cout") (r))
 
   
 

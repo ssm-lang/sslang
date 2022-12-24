@@ -2,21 +2,17 @@ putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
 
+
 // if r has q, then we know about it. 
 // if not, then we don't know
 // multi lets have problems. if multiple let has an existing binding. it works. otherwise doesn't
 // 
-{-
 
-
--}
 main cin cout = 
   let q = 5
-      r = 3
-//      z = r
-//      z = 2 + r
-//  let z = r + q
-  putd cout (r)
+  let r = 6 + q
+  putd cout (r + q)
+  //      6 + 5 + __dup (q)
 
 // if binder is in rhs it knows. otherwise it doesnt 
 

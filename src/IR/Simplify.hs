@@ -40,6 +40,7 @@ import qualified Data.Map                      as M
 import qualified Data.Maybe                    as Ma
 import           IR.IR                          ( unfoldLambda )
 import Data.Text.Prettyprint.Doc.Render.String (renderShowS)
+import Common.Compiler (Error)
 
 -- import qualified GHC.IO.Exception              as Compiler
 -- import           Data.Maybe                     ( catMaybes )
@@ -66,9 +67,11 @@ type InScopeSet = String
 type Context = String
 
 type Subst = M.Map InVar SubstRng
+  
 
 data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
  deriving Typeable
+ deriving Show
 
 data OccInfo = Dead
              | LoopBreaker -- TBD
@@ -92,7 +95,7 @@ data SimplEnv = SimplEnv
   {- ^ 'countLambda' how many matches the occurence analyzer is inside -}
   }
   deriving Show
-  deriving Typeable
+  deriving Typeable        
 
 -- | Simplifier Monad
 newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
@@ -246,10 +249,26 @@ sub: {Map q (SuspEx 5 {})}
 
 lookup args in the substitution
 
+old args: [Var (VarId x) (TCon Int32 []),
+           Var (VarId y) (TCon Int32 [])]
+fucked args'[Lit (LitIntegral 2) (TCon Int32 []),
+             Var (VarId y) (TCon Int32 [])]
+
 -}
 simplExpr sub ins p@(I.Prim prim args t) cont = do
-  args' <- sequence $ mapM (simplExpr sub ins) args cont
+--  args' <- sequence $ mapM (simplExpr sub ins) args cont
+  let y = (map (simplExpr sub ins) args)
+  let z = map ($ cont) y 
+  zz <- sequence z
+  -- error ("prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args')
+
+  args' <- mapM (\arg ->
+    simplExpr sub ins arg cont
+    ) args
+  
+  error ("sub"++ show sub ++ "\nlemon prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args' ++ "\ngrape prim" ++ show prim ++ "\nnew args: " ++ show zz)
   pure (I.Prim prim args' t)
+  --pure (I.Prim prim args' t)
 
 
   -- where
@@ -291,7 +310,9 @@ simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   pure (I.Lambda binder body' t)
 
-simplExpr sub ins var@(I.Var v _) cont = case M.lookup v sub of
+simplExpr sub ins var@(I.Var v _) cont = 
+  -- error("variable is: " ++ show v ++ " ; subs: " ++ show sub )
+  case M.lookup v sub of
   Nothing           -> pure var -- callsite inline, future work
   Just (SuspEx e s) -> simplExpr s ins e cont
   Just (DoneEx e  ) -> simplExpr M.empty ins e cont
@@ -301,11 +322,20 @@ simplExpr sub ins (I.Let binders body t) cont = do
   let (simplBinders, subs) = unzip simplified
   let binders'             = Ma.catMaybes simplBinders
   let subs'                = foldr1 (<>) subs
+  -- _ <- error("old binders: " ++ show binders ++ "\nsubstitution: " ++ show subs' ++ "\n body: " ++ show body)
+  -- _ <- error("body: " ++ show ++ "\nsubstitution: " ++ show subs' ++ "\n body: " ++ show body)
   body' <- simplExpr subs' ins body cont
+  -- error ("new body" ++ show body')
   -- if binders is all Nothing, then get rid of this Let statement
   if null binders' then pure body'
   else pure (I.Let binders' body' t)
 
+{-
+sslc: substitution: fromList [(VarId x,DoneEx (Lit (LitIntegral 2) (TCon Int32 [])))] , 
+body: Let [(Just (VarId y),
+Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon Int32 [])] (TCon Int32 []))] (Var (VarId x) (TCon Int32 [])) (TCon Int32 [])
+
+-}
   -- level 1: let q = 5
    -- simplBinders =  [Nothing]
    -- subs =  [Map q (SuspEx 5 {}))]
@@ -358,7 +388,7 @@ simplExpr sub ins (I.Let binders body t) cont = do
     m <- gets occInfo
     case binder of
       (Just v) -> case M.lookup v m of
-        (Just Dead    ) -> pure (Nothing, M.empty)  -- get rid of this binding
+        (Just Dead    ) -> pure (Nothing, sub)  -- get rid of this binding
         (Just OnceSafe) -> do -- preinline test PASSES
           -- bind x to E singleton :: k -> a -> Map k a
           let sub' = M.singleton v (SuspEx rhs sub)

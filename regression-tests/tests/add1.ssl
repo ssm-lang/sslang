@@ -1,12 +1,66 @@
 add a b = a + b
 
+type Stuff
+  Stuff Int Int Int
+
+// if x is in rhs of y then we can see x in r otherwise we can't
+main cin cout =
+  let x = 2
+      y = 3
+      r = x + y
+  r
+ // after 1, cout <- r + 48    // Should print 5
+ // wait cout
+//  after 1, cout <- 10
+//  wait cout
+
+
+/*
+DOESN'T WORK
+y = 3
+tldr: x is once safe so sub is x suspex 2
+UnexpectedError (ErrorMsg "\"[\\\"START topdef VarId add has OccInfo: \\\\\\\"fromList [(VarId a,OnceSafe),(VarId add,Dead),(VarId b,OnceSafe),(VarId cin,Dead),(VarId cout,Dead),(VarId main,Dead)]\\\\\\\" END\\\",\\\"START topdef VarId main has OccInfo: \\\\\\\"fromList [(VarId a,OnceSafe),(VarId add,OnceSafe),(VarId b,OnceSafe),(VarId cin,Dead),(VarId cout,Never),(VarId main,Dead),(VarId r,OnceSafe),(VarId x,OnceSafe),(VarId y,OnceSafe)]\\\\\\\" END\\\"]\"")
+substitution: fromList [(VarId x,SuspEx (Lit (LitIntegral 2) (TCon Int32 [])) (fromList []))]
+
+WORKS:
+y = 3 + x
+tldr: x is never so sub is empty
+UnexpectedError (ErrorMsg "\"[\\\"START topdef VarId add has OccInfo: \\\\\\\"fromList [(VarId a,OnceSafe),(VarId add,Dead),(VarId b,OnceSafe),(VarId cin,Dead),(VarId cout,Dead),(VarId main,Dead)]\\\\\\\" END\\\",\\\"START topdef VarId main has OccInfo: \\\\\\\"fromList [(VarId a,OnceSafe),(VarId add,OnceSafe),(VarId b,OnceSafe),(VarId cin,Dead),(VarId cout,Never),(VarId main,Dead),(VarId r,OnceSafe),(VarId x,Never),(VarId y,OnceSafe)]\\\\\\\" END\\\"]\"")
+substitution: fromList []
+*/
+
+/*
+add a b = a + b
+
 // changes: 
 // 1) x has to be in yet
 // 2) no r
+// need to change the way that simplExpr for let works cus our interpretation is wrong
+// let is nested singleton lolololololol
 main cin cout =
   let x = 2
       y = x + 1
-  x
+  putd cout x
+  //body of top let: 
+
+  /*
+
+  sslc: 
+  old binders: [(Just (VarId x),Lit (LitIntegral 2) (TCon Int32 []))]
+  substitution: fromList [(VarId x,DoneEx (Lit (LitIntegral 2) (TCon Int32 [])))]
+  body: Let [
+    (Just (VarId y),Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon Int32 [])] (TCon Int32 []))] (Var (VarId x) (TCon Int32 [])) (TCon Int32 [])
+
+  subs' = {x, DoneEx 2 {}}
+  body =  Let [y, (+) []]
+  body' = simplExpr subs' ins body cont
+
+  Let [
+    Binder: (Just (VarId y),
+    rhs: Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon Int32 [])] (TCon Int32 []))
+  ] 
+  Body: (Var (VarId x) (TCon Int32 [])) (TCon Int32 [])
+  */
 //      r = add x y
 //  after 1, cout <- x + 48    // Should print 5
 //  wait cout
@@ -21,6 +75,7 @@ main cin cout =
 after fold: {x, (DoneEx 2 {})}
 
 simplExpr {} ins 2 cont -> returns 2
+*/
 */
 
 
