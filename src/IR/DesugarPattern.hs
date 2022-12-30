@@ -124,16 +124,17 @@ desugarExpr (I.Match e arms t) = do
     arms
   let armsForDesugar = map (first (: [])) arms'
   case e of
-    I.Var _ _ -> desugarMatch [e] armsForDesugar (I.NoExpr t)   -- TODO: add let alias
+    I.Var _ _ -> desugarMatch [e] armsForDesugar except   -- TODO: add let alias
     _         -> do
       v <- freshVar
       let var = I.VarId v
           vt  = I.extract e
       singleLet var e
-        <$> desugarMatch [I.Var var vt] armsForDesugar (I.NoExpr t)
+        <$> desugarMatch [I.Var var vt] armsForDesugar except
         <*> do
               return vt
-desugarExpr e@(I.NoExpr _) = return e
+    where except = I.Exception (I.ExceptDefault $ I.LitIntegral 0) t
+desugarExpr e@(I.Exception _ _) = return e
 
 desugarMatch
   :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
