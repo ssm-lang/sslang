@@ -18,3 +18,5 @@ puts cout s =
 main cin cout =
  let lst = Cons 49 (Cons 50 (Cons 51 (Cons 52 (Cons 53 Nil))))
  puts cout lst
+ after 1, cout <- 10
+ wait cout
