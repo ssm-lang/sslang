@@ -1944,6 +1944,9 @@ Match :: Expr t -> [(Alt, Expr t)] -> t -> Expr t
 --   <tt>es</tt>, producing a value of type <tt>t</tt>.
 Prim :: Primitive -> [Expr t] -> t -> Expr t
 
+-- | <tt>Exception et t</tt> produces a exception for the program.
+Exception :: ExceptType -> t -> Expr t
+
 -- | An alternative in a pattern-match.
 data Alt
 
@@ -2060,6 +2063,9 @@ instance GHC.Classes.Eq IR.IR.Primitive
 instance Data.Data.Data IR.IR.Alt
 instance GHC.Show.Show IR.IR.Alt
 instance GHC.Classes.Eq IR.IR.Alt
+instance Data.Data.Data IR.IR.ExceptType
+instance GHC.Show.Show IR.IR.ExceptType
+instance GHC.Classes.Eq IR.IR.ExceptType
 instance Data.Traversable.Traversable IR.IR.Expr
 instance Data.Foldable.Foldable IR.IR.Expr
 instance GHC.Base.Functor IR.IR.Expr
