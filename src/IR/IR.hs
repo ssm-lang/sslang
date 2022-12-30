@@ -484,7 +484,7 @@ instance Pretty (Expr ()) where
     pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
   pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
   pretty (Prim (CQuote  s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
-  pretty (NoExpr _             ) = error "can't happen"
+  pretty (NoExpr _             ) = pretty "noexpr" -- error "can't happen noexpr"
 
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p

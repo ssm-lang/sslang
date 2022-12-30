@@ -667,7 +667,8 @@ genExpr (I.Match s as t) = do
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
 genExpr I.Lambda{}      = fail "Cannot handle lambdas"
 genExpr (I.Prim p es t) = genPrim p es t
-genExpr (I.NoExpr _) = fail "how to gen a noexpr?" -- TODO
+genExpr (I.NoExpr _) = genExpr (I.Lit (I.LitIntegral 0) I.I32)
+  -- fail "how to gen a noexpr?" -- TODO
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim
