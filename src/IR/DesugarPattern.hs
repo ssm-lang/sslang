@@ -194,10 +194,10 @@ desugarMatchGen us qs def | isVarEq (head qs)  = desugarMatchVar us qs def
                           | otherwise          = error "can't happen"
   where
     isWildEq (as, _) = case head as of
-        I.AltDefault b -> isNothing b
+        I.AltBinder b -> isNothing b
         _              -> False
     isVarEq (as, _) = case head as of
-        I.AltDefault b -> isJust b
+        I.AltBinder b -> isJust b
         _              -> False
     isConsEq (as, _) = case head as of
         I.AltData _ _ -> True
@@ -215,7 +215,7 @@ desugarMatchVar
 desugarMatchVar []       _  _   = error "can't happen"
 desugarMatchVar (u : us) qs def = desugarMatch
     us
-    [ (ps, singleAlias v u e) | (I.AltDefault v : ps, e) <- qs ]
+    [ (ps, singleAlias v u e) | (I.AltBinder v : ps, e) <- qs ]
     def
 
 
@@ -250,7 +250,7 @@ desugarMatchCons (u : us) qs def = do
             argsTyps = argsType cinfo
             makeVar (i, t) = do
                 return (I.Var i t)
-            makeBinder (I.Var vid _) = I.AltDefault $ Just vid
+            makeBinder (I.Var vid _) = I.AltBinder $ Just vid
             makeBinder _             = error "can't happen"
         us' <- mapM makeVar $ zip newVars argsTyps
         case qs' of
@@ -292,7 +292,7 @@ partitionEqs (x : x' : xs) | sameGroup x x' = tack x (partitionEqs (x' : xs))
     tack y yss = (y : head yss) : tail yss
     sameGroup (as, _) (as', _) = case (head as, head as') of
         (I.AltLit _, I.AltLit _) -> True
-        (I.AltDefault _, I.AltDefault _) -> True
+        (I.AltBinder _, I.AltBinder _) -> True
         (I.AltData _ _, I.AltData _ _) -> True
         _ -> False
 
