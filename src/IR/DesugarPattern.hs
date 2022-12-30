@@ -167,8 +167,6 @@ desugarExpr (I.Match e arms t) = do
         <$> desugarMatch [I.Var var vt] armsForDesugar (I.NoExpr t)
         <*> do
               return vt
-
-
 desugarExpr e@(I.NoExpr _) = return e
 
 
@@ -240,15 +238,15 @@ desugarMatchCons (u : us) qs def = do
         makeBinder (I.Var vid _) = I.AltBinder $ Just vid
         makeBinder _             = error "can't happen 6"
     us' <- mapM makeVar $ zip newVars argsTyps
-    case qs' of
-      [] ->
-        return (I.AltData dcon (map makeBinder us'), I.NoExpr (I.extract def))
-      _ -> do
-        body <- desugarMatch
-          (us' ++ us)
-          [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
-          def
-        return (I.AltData dcon (map makeBinder us'), body)
+    -- case qs' of
+    --   [] ->
+    --     return (I.AltData dcon (map makeBinder us'), I.NoExpr (I.extract def))
+    --   _ -> do
+    body <- desugarMatch
+        (us' ++ us)
+        [ (as' ++ as, e) | ((I.AltData _ as') : as, e) <- qs' ]
+        def
+    return (I.AltData dcon (map makeBinder us'), body)
 desugarMatchCons _ _ _ = error "can't happen 7"
 
 
