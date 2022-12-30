@@ -141,9 +141,9 @@ getsTCon f i = do
 
 -- | Lookup some information associated with a data constructor.
 getsDCon :: (DConInfo -> a) -> I.DConId -> GenFn a
-getsDCon f i = do 
-              Just a <- fmap f . (`dconInfo` i) <$> gets fnTypeInfo
-              return a
+getsDCon f i = do
+  Just a <- fmap f . (`dconInfo` i) <$> gets fnTypeInfo
+  return a
 
 -- | Read and increment the number of cases in a procedure, i.e., @fnCases++@.
 nextCase :: GenFn Int
@@ -527,9 +527,10 @@ genYield = do
 genExpr :: I.Expr I.Type -> GenFn (C.Exp, [C.BlockItem])
 genExpr (I.Var n _) = do
   mv <- M.lookup n <$> gets fnVars
-  v <- maybe err return mv
+  v  <- maybe err return mv
   return (v, [])
-  where err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
+ where
+  err = Compiler.unexpected $ "Codegen: Could not find I.Var named " <> show n
 genExpr (I.Data dcon _) = do
   e <- getsDCon dconConstruct dcon
   return (e, [])
@@ -650,8 +651,10 @@ genExpr (I.Match s as t) = do
     withAltScope label (I.AltData dcon fields) m = do
       destruct <- getsDCon dconDestruct dcon
       cas      <- getsDCon dconCase dcon
-      let fieldBinds =
-            zipWith (\field i -> (I.getAltDefault field, destruct i scrut)) fields [0 ..]
+      let fieldBinds = zipWith
+            (\field i -> (I.getAltDefault field, destruct i scrut))
+            fields
+            [0 ..]
       blk <- withBindings fieldBinds m
       return ([citem|case $exp:cas:;|], mkBlk label blk)
     withAltScope label (I.AltLit l) m = do
@@ -664,8 +667,11 @@ genExpr (I.Match s as t) = do
 
   (cases, blks) <- bimap concat concat . unzip <$> mapM genArm as
   return (val, sStms ++ assignScrut ++ switch cases ++ blks ++ joinStm)
-genExpr I.Lambda{}      = fail "Cannot handle lambdas"
-genExpr (I.Prim p es t) = genPrim p es t
+genExpr I.Lambda{}        = fail "Cannot handle lambdas"
+genExpr (I.Prim p es t  ) = genPrim p es t
+genExpr (I.Exception _ t) = do
+  tmp <- genTmp t
+  return (tmp, [citems|$exp:(throw INTERNAL_ERROR);|]) -- unit instead of temp?
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
 genPrim

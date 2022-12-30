@@ -219,6 +219,9 @@ data Expr t
   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
   of type @t@.
   -}
+  | Exception ExceptType t
+  {- ^ @Exception et t@ produces a exception for the program. 
+  -}
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 -- | An alternative in a pattern-match.
@@ -231,6 +234,10 @@ data Alt
   -- ^ @AltBinder v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
+newtype ExceptType
+  = ExceptDefault Literal
+  deriving (Eq, Show, Typeable, Data)
+
 -- | The number of fields in a 'TypeVariant'.
 variantFields :: TypeVariant -> Int
 variantFields (VariantNamed   fields) = length fields
@@ -238,14 +245,15 @@ variantFields (VariantUnnamed fields) = length fields
 
 -- | Extract the type carried by an 'Expr'.
 extract :: Expr t -> t
-extract (Var  _ t    ) = t
-extract (Data _ t    ) = t
-extract (Lit  _ t    ) = t
-extract (Let    _ _ t) = t
-extract (Lambda _ _ t) = t
-extract (App    _ _ t) = t
-extract (Match  _ _ t) = t
-extract (Prim   _ _ t) = t
+extract (Var  _ t     ) = t
+extract (Data _ t     ) = t
+extract (Lit  _ t     ) = t
+extract (Let    _ _ t ) = t
+extract (Lambda _ _ t ) = t
+extract (App    _ _ t ) = t
+extract (Match  _ _ t ) = t
+extract (Prim   _ _ t ) = t
+extract (Exception _ t) = t
 
 -- | Replace the top-level type carried by an 'Expr'.
 inject :: t -> Expr t -> Expr t
@@ -257,6 +265,7 @@ inject t (Lambda xs b  _) = Lambda xs b t
 inject t (App    h  a  _) = App h a t
 inject t (Match  s  as _) = Match s as t
 inject t (Prim   p  es _) = Prim p es t
+inject t (Exception et _) = Exception et t
 
 {- | Collect a curried application into the function and argument list.
 
@@ -311,8 +320,8 @@ isValue _        = False
 -- | Retrieve binder from Alt, assuming it is AltBinder.
 getAltDefault :: Alt -> Binder
 getAltDefault (AltBinder b) = b
-getAltDefault _ = error 
-  "Compiler Error: Should not have recursive patterns here"
+getAltDefault _ =
+  error "Compiler Error: Should not have recursive patterns here"
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
@@ -327,9 +336,10 @@ instance HasFreeVars (Expr t) VarId where
    where
     freeAltVars :: (Alt, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
-    altBinders (AltLit     _                 ) = S.empty
+    altBinders (AltData _ bs                ) = S.unions $ map altBinders bs
+    altBinders (AltLit    _                 ) = S.empty
     altBinders (AltBinder (maybeToList -> v)) = S.fromList v
+  freeVars Exception{} = S.empty
 
 {- | Predicate of whether an expression "looks about right".
 
@@ -378,6 +388,7 @@ wellFormed (Prim   p    es   _) = wfPrim p es && all wellFormed es
   wfPrim (PrimOp  PrimLt    ) [_, _]    = True
   wfPrim (PrimOp  PrimLe    ) [_, _]    = True
   wfPrim _                    _         = False
+wellFormed (Exception _ _) = True
 
 {- | Pretty Typeclass: pretty print the IR
 
@@ -479,14 +490,16 @@ instance Pretty (Expr ()) where
   pretty (Prim (CCall s) es _) =
     pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
   pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
-  pretty (Prim (CQuote s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+  pretty (Prim (CQuote  s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
 
   -- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
+  pretty (Exception et _       ) = pretty "__exception" <+> prettyet et
+    where prettyet (ExceptDefault l) = pretty l
 
 instance Pretty Alt where
-  pretty (AltData a b        ) = pretty a <+> hsep (map pretty b)
-  pretty (AltLit     a       ) = pretty a
+  pretty (AltData a b       ) = pretty a <+> hsep (map pretty b)
+  pretty (AltLit    a       ) = pretty a
   pretty (AltBinder (Just v)) = pretty v
   pretty (AltBinder Nothing ) = pretty '_'
 
@@ -595,10 +608,12 @@ instance Dumpy (Expr Type) where
   dumpy (Prim (PrimOp po) [l, r] t) =
     typeAnn t $ dumpy l <+> dumpy po <+> dumpy r
   dumpy (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
+  dumpy (Exception et t) = typeAnn t $ pretty "exception" <+> dumpyet et
+    where dumpyet (ExceptDefault l) = pretty l
 
 instance Dumpy Alt where
-  dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
-  dumpy (AltLit     a       ) = pretty a
+  dumpy (AltData a b       ) = parens $ pretty a <+> hsep (map pretty b)
+  dumpy (AltLit    a       ) = pretty a
   dumpy (AltBinder (Just v)) = pretty v
   dumpy (AltBinder Nothing ) = pretty '_'
 
