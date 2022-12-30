@@ -314,6 +314,17 @@ exprAtom
   | id                                  { Id $1 }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }
+  | '[' exprList ']'                    { ListExpr $2 }
+  | '(' expr ',' exprTups ')'           { Tuple ($2 : $4)  }
+
+-- | List Expression.
+exprList
+  :list                                 { $1 }
+  | {- empty list -}                    { [] }
+
+list
+  :exprAtom                             { [$1] }
+  | exprAtom ',' list                   { $1 : $3 }
 
 -- | Pipe-separated expressions, for parallel composition.
 exprPar                               --> [Expr]
@@ -322,7 +333,7 @@ exprPar                               --> [Expr]
 
 -- | Commas have the lowest precedence.
 exprTups                             --> [Expr]
-  : expr ',' exprTups                   { $1 : $3 }
+  : expr ',' exprTups                   { $1 : $3  }
   | expr                                { [$1] }
 
 -- | A list of juxtaposed identifiers.

@@ -1,0 +1,16 @@
+type String
+  Cons Int String
+  Nil
+
+puts cout s =
+  match s
+    Cons c ss =
+      after 1, cout <- c
+      wait cout
+      puts cout ss
+    Nil = ()
+
+main cin cout =
+    let s = ""
+    puts cout s
+

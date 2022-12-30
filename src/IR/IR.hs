@@ -225,11 +225,11 @@ data Expr t
 -- | An alternative in a pattern-match.
 data Alt
   = AltData DConId [Alt]
-  -- ^ @AltData d vs@ matches data constructor @d@, and names dcon members @vs@.
+  -- ^ @AltData d vs@ matches data constructor @d@, and recursive patterns @alts@.
   | AltLit Literal
   -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
-  | AltDefault Binder
-  -- ^ @AltDefault v@ matches anything, and bound to name @v@.
+  | AltBinder Binder
+  -- ^ @AltBinder v@ matches anything, and bound to name @v@.
   deriving (Eq, Show, Typeable, Data)
 
 -- | The number of fields in a 'TypeVariant'.
@@ -311,11 +311,11 @@ isValue Lit{}    = True
 isValue Lambda{} = True
 isValue _        = False
 
--- Retrieve binder from Alt, assuming it is AltDefault.
+-- | Retrieve binder from Alt, assuming it is AltBinder.
 getAltDefault :: Alt -> Binder
-getAltDefault (AltDefault b) = b
-getAltDefault _ =
-  error "Compiler Error: Should not have recursive patterns here"
+getAltDefault (AltBinder b) = b
+getAltDefault _ = error 
+  "Compiler Error: Should not have recursive patterns here"
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
@@ -332,9 +332,8 @@ instance HasFreeVars (Expr t) VarId where
     freeAltVars (a, e) = freeVars e \\ altBinders a
     altBinders (AltData _ bs                 ) = S.unions $ map altBinders bs
     altBinders (AltLit     _                 ) = S.empty
-    altBinders (AltDefault (maybeToList -> v)) = S.fromList v
+    altBinders (AltBinder (maybeToList -> v)) = S.fromList v
   freeVars (NoExpr _) = S.empty
-
 {- | Predicate of whether an expression "looks about right".
 
 Description left deliberately vague so that we have the flexibility to
@@ -493,8 +492,8 @@ instance Pretty (Expr ()) where
 instance Pretty Alt where
   pretty (AltData a b        ) = pretty a <+> hsep (map pretty b)
   pretty (AltLit     a       ) = pretty a
-  pretty (AltDefault (Just v)) = pretty v
-  pretty (AltDefault Nothing ) = pretty '_'
+  pretty (AltBinder (Just v)) = pretty v
+  pretty (AltBinder Nothing ) = pretty '_'
 
 instance Pretty Literal where
   pretty (LitIntegral i) = pretty $ show i
@@ -606,8 +605,8 @@ instance Dumpy (Expr Type) where
 instance Dumpy Alt where
   dumpy (AltData a b        ) = parens $ pretty a <+> hsep (map pretty b)
   dumpy (AltLit     a       ) = pretty a
-  dumpy (AltDefault (Just v)) = pretty v
-  dumpy (AltDefault Nothing ) = pretty '_'
+  dumpy (AltBinder (Just v)) = pretty v
+  dumpy (AltBinder Nothing ) = pretty '_'
 
 instance Dumpy Literal where
   dumpy (LitIntegral i) = pretty $ show i
