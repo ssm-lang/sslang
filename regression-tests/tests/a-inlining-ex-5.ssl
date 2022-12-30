@@ -1,0 +1,32 @@
+/*
+NOTE:
+This file starts with the letter a so it is easy to find within the regression tests folder during development.
+We should rename this file without the "a-" before opening a PR for review.
+
+stack build
+cd regression-tests
+./runtests.sh -k tests/a-inlining-ex-5.ssl
+stack exec sslc -- --dump-ir-typed tests/a-inlining-ex-1.ssl
+stack exec sslc -- --dump-ir-lifted tests/a-inlining-ex-1.ssl
+stack exec sslc -- tests/a-inlining-ex-5.ssl
+*/
+
+
+// print character followed by newline
+putc cout_ c =
+  after 1, cout_ <- c
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+main cin cout = 
+  let r = 25
+  let q = r + 25   // 50
+  let w = r + q    // 75
+  // w
+  putc cout w
+
+
+  
+
+

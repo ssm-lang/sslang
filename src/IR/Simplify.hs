@@ -152,6 +152,7 @@ addOccVar binder = do
             (  "ADD: Should never have seen this binder "
             ++ show binder
             ++ " before!"
+            ++ "\n" ++ "occInfo: " ++ show m
             )
   modify $ \st -> st { occInfo = m' }
 
@@ -179,19 +180,19 @@ insideLambda = do
   curCount <- gets countLambda
   return (curCount /= 0)
 
--- | Record that the ocurrence analyzer is looking inside a lambda
+-- | Record that the ocurrence analyzer is looking inside a match
 recordEnteringMatch :: SimplFn ()
 recordEnteringMatch = do
   curCount <- gets countMatch
   modify $ \st -> st { countMatch = curCount + 1 }
 
--- | Record that the ocurrence analyzer is no longer looking inside a lambda
+-- | Record that the ocurrence analyzer is no longer looking inside a match
 recordExitingMatch :: SimplFn ()
 recordExitingMatch = do
   curCount <- gets countMatch
   modify $ \st -> st { countMatch = curCount - 1 }
 
--- | Returns whether ocurrence analyzer is currently looking inside a lambda
+-- | Returns whether ocurrence analyzer is currently looking inside a match
 insideMatch :: SimplFn Bool
 insideMatch = do
   curCount <- gets countMatch
