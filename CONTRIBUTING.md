@@ -51,7 +51,7 @@ For quick reference about Git commands and concepts, see John's
 - Write sensible, descriptive commit messages.
 
   - Commit messages on `main` should follow [this guide][git-style]: summarize
-    in 50 characters or less, in the imperative tense, but elaborate in the
+    in 50 characters or fewer, in the imperative tense, but elaborate in the
     message body if necessary. For instance, write "Use name mangling to fix
     name clash" instead of "used name mangling, fixes name clash".
 
@@ -94,14 +94,14 @@ For quick reference about Git commands and concepts, see John's
 If you've never made a PR before, here's a basic workflow to follow:
 
 1. Start with the `main` branch (or whatever you intend to PR into later), and
-   make sure it is up to date: `git checkout main && git pull`.
+   make sure it is up-to-date: `git checkout main && git pull`.
 
 2. Create a new feature branch: `git checkout -b <branch-name>`.
 
 3. Push your new branch to GitHub: `git push -u origin <branch-name>`. This also
    sets your upstream branch to `origin/<branch-name>`.
 
-4. Optionally, create a draft PR so others can follow your work.
+4. Optionally, create a draft PR, so others can follow your work.
 
 5. Make changes, add them, commit them. If you notice new commits to `main` that
    might conflict, merge them in. Or rebase, but you may have to force push.
@@ -145,7 +145,7 @@ Here's a diagram to help you illustrate where everything should take place:
 
 The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
 
-- [GHC][ghc]: haskell compiler
+- [GHC][ghc]: Haskell compiler
 - [Cabal][cabal]: build system
 - [Stack][stack]: project manager
 - [Haddock][haddock]: code documentation generator (packaged with Stack)
@@ -153,7 +153,7 @@ The sslang compiler, sslc, is developed using the [Haskell programming language]
 - [Brittany][brittany]: formatter (optional)
 - [Hlint][hlint]: linter (optional)
 
-This section will guide you through setting up your development environnment with these tools. We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
+This section will guide you through setting up your development environment with these tools. We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
 
 [haskell]: https://www.haskell.org/
 [ghc]: https://www.haskell.org/ghc/
@@ -167,7 +167,7 @@ This section will guide you through setting up your development environnment wit
 
 ### Build Toolchain Setup
 
-You can easily setup most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
+You can easily set up most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
 
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
@@ -200,9 +200,9 @@ stack install brittany
 
 ### Git Alias Setup (optional)
 
-Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this respoitory's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
+Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this repository's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
 
-These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). They are defined in [`.gitconfig`](./.gitconfig), and can be set up by running the following command inside of this repo:
+These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). They are defined in [`.gitconfig`](./.gitconfig), and can be set up by running the following command (from within this repo):
 
 ```shell
 git config --local include.path ../.gitconfig
@@ -229,7 +229,7 @@ stack build --test --no-run-tests
 git build # equivalent convenience alias
 ```
 
-You may also start a build server to continuously watch your filesystem and build as soon as it detects changes, eliminating the need to later run `build` manually:
+You may also start a build server to continuously watch your file system and build as soon as it detects changes, eliminating the need to later run `build` manually:
 
 ```shell
 git build --test --no-run-tests --file-watch
@@ -274,7 +274,7 @@ stack haddock
 
 This generates the documentation in `haddock-out/`, in the form of a navigable static website (similar to what is found on [Hackage](https://hackage.haskell.org/)). You may view the HTML files in there using your browser.
 
-The langauge reference manual is maintained separately in the [`doc/`](doc) folder; see build instructions there.
+The language reference manual is maintained separately in the [`doc/`](doc) folder; see build instructions there.
 
 ### Adding Test Suites
 
