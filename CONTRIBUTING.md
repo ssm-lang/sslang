@@ -76,15 +76,13 @@ For quick reference about Git commands and concepts, see John's
 - Follow the recommended code style.
 
   - For Haskell code, refer to [Kowainik's style guide][kowainik-style],
-    format using [Brittany][brittany], and lint using [hlint][hlint].
+    format using [Fourmolu][fourmolu], and lint using [hlint][hlint].
 
   - For C code, refer to [Majerle's style guide][majerle-style], format using
     [clang-format][clang-format], and lint using [clang-tidy][clang-tidy].
 
 [git-style]: https://commit.style/
 [kowainik-style]: https://kowainik.github.io/posts/2019-02-06-style-guide
-[brittany]: https://github.com/lspitzner/brittany
-[hlint]: https://hackage.haskell.org/package/hlint
 [majerle-style]: https://github.com/MaJerle/c-code-style
 [clang-format]: https://clang.llvm.org/docs/ClangFormat.html
 [clang-tidy]: https://clang.llvm.org/extra/clang-tidy/
@@ -151,7 +149,7 @@ language, and is developed using the following tools:
 - [Stack][stack]: project manager
 - [Haddock][haddock]: code documentation generator (packaged with Stack)
 - [HLS][hls]: [language server][lsp] (optional)
-- [Brittany][brittany]: formatter (optional)
+- [Fourmolu][fourmolu]: formatter (optional)
 - [Hlint][hlint]: linter (optional)
 
 This section will guide you through setting up your development environment with
@@ -170,7 +168,7 @@ these tools.
 [haddock]: https://www.haskell.org/haddock/doc/html/index.html
 [hls]: https://haskell-language-server.readthedocs.io/en/latest/
 [hlint]: https://hackage.haskell.org/package/hlint
-[brittany]: https://hackage.haskell.org/package/brittany
+[fourmolu]: https://hackage.haskell.org/package/fourmolu
 [lsp]: https://langserver.org/
 [rosetta2]: https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/
 
@@ -309,11 +307,11 @@ GHC, Cabal, Stack, and HLS. You can read more about its rationale
 ### Development Tools Setup (optional)
 
 If you are helping develop sslc, you may find it helpful to have [HLint][hlint]
-and [Brittany][brittany] available. You can install these with Stack:
+and [Fourmolu][fourmolu] available. You can install these with Stack:
 
 ```shell
 stack install hlint
-stack install brittany
+stack install fourmolu
 ```
 
 ### Git Alias Setup (optional)
@@ -501,7 +499,7 @@ stack test sslang:scanner-test --ta '--match "/Tests.ScanComments/ignores single
 
 ### Linting and Formatting
 
-To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Brittany][brittany]) your code before merging any PR. You may invoke Hlint and Brittany manually, but the following [convenience aliases][convenience-aliases] are provided to coordinate with your development workflow.
+To keep code on the main branch clean and consistent, you should always make sure to lint (with [Hlint][hlint]) and format (with [Fourmolu][fourmolu]) your code before merging any PR. You may invoke Hlint and Fourmolu manually, but the following [convenience aliases][convenience-aliases] are provided to coordinate with your development workflow.
 
 To lint:
 
