@@ -85,11 +85,11 @@ parseAst opt src = do
 
   -- TODO: other desugaring
   Pattern.checkAnomaly astL
-  astD <- Pattern.desugarProgram astL
+  --astD <- Pattern.desugarProgram astL
 
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
-  return astD
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astL
+  return astL
   
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()

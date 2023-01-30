@@ -9,6 +9,7 @@ import qualified IR.IR                         as I
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
+import           IR.DesugarPattern              ( desugarPattern )
 import           IR.ExternToCall                ( externToCall )
 import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
@@ -61,11 +62,10 @@ options =
            ["dump-ir-typed"]
            (NoArg $ setMode DumpIRTyped)
            "Print the fully-typed IR after type inference"
-  , Option
-    ""
-    ["dump-ir-typed-ugly"]
-    (NoArg $ setMode DumpIRTypedUgly)
-    "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-typed-ugly"]
+           (NoArg $ setMode DumpIRTypedUgly)
+           "Ugly-Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-lifted"]
            (NoArg $ setMode DumpIRLifted)
@@ -98,6 +98,7 @@ typecheck opt p = do
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
+  p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
   p <- dConToFunc p

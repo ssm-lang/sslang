@@ -18,6 +18,7 @@ module IR.IR
   , VarId(..)
   , TConId(..)
   , DConId(..)
+  , ExceptType(..)
   , Type
   , Annotation
   , Annotations
