@@ -143,7 +143,8 @@ Here's a diagram to help you illustrate where everything should take place:
 
 ## Development Environment Setup
 
-The sslang compiler, sslc, is developed using the [Haskell programming language][haskell], and developed using the following tools:
+The sslang compiler, sslc, is written in the [Haskell][haskell] programming
+language, and is developed using the following tools:
 
 - [GHC][ghc]: Haskell compiler
 - [Cabal][cabal]: build system
@@ -153,7 +154,14 @@ The sslang compiler, sslc, is developed using the [Haskell programming language]
 - [Brittany][brittany]: formatter (optional)
 - [Hlint][hlint]: linter (optional)
 
-This section will guide you through setting up your development environment with these tools. We assume that development will take place in a UNIX-like environment (i.e., macOS, WSL, or some kind of Linux distro). Development in Windows is probably possible but unsupported.
+This section will guide you through setting up your development environment with
+these tools.
+
+-   We assume that development will take place in a UNIX-like environment (i.e.,
+    macOS, WSL, or some Linux distribution) running on x86_64 architecture.
+-   Development on Apple Silicon (M1/M2) is supported, provided you use
+    [Rosetta 2][rosetta2] for x86_64 emulation.
+-   Development in Windows is probably possible but unsupported.
 
 [haskell]: https://www.haskell.org/
 [ghc]: https://www.haskell.org/ghc/
@@ -164,34 +172,144 @@ This section will guide you through setting up your development environment with
 [hlint]: https://hackage.haskell.org/package/hlint
 [brittany]: https://hackage.haskell.org/package/brittany
 [lsp]: https://langserver.org/
+[rosetta2]: https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/
+
+### Install Rosetta 2 (for Apple Silicon)
+
+If you are using a machine with Apple Silicon (M1/M2 processors), you should
+install and run everything Haskell-related under x86_64 emulation using
+[Rosetta 2][rosetta2].
+
+You should install Rosetta with the following command:
+
+```sh
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+After Rosetta is installed, you should be able to run programs within an x86_64
+environment. You can test this with the following command:
+
+```console
+$ arch -x86_64 /bin/bash -c "uname -m"
+x86_64
+```
+
+The `arch -x86_64` runs the following command under x86_64; here, we are running
+a shell (`sh`) and executing the command `uname -m`, which prints the name of
+the hardware architecture it is running on (`x86_64`).
+
+If running that command fails, or it doesn't print `x86_64`, contact John.
 
 ### Build Toolchain Setup
 
-You can easily set up most of sslang's project dependencies using [GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager. To do so, run the following command:
+You can easily set up most of sslang's project dependencies using
+[GHCup][ghcup]<sup>[1](#why-ghcup)</sup>, Haskell's toolchain manager.
 
-```shell
+To do so on an x86_64 machine:
+
+```sh
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
   BOOTSTRAP_HASKELL_INSTALL_STACK=1 \
-  sh
+  BOOTSTRAP_HASKELL_INSTALL_HLS=1 \
+  BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK=0 \
+  /bin/sh
 ```
 
-This will run a short but interactive script that installs GHC, Cabal, and Stack; make sure to let it know where it should add the `PATH` variable. GHCup will also ask if you would like to install HLS, which you may use to extend your LSP-compatible editor with IDE features (optional).
+And on Apple Silicon:
 
-The GHCup setup script may also detect that dependencies are missing, and ask you to install them; make sure to do so before proceeding. For instance, if you are running Ubuntu 20.10:
-
-```shell
-sudo apt install build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
+  BOOTSTRAP_HASKELL_INSTALL_STACK=1 \
+  BOOTSTRAP_HASKELL_INSTALL_HLS=1 \
+  BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK=0 \
+  arch -x86_64 /bin/sh
 ```
 
-Package names differ depending on your distro and version, so make sure to read the suggestion.
+This will run a short and possibly interactive script that installs GHC, Cabal,
+Stack, and HLS.
 
-<a name="why-ghcup">Footnote 1</a>: _While you can also directly install Stack and use that to manage GHC versions, GHCup is more specialized toward coordinating versioning for just the core components of the toolchain, i.e., GHC, Cabal, Stack, and HLS. You can read more about its rationale [here](https://www.haskell.org/ghcup/about/#faq)._
+-   At various points, the script will print:
+
+    ```
+    Press ENTER to proceed or ctrl-c to abort.
+    ```
+
+    Make sure to press enter rather than wait for the script to do something!
+
+-   Make sure the script is actually trying to install the x86_64 toolchain!
+    `x86_64` should appear in the URL where it downloads GHCup from, like this:
+
+    ```
+    [ Info  ] downloading: https://downloads.haskell.org/~ghcup/0.1.19.0/x86_64-apple-darwin-ghcup-0.1.19.0 as file /Users/j-hui/.ghcup/tmp/ghcup-ad207a0b32adb343/ghcup
+    ```
+
+-   If it asks, tell the script where it should the `PATH` variable. This
+    ensures commands such as `ghcup`, `stack`, `ghc` are available in your
+    command line.
+
+-   The `BOOTSTRAP_HASKELL_INSTALL_*` variables in the command above tell GHCup
+    to also install Stack and HLS, and to tell Stack to use versions of GHC
+    installed by GHCup (rather than going out and downloading its own copies,
+    which can quickly eat up disk space).
+
+-   On Linux, the setup script may also detect missing dependencies and ask you
+    to install them; make sure to do so before proceeding!
+
+    For example, on Ubuntu 22.04 LTS, you will need to run:
+
+    ```sh
+    sudo apt install build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+    ```
+
+    Note that package names differ depending on your OS distribution and version, so make
+    sure to read the suggestion.
+
+    You shouldn't need to do anything like that macOS (even if the setup script
+    mumbles something about "Darwin M1").
+
+If installation that was successful, you should be able to use GHCup:
+
+```console
+$ ghcup list -c installed  # list tools installed by ghcup
+   Tool  Version  Tags                      Notes
+✔✔ ghc   9.2.5    recommended,base-4.16.4.0 hls-powered
+✔✔ cabal 3.6.2.0  recommended
+✔✔ hls   1.9.0.0  latest,recommended
+✔✔ stack 2.9.1    recommended
+✔✔ ghcup 0.1.19.0 latest,recommended
+```
+
+GHC/GHCi:
+
+```console
+$ echo 'putStrLn "Hello, GHCi works!"' | ghci
+GHCi, version 9.2.5: https://www.haskell.org/ghc/  :? for help
+ghci> Hello, GHCi works!
+ghci> Leaving GHCi.
+```
+
+And Stack:
+
+```console
+$ stack --version
+Version 2.9.1, Git revision 409d56031b4240221d656db09b2ba476fe6bb5b1 x86_64 hpack-0.35.0
+```
+
+When running those commands, you should be able to safely ignore any warnings
+and version differences, though for Stack you should make sure that it says `x86_64`.
+
+<a name="why-ghcup">Footnote 1</a>: _While you can also directly install Stack
+and use that to manage GHC versions, GHCup is more specialized toward
+coordinating versioning for just the core components of the toolchain, i.e.,
+GHC, Cabal, Stack, and HLS. You can read more about its rationale
+[here](https://www.haskell.org/ghcup/about/#faq)._
 
 [ghcup]: https://www.haskell.org/ghcup/
 
 ### Development Tools Setup (optional)
 
-If you are helping develop sslc, you may find it helpful to have [HLint][hlint] and [Brittany][brittany] available. You can install these with Stack:
+If you are helping develop sslc, you may find it helpful to have [HLint][hlint]
+and [Brittany][brittany] available. You can install these with Stack:
 
 ```shell
 stack install hlint
@@ -200,15 +318,21 @@ stack install brittany
 
 ### Git Alias Setup (optional)
 
-Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory, to help lint, format, and build this repository's code. As long as your current working directory is within this repo, you may invoke these scripts directly.
+Convenience scripts are provided under the [`scripts`](./scripts/) subdirectory,
+to help lint, format, and build this repository's code. As long as your current
+working directory is within this repo, you may invoke these scripts directly.
 
-These scripts may be added as Git aliases for even easier access (e.g., to lint your code, just run `git lint`). They are defined in [`.gitconfig`](./.gitconfig), and can be set up by running the following command (from within this repo):
+These scripts may be added as Git aliases for even easier access (e.g., to lint
+your code, just run `git lint`). They are defined in
+[`.gitconfig`](./.gitconfig), and can be set up by running the following command
+(from within this repo):
 
 ```shell
 git config --local include.path ../.gitconfig
 ```
 
-Though these convenience aliases are optional, they help outline a recommended command-line workflow that you may wish to follow.
+Though these convenience aliases are optional, they help outline a recommended
+command-line workflow that you may wish to follow.
 
 [convenience-aliases]: #git-alias-setup-optional
 
