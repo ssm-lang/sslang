@@ -1067,54 +1067,6 @@ instance GHC.Classes.Eq Front.Pattern.Common.CInfo
 instance GHC.Show.Show Front.Pattern.Common.TInfo
 instance GHC.Classes.Eq Front.Pattern.Common.TInfo
 
-module Front.Pattern.Desugar
-type Equation = ([Pat], Expr)
-type Arm = (Pat, Expr)
-data DesugarCtx
-DesugarCtx :: Map Identifier TInfo -> Map Identifier CInfo -> Int -> DesugarCtx
-[typeMap] :: DesugarCtx -> Map Identifier TInfo
-[consMap] :: DesugarCtx -> Map Identifier CInfo
-[anonCount] :: DesugarCtx -> Int
-newtype DesugarFn a
-DesugarFn :: StateT DesugarCtx Pass a -> DesugarFn a
-runDesugarFn :: DesugarFn a -> DesugarCtx -> Pass a
-freshVar :: DesugarFn Identifier
-buildCtx :: [TypeDef] -> DesugarCtx
-desugarProgram :: Program -> Pass Program
-desugarTopDefs :: [TopDef] -> DesugarFn [TopDef]
-desugarDefs :: [Definition] -> DesugarFn [Definition]
-desugarDef :: Definition -> DesugarFn Definition
-desugarExprs :: [Expr] -> DesugarFn [Expr]
-desugarExpr :: Expr -> DesugarFn Expr
-desugarOpRegion :: OpRegion -> DesugarFn OpRegion
-desugarMatch :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchGen :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchVar :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchWild :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchCons :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchLit :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchTup :: [Identifier] -> [Equation] -> Expr -> DesugarFn Expr
-desugarMatchIdCons :: [Equation] -> DesugarFn [Equation]
-desugarMatchAsAnn :: [Identifier] -> [Equation] -> DesugarFn [Equation]
-partitionEqs :: [Equation] -> [[Equation]]
-substId :: Identifier -> Identifier -> Expr -> Expr
-singleLet :: Identifier -> Expr -> Expr -> Expr
-singleAlias :: Identifier -> Identifier -> Expr -> Expr
-singleAliasWithTyp :: Identifier -> Identifier -> Typ -> Expr -> Expr
-getConstructors :: Identifier -> DesugarFn (Set Identifier)
-getArity :: Identifier -> DesugarFn Int
-getCInfo :: Identifier -> DesugarFn CInfo
-getTInfo :: Identifier -> DesugarFn TInfo
-foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
-throwDesugarError :: DesugarFn a
-throwInexhaustionError :: DesugarFn a
-instance Control.Monad.State.Class.MonadState Front.Pattern.Desugar.DesugarCtx Front.Pattern.Desugar.DesugarFn
-instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Front.Pattern.Desugar.DesugarFn
-instance Control.Monad.Fail.MonadFail Front.Pattern.Desugar.DesugarFn
-instance GHC.Base.Monad Front.Pattern.Desugar.DesugarFn
-instance GHC.Base.Applicative Front.Pattern.Desugar.DesugarFn
-instance GHC.Base.Functor Front.Pattern.Desugar.DesugarFn
-
 module Front.Pattern.Vector
 data PatVec
 PatVec :: Int -> [Pat] -> PatVec
@@ -1208,7 +1160,6 @@ instance GHC.Show.Show Front.Pattern.Anomaly.LitType
 instance GHC.Classes.Eq Front.Pattern.Anomaly.LitType
 
 module Front.Pattern
-desugarProgram :: Program -> Pass Program
 checkAnomaly :: Program -> Pass ()
 
 
@@ -1972,6 +1923,8 @@ TConId :: Identifier -> TConId
 -- | Identifier for data constructors, e.g., <tt>None</tt>.
 newtype DConId
 DConId :: Identifier -> DConId
+newtype ExceptType
+ExceptDefault :: Literal -> ExceptType
 
 -- | Encoding of sslang types.
 --   
@@ -2113,6 +2066,19 @@ substMagic :: (Data t, Data a) => Proxy t -> a -> a
 module IR.SegmentLets
 segmentLets :: Program T -> Pass (Program T)
 segmentDefs :: Show t => [Def t] -> [[Def t]]
+
+module IR.DesugarPattern
+desugarPattern :: Program Type -> Pass (Program Type)
+instance GHC.Show.Show IR.DesugarPattern.CInfo
+instance GHC.Classes.Eq IR.DesugarPattern.CInfo
+instance GHC.Show.Show IR.DesugarPattern.TInfo
+instance GHC.Classes.Eq IR.DesugarPattern.TInfo
+instance Control.Monad.State.Class.MonadState IR.DesugarPattern.DesugarCtx IR.DesugarPattern.DesugarFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.DesugarPattern.DesugarFn
+instance Control.Monad.Fail.MonadFail IR.DesugarPattern.DesugarFn
+instance GHC.Base.Monad IR.DesugarPattern.DesugarFn
+instance GHC.Base.Applicative IR.DesugarPattern.DesugarFn
+instance GHC.Base.Functor IR.DesugarPattern.DesugarFn
 
 module IR.ClassInstantiation
 instProgram :: Program Type -> Pass (Program Type)
