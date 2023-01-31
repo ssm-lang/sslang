@@ -29,7 +29,7 @@ data State = State
 
 add :: I.Alt -> Type -> State -> TC State
 add alt expected state = case alt of
-  I.AltDefault binder -> do
+  I.AltBinder binder -> do
     var <- binderToVarId binder
     return $ addToHeaders (Ident.fromId var) expected state
   I.AltLit lit      -> return $ addLit lit expected state
@@ -55,19 +55,18 @@ addData
   -> [Ident.TVarId]
   -> Ident.DConId
   -> [Can.Type]
-  -> [I.Binder]
+  -> [I.Alt]
   -> Type
   -> State
   -> TC State
-addData typeName typeVarNames ctorName ctorArgTypes bs expected state = do
-  unless (length ctorArgTypes == length bs)
+addData typeName typeVarNames ctorName ctorArgTypes as expected state = do
+  unless (length ctorArgTypes == length as)
     $  throwError
     $  "Pattern: wrong number of argument - "
     ++ show ctorName
   varPairs <- mapM (\var -> (,) var <$> mkFlexVar) typeVarNames
   let typePairs   = map (second TVarN) varPairs
   let freeVarDict = Map.fromList typePairs
-  let as          = map I.AltDefault bs -- TODO: this is a small placeholder before recursive alts
   (State headers vars revCons) <- foldM
     (\st (a, aCanType) -> addDataArg freeVarDict aCanType a st)
     state

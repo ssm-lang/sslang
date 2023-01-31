@@ -116,6 +116,9 @@ constrainExpr expr expected = do
       constrainBinderDefs binderDefs =<< constrainExprAttached body expected
     I.Match e    branches _ -> constrainMatch e branches expected
     I.Prim  prim args     _ -> constrainPrim prim args expected
+    I.Exception _ _ ->
+      let scheme = Can.schemeOf $ Can.TVar "a"
+      in  return $ CForeign scheme expected
 
 
 constrainLit :: I.Literal -> Type -> TC Constraint
