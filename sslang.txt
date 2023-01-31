@@ -989,7 +989,7 @@ instance Prettyprinter.Internal.Pretty Front.Ast.TypFn
 instance Prettyprinter.Internal.Pretty Front.Ast.Typ
 
 
--- | Desugar ListExpr nodes into App nodes
+-- | Desugar <tt>ListExpr</tt> nodes into <tt>App</tt> nodes
 module Front.DesugarLists
 
 -- | Desugar ListExpr nodes inside of an AST <a>Program</a>.
@@ -999,7 +999,7 @@ desugarLists :: Program -> Pass Program
 -- | Desugar String Literal nodes into ListExpr nodes
 module Front.DesugarStrings
 
--- | Desugar String Literal nodes inside of an AST <a>Program</a>.
+-- | Desugar <a>LitString</a> nodes inside of an AST <a>Program</a>.
 desugarStrings :: Program -> Pass Program
 
 
@@ -1039,10 +1039,10 @@ instance Common.Default.Default Front.Identifiers.TypInfo
 instance Common.Default.Default Front.Identifiers.DataInfo
 
 
--- | Parse OpRegion nodes inside of an AST <a>Program</a>.
+-- | Parse OpRegion nodes inside of an AST <tt>Program</tt>.
 module Front.ParseOperators
 
--- | Parse OpRegion nodes inside of an AST <a>Program</a>.
+-- | Parse OpRegion nodes inside of an AST <tt>Program</tt>.
 parseOperators :: Program -> Pass Program
 
 -- | Fixity declaration for binary operators.
