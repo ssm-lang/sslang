@@ -18,6 +18,8 @@ library:
   source-dirs: src
   ghc-options:
   - -Wall
+  - -fwrite-ide-info
+  - -hiedir=.hie
   dependencies:
   - prettyprinter >= 1.7.0
   - array
