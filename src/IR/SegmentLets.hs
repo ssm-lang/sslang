@@ -3,10 +3,12 @@
 module IR.SegmentLets
   ( segmentLets
   , segmentDefs
+  , segmentDefs'
   ) where
 
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers             ( HasFreeVars(..)
+                                                , VarId(..)
                                                 , genId
                                                 , showId
                                                 , ungenId
@@ -38,7 +40,7 @@ segmentLetExpr (I.Let ds b t) = foldr ilet b $ segmentDefs ds
   where ilet d' b' = I.Let d' b' t
 segmentLetExpr e = e
 
-segmentDefs :: Show t => [Def t] -> [[Def t]]
+segmentDefs :: [Def t] -> [[Def t]]
 segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
  where
   toGraph :: Def t -> State Int (Def t, I.VarId, [I.VarId])
@@ -58,3 +60,17 @@ segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
   ungenVar :: I.Binder -> I.Binder
   ungenVar (Just v) = ungenId v
   ungenVar Nothing  = Nothing
+
+type Def' t = (VarId, I.Expr t)
+
+segmentDefs' :: [Def' t] -> [[Def' t]]
+segmentDefs' = map fromSCC . stronglyConnComp . map toGraph
+ where
+  toGraph :: Def' t -> (Def' t, I.VarId, [I.VarId])
+  toGraph d@(v, e) = (d, v, S.toList $ freeVars e)
+
+  fromSCC :: SCC (Def' t) -> [Def' t]
+  fromSCC = from
+   where
+    from (AcyclicSCC d ) = [d]
+    from (CyclicSCC  ds) = ds

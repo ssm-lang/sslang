@@ -32,6 +32,7 @@ library:
   - comonad
   - syb
   - unification-fd
+  - vector
 
   build-tools:
   - happy
