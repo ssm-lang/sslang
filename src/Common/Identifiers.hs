@@ -60,6 +60,10 @@ module Common.Identifiers
   , isGenerated
   , genId
   , ungenId
+  , tuple
+  , tempTuple
+  , cons
+  , nil
   ) where
 
 import           Common.Pretty                  ( Pretty(..) )
@@ -277,3 +281,19 @@ mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
 -- | Mangle all type and data variable identifiers.
 mangleVars :: (Data a) => a -> a
 mangleVars = mangle (Proxy :: Proxy VarId) . mangle (Proxy :: Proxy TVarId)
+
+-- | the tuple identifier
+tuple :: Identifier
+tuple = Identifier "(,)"
+
+-- | we'll use this temp tuple name for now due to the naming issue
+tempTuple :: Identifier
+tempTuple = Identifier "Pair"
+
+-- | Cons identifier for Lists
+cons :: Identifier
+cons = Identifier "Cons"
+
+-- | Nil identifier for Lists
+nil :: Identifier
+nil = Identifier "Nil"

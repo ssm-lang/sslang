@@ -18,6 +18,8 @@ library:
   source-dirs: src
   ghc-options:
   - -Wall
+  - -fwrite-ide-info
+  - -hiedir=.hie
   dependencies:
   - prettyprinter >= 1.7.0
   - array
@@ -31,6 +33,10 @@ library:
   - syb
   - unification-fd
   - vector
+
+  build-tools:
+  - happy
+  - alex
 
 executables:
   sslc:
@@ -47,10 +53,6 @@ executables:
     - sslang
     - prettyprinter >= 1.7.0
 
-    build-tools:
-    - happy
-    - alex
-
 _test-suite: &test-suite
   main: Spec.hs
   dependencies:
@@ -64,6 +66,8 @@ _test-suite: &test-suite
   - containers
   - comonad
   - syb
+  build-tools:
+  - hspec-discover
 
 tests:
   # End-to-end regression tests

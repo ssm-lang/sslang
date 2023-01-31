@@ -1,0 +1,12 @@
+//This is the temp lib for tuples, when making tuple tests or use tuples, copy these definitions to the files.
+
+type Pair2 a b =
+    Pair2 a b
+
+
+type Pair3 a b c = 
+  Pair3 a b c
+
+
+type Pair4 a b c d = 
+    Pair4 a b c d

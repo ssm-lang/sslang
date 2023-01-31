@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {- | Front end of the compiler pipeline.
 
 Throughout this stage, high-level syntax is progressively parsed and desugared
@@ -79,16 +80,17 @@ parseAst opt src = do
   astP <- parseOperators ast
   when (optMode opt == DumpAstParsed) $ dump $ show $ pretty astP
 
-  astDS <- desugarStrings astP
-  astDL <- desugarLists astDS
+  astS <- desugarStrings astP
+  astL <- desugarLists astS
 
   -- TODO: other desugaring
-  Pattern.checkAnomaly astDL
-  astD <- Pattern.desugarProgram astP
+  Pattern.checkAnomaly astL
+  --astD <- Pattern.desugarProgram astL
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astD
-  return astD
 
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astL
+  return astL
+  
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
 checkAst _opt ast = do
