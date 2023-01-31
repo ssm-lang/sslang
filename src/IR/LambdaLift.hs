@@ -12,7 +12,6 @@ module IR.LambdaLift
 import qualified Common.Compiler               as Compiler
 import           Common.Identifiers
 import qualified IR.IR                         as I
-import           IR.MangleNames                 ( pickId )
 import qualified IR.Types                      as I
 
 import           Control.Monad                  ( forM_ )
@@ -112,7 +111,7 @@ getFullName :: Identifier -> LiftFn I.VarId
 getFullName cur = do
   identifier <- prependTrail cur
   vns <- gets varNames
-  let (_, name) = pickId vns $ fromId identifier
+  let (_, name) = freshId vns $ fromId identifier
       label      = "((__generated_lambda_name__))"
   modify $ \st -> st { varNames = M.insert label name vns }
   return name
@@ -181,12 +180,12 @@ Program with the relative order of user definitions preserved.
 -}
 liftProgramLambdas :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 liftProgramLambdas p = runLiftFn $ do
-  modify $ \st -> st { varNames = I.varNames p }
+  modify $ \st -> st { varNames = I.symTable p }
   let defs = I.programDefs p
   populateGlobalScope defs
   liftedProgramDefs <- mapM liftLambdasTop defs
   vns               <- gets varNames
-  return $ p { I.programDefs = concat liftedProgramDefs, I.varNames = vns }
+  return $ p { I.programDefs = concat liftedProgramDefs, I.symTable = vns }
 
 -- | Given a top-level definition, lift out any lambda definitions.
 liftLambdasTop :: (I.VarId, I.Expr I.Type) -> LiftFn [(I.VarId, I.Expr I.Type)]

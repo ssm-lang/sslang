@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module IR.MangleNames (mangleProgram, pickId) where
+module IR.MangleNames (mangleProgram) where
 
 import qualified Common.Compiler as Compiler
 import Common.Identifiers (Identifiable (..), IsString (..))
@@ -14,31 +14,37 @@ import Data.Bifunctor (Bifunctor (..))
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, fromJust)
 import qualified Data.Set as S
+import Control.Monad (zipWithM)
 
 
 normalize :: I.VarId -> I.VarId
-normalize = fromString . map m . ident
+normalize = fromString . map tr . ident
  where
-  m '\'' = '_'
-  m a = a
+  tr '\'' = '_'
+  tr a = a
 
 
-pickId :: M.Map I.VarId I.VarId -> I.VarId -> (I.VarId, I.VarId)
+pickId :: M.Map I.VarId (I.SymInfo I.Type) -> I.VarId -> I.VarId
 pickId globals v =
-  let v' = normalize v in if alreadyInUse v' then pick 1 else (v, v')
+  let v' = normalize v
+   in if alreadyInUse v'
+        then pick 1
+        else v'
  where
-  pick :: Int -> (I.VarId, I.VarId)
+  pick :: Int -> I.VarId
   pick i =
     let v' = normalize (v <> "___" <> fromString (show i))
-     in if alreadyInUse v' then pick (i + 1) else (v, v')
+     in if alreadyInUse v'
+           then pick $ i + 1
+           else v'
 
   alreadyInUse :: I.VarId -> Bool
   alreadyInUse v' = M.member v' globals
 
 
 data MangleCtx = MangleCtx
-  { localScope :: M.Map I.VarId I.VarId
-  , globalScope :: M.Map I.VarId I.VarId
+  { localScope :: M.Map I.VarId (I.SymInfo I.Type)
+  , globalScope :: M.Map I.VarId (I.SymInfo I.Type)
   }
 
 
@@ -57,7 +63,7 @@ runMangle (Mangle m) =
   evalStateT m MangleCtx{localScope = M.empty, globalScope = M.empty}
 
 
-withLocals :: [(I.VarId, I.VarId)] -> Mangle a -> Mangle a
+withLocals :: [(I.VarId, I.SymInfo I.Type)] -> Mangle a -> Mangle a
 withLocals vs m = do
   locals <- gets localScope
   modify $ \st -> st{localScope = M.fromList vs `M.union` locals}
@@ -66,10 +72,9 @@ withLocals vs m = do
   return a
 
 
-tellGlobals :: [(I.VarId, I.VarId)] -> Mangle ()
+tellGlobals :: [(I.VarId, I.SymInfo I.Type)] -> Mangle ()
 tellGlobals vs = do
-  let vs' = map (\(a, b) -> (b, a)) vs
-  modify $ \st -> st{globalScope = M.fromList vs' `M.union` globalScope st}
+  modify $ \st -> st{globalScope = M.fromList vs `M.union` globalScope st}
 
 
 withMangled :: [I.Binder] -> Mangle a -> Mangle ([I.Binder], a)
@@ -80,10 +85,13 @@ withMangled vs m = do
     a <- m
     return (map toBinder vs', a)
  where
-  pickBinder :: I.Binder -> Mangle (Maybe (I.VarId, I.VarId))
+  pickBinder :: I.Binder -> Mangle (Maybe (I.VarId, I.SymInfo I.Type))
   pickBinder (Just v) = do
     globals <- gets globalScope
-    return $ Just $ pickId globals v
+    let v' = pickId globals v
+    puts { globalScope = M.insert undefined undefined globals }
+    -- return $ Just (v, I.SymInfo )
+
   pickBinder Nothing = return Nothing
 
   toBinder :: Maybe (I.VarId, I.VarId) -> I.Binder
@@ -102,7 +110,7 @@ mangleProgram p = runMangle $ do
     return
       p
         { I.programDefs = zip (map fromJust tvs') tes'
-        , I.varNames = names `M.union` I.varNames p
+        , I.symTable = names
         }
 
 

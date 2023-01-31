@@ -98,10 +98,11 @@ inferProgram p = U.runInfer initCtx $ do
     ds' <- mapM
       (mapM $ U.freeze <=< U.applyBindings . T.unScheme <=< U.generalize)
       ds
-    return $ p { programDefs = zip bs ds' }
+    return $ p { programDefs = zip bs ds', symTable = symTbl }
  where
   -- | Obtain the kind of each type constructor.
   kenv = M.fromList $ map (second $ length . targs) $ typeDefs p
+  symTbl = error "symTable not yet defined"
 
   -- | Construct the inintial inference context.
   initCtx =

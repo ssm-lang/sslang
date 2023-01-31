@@ -4,9 +4,11 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ViewPatterns #-}
+
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
   ( Program(..)
+  , SymInfo(..)
   , TypeDef(..)
   , TypeVariant(..)
   , Binder
@@ -64,18 +66,24 @@ import           IR.Types.Type                  ( Annotation
 {- | Top-level compilation unit, parameterized by the type system.
 
 After name-mangling, all variable names should be globally unique, and will be
-kept track of in @varNames@.
+kept track of in @symInfo@.
 -}
 data Program t = Program
-  { programEntry :: VarId               -- ^ name of entry point
-  , cDefs        :: String              -- ^ top-level literal C code
-  , externDecls  :: [(VarId, Type)]     -- ^ top-level extern symbols
-  , programDefs  :: [(VarId, Expr t)]   -- ^ top-level sslang definitions
-  , typeDefs     :: [(TConId, TypeDef)] -- ^ sslang type definitions
-  , varNames     :: M.Map VarId VarId   -- ^ set of all variable names
+  { programEntry :: VarId                   -- ^ name of entry point
+  , cDefs        :: String                  -- ^ top-level literal C code
+  , externDecls  :: [(VarId, Type)]         -- ^ top-level extern symbols
+  , programDefs  :: [(VarId, Expr t)]       -- ^ top-level sslang definitions
+  , typeDefs     :: [(TConId, TypeDef)]     -- ^ sslang type definitions
+  , symTable     :: M.Map VarId (SymInfo t) -- ^ set of all variable names
   }
   deriving (Eq, Show, Typeable, Data, Functor)
 
+-- | Information stored in global symbol table.
+data SymInfo t = SymInfo
+  { symOrigin :: VarId                      -- ^ Original name of symbol
+  , symType   :: t                          -- ^ Type information of symbol
+  }
+  deriving (Eq, Show, Typeable, Data, Functor)
 
 {- | The type definition associated with a type constructor.
 A definition for `data MyList a = Cons a (MyList a) | Nil` looks like:
