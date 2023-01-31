@@ -65,6 +65,8 @@ _test-suite: &test-suite
   - containers
   - comonad
   - syb
+  build-tools:
+  - hspec-discover
 
 tests:
   # End-to-end regression tests
