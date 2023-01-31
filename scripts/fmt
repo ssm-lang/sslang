@@ -5,7 +5,7 @@ set -euf
 is_alias="${GIT_PREFIX+y}"
 pwd="${GIT_PREFIX:-$(pwd)}"
 
-haskell_fmt_cmd=("brittany" "--write-mode" "inplace")
+haskell_fmt_cmd=("fourmolu" "--mode" "inplace" "-q")
 haskell_files=()
 
 git_since=""
@@ -35,7 +35,7 @@ function usage () {
   echo
   echo "But if you just really want to just format all files in this repo:"
   echo
-  echo "    find . -name '*.hs' -print0 | xargs -0 brittany --write-mode=inplace"
+  echo "    fourmolu -i ."
 }
 
 cd "$(git rev-parse --show-toplevel)"
@@ -96,13 +96,13 @@ if [ "${#haskell_files[@]}" -eq 0 ] ; then
   echo "Nothing to format."
 fi
 
-if ! which brittany >/dev/null 2>/dev/null ; then
+if ! which fourmolu >/dev/null 2>/dev/null ; then
   echo
-  echo "Cannot find brittany on PATH."
+  echo "Cannot find fourmolu on PATH."
   echo
   echo "Please install with:"
   echo
-  echo "    stack install brittany"
+  echo "    stack install fourmolu"
   exit 1
 fi
 

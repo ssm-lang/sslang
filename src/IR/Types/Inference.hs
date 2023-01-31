@@ -70,7 +70,8 @@ withBindings bs = U.local
 -- | Look up the 'U.Scheme' a data identifier in the variable environment.
 lookupBinding :: Identifiable i => i -> Infer U.Scheme
 lookupBinding x =
-  U.asks (M.lookup (fromId x) . varEnv) >>= maybe (U.throwError unbound) return
+    do
+    U.asks (M.lookup (fromId x) . varEnv) >>= maybe (U.throwError unbound) return
  where
   unbound = Compiler.TypeError $ fromString $ "Unbound variable: " <> show x
 
@@ -204,6 +205,8 @@ inferExpr (Prim p es ts) = do
   t   <- U.instantiate =<< inferPrim (length es) p
   t =:= U.foldArrow (map extract es', rt)
   Prim p es' <$> checkAgainst ts rt
+-- Exception is brought in to program after type inference, which cannot happen here
+inferExpr (Exception _ _) = error "can't happen"
 
 -- | Obtain bindings for a pattern match arm, according to the scrutinee's type.
 inferAlt :: U.Type -> Alt -> Infer [(Binder, U.Scheme)]
@@ -216,13 +219,12 @@ inferAlt t (AltData d as) = do
       , "Expected: " <> show (length ats)
       , "Got: " <> show (length as)
       ]
-  let as' = map AltDefault as -- TODO: remove for nested patterns, just use as
-  concat <$> zipWithM inferAlt ats as'
+  concat <$> zipWithM inferAlt ats as
 inferAlt t (AltLit l) = do
   t' <- U.instantiate =<< inferLit l
   t =:= t'
   return []
-inferAlt t (AltDefault b) = return [(b, T.forall [] t)]
+inferAlt t (AltBinder b) = return [(b, T.forall [] t)]
 
 -- | Type inference rules for primitives of a given arity.
 inferPrim :: Int -> Primitive -> Infer U.Scheme

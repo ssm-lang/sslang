@@ -9,6 +9,7 @@ import qualified IR.IR                         as I
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
+import           IR.DesugarPattern              ( desugarPattern )
 import           IR.ExternToCall                ( externToCall )
 import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
@@ -105,6 +106,7 @@ transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
   p <- mangleProgram p
   when (mode opt == DumpIRMangled) $ dump p
+  p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
   p <- dConToFunc p
