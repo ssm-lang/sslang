@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">IR.Constraint.Elaborate</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.Constraint.Canonical.html"><span class="hs-identifier">IR.Constraint.Canonical</span></a></span><span>       </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Can</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="IR.Constraint.Monad.html"><span class="hs-identifier">IR.Constraint.Monad</span></a></span><span>            </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier">TC</span></a></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="IR.Constraint.Type.html"><span class="hs-identifier">IR.Constraint.Type</span></a></span><span>            </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Type</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.IR.html"><span class="hs-identifier">IR.IR</span></a></span><span>                         </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">I</span></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="annot"><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span id="run"><span class="annot"><span class="annottext">run :: Program Variable -&gt; TC (Program Type)
+</span><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679563631"><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679563631"><span class="hs-identifier hs-var">pVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563630"><span class="annot"><span class="annottext">[VarId]
+</span><a href="#local-6989586621679563630"><span class="hs-identifier hs-var">names</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679563629"><span class="annot"><span class="annottext">[Expr Variable]
+</span><a href="#local-6989586621679563629"><span class="hs-identifier hs-var">exprs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Variable)] -&gt; ([VarId], [Expr Variable])
+forall a b. [(a, b)] -&gt; ([a], [b])
+</span><span class="hs-identifier hs-var">unzip</span></span><span> </span><span class="annot"><span class="annottext">([(VarId, Expr Variable)] -&gt; ([VarId], [Expr Variable]))
+-&gt; [(VarId, Expr Variable)] -&gt; ([VarId], [Expr Variable])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Variable -&gt; [(VarId, Expr Variable)]
+forall t. Program t -&gt; [(VarId, Expr t)]
+</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679563631"><span class="hs-identifier hs-var">pVar</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span id="local-6989586621679563626"><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679563626"><span class="hs-identifier hs-var">exprs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr Variable -&gt; StateT TCState (ExceptT Error IO) (Expr Type))
+-&gt; [Expr Variable] -&gt; StateT TCState (ExceptT Error IO) [Expr Type]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Variable -&gt; StateT TCState (ExceptT Error IO) Type)
+-&gt; Expr Variable -&gt; StateT TCState (ExceptT Error IO) (Expr Type)
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; StateT TCState (ExceptT Error IO) Type
+</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">Type.toCanType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr Variable]
+</span><a href="#local-6989586621679563629"><span class="hs-identifier hs-var">exprs</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679563623"><span class="annot"><span class="annottext">pdefs' :: [(VarId, Expr Type)]
+</span><a href="#local-6989586621679563623"><span class="hs-identifier hs-var hs-var">pdefs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarId] -&gt; [Expr Type] -&gt; [(VarId, Expr Type)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[VarId]
+</span><a href="#local-6989586621679563630"><span class="hs-identifier hs-var">names</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679563626"><span class="hs-identifier hs-var">exprs'</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; TC (Program Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; TC (Program Type))
+-&gt; Program Type -&gt; TC (Program Type)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679563631"><span class="hs-identifier hs-var">pVar</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
+</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Type)]
+</span><a href="#local-6989586621679563623"><span class="hs-identifier hs-var">pdefs'</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-14"></span></pre></body></html>

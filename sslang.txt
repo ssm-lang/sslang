@@ -1451,6 +1451,31 @@ instance GHC.Show.Show Front.Options
 instance GHC.Classes.Eq Front.Options
 instance Common.Default.Default Front.Options
 
+module IR.Constraint.Error
+data Type
+Infinite :: Type
+Error :: Type
+FlexVar :: TVarId -> Type
+RigidVar :: TVarId -> Type
+Type :: TConId -> [Type] -> Type
+data Error
+BadExpr :: Type -> Type -> Error
+BadPattern :: Type -> Type -> Error
+InfiniteType :: Identifier -> Type -> Error
+toErrorString :: Error -> String
+instance GHC.Show.Show IR.Constraint.Error.Type
+
+module IR.Constraint.UnionFind
+data Point a
+fresh :: MonadIO m => a -> m (Point a)
+union :: (MonadIO m, MonadFail m) => Point a -> Point a -> a -> m ()
+equivalent :: MonadIO m => Point a -> Point a -> m Bool
+redundant :: MonadIO m => Point a -> m Bool
+get :: MonadIO m => Point a -> m a
+set :: MonadIO m => Point a -> a -> m ()
+modify :: MonadIO m => Point a -> (a -> a) -> m ()
+instance GHC.Classes.Eq (IR.Constraint.UnionFind.Point a)
+
 
 -- | Definitions of and related to the sslang IR's type system.
 module IR.Types.Type
@@ -2065,7 +2090,8 @@ substMagic :: (Data t, Data a) => Proxy t -> a -> a
 --   definitions.
 module IR.SegmentLets
 segmentLets :: Program T -> Pass (Program T)
-segmentDefs :: Show t => [Def t] -> [[Def t]]
+segmentDefs :: [Def t] -> [[Def t]]
+segmentDefs' :: [Def' t] -> [[Def' t]]
 
 module IR.DesugarPattern
 desugarPattern :: Program Type -> Pass (Program Type)
@@ -2134,123 +2160,54 @@ TypegenInfo :: (DConId -> Maybe DConInfo) -> (TConId -> Maybe TConInfo) -> Typeg
 -- | Create codegen definitions and helpers for sslang type definitions.
 genTypes :: [(TConId, TypeDef)] -> Pass ([Definition], TypegenInfo)
 
+module IR.Constraint.Canonical
 
--- | Wrapper around the unification-fd library.
+-- | Encoding of sslang types.
 --   
---   Compared to normal types (<a>Type</a>), unification types
---   (<a>Type</a>) may contain unification variables, which only appear
---   during the type inference process.
+--   Structurally speaking, these are very simple. Types are either type
+--   variables or type constructors applied to some other types.
 --   
---   This module provides a definition for unification types, an inference
---   monad, as well as some pattern synonyms for the builtin types.
-module IR.Types.Unification
+--   Builtin types (and type constructors) include <a>Arrow</a>,
+--   <a>Unit</a>, <a>Ref</a>, <a>List</a>, and various sizes of tuples; for
+--   convenience, those are defined elsewhere using the GHC PatternSynonyms
+--   extension.
+data Type
 
--- | A type that may also contain unification variables.
-type Type = UTerm TypeF IntVar
+-- | Type constructor, applied to zero or more types
+TCon :: TConId -> [Type] -> Type
 
--- | An explicitly quantified <a>Type</a>, which may contain unification
---   variables.
-type Scheme = SchemeOf Type
+-- | Type variable (may be implicitly quantified)
+TVar :: TVarId -> Type
 
--- | Pattern synonym for <a>Type</a> variables.
-pattern TVar :: TVarId -> Type
+-- | SCHEMES
+data Scheme
+Forall :: FreeVars -> Type -> Scheme
+type FreeVars = Map TVarId ()
 
--- | Pattern synonym for <a>Type</a> constructors.
-pattern TCon :: TConId -> [Type] -> Type
-class HasFreeUVars a
-freeUVars :: HasFreeUVars a => a -> InferM ctx (Set IntVar)
+-- | An annotation records the annotated portion of a pattern.
+data Annotation
 
--- | Inference monad, build on top of the unification algorithm.
-type InferM ctx = ReaderT ctx (ExceptT Error (IntBindingT TypeF Pass))
+-- | A basic <a>Type</a> annotation
+AnnType :: Type -> Annotation
 
--- | Execute the <a>InferM</a> inference monad.
-runInfer :: ctx -> InferM ctx a -> Pass a
+-- | Annotations collected from patterns
+AnnDCon :: DConId -> [Annotation] -> Annotation
 
--- | Create a fresh unification variable.
-fresh :: InferM ctx Type
+-- | Annotations collected from fun args
+AnnArrows :: [Annotation] -> Annotation -> Annotation
 
--- | Apply bindings from current monad so remaining bindings must be free.
-applyBindings :: Type -> InferM ctx Type
+-- | Expressions are annotated with a (potentially empty) list of
+--   <a>Annotation</a>.
+newtype Annotations
+Annotations :: [Annotation] -> Annotations
 
--- | Unifies two types; fails if they cannot unify.
-(=:=) :: Type -> Type -> InferM ctx ()
-infix 4 =:=
+-- | KINDS
+type Kind = Int
 
--- | Whether the LHS subsumes the RHS.
-(<:=) :: Type -> Type -> InferM ctx Bool
-infix 4 <:=
-
--- | Promote a <a>Type</a> to a <a>Type</a>.
-unfreeze :: Type -> Type
-
--- | Demote a <a>Type</a> to a regular <a>Type</a>.
---   
---   Fails if the unification type contains more than just contructors and
---   variables.
-freeze :: Type -> InferM ctx Type
-
--- | Instantiate a <a>Scheme</a> by replacing all quantified type varibles
---   with fresh unification variables
-instantiate :: Scheme -> InferM ctx Type
-
--- | Generalize a <a>Type</a> by replacing all free unification variables
---   with quantified type variables.
-generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
-
--- | See examples in <a>Control.Monad.Reader</a>. Note, the partially
---   applied function type <tt>(-&gt;) r</tt> is a simple reader monad. See
---   the <tt>instance</tt> declaration below.
-class Monad m => MonadReader r (m :: Type -> Type) | m -> r
-
--- | Retrieves the monad environment.
-ask :: MonadReader r m => m r
-
--- | Executes a computation in a modified environment.
-local :: MonadReader r m => (r -> r) -> m a -> m a
-
--- | Retrieves a function of the current environment.
-reader :: MonadReader r m => (r -> a) -> m a
-
--- | The strategy of combining computations that can throw exceptions by
---   bypassing bound functions from the point an exception is thrown to the
---   point that it is handled.
---   
---   Is parameterized over the type of error information and the monad type
---   constructor. It is common to use <tt><a>Either</a> String</tt> as the
---   monad type constructor for an error monad in which error descriptions
---   take the form of strings. In that case and many other common cases the
---   resulting monad is already defined as an instance of the
---   <a>MonadError</a> class. You can also define your own error type
---   and/or use a monad type constructor other than <tt><a>Either</a>
---   <tt>String</tt></tt> or <tt><a>Either</a> <tt>IOError</tt></tt>. In
---   these cases you will have to explicitly define instances of the
---   <a>MonadError</a> class. (If you are using the deprecated
---   <a>Control.Monad.Error</a> or <a>Control.Monad.Trans.Error</a>, you
---   may also have to define an <a>Error</a> instance.)
-class Monad m => MonadError e (m :: Type -> Type) | m -> e
-
--- | Is used within a monadic computation to begin exception processing.
-throwError :: MonadError e m => e -> m a
-
--- | A handler function to handle previous errors and return to normal
---   execution. A common idiom is:
---   
---   <pre>
---   do { action1; action2; action3 } `catchError` handler
---   </pre>
---   
---   where the <tt>action</tt> functions can call <a>throwError</a>. Note
---   that <tt>handler</tt> and the do-block must have the same return type.
-catchError :: MonadError e m => m a -> (e -> m a) -> m a
-
--- | Retrieves a function of the current environment.
-asks :: MonadReader r m => (r -> a) -> m a
-
--- | A fresh, free type variable; may appear in type annotations.
-pattern Hole :: Type
-
--- | The type constructor for function arrows.
-pattern Arrow :: Type -> Type -> Type
+-- | Construct a scheme from all free type variables and a trivial
+--   constraint.
+schemeOf :: Type -> Scheme
+freeVars :: Type -> FreeVars
 
 -- | Fold a list of argument types and a return type into an <a>Arrow</a>
 --   <a>Type</a>.
@@ -2259,6 +2216,10 @@ foldArrow :: ([Type], Type) -> Type
 -- | Unfold an <a>Arrow</a> <a>Type</a> into a list of argument types and a
 --   return type.
 unfoldArrow :: Type -> ([Type], Type)
+
+-- | HELPERS
+(-->) :: Type -> Type -> Type
+infixr 0 -->
 
 -- | The builtin singleton <a>Type</a>, whose only data constructor is just
 --   <tt>()</tt>.
@@ -2300,40 +2261,307 @@ pattern U8 :: Type
 
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
-instance Control.Unification.Types.Unifiable IR.Types.Unification.TypeF
-instance GHC.Generics.Generic1 IR.Types.Unification.TypeF
-instance Data.Traversable.Traversable IR.Types.Unification.TypeF
-instance Data.Foldable.Foldable IR.Types.Unification.TypeF
-instance GHC.Base.Functor IR.Types.Unification.TypeF
-instance GHC.Classes.Eq a => GHC.Classes.Eq (IR.Types.Unification.TypeF a)
-instance GHC.Classes.Ord Control.Unification.IntVar.IntVar
-instance Control.Unification.Types.Unifiable []
-instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Type
-instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Scheme
-instance Common.Identifiers.HasFreeVars IR.Types.Unification.Type Common.Identifiers.TVarId
-instance GHC.Show.Show a => GHC.Show.Show (IR.Types.Unification.TypeF a)
-instance Control.Unification.Types.Fallible IR.Types.Unification.TypeF Control.Unification.IntVar.IntVar Common.Compiler.Error
 
+-- | Unwrap the <a>Annotations</a> data constructor.
+unAnnotations :: Annotations -> [Annotation]
 
--- | Hindley-Milner-Damas type inference with union-find.
-module IR.Types.Inference
+-- | ANNOTATION
+annToType :: Annotation -> Type
 
--- | Infer the types of every node in an optionally annotated program.
-inferProgram :: Program Annotations -> Pass (Program Type)
-instance IR.Types.Unification.HasFreeUVars IR.Types.Inference.InferCtx
+-- | Map to help us look up the kinds of builtin types.
+builtinKinds :: Map TConId Kind
 
+module IR.Constraint.Monad
+type TC a = StateT TCState (ExceptT Error IO) a
+type DConInfo = (DConId, TConId, [TVarId], [Type])
+type DConMap = Map DConId DConInfo
+data TCState
+TCState :: Int -> Int -> DConMap -> Map TConId Kind -> Map VarId Type -> TCState
+[_freshName] :: TCState -> Int
+[_freshVar] :: TCState -> Int
+[_dconMap] :: TCState -> DConMap
+[_kindMap] :: TCState -> Map TConId Kind
+[_externMap] :: TCState -> Map VarId Type
+runTC :: TCState -> TC a -> Either Error a
+mkTCState :: Program Annotations -> TCState
+mkDConMap :: Program Annotations -> DConMap
+freshName :: TC TVarId
+freshVar :: TC VarId
+getDConInfo :: DConId -> TC (Maybe DConInfo)
+getKind :: TConId -> TC (Maybe Kind)
+getExtern :: VarId -> TC (Maybe Type)
+throwError :: String -> TC a
 
--- | Entry point to the type checking phase of the compiler.
-module IR.Types.Typechecking
+module IR.Constraint.Type
 
--- | Type check an optionally annotated program.
+-- | CONSTRAINTS
+data Constraint
+CTrue :: Constraint
+CSaveTheEnvironment :: Constraint
+CEqual :: Type -> Type -> Constraint
+CPattern :: Type -> Type -> Constraint
+CLocal :: Identifier -> Type -> Constraint
+CForeign :: Scheme -> Type -> Constraint
+CAnd :: [Constraint] -> Constraint
+CLet :: [Variable] -> [Variable] -> Map Identifier Type -> Constraint -> Constraint -> Constraint
+[_rigidVars] :: Constraint -> [Variable]
+[_flexVars] :: Constraint -> [Variable]
+[_header] :: Constraint -> Map Identifier Type
+[_headerCon] :: Constraint -> Constraint
+[_bodyCon] :: Constraint -> Constraint
+exists :: [Variable] -> Constraint -> Constraint
+
+-- | TYPE PRIMITIVES
+type Variable = Point Descriptor
+data FlatType
+TCon1 :: TConId -> [Variable] -> FlatType
+data Type
+TConN :: TConId -> [Type] -> Type
+TVarN :: Variable -> Type
+
+-- | DESCRIPTORS
+data Descriptor
+Descriptor :: Content -> Int -> Mark -> Maybe Variable -> Descriptor
+[_content] :: Descriptor -> Content
+[_rank] :: Descriptor -> Int
+[_mark] :: Descriptor -> Mark
+[_copy] :: Descriptor -> Maybe Variable
+data Content
+FlexVar :: TVarId -> Content
+RigidVar :: TVarId -> Content
+Structure :: FlatType -> Content
+Error :: Content
+mkDescriptor :: Content -> Descriptor
+
+-- | RANKS
+noRank :: Int
+outermostRank :: Int
+
+-- | MARKS
+newtype Mark
+Mark :: Int -> Mark
+noMark :: Mark
+occursMark :: Mark
+getVarNamesMark :: Mark
+nextMark :: Mark -> Mark
+
+-- | BUILT-IN TYPES
+--   
+--   Fold a list of argument types and a return type into an <tt>Arrow</tt>
+--   <a>Type</a>.
+foldArrow :: ([Type], Type) -> Type
+(==>) :: Type -> Type -> Type
+infixr 0 ==>
+unit :: Type
+ref :: Type -> Type
+list :: Type -> Type
+time :: Type
+i64 :: Type
+u64 :: Type
+i32 :: Type
+u32 :: Type
+i16 :: Type
+u16 :: Type
+i8 :: Type
+u8 :: Type
+
+-- | MAKE FLEX VARIABLES
+mkFlexVar :: TC Variable
+mkRigidVar :: TC Variable
+
+-- | TO CANONICAL TYPE
+toCanType :: Variable -> TC Type
+termToCanType :: FlatType -> TC Type
+
+-- | TO ERROR TYPE
+toErrorType :: Variable -> TC Type
+contentToErrorType :: Variable -> Content -> TC Type
+termToErrorType :: FlatType -> TC Type
+instance GHC.Classes.Ord IR.Constraint.Type.Mark
+instance GHC.Classes.Eq IR.Constraint.Type.Mark
+
+module IR.Constraint.Unify
+
+-- | UNIFY
+data Answer
+Ok :: Answer
+Err :: Type -> Type -> Answer
+unify :: Variable -> Variable -> TC Answer
+onSuccess :: () -> TC Answer
+errorDescriptor :: Descriptor
+
+-- | CPS style UNIFIER
+newtype Unify a
+Unify :: (forall r. (a -> TC r) -> (() -> TC r) -> TC r) -> Unify a
+mismatch :: Unify a
+
+-- | UNIFICATION HELPERS
+data Context
+Context :: Variable -> Descriptor -> Variable -> Descriptor -> Context
+[_first] :: Context -> Variable
+[_firstDesc] :: Context -> Descriptor
+[_second] :: Context -> Variable
+[_secondDesc] :: Context -> Descriptor
+
+-- | MERGE
+merge :: Context -> Content -> Unify ()
+
+-- | ACTUALLY UNIFY
+guardedUnify :: Variable -> Variable -> Unify ()
+subUnify :: Variable -> Variable -> Unify ()
+actuallyUnify :: Context -> Unify ()
+unifyFlex :: Context -> Content -> Content -> Unify ()
+unifyRigid :: Context -> Content -> Content -> Unify ()
+unifyStructure :: Context -> FlatType -> Content -> Content -> Unify ()
+unifyArgs :: Context -> [Variable] -> [Variable] -> (() -> TC r) -> (() -> TC r) -> TC r
+
+module IR.Constraint.Occurs
+occurs :: Variable -> TC Bool
+
+module IR.Constraint.Solve
+
+-- | RUN SOLVER
+run :: Constraint -> TC ()
+emptyState :: State
+
+-- | SOLVER
+type Env = Map Identifier Variable
+type Pools = IOVector [Variable]
+data State
+State :: Env -> Mark -> [Error] -> State
+[_env] :: State -> Env
+[_mark] :: State -> Mark
+[_errors] :: State -> [Error]
+solve :: Env -> Int -> Pools -> State -> Constraint -> TC State
+isGeneric :: Variable -> TC ()
+
+-- | ERROR HELPERS
+addError :: State -> Error -> State
+
+-- | OCCURS CHECK
+occurs :: State -> (Identifier, Variable) -> TC State
+
+-- | GENERALIZE
+--   
+--   Every variable has rank less than or equal to the maxRank of the pool.
+--   This sorts variables into the young and old pools accordingly.
+generalize :: Mark -> Mark -> Int -> Pools -> TC ()
+poolToRankTable :: Mark -> Int -> [Variable] -> TC (Vector [Variable])
+
+-- | ADJUST RANK
+adjustRank :: Mark -> Mark -> Int -> Variable -> TC Int
+adjustRankContent :: Mark -> Mark -> Int -> Content -> TC Int
+
+-- | REGISTER VARIABLES
+introduce :: Int -> Pools -> [Variable] -> TC ()
+
+-- | TYPE TO VARIABLE
+typeToVariable :: Int -> Pools -> Type -> TC Variable
+typeToVar :: Int -> Pools -> Map TVarId Variable -> Type -> TC Variable
+register :: Int -> Pools -> Content -> TC Variable
+schemeToVariable :: Int -> Pools -> Map TVarId () -> Type -> TC Variable
+schemeToVar :: Int -> Pools -> Map TVarId Variable -> Type -> TC Variable
+
+-- | COPY
+makeCopy :: Int -> Pools -> Variable -> TC Variable
+makeCopyHelp :: Int -> Pools -> Variable -> TC Variable
+restore :: Variable -> TC ()
+restoreContent :: Content -> TC ()
+traverseFlatType :: (Variable -> TC Variable) -> FlatType -> TC FlatType
+
+module IR.Constraint.Instantiate
+
+-- | FROM SCHEME
+fromScheme :: FreeVars -> Type -> TC Type
+
+module IR.Constraint.Elaborate
+run :: Program Variable -> TC (Program Type)
+
+module IR.Constraint.Constrain.Pattern
+
+-- | CONSTRAIN ALT
+type Header = Map Identifier Type
+data State
+State :: Header -> [Variable] -> [Constraint] -> State
+[_headers] :: State -> Header
+[_vars] :: State -> [Variable]
+[_revCons] :: State -> [Constraint]
+add :: Alt -> Type -> State -> TC State
+emptyState :: State
+addToHeaders :: Identifier -> Type -> State -> State
+addData :: TConId -> [TVarId] -> DConId -> [Type] -> [Alt] -> Type -> State -> TC State
+addDataArg :: Map TVarId Type -> Type -> Alt -> State -> TC State
+addLit :: Literal -> Type -> State -> State
+
+-- | BINDER HELPERS
+binderToVarId :: Binder -> TC VarId
+
+module IR.Constraint.Constrain.Annotation
+
+-- | CONSTRAIN ANNOTATION
+type RigidMap = Map TVarId Variable
+data State
+State :: RigidMap -> [Variable] -> State
+[_rigidMap] :: State -> RigidMap
+[_flex] :: State -> [Variable]
+add :: Annotation -> TC (State, Type)
+addTypeWithHoles :: Type -> State -> TC (State, Type)
+emptyState :: State
+
+module IR.Constraint.Constrain.Expression
+
+-- | HELPER ALIASES
+type Attachment = (Annotations, Variable)
+type BinderDef = (Binder, Expr Attachment)
+type Def = (VarId, Expr Attachment)
+
+-- | DEFS
+constrainBinderDefs :: [BinderDef] -> Constraint -> TC Constraint
+constrainDefs :: [Def] -> Constraint -> TC Constraint
+constrainRecDefs :: [Def] -> Constraint -> TC Constraint
+
+-- | CONSTRAIN EXPRESSIONS
+constrainExprAttached :: Expr Attachment -> Type -> TC Constraint
+constrainExprAnnotated :: Expr Attachment -> [Annotation] -> Type -> TC Constraint
+constrainExpr :: Expr Attachment -> Type -> TC Constraint
+constrainLit :: Literal -> Type -> TC Constraint
+constrainApp :: Expr Attachment -> Expr Attachment -> Type -> TC Constraint
+constrainLambda :: Binder -> Expr Attachment -> Type -> TC Constraint
+constrainMatch :: Expr Attachment -> [(Alt, Expr Attachment)] -> Type -> TC Constraint
+constrainBranch :: Alt -> Expr Attachment -> Type -> Type -> TC Constraint
+constrainPrim :: Primitive -> [Expr Attachment] -> Type -> TC Constraint
+lookupPrim :: Int -> Primitive -> TC Scheme
+
+-- | BINDER HELPERS
+binderToVarId :: Binder -> TC VarId
+
+module IR.Constraint.Constrain.Program
+constrain :: Program (Annotations, Variable) -> TC Constraint
+
+-- | EXTERN DECLS
+constrainExternDecls :: [(VarId, Type)] -> Constraint -> TC Constraint
+constrainExternDecl :: (VarId, Type) -> Constraint -> TC Constraint
+
+-- | TYPE DEFS
+constrainTypeDefs :: [(TConId, TypeDef)] -> Constraint -> TC Constraint
+constrainTypeDef :: TConId -> TypeDef -> Constraint -> TC Constraint
+constrainVariant :: TConId -> [TVarId] -> DConId -> TypeVariant -> Constraint -> TC Constraint
+
+-- | HELPER: CONSTRAIN NAME TO TYPE
+constrainDeclaration :: Identifier -> Scheme -> Constraint -> TC Constraint
+
+module IR.Constraint.Constrain
+run :: Program Annotations -> TC (Constraint, Program Variable)
+sprinkleVariables :: Program Annotations -> TC (Program (Annotations, Variable))
+constrain :: Program (Annotations, Variable) -> TC Constraint
+discardAnnotations :: Program (Annotations, Variable) -> Program Variable
+
+module IR.Constraint.Typechecking
 typecheckProgram :: Program Annotations -> Pass (Program Type)
 
 
 -- | Wrapper module around other types-related modules and definitions.
 module IR.Types
-
--- | Type check an optionally annotated program.
 typecheckProgram :: Program Annotations -> Pass (Program Type)
 
 
@@ -3092,3 +3320,198 @@ instance GHC.Classes.Eq Codegen.Mode
 instance GHC.Show.Show Codegen.Options
 instance GHC.Classes.Eq Codegen.Options
 instance Common.Default.Default Codegen.Options
+
+
+-- | Wrapper around the unification-fd library.
+--   
+--   Compared to normal types (<a>Type</a>), unification types
+--   (<a>Type</a>) may contain unification variables, which only appear
+--   during the type inference process.
+--   
+--   This module provides a definition for unification types, an inference
+--   monad, as well as some pattern synonyms for the builtin types.
+module IR.Types.Unification
+
+-- | A type that may also contain unification variables.
+type Type = UTerm TypeF IntVar
+
+-- | An explicitly quantified <a>Type</a>, which may contain unification
+--   variables.
+type Scheme = SchemeOf Type
+
+-- | Pattern synonym for <a>Type</a> variables.
+pattern TVar :: TVarId -> Type
+
+-- | Pattern synonym for <a>Type</a> constructors.
+pattern TCon :: TConId -> [Type] -> Type
+class HasFreeUVars a
+freeUVars :: HasFreeUVars a => a -> InferM ctx (Set IntVar)
+
+-- | Inference monad, build on top of the unification algorithm.
+type InferM ctx = ReaderT ctx (ExceptT Error (IntBindingT TypeF Pass))
+
+-- | Execute the <a>InferM</a> inference monad.
+runInfer :: ctx -> InferM ctx a -> Pass a
+
+-- | Create a fresh unification variable.
+fresh :: InferM ctx Type
+
+-- | Apply bindings from current monad so remaining bindings must be free.
+applyBindings :: Type -> InferM ctx Type
+
+-- | Unifies two types; fails if they cannot unify.
+(=:=) :: Type -> Type -> InferM ctx ()
+infix 4 =:=
+
+-- | Whether the LHS subsumes the RHS.
+(<:=) :: Type -> Type -> InferM ctx Bool
+infix 4 <:=
+
+-- | Promote a <a>Type</a> to a <a>Type</a>.
+unfreeze :: Type -> Type
+
+-- | Demote a <a>Type</a> to a regular <a>Type</a>.
+--   
+--   Fails if the unification type contains more than just contructors and
+--   variables.
+freeze :: Type -> InferM ctx Type
+
+-- | Instantiate a <a>Scheme</a> by replacing all quantified type varibles
+--   with fresh unification variables
+instantiate :: Scheme -> InferM ctx Type
+
+-- | Generalize a <a>Type</a> by replacing all free unification variables
+--   with quantified type variables.
+generalize :: HasFreeUVars ctx => Type -> InferM ctx Scheme
+
+-- | See examples in <a>Control.Monad.Reader</a>. Note, the partially
+--   applied function type <tt>(-&gt;) r</tt> is a simple reader monad. See
+--   the <tt>instance</tt> declaration below.
+class Monad m => MonadReader r (m :: Type -> Type) | m -> r
+
+-- | Retrieves the monad environment.
+ask :: MonadReader r m => m r
+
+-- | Executes a computation in a modified environment.
+local :: MonadReader r m => (r -> r) -> m a -> m a
+
+-- | Retrieves a function of the current environment.
+reader :: MonadReader r m => (r -> a) -> m a
+
+-- | The strategy of combining computations that can throw exceptions by
+--   bypassing bound functions from the point an exception is thrown to the
+--   point that it is handled.
+--   
+--   Is parameterized over the type of error information and the monad type
+--   constructor. It is common to use <tt><a>Either</a> String</tt> as the
+--   monad type constructor for an error monad in which error descriptions
+--   take the form of strings. In that case and many other common cases the
+--   resulting monad is already defined as an instance of the
+--   <a>MonadError</a> class. You can also define your own error type
+--   and/or use a monad type constructor other than <tt><a>Either</a>
+--   <tt>String</tt></tt> or <tt><a>Either</a> <tt>IOError</tt></tt>. In
+--   these cases you will have to explicitly define instances of the
+--   <a>MonadError</a> class. (If you are using the deprecated
+--   <a>Control.Monad.Error</a> or <a>Control.Monad.Trans.Error</a>, you
+--   may also have to define an <a>Error</a> instance.)
+class Monad m => MonadError e (m :: Type -> Type) | m -> e
+
+-- | Is used within a monadic computation to begin exception processing.
+throwError :: MonadError e m => e -> m a
+
+-- | A handler function to handle previous errors and return to normal
+--   execution. A common idiom is:
+--   
+--   <pre>
+--   do { action1; action2; action3 } `catchError` handler
+--   </pre>
+--   
+--   where the <tt>action</tt> functions can call <a>throwError</a>. Note
+--   that <tt>handler</tt> and the do-block must have the same return type.
+catchError :: MonadError e m => m a -> (e -> m a) -> m a
+
+-- | Retrieves a function of the current environment.
+asks :: MonadReader r m => (r -> a) -> m a
+
+-- | A fresh, free type variable; may appear in type annotations.
+pattern Hole :: Type
+
+-- | The type constructor for function arrows.
+pattern Arrow :: Type -> Type -> Type
+
+-- | Fold a list of argument types and a return type into an <a>Arrow</a>
+--   <a>Type</a>.
+foldArrow :: ([Type], Type) -> Type
+
+-- | Unfold an <a>Arrow</a> <a>Type</a> into a list of argument types and a
+--   return type.
+unfoldArrow :: Type -> ([Type], Type)
+
+-- | The builtin singleton <a>Type</a>, whose only data constructor is just
+--   <tt>()</tt>.
+pattern Unit :: Type
+
+-- | The builtin reference <a>Type</a>, created using <tt>new</tt>.
+pattern Ref :: Type -> Type
+
+-- | The builtin list <a>Type</a>, created using list syntax, e.g., <tt>[a,
+--   b]</tt>.
+pattern List :: Type -> Type
+
+-- | The builtin 64-bit timestamp <a>Type</a>.
+pattern Time :: Type
+
+-- | Builtin <a>Type</a> for signed 64-bit integers.
+pattern I64 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 64-bit integers.
+pattern U64 :: Type
+
+-- | Builtin <a>Type</a> for signed 32-bit integers.
+pattern I32 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 32-bit integers.
+pattern U32 :: Type
+
+-- | Builtin <a>Type</a> for signed 16-bit integers.
+pattern I16 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 16-bit integers.
+pattern U16 :: Type
+
+-- | Builtin <a>Type</a> for signed 8-bit integers.
+pattern I8 :: Type
+
+-- | Builtin <a>Type</a> for unsigned 8-bit integers.
+pattern U8 :: Type
+
+-- | Construct a builtin tuple type out of a list of at least 2 types.
+tuple :: [Type] -> Type
+instance Control.Unification.Types.Unifiable IR.Types.Unification.TypeF
+instance GHC.Generics.Generic1 IR.Types.Unification.TypeF
+instance Data.Traversable.Traversable IR.Types.Unification.TypeF
+instance Data.Foldable.Foldable IR.Types.Unification.TypeF
+instance GHC.Base.Functor IR.Types.Unification.TypeF
+instance GHC.Classes.Eq a => GHC.Classes.Eq (IR.Types.Unification.TypeF a)
+instance GHC.Classes.Ord Control.Unification.IntVar.IntVar
+instance Control.Unification.Types.Unifiable []
+instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Type
+instance IR.Types.Unification.HasFreeUVars IR.Types.Unification.Scheme
+instance Common.Identifiers.HasFreeVars IR.Types.Unification.Type Common.Identifiers.TVarId
+instance GHC.Show.Show a => GHC.Show.Show (IR.Types.Unification.TypeF a)
+instance Control.Unification.Types.Fallible IR.Types.Unification.TypeF Control.Unification.IntVar.IntVar Common.Compiler.Error
+
+
+-- | Hindley-Milner-Damas type inference with union-find.
+module IR.Types.Inference
+
+-- | Infer the types of every node in an optionally annotated program.
+inferProgram :: Program Annotations -> Pass (Program Type)
+instance IR.Types.Unification.HasFreeUVars IR.Types.Inference.InferCtx
+
+
+-- | Entry point to the type checking phase of the compiler.
+module IR.Types.Typechecking
+
+-- | Type check an optionally annotated program.
+typecheckProgram :: Program Annotations -> Pass (Program Type)
