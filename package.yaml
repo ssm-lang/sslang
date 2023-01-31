@@ -33,6 +33,10 @@ library:
   - syb
   - unification-fd
 
+  build-tools:
+  - happy
+  - alex
+
 executables:
   sslc:
     main:                Main.hs
@@ -47,10 +51,6 @@ executables:
     dependencies:
     - sslang
     - prettyprinter >= 1.7.0
-
-    build-tools:
-    - happy
-    - alex
 
 _test-suite: &test-suite
   main: Spec.hs
