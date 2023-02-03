@@ -1,3 +1,9 @@
+/*
+NOTE:
+This file starts with 1 so it appears at the top of the regression tests folder during development.
+We should rename this file without the "1-" before opening a PR for review.
+*/
+
 putd cout_ c =
   after 1, cout_ <- c + 48    // Should print 5
   wait cout_
