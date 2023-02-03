@@ -1,13 +1,11 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use record patterns" #-}
-{- | Lift lambda definitions into the global scope.
+{- | Simple Inlining Optimization Pass
 
-This pass is responsible for moving nested lambda definitions into the global
-scope and performing necessary callsite adjustments.
+Performs preinline and postinline unconditionally.
 -}
 module IR.Simplify
   ( simplifyProgram
@@ -15,49 +13,34 @@ module IR.Simplify
 
 -- import qualified IR.Types                      as I
 import qualified Common.Compiler               as Compiler
--- import           Common.Identifiers
-import qualified IR.IR                         as I
-import           Data.Generics                  ( everywhere
-                                                , mkT,
-                                                everywhereM,
-                                                mkM,
-                                                Typeable
-                                                )
--- import           Control.Monad                  ( forM_ )
--- import           Control.Monad                  ( forM_ )
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
                                                 , StateT(..)
                                                 , evalStateT
                                                 , gets
                                                 , modify
-                                                -- , unless
                                                 )
+-- import           Common.Identifiers
+import qualified IR.IR                         as I
 
 import           Data.Bifunctor                 ( second )
+-- import Data.Text.Prettyprint.Doc.Render.String (renderShowS)
+-- import Common.Compiler (Error)
+import           Data.Generics                  ( Typeable )
 -- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
 import qualified Data.Maybe                    as Ma
 import           IR.IR                          ( unfoldLambda )
-import Data.Text.Prettyprint.Doc.Render.String (renderShowS)
-import Common.Compiler (Error)
+-- import           Data.Generics                  ( everywhere
+--                                                 , mkT,
+--                                                 everywhereM,
+--                                                 mkM,
+--                                                 Typeable
+--                                                 )
 
 -- import qualified GHC.IO.Exception              as Compiler
 -- import           Data.Maybe                     ( catMaybes )
 -- import qualified Data.Set                      as S
-
-{-  | Occurrence Information for each binding
-
-Dead: Does not appear at all
-OnceSafe: Appears once, NOT inside a lambda
-MultiSafe: The binder occurs at most ONCE in each of several distinct case branches; 
-           NONE of these ocurrences is inside a lambda
-OnceUnsafe: Binder occurs exactly once, but inside a lambda. 
-Multisafe: Binder may occur many times, including inside lambdas. 
-           Variables exported from the module are also makred MultiUnsafe.
-LoopBreaker: Chosen to break dependency between mutually recursive defintions. 
-Never: Never inline; we use this to develop our inliner incrementally.
--}
 
 type InVar = I.VarId
 type OutVar = I.VarId
@@ -72,6 +55,18 @@ data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
  deriving Typeable
  deriving Show
 
+{-  | Occurrence Information for each binding
+
+Dead: Does not appear at all
+OnceSafe: Appears once, NOT inside a lambda
+MultiSafe: The binder occurs at most ONCE in each of several distinct case branches; 
+           NONE of these ocurrences is inside a lambda
+OnceUnsafe: Binder occurs exactly once, but inside a lambda. 
+MultiUnsafe: Binder may occur many times, including inside lambdas. 
+           Variables exported from the module are also makred MultiUnsafe.
+LoopBreaker: Chosen to break dependency between mutually recursive defintions. 
+Never: Never inline; we use this to develop our inliner incrementally.
+-}
 data OccInfo = Dead
              | LoopBreaker -- TBD
              | OnceSafe
@@ -86,17 +81,17 @@ data OccInfo = Dead
 data SimplEnv = SimplEnv
   { occInfo     :: M.Map I.VarId OccInfo
   {- ^ 'occInfo' maps an identifier to its occurence category -}
-  , subst :: M.Map InVar SubstRng
+  , subst       :: M.Map InVar SubstRng
   {- ^ 'subst' maps an identifier to its substitution -}
   , runs        :: Int
   {- ^ 'runs' stores how many times the simplifier has run so far -}
   , countLambda :: Int
   {- ^ 'countLambda' how many lambdas the occurence analyzer is inside -}
-  , countMatch :: Int
+  , countMatch  :: Int
   {- ^ 'countLambda' how many matches the occurence analyzer is inside -}
   }
   deriving Show
-  deriving Typeable        
+  deriving Typeable
 
 -- | Simplifier Monad
 newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
@@ -110,36 +105,22 @@ newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
 
 -- | Run a SimplFn computation.
 runSimplFn :: SimplFn a -> Compiler.Pass a
---evalStateT runs function in context and returns final value, without context
-  -- take state transformer monad and an initial state, and gives the initial state to the transformer monad. (and the transformer monad holds our monadic program)
-      -- runSimplFun takes in the Compiler.Pass wrapped inside a SimplFn
-      -- at the moment of evalStateT taking in m and SimplCtx, m has Compiler.Pass (from do) but not SimplCtx yet
-        -- but so you have m that doesn't have SimplCtx yet?? (IDK) -- look at stackoverflow post
-          -- state transformer: function that takes in state and returns final value (Compiler.Pass)
-  -- m is state transformer monad (result of do inside simplifyProgram)
-  -- SimplCtx is initial state
-runSimplFn (SimplFn m) =
-  evalStateT m SimplEnv { occInfo = M.empty, runs = 0, countLambda = 0, countMatch = 0, subst = M.empty}
-
--- | Update occInfo for the binder since we just spotted it
-updateOccVar :: I.VarId -> SimplFn ()
-updateOccVar binder = do
-  m      <- gets occInfo
-  insidel <- insideLambda
-  insidem <- insideMatch
-  let m' = case M.lookup binder m of
-        Nothing ->
-          error
-            (  "UDPATE: We should already know about this binder " ++ show binder ++ " :"
-            ++ show m
-            ++ "!"
-            )
-        Just Dead -> do
-          -- we only handle OnceSafe currently
-          -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
-          if insidel || insidem then M.insert binder Never m else M.insert binder OnceSafe m
-        _ -> M.insert binder Never m
-  modify $ \st -> st { occInfo = m' }
+-- evalStateT runs function in context and returns final value, without context
+-- take state transformer monad and an initial state, and gives the initial state to the transformer monad. (and the transformer monad holds our monadic program)
+-- runSimplFn takes in the Compiler.Pass wrapped inside a SimplFn
+-- at the moment of evalStateT taking in m and SimplCtx, m has Compiler.Pass (from do) but not SimplCtx yet
+-- but so you have m that doesn't have SimplCtx yet?? (IDK) -- look at stackoverflow post
+-- state transformer: function that takes in state and returns final value (Compiler.Pass)
+-- m is state transformer monad (result of do inside simplifyProgram)
+-- SimplCtx is initial state
+runSimplFn (SimplFn m) = evalStateT
+  m
+  SimplEnv { occInfo     = M.empty
+           , runs        = 0
+           , countLambda = 0
+           , countMatch  = 0
+           , subst       = M.empty
+           }
 
 -- | Add a binder to occInfo with category Dead by default
 addOccVar :: I.VarId -> SimplFn ()
@@ -147,13 +128,37 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _ ->
-          error
-            (  "ADD: Should never have seen this binder "
-            ++ show binder
-            ++ " before!"
-            ++ "\n" ++ "occInfo: " ++ show m
-            )
+        _       -> error
+          (  "ADD: Should never have seen this binder "
+          ++ show binder
+          ++ " before!"
+          ++ "\n"
+          ++ "occInfo: "
+          ++ show m
+          )
+  modify $ \st -> st { occInfo = m' }
+
+-- | Update occInfo for the binder since we just spotted it
+updateOccVar :: I.VarId -> SimplFn ()
+updateOccVar binder = do
+  m       <- gets occInfo
+  insidel <- insideLambda
+  insidem <- insideMatch
+  let m' = case M.lookup binder m of
+        Nothing -> error
+          (  "UDPATE: We should already know about this binder "
+          ++ show binder
+          ++ " :"
+          ++ show m
+          ++ "!"
+          )
+        Just Dead -> do
+          -- we only handle OnceSafe currently
+          -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
+          if insidel || insidem
+            then M.insert binder Never m
+            else M.insert binder OnceSafe m
+        _ -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
 
 insertSubst :: I.VarId -> SubstRng -> SimplFn ()
@@ -206,191 +211,82 @@ Do we ever want to inline top-level definitions?
 simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 simplifyProgram p = runSimplFn $ do -- everything in do expression will know about simplifier environment
                                     -- run this do expression and give it the knowledge of my simplifier environment
-  -- run the occurrence analyzer
-  (_, info) <- runOccAnal p
+  _                     <- runOccAnal p -- run the occurrence analyzer
   -- fail and print out the results of the occurence analyzer
+  -- info <- runOccAnal p
   -- _ <- Compiler.unexpected $ show info
-  -- I should always have at least one top-level func, main.
-  -- let's see how many top level funcs I have!
-
-  let defs = I.programDefs p
-  simplifiedProgramDefs <- mapM simplTop defs
+  simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
   return $ p { I.programDefs = simplifiedProgramDefs } -- this whole do expression returns a Compiler.Pass
-
-{- | Check if defintion is a top-level function
-
-Every top level defintion is either
-1) a top level function of the form (VarId, Lambda v b t)
-2) a global variable of the form (VarId, some kind of expr that isn't a Lambda)
--}
--- topLevelFunc :: (I.VarId, I.Expr I.Type) -> Maybe I.VarId -- get rid of me someday
--- topLevelFunc (v, I.Lambda _ _ _) = Just v 
--- topLevelFunc _                   = Nothing
-
 
 -- | Simplify a top-level definition
 simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
 simplTop (v, e) = do
   (,) v <$> simplExpr M.empty "inscopeset" e "context"
 
-{- | Recursively simplify IR expressions.
+{- | Simplify an IR expression.
+
 Probably want more documentation here eventually.
+For now we ignore the in scope set and context args.
 
-WIP WIP WIP WIP WIPPPPPPPPPPPP
-simpleExpr :: Subst -> InScopeSet
-           -> InExpr -> Context
-           -> OutExpr
+- Var VarId t                           DONE (except callsite inline)
+- Data DConId t                         Default case             
+- Lit Literal t                         Default case
+- App (Expr t) (Expr t) t               DONE
+- Let [(Binder, Expr t)] (Expr t) t     DONE (except callsite inline)
+- Lambda Binder (Expr t) t              DONE 
+- Match (Expr t) [(Alt, Expr t)] t      DONE  
+- Prim Primitive [Expr t] t             DONE
 
 -}
-
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
--- simplExpr sub ins m@(I.Match scrutinee arms@(alt, body) t) cont = do
---   scrutinee' <- simplExpr sub ins scrutinee cont
---   body' <- mapM (simplExpr sub ins) body
---   let x = mapM (simplExpr sub ins) arms <*> cont
---   return (I.Match scrutinee' (alt, body') t)
- -- where f :: 
+{- | Simplify Primitive Expression
 
-{- 
-p: q + 1
-sub: {Map q (SuspEx 5 {})}
-
-lookup args in the substitution
-
-old args: [Var (VarId x) (TCon Int32 []),
-           Var (VarId y) (TCon Int32 [])]
-fucked args'[Lit (LitIntegral 2) (TCon Int32 []),
-             Var (VarId y) (TCon Int32 [])]
-
+  More Intuitive Version:
+  let partiallyApplied = (map (simplExpr sub ins) args)
+  let fullyApplied = map ($ cont) partiallyApplied
+  unwrappedAndRecollected <- sequence fullyApplied
+  pure (I.Prim prim unwrappedAndRecollected t)
 -}
-simplExpr sub ins p@(I.Prim prim args t) cont = do
---  args' <- sequence $ mapM (simplExpr sub ins) args cont
-  let y = (map (simplExpr sub ins) args)
-  let z = map ($ cont) y 
-  zz <- sequence z
-  -- error ("prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args')
+simplExpr sub ins (I.Prim prim args t) cont = do
+  args' <- mapM (($ cont) . simplExpr sub ins) args
+  pure (I.Prim prim args' t)
 
---  args' <- mapM (\arg ->
---    simplExpr sub ins arg cont
---    ) args
---  
---  error ("sub"++ show sub ++ "\nlemon prim: " ++ show prim ++  "\nold args: " ++ show args ++ "\nfucked args'" ++ show args' ++ "\ngrape prim" ++ show prim ++ "\nnew args: " ++ show zz)
-  pure (I.Prim prim zz t)
-  --pure (I.Prim prim args' t)
-
-
-  -- where
-   -- f :: [SimplFn OutExpr] -> SimplFn [OutExpr]
--- Match (Expr t) [(Alt, Expr t)] t
+-- Simplify Match Expression
 simplExpr sub ins (I.Match scrutinee arms t) cont = do
   scrutinee' <- simplExpr sub ins scrutinee cont
-  let (pats,rhss ) = unzip arms
+  let (pats, rhss) = unzip arms
   rhss' <- sequence $ mapM (simplExpr sub ins) rhss cont
   let results = zip pats rhss'
   return (I.Match scrutinee' results t)
-    -- let new = sequence $ mapM (\(alt, e) -> simplExpr sub ins e) arms cont
-  -- let j = 
-    --let y = zipwith ($) (repeat cont) mapM (simplExpr sub ins) es
-  --z' <- sequence $ mapM ((simplExpr sub ins).second) arms cont
-  -- let y' = map (\x -> x cont) y
-  -- x <- sequence $ mapM (\(a,b) -> do b' <- simplExpr sub ins b cont
-  --                                    pure (a, b')) arms <*> cont
--- f :: (Atl, Expr t) -> SimplFn (Atl, Expr t)
-  --pure (I.Match scrutinee' x t)
-{-
- • Couldn't match expected type ‘[(I.Alt, I.Expr I.Type)]’
-                  with actual type ‘SimplFn [OutExpr]’
--}
---  scrutinee' <- simplExpr sub ins scrutinee cont
---  body' <- mapM (simplExpr sub ins) body
---  return m
---   let x = mapM (simplExpr sub ins) arms <*> cont
---   return (I.Match scrutinee' (alt, body') t)
 
- -- where f :: 
-
+-- Simplify Application Expression
 simplExpr sub ins (I.App lhs rhs t) cont = do
   lhs' <- simplExpr sub ins lhs cont
   rhs' <- simplExpr sub ins rhs cont
   return (I.App lhs' rhs' t)
 
+-- Simplify Lambda Expression
 simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   pure (I.Lambda binder body' t)
 
-simplExpr sub ins var@(I.Var v _) cont = 
-  -- error("variable is: " ++ show v ++ " ; subs: " ++ show sub )
-  do
-    m <- gets subst
-    case M.lookup v m of
-      Nothing           -> pure var -- callsite inline, future work
-      Just (SuspEx e s) -> simplExpr s ins e cont
-      Just (DoneEx e  ) -> simplExpr M.empty ins e cont
+-- Simplify Variable Expression
+simplExpr _ ins var@(I.Var v _) cont = do
+  m <- gets subst
+  case M.lookup v m of
+    Nothing           -> pure var -- callsite inline, future work
+    Just (SuspEx e s) -> simplExpr s ins e cont
+    Just (DoneEx e  ) -> simplExpr M.empty ins e cont
 
+-- Simplify Let Expressions
 simplExpr sub ins (I.Let binders body t) cont = do
   simplified <- mapM simplBinder binders
   let (simplBinders, subs) = unzip simplified
   let binders'             = Ma.catMaybes simplBinders
   let subs'                = foldr1 (<>) subs
-  -- _ <- error("old binders: " ++ show binders ++ "\nsubstitution: " ++ show subs' ++ "\n body: " ++ show body)
-  -- _ <- error("body: " ++ show ++ "\nsubstitution: " ++ show subs' ++ "\n body: " ++ show body)
   body' <- simplExpr subs' ins body cont
-  -- error ("new body" ++ show body')
-  -- if binders is all Nothing, then get rid of this Let statement
-  if null binders' then pure body'
-  else pure (I.Let binders' body' t)
-
-{-
-sslc: substitution: fromList [(VarId x,DoneEx (Lit (LitIntegral 2) (TCon Int32 [])))] , 
-body: Let [(Just (VarId y),
-Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon Int32 [])] (TCon Int32 []))] (Var (VarId x) (TCon Int32 [])) (TCon Int32 [])
-
--}
-  -- level 1: let q = 5
-   -- simplBinders =  [Nothing]
-   -- subs =  [Map q (SuspEx 5 {}))]
-
-  -- level 2: let r = q + 1
-  -- simplBinders =  [Nothing]
-  -- subs = [Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
-
-  -- level 3: r , with substitution map [Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
-  -- We call simplExpr on r, which is a varId
-  -- -> matches on Just (SuspEx q+1 {Map q (SuspEx 5 {})}) -> simplExpr <same thing> q+1 cont
-  --    -> no pattern match for q+1 so go to catch all 
-
-  -- recurse on body
-  -- return a Let containing our new binders and the simplified body??
-
-  -- let f = (\(binder, rhs) -> case binder of
-  --            (Just v) -> case M.lookup v m of
-  --             Just Dead -> 
-  --         )
- -- mapM_ 
---  type Subst = M.Map InVar SubstRng
--- data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
-
-  --pure l
+  if null binders' then pure body' else pure (I.Let binders' body' t)
  where
-    {-
-    let x = 5
-        y = 7
-        z = x + 4
-        in 
-          x
-    
-    
-    -}
-    --filterM :: Applicative m => (a -> m Bool) -> [a] -> m [a]
-    -- where the initial value of the accumulator is ([],sub)
-    -- f :: (I.Binder, I.Expr I.Type) -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
-    -- **************************
-    -- let q = 5
-    -- binders: [(Nothing, Map q (SuspEx 5 {}))]
-
-    -- *******
-    -- let r = q + 1 in r
-    -- binders: [(Nothing, Map r (SuspEx q+1 {Map q (SuspEx 5 {})}))]
   simplBinder
     :: (I.Binder, I.Expr I.Type)
     -> SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
@@ -398,7 +294,7 @@ Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon I
     m <- gets occInfo
     case binder of
       (Just v) -> case M.lookup v m of
-        (Just Dead    ) -> pure (Nothing, sub)  -- get rid of this binding
+        (Just Dead    ) -> pure (Nothing, sub)  -- get rid of this dead binding
         (Just OnceSafe) -> do -- preinline test PASSES
           -- bind x to E singleton :: k -> a -> Map k a
           insertSubst v $ SuspEx rhs M.empty
@@ -414,206 +310,16 @@ Prim (PrimOp PrimAdd) [Var (VarId x) (TCon Int32 []),Lit (LitIntegral 1) (TCon I
             (I.Var _ _) -> do
               insertSubst v $ DoneEx e'
               pure (Nothing, M.empty) -- PASSES postinline
-            _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
---            (I.Var _ _) -> pure (Nothing, M.singleton v (DoneEx e'))  -- PASSES postinline
---            _           -> pure (Just (binder, rhs), sub) -- FAIL postinline; someday callsite inline
+            _ -> pure (Just (binder, rhs), sub) -- FAILS postinline; someday callsite inline
       _ -> do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards
 
-{-
-inside ghci:
-import Data.Map
-let x = singleton "x" 5
-let y = singleton "x" 7
-let zz = Prelude.foldr1 (<>) [x,y]
-zz
- Output:
- Prelude Data.Map> zz
-fromList [("x",5)]
-
-
-
-
-main cin cout = 
-  let x = 5
-  cout <- x
-  wait cout
-  cout <- (let y = 5 in x + y)
-  ()
-
-Let ("x",5) body
-where body = let (_, "cout <- x") (let (_, "wait cout") (let (_, (let y = 5 in x + y)) ())
--}
-
--- catch all
---simplExpr _ _ e _ = pure (I.Var (I.VarId "catch all simplExpr") (I.extract e))
+-- for all other expressions, don't do anything
 simplExpr _ _ e _ = pure e
 
 
-{-
---   m <- gets occInfo
---   mapM_
---     (\(binder, rhs) -> case binder of
---       (Just something) -> case M.lookup something m of
---         Just Dead -> get rid of this binding
---         -- inline x unconditionally in B
---         -- -> binds x to E substitution, discard binding completely, simplifies B using this extended substitution
---         Just OnceSafe -> get rid of binding, add substitution and that's it
---         _ ->  do -- post inline unconditionallly
-              E' <- simplExpr rhs 
-              if E' == literal/value:
-                bind x to E' substitution, discard binding completely 
-              else
-                do nothing
---       Nothing -> pure ()
---     )
---     binders
-If post inline unconditionally fails, we don't do anything. 
-Someday, we will add the binder to the inscope instead of the substitution
--- let expressions
-occAnalExpr l@(I.Let binders body _) = do
-  mapM_
-    (\(binder, rhs) -> case binder of
-      (Just nm) -> do
-        addOccVar nm
-        _ <- occAnalExpr rhs -- in case there is a let in the RHS
-        pure ()
-      Nothing -> pure ()
-    )
-    binders
-  _ <- occAnalExpr body
-  m <- gets occInfo
-  pure (l, show m)
 
--}
--- simplExpr _ _ e _ = pure e -- catch all case; delete later
--- simplExpr l@(I.Let binders body _) = do
---   m <- gets occInfo
---   mapM_
---     (\(binder, rhs) -> case binder of
---       (Just something) -> case M.lookup something m of
---         Just Dead -> pure ()
---         -- inline x unconditionally in B
---         -- -> binds x to E in current substitution, discard binding completely, simplifies B using this extended substitution
---         Just OnceSafe -> pure ()
---         _ -> pure ()
---       Nothing -> pure ()
---     )
---     binders
---   -- _ :: (Maybe VarId, Expr Type) -> SimplFn ()
--- --  mapM_
--- --    ( \(binder, rhs) -> case binder of
--- --        Just something -> pure (binder, rhs)
--- --    )
---     -- (\(binder, rhs) -> case M.lookup binder m of 
---       -- Just Dead -> pure ()
---       -- Just OnceSafe -> pure rhs
---       -- _ -> pure (binder, rhs)
---     -- )
--- --  binders
---   pure l
-
-{-
-data Program t = Program
-  { programEntry :: VarId
-  , cDefs        :: String
-  , externDecls  :: [(VarId, Type)]
-  , programDefs  :: [(VarId, Expr t)]
-  , typeDefs     :: [(TConId, TypeDef)]
-  }
-  deriving (Eq, Show, Typeable, Data, Functor)
-  User{name=name, favoriteFood=Just food}
-
-  f a = a
-
-  main cin cout = 
-    let x = 4
-    let y = f x
-    ()
-
-  [("f", I.Lambda a -> a)
-  ,("main", "cin cout = 
-    let x = 4
-    let y = f x
-    ()" )]
-  case x of 
-    RGB 1 2 _ = 
-    ...
-  let x = 4
-      y = 3
-      _ = 8
-  IN
-  y + x
-  
--}
-
-{-
-main cin cout = // has type int -> int -> int
-let x = +5
-IN
-let y = x 4
-IN
-y
-
-FYI: Lambda Binder (Expr t) t
-FYI: Binder is a (Maybe VarId)
-Let [(Binder, Expr t)] (Expr t) t
-5 + 5 ==> App (App "Add" 5) 5
-+5 ==> (App "Add" 5)
-
-'foldApp' is the inverse of 'unfoldApp'.
-foldApp :: Expr t -> [(Expr t, t)] -> Expr t
-foldApp = foldr $ \(a, t) f -> App f a t
-
-("main", Lambda cin -- FoldApp
-  (Lambda cout 
-    Lambda something something
-    (Let [(x, (App "+" 5))] (Let [(y, App "x" 4)] (y)))
-  )
-)
-
-("main", (Let [(x, (App "+" 5))] (Let [(y, App "x" 4)] (y)))) )
-where in our occurence info state monad thing, we have
-(cin, DEAD)
-(cout, DEAD) 
-
-main cin cout = // has type int -> int -> (int -> int)
-\z -> 
-let z' = z + 5 + 2 (\j -> j * 2)
-
-result of unfolding this will be: main [cin, cout, z] with type int -> int -> int -> int
-Does a top a top level function with two args that returns a lambda have the SAME TYPE
-as a top level function with three arguments?
-
-
--}
-
-{-
-1) {x: Dead }
-2) {x: Dead, y: Dead}
-3) {}
--}
-
---unfoldLambda :: Expr t -> ([Binder], Expr t)
-
-{- | Given the RHS of a top level function, return first expr inside it that isn't a Lambda
-
-For each curried lambda expr I find, add binders to occurence info.
-Basically, "swallow up" the arguments to my top-level function.
--}
--- swallowArgs :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
--- swallowArgs (I.Lambda Nothing b _) = swallowArgs b
--- swallowArgs (I.Lambda (Just arg) b _)= do
---   addOccVar arg 
---   swallowArgs b
--- swallowArgs e = pure e
-
---                  this is body> 
---FYI: Lambda Binder (Expr t) t
---FYI: Binder is a (Maybe VarId)
--- 1)  _ <- blah -- compiler knows you want to throw away your result
--- 2)    blah -- get warning
 
 {- | Take in a top level function, and "swallows" its arguments
 
@@ -634,7 +340,7 @@ swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
 swallowArgs (name, e) = pure (name, e)
 
 
-runOccAnal :: I.Program I.Type -> SimplFn (I.Program I.Type, String)
+runOccAnal :: I.Program I.Type -> SimplFn (String)
 runOccAnal p@I.Program { I.programDefs = defs } = do
   {-
   stack build
@@ -662,7 +368,7 @@ runOccAnal p@I.Program { I.programDefs = defs } = do
  -- addOccVar "yo"
  -- m <- gets occInfo
  -- error (show m)
-  return (p, show x)
+  return (show x)
 
 
 
@@ -674,9 +380,9 @@ occAnalExpr l@(I.Let binders body _) = do
   mapM_
     (\(binder, rhs) -> do
       _ <- occAnalExpr rhs
-      case binder of 
+      case binder of
         (Just nm) -> addOccVar nm
-        _ -> pure ()
+        _         -> pure ()
     )
     binders
   _ <- occAnalExpr body
@@ -747,7 +453,7 @@ occAnalExpr p@(I.Prim _ args _) = do
 -- match
 occAnalExpr p@(I.Match scrutinee arms _) = do
   recordEnteringMatch
-  _ <-  occAnalExpr scrutinee
+  _ <- occAnalExpr scrutinee
   --let (alts, rhss) = unzip arms
   mapM_ (occAnalExpr . snd) arms
   --let x = everywhereM (mkM addOccExprNever) p
