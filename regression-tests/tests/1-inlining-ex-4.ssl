@@ -11,7 +11,6 @@ putd cout_ c =
   after 1, cout_ <- 10
   wait cout_
 
-
 /*
 Example:  r is oncesafe, q is multiunsafe; post-inline inlines q
 Input:

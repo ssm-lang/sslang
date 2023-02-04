@@ -5,9 +5,8 @@ We should rename this file without the "1-" before opening a PR for review.
   stack build
   cd regression-tests
   ./runtests.sh -k tests/1-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-typed tests/1-inlining-ex-1.ssl
   stack exec sslc -- --dump-ir-lifted tests/1-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-final tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-inlined tests/1-inlining-ex-1.ssl
   stack exec sslc -- tests/1-inlining-ex-1.ssl
 */
 
@@ -17,24 +16,28 @@ We should rename this file without the "1-" before opening a PR for review.
 */
 
 // print single digit number; account for ascii offset
-putd cout c =
-  after 1, cout <- (c + 48)
-  wait cout
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
 
+/*
+Example:  r is oncesafe, q is multiunsafe; post-inline inlines q; checking operator precedence
+Input:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (r + q - q)
 
-//g a b c d e f = fun arg0 {arg0 + 45}
+Expected Output:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (2 + (3 + 2) * 2 - 6) 
+  // I don't think the pretty printer prints parens around operators correctly right now
+  
+*/
 
 main cin cout = 
- // let z = fun a 
- //             a + 4
- // z is equivalent \a -> a + 4
- //let q = 5
- // let r = q + 1 
-  
- // w is equivalent to (\_ -> r) 2
- // let w = (fun _ { r }) 2
-
- // let z = (fun _ { (fun _ { r }) + r }) 2
-
-//(fun a1 {a1 + 5}) r
-  putd cout 6
+  let q = 2
+  let r = 3 + q
+  putd cout (q + r * q - 6)
