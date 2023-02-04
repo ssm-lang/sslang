@@ -2,13 +2,13 @@
 NOTE:
 This file starts with 1 so it appears at the top of the regression tests folder during development.
 We should rename this file without the "1-" before opening a PR for review.
-{-
+
   stack build
   cd regression-tests
-  ./runtests.sh -k tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-typed tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-lifted tests/a-inlining-ex-1.ssl
-  stack exec sslc -- tests/a-inlining-ex-1.ssl
+  ./runtests.sh -k tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-lifted tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-inlined tests/1-inlining-ex-1.ssl
+  stack exec sslc -- tests/1-inlining-ex-1.ssl
 
 CORRECT OUTPUT
   UnexpectedError (ErrorMsg "\"
@@ -25,11 +25,10 @@ CORRECT OUTPUT
     (VarId q,OnceSafe),
     (VarId r,OnceSafe),
     (VarId y,OnceSafe)]\\\\\\\" END\\\"]\"")
--}
+
 */
 
-/*
-
+/* 
 Example: r and q are oncesafe.
 Input:
 main = 
@@ -45,31 +44,12 @@ main =
 
 */
 
-// print digit; account for ascii offset
-
+// print single digit; account for ascii offset
 putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
-
 
 main cin cout = 
   let q = 5
   let r = q + 1 
   putd cout r
-  // we need simplExpr on App
-//  putd cout r // IR node is let _ = (App (App putd "cout") (r))
-
-  
-
-/*
-main has arity 2, we know we only care about the 3rd lambda and onward
-ON top level functions: skip all starting lambdas until first body
-("main", lambda cin (lambda cout body))
-("main", (I.Lambda (Just "cin") (I.Lambda (Just cout) b t2)  t) )
-where body is "  let q = 5
-                 let r = q + 1 
-                 r"
-
-*/
-
-

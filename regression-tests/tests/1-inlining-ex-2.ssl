@@ -2,18 +2,21 @@
 NOTE:
 This file starts with 1 so it appears at the top of the regression tests folder during development.
 We should rename this file without the "1-" before opening a PR for review.
-{-
   stack build
   cd regression-tests
-  ./runtests.sh -k tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-typed tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-lifted tests/a-inlining-ex-1.ssl
--}
+  ./runtests.sh -k tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-typed tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-lifted tests/1-inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-final tests/1-inlining-ex-1.ssl
+  stack exec sslc -- tests/1-inlining-ex-1.ssl
 */
 
+/* 
+  TODO: make this test actually do something!
 
-// print digit; account for ascii offset
+*/
 
+// print single digit number; account for ascii offset
 putd cout c =
   after 1, cout <- (c + 48)
   wait cout

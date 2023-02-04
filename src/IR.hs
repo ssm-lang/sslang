@@ -36,6 +36,7 @@ data Mode
   | DumpIRAnnotated
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRInlined
   | DumpIRLifted
   | DumpIRFinal
   deriving (Eq, Show)
@@ -66,6 +67,10 @@ options =
            ["dump-ir-typed-ugly"]
            (NoArg $ setMode DumpIRTypedUgly)
            "Ugly-Print the fully-typed IR after type inference"
+  , Option ""
+           ["dump-ir-inlined"]
+           (NoArg $ setMode DumpIRInlined)
+           "Print IR after inlining optimization and before dup drops"
   , Option ""
            ["dump-ir-lifted"]
            (NoArg $ setMode DumpIRLifted)
@@ -104,7 +109,8 @@ transform opt p = do
   p <- externToCall p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
-  p <- simplifyProgram p
+  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p
