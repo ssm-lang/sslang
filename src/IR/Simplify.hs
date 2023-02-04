@@ -6,12 +6,11 @@
 {- | Simple Inlining Optimization Pass
 
 Performs preinline and postinline unconditionally.
+TODO: Callsite Inline
 -}
 module IR.Simplify
   ( simplifyProgram
   ) where
-
--- import qualified IR.Types                      as I
 import qualified Common.Compiler               as Compiler
 import           Control.Monad.Except           ( MonadError(..) )
 import           Control.Monad.State.Lazy       ( MonadState
@@ -20,30 +19,16 @@ import           Control.Monad.State.Lazy       ( MonadState
                                                 , gets
                                                 , modify
                                                 )
--- import           Common.Identifiers
-import qualified IR.IR                         as I
-
 import           Data.Bifunctor                 ( second )
--- import Data.Text.Prettyprint.Doc.Render.String (renderShowS)
--- import Common.Compiler (Error)
 import           Data.Generics                  ( Typeable )
--- import           Data.List                      ( intersperse )
 import qualified Data.Map                      as M
 import qualified Data.Maybe                    as Ma
+import qualified IR.IR                         as I
 import           IR.IR                          ( unfoldLambda )
--- import           Data.Generics                  ( everywhere
---                                                 , mkT,
---                                                 everywhereM,
---                                                 mkM,
---                                                 Typeable
---                                                 )
 
--- import qualified GHC.IO.Exception              as Compiler
--- import           Data.Maybe                     ( catMaybes )
--- import qualified Data.Set                      as S
 
 type InVar = I.VarId
-type OutVar = I.VarId
+-- type OutVar = I.VarId -- used by callsite inline
 type InExpr = I.Expr I.Type
 type OutExpr = I.Expr I.Type
 type InScopeSet = String
@@ -228,6 +213,7 @@ simplTop (v, e) = do
 Probably want more documentation here eventually.
 For now we ignore the in scope set and context args.
 
+How do we handle each node?
 - Var VarId t                           DONE (except callsite inline)
 - Data DConId t                         Default case             
 - Lit Literal t                         Default case
@@ -319,37 +305,12 @@ simplExpr sub ins (I.Let binders body t) cont = do
 simplExpr _ _ e _ = pure e
 
 
+{- | Run occurrence analyser over each top level function
 
-
-{- | Take in a top level function, and "swallows" its arguments
-
-"Swallow" means to add the argument to our occurrence info state.
-It returns a top level function without curried arguments; just the body.
-unfoldLambda :: Expr t -> ([Binder], Expr t)
+Returns logging info as a string.
 -}
-swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
-swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
-  addOccs (Just funcName) -- HACKY
-  let (args, body) = unfoldLambda l
-  mapM_ addOccs args
-  pure (funcName, body)
- where
-  addOccs (Just nm) = addOccVar nm
-  addOccs Nothing   = pure ()
-
-swallowArgs (name, e) = pure (name, e)
-
-
-runOccAnal :: I.Program I.Type -> SimplFn (String)
-runOccAnal p@I.Program { I.programDefs = defs } = do
-  {-
-  stack build
-  cd regression-tests
-  ./runtests.sh -k tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-typed tests/a-inlining-ex-1.ssl
-  stack exec sslc -- --dump-ir-lifted tests/a-inlining-ex-1.ssl
-  -}
+runOccAnal :: I.Program I.Type -> SimplFn String
+runOccAnal I.Program { I.programDefs = defs } = do
   -- a hacky way to see the occurence info for each top def
   let getOccInfoForDef
         :: (I.VarId, SimplFn (I.Expr I.Type, String)) -> SimplFn String
@@ -362,20 +323,44 @@ runOccAnal p@I.Program { I.programDefs = defs } = do
           ++ show occinfo
           ++ " END"
   defs' <- mapM swallowArgs defs
-  x     <- mapM (getOccInfoForDef . second occAnalExpr) defs'
-  --y <- snd $ second occAnalExpr (head defs)
-  --error $ show x
- -- addOccVar "yo"
- -- m <- gets occInfo
- -- error (show m)
-  return (show x)
+  info  <- mapM (getOccInfoForDef . second occAnalExpr) defs'
+  return (show info)
+ where
+    {- Take in a top level function, "swallows" its args, and return its body.
+
+    "Swallow" means to add the argument to our occurrence info state.
+    It returns a top level function without curried arguments; just the body.
+    -}
+  swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
+  swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
+    addOccs (Just funcName) -- HACKY
+    let (args, body) = unfoldLambda l
+    mapM_ addOccs args
+    pure (funcName, body)
+    where
+    addOccs (Just nm) = addOccVar nm
+    addOccs Nothing   = pure ()
+  swallowArgs (name, e) = pure (name, e)
 
 
 
--- | Run the Ocurrence Analyzer over an IR expression node
+
+
+{- | Run the Ocurrence Analyzer over an IR expression node
+
+How do we handle each node?
+- Var VarId t                           DONE 
+- Data DConId t                         Default case (TODO: trivial constructor argument invariant)     
+- Lit Literal t                         Default case
+- App (Expr t) (Expr t) t               DONE
+- Let [(Binder, Expr t)] (Expr t) t     DONE
+- Lambda Binder (Expr t) t              DONE
+- Match (Expr t) [(Alt, Expr t)] t      DONE (TODO: analyze patterns / LHS of arms?)
+- Prim Primitive [Expr t] t             DONE 
+
+-}
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
-
--- let expressions
+-- Occurrence Analysis over Let Expression
 occAnalExpr l@(I.Let binders body _) = do
   mapM_
     (\(binder, rhs) -> do
@@ -389,20 +374,19 @@ occAnalExpr l@(I.Let binders body _) = do
   m <- gets occInfo
   pure (l, show m)
 
--- variables
+-- Occurrence Analysis over Variable Expression
 occAnalExpr var@(I.Var v _) = do
   updateOccVar v
   m <- gets occInfo
   return (var, show m)
 
--- lambdas
+-- Occurrence Analysis over Lambda Expression
 occAnalExpr l@(I.Lambda Nothing b _) = do
   recordEnteringLambda
   _ <- occAnalExpr b
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
-
 occAnalExpr l@(I.Lambda (Just binder) b _) = do
   recordEnteringLambda
   addOccVar binder
@@ -411,59 +395,36 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
   m <- gets occInfo
   pure (l, show m)
 
--- application
--- App (Expr t) (Expr t) t
-{-
- let r = q + 1 
- App (App "+" q) 1
--}
+-- Occurrence Analysis over Application Expression
 occAnalExpr a@(I.App lhs rhs _) = do
   _ <- occAnalExpr lhs
   _ <- occAnalExpr rhs
   m <- gets occInfo
   pure (a, show m)
 
--- primitive operations
-{-
-  | Prim Primitive [Expr t] t
-  ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
-  of type @t@.
-  
-  data Primitive
-  = New
-  | PrimOp PrimOp
-  {- ^ Inlined C expression code. -}
-  | CQuote String
-  {- ^ Primitive operator. -}
-  | CCall CSym
-  {- ^ Direct call to arbitrary C function (NOTE: HACKY). -}
-  | FfiCall VarId
-  {- ^ Call to well-typed extern symbol. -}
-  deriving (Eq, Show, Typeable, Data)
-
-  when primitive is
--}
-
--- primitives
+-- Occurrence Analysis over Primitve Expression
 occAnalExpr p@(I.Prim _ args _) = do
   mapM_ occAnalExpr args
   m <- gets occInfo
   pure (p, show m)
 
--- match
+-- Occurrence Analysis over Match Expression
 occAnalExpr p@(I.Match scrutinee arms _) = do
   recordEnteringMatch
   _ <- occAnalExpr scrutinee
   --let (alts, rhss) = unzip arms
   mapM_ (occAnalExpr . snd) arms
-  --let x = everywhereM (mkM addOccExprNever) p
- -- let x = everywhereM (mkM addOccExprNever) p
-  --addOccVarNever scrutinee
   recordExitingMatch
   m <- gets occInfo
   pure (p, show m)
 
--- data constructors
+-- for all other expressions, don't do anything
+occAnalExpr e = do
+  m <- gets occInfo
+  pure (e, show m)
+
+-- NOTES --
+
 {-
 According to section 2.3 in the paper, the trivial-constructor-argument-invariant says that
 if we have
@@ -477,7 +438,7 @@ trivial-constructor-argument-invariant: It's okay to inline a binder whose RHS
 is an application of a data constructor IF the arguments to the data constructors
 are variable, literals, or type applications.
 
-let x = RGB (let y = 5 in y + 2) 4 5 //dumb but possible
+let x = RGB (let y = 5 in y + 2) 4 5 // dumb but possible
 
 
 data Color =
@@ -485,139 +446,6 @@ data Color =
   Black
   White
 -}
-
--- occAnalExpr p@(I.Data args _) = do 
---   pure ()
-
--- match expressions???? 
-
--- everything else
-occAnalExpr e = do
-  m <- gets occInfo
-  pure (e, show m)
-
-{-
-data Expr t
-  = Var VarId t                                DONE
-  | Data DConId t                              DONE
-  | Lit Literal t                              DONE
-  | App (Expr t) (Expr t) t                    DONE
-  | Let [(Binder, Expr t)] (Expr t) t
-  | Lambda Binder (Expr t) t
-  | Match (Expr t) [(Alt, Expr t)] t
-  | Prim Primitive [Expr t] t
--}
-
--- -- | Add a binder to occInfo with category Never
--- addOccExprNever :: I.Expr t-> SimplFn ()
--- addOccExprNever e@(I.Var v _) = do
---   m <- gets occInfo
---   let m' = M.insert v Never m
---   modify $ \st -> st {occInfo = m'}
---   pure ()
--- addOccExprNever (I.Lit _ _) = pure ()
--- addOccExprNever (I.Data _ _) = pure ()
--- -- nullary data constructor
--- addOccExprNever a@(I.App rhs lhs t) = do
---   _ <- addOccExprNever lhs
---   _ <- addOccExprNever rhs
---   pure ()
--- addOccExprNever a@(I.Let bindings@[(binder, rhs)] body t) = do
---   _ <- addOccExprNever body
---   pure ()
--- addOccExprNever _ = pure () -- to get rid of warnings; delete later
-
-{-
-main cin cout =
-let x = (\a -> a + 1)
-specialFunc (RHS of x) -- this only updates binders, and we ignore a
-IN
-let y = x 4
-specialFunc (RHS of y) -- this only updates binders, so x is updated
-IN
-let y = (\a -> a + 1 + (x 4)) -- this only updates binders, and we ignore a and update x
-IN
-y
-  | Data DConId t // don't care
-  {- ^ @Data d t@ is a data constructor named @d@ of type @t@. -}
-  | Lit Literal t // don't care
-  {- ^ @Lit l t@ is a literal value @l@ of type @t@. -}
-
-    App x 4
-  | App (Expr t) (Expr t) t 
-  {- ^ @App f a t@ applies function @f@ to argument @a@, producing a value of
-  type @t@.
-  -}
-
-  The bindings list may only be of length greater than 1 for a set of mutually
-  co-recursive functions.
---   -}
---   | Lambda Binder (Expr t) t
---   {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
---   a value to parameter @v@ in its body @b@.
---   -}
---   | Match (Expr t) [(Alt, Expr t)] t
---   {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
---   @alts@, each producing a value of type @t@.
---   -}
---   | Prim Primitive [Expr t] t
---   {- ^ @Prim p es t@ applies primitive @p@ arguments @es@, producing a value
---   of type @t@.
---   -}
--- -}
-
-{-
-thoughts:
-Decouple occurence analyzer from simplExpr
-
-have occurence analyzer fill in SimplEnv and just feed it into runSimplFn; 
-
-runSimplFn will purely care about inlining
--}
-
-{-
-Example run of Ocurrence Analyzer
-main cin cout =
-let x = (\a -> a + 1)
-IN
-let y = x 4
-IN
-y
-
-Result is wrong:
-(x, Dead)
-(y, Dead) -> (y, Oncesafe)
-
-We want this result:
-(x, Dead) -> (x, OnceSage)
-(y, Dead) -> (y, Oncesafe)
-
-Solution:
-main cin cout =
-let x = (\a -> a + 1)
-specialFunc (RHS of x) -- this only updates binders, so we ignore a
-IN
-let y = x 4
-specialFunc (RHS of y) -- this only updates binders, so x is updated
-IN
-y
-
-Plan:
-add specialFunc
--}
-
-{- | Given the RHS of a top level function, return first expr inside it that isn't a Lambda
-
-For each curried lambda expr I find, add binders to occurence info.
-Basically, "swallow up" the arguments to my top-level function.
--}
--- swallowArgs :: I.Expr I.Type -> SimplFn (I.Expr I.Type)
--- swallowArgs (I.Lambda Nothing b _) = swallowArgs b
--- swallowArgs (I.Lambda (Just arg) b _)= do
---   addOccVar arg 
---   swallowArgs b
--- swallowArgs e = pure e
-
 
 {-
 Mututally Recursive:
