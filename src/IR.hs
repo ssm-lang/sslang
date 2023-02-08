@@ -18,8 +18,6 @@ import           IR.SegmentLets                 ( segmentLets )
 import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
                                                 )
-
-import           Common.Pretty                  ( spaghetti )
 import           Control.Monad                  ( (>=>)
                                                 , when
                                                 )
@@ -36,6 +34,7 @@ data Mode
   | DumpIRAnnotated
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRTypedShow
   | DumpIRLifted
   | DumpIRFinal
   deriving (Eq, Show)
@@ -64,7 +63,7 @@ options =
            "Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-typed-ugly"]
-           (NoArg $ setMode DumpIRTypedUgly)
+           (NoArg $ setMode DumpIRTypedShow)
            "Ugly-Print the fully-typed IR after type inference"
   , Option ""
            ["dump-ir-lifted"]
@@ -92,7 +91,7 @@ typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
-  when (mode opt == DumpIRTypedUgly) $ (throwError . Dump . show . spaghetti) p
+  when (mode opt == DumpIRTypedShow) $ (throwError . Dump . show ) p
   return p
 
 -- | IR transformations to prepare for codegen.
