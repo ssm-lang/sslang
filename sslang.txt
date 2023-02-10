@@ -2999,6 +2999,7 @@ DumpIR :: Mode
 DumpIRAnnotated :: Mode
 DumpIRTyped :: Mode
 DumpIRTypedUgly :: Mode
+DumpIRTypedShow :: Mode
 DumpIRLifted :: Mode
 DumpIRFinal :: Mode
 

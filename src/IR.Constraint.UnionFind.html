@@ -44,9 +44,9 @@ Compared to the Haskell implementation, the major changes here include:
 </span><span id="line-44"></span><span class="hs-comment">-- POINT</span><span>
 </span><span id="line-45"></span><span>
 </span><span id="line-46"></span><span>
-</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span id="Point"><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-var">Point</span></a></span></span><span> </span><span id="local-6989586621679559575"><span class="annot"><a href="#local-6989586621679559575"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-48"></span><span>  </span><span id="Pt"><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-var">Pt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#PointInfo"><span class="hs-identifier hs-type">PointInfo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559575"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679559526"><span id="local-6989586621679559528"><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
+</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span id="Point"><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-var">Point</span></a></span></span><span> </span><span id="local-6989586621679559578"><span class="annot"><a href="#local-6989586621679559578"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-48"></span><span>  </span><span id="Pt"><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-var">Pt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#PointInfo"><span class="hs-identifier hs-type">PointInfo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559578"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679559529"><span id="local-6989586621679559531"><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
 (Point a -&gt; Point a -&gt; Bool)
 -&gt; (Point a -&gt; Point a -&gt; Bool) -&gt; Eq (Point a)
 forall a. Point a -&gt; Point a -&gt; Bool
@@ -58,21 +58,21 @@ $c== :: forall a. Point a -&gt; Point a -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
 </span><span id="line-50"></span><span>
 </span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span class="hs-keyword">data</span><span> </span><span id="PointInfo"><span class="annot"><a href="IR.Constraint.UnionFind.html#PointInfo"><span class="hs-identifier hs-var">PointInfo</span></a></span></span><span> </span><span id="local-6989586621679559578"><span class="annot"><a href="#local-6989586621679559578"><span class="hs-identifier hs-type">a</span></a></span></span><span>
-</span><span id="line-53"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Info"><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Word32</span></span><span class="hs-special">)</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="annot"><a href="#local-6989586621679559578"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Link"><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-var">Link</span></a></span></span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559578"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span class="hs-keyword">data</span><span> </span><span id="PointInfo"><span class="annot"><a href="IR.Constraint.UnionFind.html#PointInfo"><span class="hs-identifier hs-var">PointInfo</span></a></span></span><span> </span><span id="local-6989586621679559581"><span class="annot"><a href="#local-6989586621679559581"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Info"><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Word32</span></span><span class="hs-special">)</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="annot"><a href="#local-6989586621679559581"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Link"><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-var">Link</span></a></span></span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559581"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-55"></span><span>
 </span><span id="line-56"></span><span>
 </span><span id="line-57"></span><span>
 </span><span id="line-58"></span><span class="hs-comment">-- HELPERS</span><span>
 </span><span id="line-59"></span><span>
 </span><span id="line-60"></span><span>
-</span><span id="line-61"></span><span id="local-6989586621679559521"><span id="local-6989586621679559522"><span class="annot"><a href="IR.Constraint.UnionFind.html#fresh"><span class="hs-identifier hs-type">fresh</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559522"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559521"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559522"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559521"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-61"></span><span id="local-6989586621679559524"><span id="local-6989586621679559525"><span class="annot"><a href="IR.Constraint.UnionFind.html#fresh"><span class="hs-identifier hs-type">fresh</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559525"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559524"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559525"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559524"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-62"></span><span id="fresh"><span class="annot"><span class="annottext">fresh :: a -&gt; m (Point a)
-</span><a href="IR.Constraint.UnionFind.html#fresh"><span class="hs-identifier hs-var hs-var">fresh</span></a></span></span><span> </span><span id="local-6989586621679559520"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559520"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-63"></span><span>  </span><span id="local-6989586621679559519"><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559519"><span class="hs-identifier hs-var">weight</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef Word32) -&gt; m (IORef Word32)
+</span><a href="IR.Constraint.UnionFind.html#fresh"><span class="hs-identifier hs-var hs-var">fresh</span></a></span></span><span> </span><span id="local-6989586621679559523"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559523"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679559522"><span class="annot"><span class="annottext">IORef Word32
+</span><a href="#local-6989586621679559522"><span class="hs-identifier hs-var">weight</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef Word32) -&gt; m (IORef Word32)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (IORef Word32) -&gt; m (IORef Word32))
 -&gt; IO (IORef Word32) -&gt; m (IORef Word32)
@@ -81,17 +81,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. a -&gt; IO (IORef a)
 </span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">Word32
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-64"></span><span>  </span><span id="local-6989586621679559518"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559518"><span class="hs-identifier hs-var">desc</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef a) -&gt; m (IORef a)
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679559521"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559521"><span class="hs-identifier hs-var">desc</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef a) -&gt; m (IORef a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (IORef a) -&gt; m (IORef a)) -&gt; IO (IORef a) -&gt; m (IORef a)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; IO (IORef a)
 forall a. a -&gt; IO (IORef a)
 </span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559520"><span class="hs-identifier hs-var">value</span></a></span><span>
-</span><span id="line-65"></span><span>  </span><span id="local-6989586621679559517"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559517"><span class="hs-identifier hs-var">link</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef (PointInfo a)) -&gt; m (IORef (PointInfo a))
+</span><a href="#local-6989586621679559523"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679559520"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559520"><span class="hs-identifier hs-var">link</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef (PointInfo a)) -&gt; m (IORef (PointInfo a))
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (IORef (PointInfo a)) -&gt; m (IORef (PointInfo a)))
 -&gt; IO (IORef (PointInfo a)) -&gt; m (IORef (PointInfo a))
@@ -101,23 +101,23 @@ forall a. a -&gt; IO (IORef a)
 </span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IORef Word32 -&gt; IORef a -&gt; PointInfo a
 forall a. IORef Word32 -&gt; IORef a -&gt; PointInfo a
 </span><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-var">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559519"><span class="hs-identifier hs-var">weight</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559518"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679559522"><span class="hs-identifier hs-var">weight</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559521"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-66"></span><span>  </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; Point a
 forall a. IORef (PointInfo a) -&gt; Point a
 </span><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-var">Pt</span></a></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559517"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679559520"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-67"></span><span>
 </span><span id="line-68"></span><span>
-</span><span id="line-69"></span><span id="local-6989586621679559570"><span id="local-6989586621679559571"><span class="annot"><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-type">repr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559571"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559570"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559571"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559570"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-69"></span><span id="local-6989586621679559573"><span id="local-6989586621679559574"><span class="annot"><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-type">repr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559574"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559573"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559574"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559573"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-70"></span><span id="repr"><span class="annot"><span class="annottext">repr :: Point a -&gt; m (Point a)
-</span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var hs-var">repr</span></a></span></span><span> </span><span id="local-6989586621679559515"><span class="annot"><span class="annottext">point :: Point a
-</span><a href="#local-6989586621679559515"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559514"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559514"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-71"></span><span>  </span><span id="local-6989586621679559513"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559513"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var hs-var">repr</span></a></span></span><span> </span><span id="local-6989586621679559518"><span class="annot"><span class="annottext">point :: Point a
+</span><a href="#local-6989586621679559518"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559517"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559517"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>  </span><span id="local-6989586621679559516"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559516"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -125,35 +125,35 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559514"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><a href="#local-6989586621679559517"><span class="hs-identifier hs-var">ref</span></a></span><span>
 </span><span id="line-72"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559513"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679559516"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-73"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">IORef a
 </span><span class="hs-identifier">_</span></span><span>              </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559515"><span class="hs-identifier hs-var">point</span></a></span><span>
+</span><a href="#local-6989586621679559518"><span class="hs-identifier hs-var">point</span></a></span><span>
 </span><span id="line-74"></span><span>
-</span><span id="line-75"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span id="local-6989586621679559512"><span class="annot"><span class="annottext">point1 :: Point a
-</span><a href="#local-6989586621679559512"><span class="hs-identifier hs-var">point1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559511"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559511"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-76"></span><span>      </span><span id="local-6989586621679559510"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559510"><span class="hs-identifier hs-var">point2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span id="local-6989586621679559515"><span class="annot"><span class="annottext">point1 :: Point a
+</span><a href="#local-6989586621679559515"><span class="hs-identifier hs-var">point1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559514"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559514"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-76"></span><span>      </span><span id="local-6989586621679559513"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559513"><span class="hs-identifier hs-var">point2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559512"><span class="hs-identifier hs-var">point1</span></a></span><span>
+</span><a href="#local-6989586621679559515"><span class="hs-identifier hs-var">point1</span></a></span><span>
 </span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559510"><span class="hs-identifier hs-var">point2</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
+</span><a href="#local-6989586621679559513"><span class="hs-identifier hs-var">point2</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559512"><span class="hs-identifier hs-var">point1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+</span><a href="#local-6989586621679559515"><span class="hs-identifier hs-var">point1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-78"></span><span>        </span><span id="local-6989586621679559508"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559508"><span class="hs-identifier hs-var">pInfo1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><span id="line-78"></span><span>        </span><span id="local-6989586621679559511"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559511"><span class="hs-identifier hs-var">pInfo1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -161,7 +161,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559511"><span class="hs-identifier hs-var">ref1</span></a></span><span>
+</span><a href="#local-6989586621679559514"><span class="hs-identifier hs-var">ref1</span></a></span><span>
 </span><span id="line-79"></span><span>        </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -169,21 +169,21 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; PointInfo a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559514"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559508"><span class="hs-identifier hs-var">pInfo1</span></a></span><span>
+</span><a href="#local-6989586621679559517"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559511"><span class="hs-identifier hs-var">pInfo1</span></a></span><span>
 </span><span id="line-80"></span><span>      </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559510"><span class="hs-identifier hs-var">point2</span></a></span><span>
+</span><a href="#local-6989586621679559513"><span class="hs-identifier hs-var">point2</span></a></span><span>
 </span><span id="line-81"></span><span>
 </span><span id="line-82"></span><span>
-</span><span id="line-83"></span><span id="local-6989586621679559564"><span id="local-6989586621679559565"><span class="annot"><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-type">get</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559565"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559564"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559565"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559564"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-83"></span><span id="local-6989586621679559567"><span id="local-6989586621679559568"><span class="annot"><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-type">get</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559568"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559567"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559568"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559567"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
 </span><span id="line-84"></span><span id="get"><span class="annot"><span class="annottext">get :: Point a -&gt; m a
-</span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var hs-var">get</span></a></span></span><span> </span><span id="local-6989586621679559507"><span class="annot"><span class="annottext">point :: Point a
-</span><a href="#local-6989586621679559507"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559506"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559506"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-85"></span><span>  </span><span id="local-6989586621679559505"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559505"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var hs-var">get</span></a></span></span><span> </span><span id="local-6989586621679559510"><span class="annot"><span class="annottext">point :: Point a
+</span><a href="#local-6989586621679559510"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559509"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559509"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-85"></span><span>  </span><span id="local-6989586621679559508"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559508"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -191,10 +191,35 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559506"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><a href="#local-6989586621679559509"><span class="hs-identifier hs-var">ref</span></a></span><span>
 </span><span id="line-86"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559505"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679559508"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-87"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559507"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559507"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a -&gt; m a
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO a -&gt; m a) -&gt; IO a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; IO a
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559507"><span class="hs-identifier hs-var">descRef</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559506"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559506"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-90"></span><span>      </span><span id="local-6989586621679559505"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559505"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
+-&gt; IO (PointInfo a) -&gt; m (PointInfo a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559506"><span class="hs-identifier hs-var">ref1</span></a></span><span>
+</span><span id="line-91"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559505"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-92"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559504"><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559504"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a -&gt; m a
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -204,31 +229,6 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559504"><span class="hs-identifier hs-var">descRef</span></a></span><span>
-</span><span id="line-88"></span><span>
-</span><span id="line-89"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559503"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559503"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-90"></span><span>      </span><span id="local-6989586621679559502"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559502"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
--&gt; IO (PointInfo a) -&gt; m (PointInfo a)
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
-forall a. IORef a -&gt; IO a
-</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559503"><span class="hs-identifier hs-var">ref1</span></a></span><span>
-</span><span id="line-91"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559502"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-92"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559501"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559501"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a -&gt; m a
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO a -&gt; m a) -&gt; IO a -&gt; m a
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; IO a
-forall a. IORef a -&gt; IO a
-</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559501"><span class="hs-identifier hs-var">descRef</span></a></span><span>
 </span><span id="line-93"></span><span>
 </span><span id="line-94"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
 </span><span class="hs-identifier">_</span></span><span>         </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m a
@@ -238,17 +238,17 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b
 </span><span class="hs-operator hs-var">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559507"><span class="hs-identifier hs-var">point</span></a></span><span>
+</span><a href="#local-6989586621679559510"><span class="hs-identifier hs-var">point</span></a></span><span>
 </span><span id="line-95"></span><span>
 </span><span id="line-96"></span><span>
-</span><span id="line-97"></span><span id="local-6989586621679559557"><span id="local-6989586621679559558"><span class="annot"><a href="IR.Constraint.UnionFind.html#set"><span class="hs-identifier hs-type">set</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559558"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559557"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559557"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559558"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-97"></span><span id="local-6989586621679559560"><span id="local-6989586621679559561"><span class="annot"><a href="IR.Constraint.UnionFind.html#set"><span class="hs-identifier hs-type">set</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559561"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559560"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559560"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559561"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-98"></span><span id="set"><span class="annot"><span class="annottext">set :: Point a -&gt; a -&gt; m ()
-</span><a href="IR.Constraint.UnionFind.html#set"><span class="hs-identifier hs-var hs-var">set</span></a></span></span><span> </span><span id="local-6989586621679559499"><span class="annot"><span class="annottext">point :: Point a
-</span><a href="#local-6989586621679559499"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559498"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559498"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679559497"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">newDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-99"></span><span>  </span><span id="local-6989586621679559496"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559496"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="IR.Constraint.UnionFind.html#set"><span class="hs-identifier hs-var hs-var">set</span></a></span></span><span> </span><span id="local-6989586621679559502"><span class="annot"><span class="annottext">point :: Point a
+</span><a href="#local-6989586621679559502"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559501"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559501"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679559500"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559500"><span class="hs-identifier hs-var">newDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679559499"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559499"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -256,10 +256,36 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559498"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><a href="#local-6989586621679559501"><span class="hs-identifier hs-var">ref</span></a></span><span>
 </span><span id="line-100"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559496"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679559499"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-101"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559498"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559498"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; a -&gt; IO ()
+forall a. IORef a -&gt; a -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559498"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559500"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559497"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-104"></span><span>      </span><span id="local-6989586621679559496"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559496"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
+-&gt; IO (PointInfo a) -&gt; m (PointInfo a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">ref1</span></a></span><span>
+</span><span id="line-105"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559496"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-106"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559495"><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559495"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -269,56 +295,30 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559495"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
-</span><span id="line-102"></span><span>
-</span><span id="line-103"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559494"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559494"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-104"></span><span>      </span><span id="local-6989586621679559493"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559493"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
--&gt; IO (PointInfo a) -&gt; m (PointInfo a)
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
-forall a. IORef a -&gt; IO a
-</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559494"><span class="hs-identifier hs-var">ref1</span></a></span><span>
-</span><span id="line-105"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559493"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-106"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559492"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559492"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; a -&gt; IO ()
-forall a. IORef a -&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559492"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><a href="#local-6989586621679559500"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
 </span><span id="line-107"></span><span>
 </span><span id="line-108"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
 </span><span class="hs-identifier">_</span></span><span>         </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-109"></span><span>          </span><span id="local-6989586621679559491"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">newPoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><span id="line-109"></span><span>          </span><span id="local-6989586621679559494"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559494"><span class="hs-identifier hs-var">newPoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559499"><span class="hs-identifier hs-var">point</span></a></span><span>
+</span><a href="#local-6989586621679559502"><span class="hs-identifier hs-var">point</span></a></span><span>
 </span><span id="line-110"></span><span>          </span><span class="annot"><span class="annottext">Point a -&gt; a -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; a -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#set"><span class="hs-identifier hs-var">set</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">newPoint</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559497"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><a href="#local-6989586621679559494"><span class="hs-identifier hs-var">newPoint</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559500"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
 </span><span id="line-111"></span><span>
 </span><span id="line-112"></span><span>
-</span><span id="line-113"></span><span id="local-6989586621679559552"><span id="local-6989586621679559553"><span class="annot"><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-type">modify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559553"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559552"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679559552"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559552"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559553"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679559555"><span id="local-6989586621679559556"><span class="annot"><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-type">modify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559556"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559555"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679559555"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559555"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559556"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-114"></span><span id="modify"><span class="annot"><span class="annottext">modify :: Point a -&gt; (a -&gt; a) -&gt; m ()
-</span><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-var hs-var">modify</span></a></span></span><span> </span><span id="local-6989586621679559490"><span class="annot"><span class="annottext">point :: Point a
-</span><a href="#local-6989586621679559490"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559489"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559489"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679559488"><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-115"></span><span>  </span><span id="local-6989586621679559487"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559487"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-var hs-var">modify</span></a></span></span><span> </span><span id="local-6989586621679559493"><span class="annot"><span class="annottext">point :: Point a
+</span><a href="#local-6989586621679559493"><span class="hs-identifier hs-var">point</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559492"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559492"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679559491"><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621679559490"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559490"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -326,10 +326,36 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559489"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><a href="#local-6989586621679559492"><span class="hs-identifier hs-var">ref</span></a></span><span>
 </span><span id="line-116"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559487"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679559490"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-117"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559489"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559489"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; (a -&gt; a) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559489"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559488"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-120"></span><span>      </span><span id="local-6989586621679559487"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559487"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
+-&gt; IO (PointInfo a) -&gt; m (PointInfo a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">ref1</span></a></span><span>
+</span><span id="line-121"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559487"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-122"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559486"><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559486"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -339,70 +365,44 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
 </span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef a
 </span><a href="#local-6989586621679559486"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">func</span></a></span><span>
-</span><span id="line-118"></span><span>
-</span><span id="line-119"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559485"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559485"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-120"></span><span>      </span><span id="local-6989586621679559484"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559484"><span class="hs-identifier hs-var">link'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
--&gt; IO (PointInfo a) -&gt; m (PointInfo a)
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
-forall a. IORef a -&gt; IO a
-</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559485"><span class="hs-identifier hs-var">ref1</span></a></span><span>
-</span><span id="line-121"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559484"><span class="hs-identifier hs-var">link'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-122"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679559483"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559483"><span class="hs-identifier hs-var">descRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
-forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
-</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; (a -&gt; a) -&gt; IO ()
-forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
-</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559483"><span class="hs-identifier hs-var">descRef</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">func</span></a></span><span>
 </span><span id="line-123"></span><span>
 </span><span id="line-124"></span><span>        </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-type">Link</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
 </span><span class="hs-identifier">_</span></span><span>         </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-125"></span><span>          </span><span id="local-6989586621679559482"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559482"><span class="hs-identifier hs-var">newPoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><span id="line-125"></span><span>          </span><span id="local-6989586621679559485"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559485"><span class="hs-identifier hs-var">newPoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559490"><span class="hs-identifier hs-var">point</span></a></span><span>
+</span><a href="#local-6989586621679559493"><span class="hs-identifier hs-var">point</span></a></span><span>
 </span><span id="line-126"></span><span>          </span><span class="annot"><span class="annottext">Point a -&gt; (a -&gt; a) -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; (a -&gt; a) -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-var">modify</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559482"><span class="hs-identifier hs-var">newPoint</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679559488"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><a href="#local-6989586621679559485"><span class="hs-identifier hs-var">newPoint</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679559491"><span class="hs-identifier hs-var">func</span></a></span><span>
 </span><span id="line-127"></span><span>
 </span><span id="line-128"></span><span>
-</span><span id="line-129"></span><span id="local-6989586621679559480"><span id="local-6989586621679559481"><span class="annot"><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-type">union</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559481"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="annot"><a href="#local-6989586621679559481"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559480"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559480"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559480"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559481"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-129"></span><span id="local-6989586621679559483"><span id="local-6989586621679559484"><span class="annot"><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-type">union</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559484"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="annot"><a href="#local-6989586621679559484"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559483"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559483"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559483"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559484"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-130"></span><span id="union"><span class="annot"><span class="annottext">union :: Point a -&gt; Point a -&gt; a -&gt; m ()
-</span><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-var hs-var">union</span></a></span></span><span> </span><span id="local-6989586621679559479"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559479"><span class="hs-identifier hs-var">p1</span></a></span></span><span> </span><span id="local-6989586621679559478"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559478"><span class="hs-identifier hs-var">p2</span></a></span></span><span> </span><span id="local-6989586621679559477"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">newDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-131"></span><span>  </span><span id="local-6989586621679559476"><span class="annot"><span class="annottext">point1 :: Point a
-</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">point1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559475"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-var hs-var">union</span></a></span></span><span> </span><span id="local-6989586621679559482"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559482"><span class="hs-identifier hs-var">p1</span></a></span></span><span> </span><span id="local-6989586621679559481"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559481"><span class="hs-identifier hs-var">p2</span></a></span></span><span> </span><span id="local-6989586621679559480"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559480"><span class="hs-identifier hs-var">newDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-131"></span><span>  </span><span id="local-6989586621679559479"><span class="annot"><span class="annottext">point1 :: Point a
+</span><a href="#local-6989586621679559479"><span class="hs-identifier hs-var">point1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559478"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559478"><span class="hs-identifier hs-var">ref1</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559479"><span class="hs-identifier hs-var">p1</span></a></span><span>
-</span><span id="line-132"></span><span>  </span><span id="local-6989586621679559474"><span class="annot"><span class="annottext">point2 :: Point a
-</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">point2</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559473"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">ref2</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><a href="#local-6989586621679559482"><span class="hs-identifier hs-var">p1</span></a></span><span>
+</span><span id="line-132"></span><span>  </span><span id="local-6989586621679559477"><span class="annot"><span class="annottext">point2 :: Point a
+</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">point2</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559476"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">ref2</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559478"><span class="hs-identifier hs-var">p2</span></a></span><span>
+</span><a href="#local-6989586621679559481"><span class="hs-identifier hs-var">p2</span></a></span><span>
 </span><span id="line-133"></span><span>
-</span><span id="line-134"></span><span>  </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span>    </span><span id="local-6989586621679559472"><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559472"><span class="hs-identifier hs-var">w1</span></a></span></span><span>     </span><span id="local-6989586621679559471"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">d1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><span id="line-134"></span><span>  </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span>    </span><span id="local-6989586621679559475"><span class="annot"><span class="annottext">IORef Word32
+</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">w1</span></a></span></span><span>     </span><span id="local-6989586621679559474"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">d1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -410,10 +410,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">ref1</span></a></span><span>
-</span><span id="line-135"></span><span>  </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span>    </span><span id="local-6989586621679559470"><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">w2</span></a></span></span><span>     </span><span id="local-6989586621679559469"><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559469"><span class="hs-identifier hs-var">d2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="#local-6989586621679559478"><span class="hs-identifier hs-var">ref1</span></a></span><span>
+</span><span id="line-135"></span><span>  </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span>    </span><span id="local-6989586621679559473"><span class="annot"><span class="annottext">IORef Word32
+</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">w2</span></a></span></span><span>     </span><span id="local-6989586621679559472"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679559472"><span class="hs-identifier hs-var">d2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -421,13 +421,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">ref2</span></a></span><span>
+</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">ref2</span></a></span><span>
 </span><span id="line-136"></span><span>
 </span><span id="line-137"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">point1</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
+</span><a href="#local-6989586621679559479"><span class="hs-identifier hs-var">point1</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">point2</span></a></span><span>
+</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">point2</span></a></span><span>
 </span><span id="line-138"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -435,40 +435,40 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559480"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
 </span><span id="line-139"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-140"></span><span>      </span><span id="local-6989586621679559468"><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559468"><span class="hs-identifier hs-var">weight1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Word32 -&gt; m Word32
+</span><span id="line-140"></span><span>      </span><span id="local-6989586621679559471"><span class="annot"><span class="annottext">Word32
+</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">weight1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Word32 -&gt; m Word32
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Word32 -&gt; m Word32) -&gt; IO Word32 -&gt; m Word32
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32 -&gt; IO Word32
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559472"><span class="hs-identifier hs-var">w1</span></a></span><span>
-</span><span id="line-141"></span><span>      </span><span id="local-6989586621679559467"><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559467"><span class="hs-identifier hs-var">weight2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Word32 -&gt; m Word32
+</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">w1</span></a></span><span>
+</span><span id="line-141"></span><span>      </span><span id="local-6989586621679559470"><span class="annot"><span class="annottext">Word32
+</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">weight2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Word32 -&gt; m Word32
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Word32 -&gt; m Word32) -&gt; IO Word32 -&gt; m Word32
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32 -&gt; IO Word32
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">w2</span></a></span><span>
+</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">w2</span></a></span><span>
 </span><span id="line-142"></span><span>
-</span><span id="line-143"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679559466"><span class="annot"><span class="annottext">newWeight :: Word32
-</span><a href="#local-6989586621679559466"><span class="hs-identifier hs-var hs-var">newWeight</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559468"><span class="hs-identifier hs-var">weight1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32 -&gt; Word32 -&gt; Word32
+</span><span id="line-143"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679559469"><span class="annot"><span class="annottext">newWeight :: Word32
+</span><a href="#local-6989586621679559469"><span class="hs-identifier hs-var hs-var">newWeight</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Word32
+</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">weight1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32 -&gt; Word32 -&gt; Word32
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559467"><span class="hs-identifier hs-var">weight2</span></a></span><span>
+</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">weight2</span></a></span><span>
 </span><span id="line-144"></span><span>
 </span><span id="line-145"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559468"><span class="hs-identifier hs-var">weight1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32 -&gt; Word32 -&gt; Bool
+</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">weight1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32 -&gt; Word32 -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559467"><span class="hs-identifier hs-var">weight2</span></a></span><span>
+</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">weight2</span></a></span><span>
 </span><span id="line-146"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-147"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -477,10 +477,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; PointInfo a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">ref2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; PointInfo a
+</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">ref2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; PointInfo a
 forall a. Point a -&gt; PointInfo a
 </span><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-var">Link</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559476"><span class="hs-identifier hs-var">point1</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679559479"><span class="hs-identifier hs-var">point1</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-148"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -488,8 +488,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32 -&gt; Word32 -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559472"><span class="hs-identifier hs-var">w1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559466"><span class="hs-identifier hs-var">newWeight</span></a></span><span>
+</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">w1</span></a></span><span> </span><span class="annot"><span class="annottext">Word32
+</span><a href="#local-6989586621679559469"><span class="hs-identifier hs-var">newWeight</span></a></span><span>
 </span><span id="line-149"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -497,8 +497,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559471"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559480"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
 </span><span id="line-150"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-151"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -507,10 +507,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; PointInfo a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559475"><span class="hs-identifier hs-var">ref1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; PointInfo a
+</span><a href="#local-6989586621679559478"><span class="hs-identifier hs-var">ref1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; PointInfo a
 forall a. Point a -&gt; PointInfo a
 </span><a href="IR.Constraint.UnionFind.html#Link"><span class="hs-identifier hs-var">Link</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559474"><span class="hs-identifier hs-var">point2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">point2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-152"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -518,8 +518,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32 -&gt; Word32 -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Word32
-</span><a href="#local-6989586621679559470"><span class="hs-identifier hs-var">w2</span></a></span><span> </span><span class="annot"><span class="annottext">Word32
-</span><a href="#local-6989586621679559466"><span class="hs-identifier hs-var">newWeight</span></a></span><span>
+</span><a href="#local-6989586621679559473"><span class="hs-identifier hs-var">w2</span></a></span><span> </span><span class="annot"><span class="annottext">Word32
+</span><a href="#local-6989586621679559469"><span class="hs-identifier hs-var">newWeight</span></a></span><span>
 </span><span id="line-153"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
@@ -527,40 +527,40 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; a -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef a
-</span><a href="#local-6989586621679559469"><span class="hs-identifier hs-var">d2</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679559477"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
+</span><a href="#local-6989586621679559472"><span class="hs-identifier hs-var">d2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679559480"><span class="hs-identifier hs-var">newDesc</span></a></span><span>
 </span><span id="line-154"></span><span>
 </span><span id="line-155"></span><span>
-</span><span id="line-156"></span><span id="local-6989586621679559463"><span id="local-6989586621679559464"><span class="annot"><a href="IR.Constraint.UnionFind.html#equivalent"><span class="hs-identifier hs-type">equivalent</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559464"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559463"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559463"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559464"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span></span><span>
+</span><span id="line-156"></span><span id="local-6989586621679559466"><span id="local-6989586621679559467"><span class="annot"><a href="IR.Constraint.UnionFind.html#equivalent"><span class="hs-identifier hs-type">equivalent</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559467"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559466"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559466"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559467"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span></span><span>
 </span><span id="line-157"></span><span id="equivalent"><span class="annot"><span class="annottext">equivalent :: Point a -&gt; Point a -&gt; m Bool
-</span><a href="IR.Constraint.UnionFind.html#equivalent"><span class="hs-identifier hs-var hs-var">equivalent</span></a></span></span><span> </span><span id="local-6989586621679559462"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559462"><span class="hs-identifier hs-var">p1</span></a></span></span><span> </span><span id="local-6989586621679559461"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559461"><span class="hs-identifier hs-var">p2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-158"></span><span>  </span><span id="local-6989586621679559460"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559460"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><a href="IR.Constraint.UnionFind.html#equivalent"><span class="hs-identifier hs-var hs-var">equivalent</span></a></span></span><span> </span><span id="local-6989586621679559465"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559465"><span class="hs-identifier hs-var">p1</span></a></span></span><span> </span><span id="local-6989586621679559464"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559464"><span class="hs-identifier hs-var">p2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-158"></span><span>  </span><span id="local-6989586621679559463"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559463"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559462"><span class="hs-identifier hs-var">p1</span></a></span><span>
-</span><span id="line-159"></span><span>  </span><span id="local-6989586621679559459"><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559459"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
+</span><a href="#local-6989586621679559465"><span class="hs-identifier hs-var">p1</span></a></span><span>
+</span><span id="line-159"></span><span>  </span><span id="local-6989586621679559462"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679559462"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Point a -&gt; m (Point a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m (Point a)
 </span><a href="IR.Constraint.UnionFind.html#repr"><span class="hs-identifier hs-var">repr</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559461"><span class="hs-identifier hs-var">p2</span></a></span><span>
+</span><a href="#local-6989586621679559464"><span class="hs-identifier hs-var">p2</span></a></span><span>
 </span><span id="line-160"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; m Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559460"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
+</span><a href="#local-6989586621679559463"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Point a -&gt; Point a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Point a
-</span><a href="#local-6989586621679559459"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679559462"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-161"></span><span>
 </span><span id="line-162"></span><span>
-</span><span id="line-163"></span><span id="local-6989586621679559457"><span id="local-6989586621679559458"><span class="annot"><a href="IR.Constraint.UnionFind.html#redundant"><span class="hs-identifier hs-type">redundant</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559458"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559457"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559458"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span></span><span>
+</span><span id="line-163"></span><span id="local-6989586621679559460"><span id="local-6989586621679559461"><span class="annot"><a href="IR.Constraint.UnionFind.html#redundant"><span class="hs-identifier hs-type">redundant</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679559461"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679559460"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679559461"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span></span><span>
 </span><span id="line-164"></span><span id="redundant"><span class="annot"><span class="annottext">redundant :: Point a -&gt; m Bool
-</span><a href="IR.Constraint.UnionFind.html#redundant"><span class="hs-identifier hs-var hs-var">redundant</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559456"><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559456"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-165"></span><span>  </span><span id="local-6989586621679559455"><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559455"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
+</span><a href="IR.Constraint.UnionFind.html#redundant"><span class="hs-identifier hs-var hs-var">redundant</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.UnionFind.html#Pt"><span class="hs-identifier hs-type">Pt</span></a></span><span> </span><span id="local-6989586621679559459"><span class="annot"><span class="annottext">IORef (PointInfo a)
+</span><a href="#local-6989586621679559459"><span class="hs-identifier hs-var">ref</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-165"></span><span>  </span><span id="local-6989586621679559458"><span class="annot"><span class="annottext">PointInfo a
+</span><a href="#local-6989586621679559458"><span class="hs-identifier hs-var">pInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (PointInfo a) -&gt; m (PointInfo a)
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (PointInfo a) -&gt; m (PointInfo a))
 -&gt; IO (PointInfo a) -&gt; m (PointInfo a)
@@ -568,9 +568,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a) -&gt; IO (PointInfo a)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (PointInfo a)
-</span><a href="#local-6989586621679559456"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><a href="#local-6989586621679559459"><span class="hs-identifier hs-var">ref</span></a></span><span>
 </span><span id="line-166"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PointInfo a
-</span><a href="#local-6989586621679559455"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679559458"><span class="hs-identifier hs-var">pInfo</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-167"></span><span>    </span><span class="annot"><a href="IR.Constraint.UnionFind.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Word32
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">IORef a
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; m Bool
