@@ -201,7 +201,7 @@ insideMatch = do
 
 -- | Set simplifier to version 1 or 2
 simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-simplifyProgram = simplifyProgram1
+simplifyProgram = simplifyProgram2
 
 {- | Entry-point to Simplifer.
 
