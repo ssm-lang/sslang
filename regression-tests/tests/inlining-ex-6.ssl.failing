@@ -1,10 +1,4 @@
 /*
-NOTE:
-This file starts with 1 so it appears at the top of the regression tests folder during development.
-We should rename this file without the "1-" before opening a PR for review.
-*/
-
-/*
 This file has a bunch of notes as well as a test program with examples of 
 dead, oncesafe, multisafe, onceunsafe, multiunsafe, and callsite inline (no loopbreaker example though!)
 This test case fails because we have only implemented pre and post inline unconditionally so far.

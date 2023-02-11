@@ -1,0 +1,29 @@
+/*
+Example:  r is oncesafe, q is multiunsafe; post-inline inlines q
+Input:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (r + q - q)
+
+Expected Output:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (3 + 2 + 2 -2)
+  
+*/
+
+// print single digit number followed by newline; accounts for ascii offset
+putd cout_ c =
+  after 1, cout_ <- c + 48    // Should print 5
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (r + q - q)
+
+  

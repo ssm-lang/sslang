@@ -1,14 +1,3 @@
-/*
-NOTE:
-This file starts with 1 so it appears at the top of the regression tests folder during development.
-We should rename this file without the "1-" before opening a PR for review.
-*/
-
-// print single digit number; account for ascii offset
-putd cout_ c =
-  after 1, cout_ <- (c + 48)
-  wait cout_
-
 /* 
 Example: n is oncesafe; TODO: case elimination!
 Input:
@@ -34,6 +23,11 @@ main =
   putd cout 3
   
 */
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
 
 main cin cout = 
   let n = 5

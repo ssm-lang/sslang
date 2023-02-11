@@ -1,0 +1,26 @@
+/*
+Example:  r is oncesafe, q is multiunsafe; post-inline inlines q; checking operator precedence
+Input:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (r + q - q)
+
+Expected Output:
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (2 + (3 + 2) * 2 - 6) 
+  // I don't think the pretty printer prints parens around operators correctly right now
+  
+*/
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  let q = 2
+  let r = 3 + q
+  putd cout (q + r * q - 6)
