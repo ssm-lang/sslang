@@ -146,6 +146,11 @@ updateOccVar binder = do
         _ -> M.insert binder Never m
   modify $ \st -> st { occInfo = m' }
 
+{- | Add substitution to the substitution set
+
+Suppose we want to replace x with y.
+Then we call insertSubst x (SuspEx y {})
+-}
 insertSubst :: I.VarId -> SubstRng -> SimplFn ()
 insertSubst binder rng = do
   m <- gets subst
@@ -220,18 +225,18 @@ How do we handle each node?
 - App (Expr t) (Expr t) t               DONE
 - Let [(Binder, Expr t)] (Expr t) t     DONE (except callsite inline)
 - Lambda Binder (Expr t) t              DONE 
-- Match (Expr t) [(Alt, Expr t)] t      DONE  
+- Match (Expr t) [(Alt, Expr t)] t      DONE (TODO: match arm elimination)
 - Prim Primitive [Expr t] t             DONE
 
 -}
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
 {- | Simplify Primitive Expression
 
-  More Intuitive Version:
-  let partiallyApplied = (map (simplExpr sub ins) args)
-  let fullyApplied = map ($ cont) partiallyApplied
-  unwrappedAndRecollected <- sequence fullyApplied
-  pure (I.Prim prim unwrappedAndRecollected t)
+  Simplify each of the arguments to prim
+  For ex. 5 + g + h + (6 + v)
+  Is the primitive "plus" followed by args 5, g, h, and (6 + v)
+  SimpleExpr calls itself on each of "plus"'s arguments, then
+  returns the result wrapped back up in an I.Prim IR node.
 -}
 simplExpr sub ins (I.Prim prim args t) cont = do
   args' <- mapM (($ cont) . simplExpr sub ins) args
