@@ -10,33 +10,33 @@
 </span><span id="line-10"></span><span>
 </span><span id="line-11"></span><span class="annot"><a href="IR.Constraint.Constrain.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Constraint"><span class="hs-identifier hs-type">Constraint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-12"></span><span id="run"><span class="annot"><span class="annottext">run :: Program Annotations -&gt; TC (Constraint, Program Variable)
-</span><a href="IR.Constraint.Constrain.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679564343"><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679564343"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-13"></span><span>  </span><span id="local-6989586621679564342"><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564342"><span class="hs-identifier hs-var">pSprinkled</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Annotations -&gt; TC (Program (Annotations, Variable))
+</span><a href="IR.Constraint.Constrain.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679564240"><span class="annot"><span class="annottext">Program Annotations
+</span><a href="#local-6989586621679564240"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-13"></span><span>  </span><span id="local-6989586621679564239"><span class="annot"><span class="annottext">Program (Annotations, Variable)
+</span><a href="#local-6989586621679564239"><span class="hs-identifier hs-var">pSprinkled</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Annotations -&gt; TC (Program (Annotations, Variable))
 </span><a href="IR.Constraint.Constrain.html#sprinkleVariables"><span class="hs-identifier hs-var">sprinkleVariables</span></a></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679564343"><span class="hs-identifier hs-var">pAnn</span></a></span><span>
-</span><span id="line-14"></span><span>  </span><span id="local-6989586621679564340"><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679564340"><span class="hs-identifier hs-var">constraint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable) -&gt; TC Constraint
+</span><a href="#local-6989586621679564240"><span class="hs-identifier hs-var">pAnn</span></a></span><span>
+</span><span id="line-14"></span><span>  </span><span id="local-6989586621679564237"><span class="annot"><span class="annottext">Constraint
+</span><a href="#local-6989586621679564237"><span class="hs-identifier hs-var">constraint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable) -&gt; TC Constraint
 </span><a href="IR.Constraint.Constrain.Program.html#constrain"><span class="hs-identifier hs-var">Prog.constrain</span></a></span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564342"><span class="hs-identifier hs-var">pSprinkled</span></a></span><span>
-</span><span id="line-15"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679564338"><span class="annot"><span class="annottext">pVar :: Program Variable
-</span><a href="#local-6989586621679564338"><span class="hs-identifier hs-var hs-var">pVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable) -&gt; Program Variable
+</span><a href="#local-6989586621679564239"><span class="hs-identifier hs-var">pSprinkled</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679564235"><span class="annot"><span class="annottext">pVar :: Program Variable
+</span><a href="#local-6989586621679564235"><span class="hs-identifier hs-var hs-var">pVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable) -&gt; Program Variable
 </span><a href="IR.Constraint.Constrain.html#discardAnnotations"><span class="hs-identifier hs-var">discardAnnotations</span></a></span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564342"><span class="hs-identifier hs-var">pSprinkled</span></a></span><span>
+</span><a href="#local-6989586621679564239"><span class="hs-identifier hs-var">pSprinkled</span></a></span><span>
 </span><span id="line-16"></span><span>  </span><span class="annot"><span class="annottext">(Constraint, Program Variable) -&gt; TC (Constraint, Program Variable)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679564340"><span class="hs-identifier hs-var">constraint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679564338"><span class="hs-identifier hs-var">pVar</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679564237"><span class="hs-identifier hs-var">constraint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679564235"><span class="hs-identifier hs-var">pVar</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-17"></span><span>
 </span><span id="line-18"></span><span class="annot"><a href="IR.Constraint.Constrain.html#sprinkleVariables"><span class="hs-identifier hs-type">sprinkleVariables</span></a></span><span>
 </span><span id="line-19"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-20"></span><span id="sprinkleVariables"><span class="annot"><span class="annottext">sprinkleVariables :: Program Annotations -&gt; TC (Program (Annotations, Variable))
-</span><a href="IR.Constraint.Constrain.html#sprinkleVariables"><span class="hs-identifier hs-var hs-var">sprinkleVariables</span></a></span></span><span> </span><span id="local-6989586621679564336"><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679564336"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-21"></span><span>  </span><span id="local-6989586621679564335"><span class="annot"><span class="annottext">[(VarId, Expr (Annotations, Variable))]
-</span><a href="#local-6989586621679564335"><span class="hs-identifier hs-var">sprinkledDefs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarId, Expr Annotations)
+</span><a href="IR.Constraint.Constrain.html#sprinkleVariables"><span class="hs-identifier hs-var hs-var">sprinkleVariables</span></a></span></span><span> </span><span id="local-6989586621679564233"><span class="annot"><span class="annottext">Program Annotations
+</span><a href="#local-6989586621679564233"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-21"></span><span>  </span><span id="local-6989586621679564232"><span class="annot"><span class="annottext">[(VarId, Expr (Annotations, Variable))]
+</span><a href="#local-6989586621679564232"><span class="hs-identifier hs-var">sprinkledDefs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarId, Expr Annotations)
  -&gt; StateT
       TCState (ExceptT Error IO) (VarId, Expr (Annotations, Variable)))
 -&gt; [(VarId, Expr Annotations)]
@@ -51,49 +51,49 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 forall (t :: * -&gt; *) a a.
 Traversable t =&gt;
 (a, t a) -&gt; StateT TCState (ExceptT Error IO) (a, t (a, Variable))
-</span><a href="#local-6989586621679564333"><span class="hs-identifier hs-var">sprinkleDef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program Annotations -&gt; [(VarId, Expr Annotations)]
+</span><a href="#local-6989586621679564230"><span class="hs-identifier hs-var">sprinkleDef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program Annotations -&gt; [(VarId, Expr Annotations)]
 forall t. Program t -&gt; [(VarId, Expr t)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679564336"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679564233"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-22"></span><span>  </span><span class="annot"><span class="annottext">Program (Annotations, Variable)
 -&gt; TC (Program (Annotations, Variable))
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679564336"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr (Annotations, Variable))]
+</span><a href="#local-6989586621679564233"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr (Annotations, Variable))]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr (Annotations, Variable))]
-</span><a href="#local-6989586621679564335"><span class="hs-identifier hs-var">sprinkledDefs</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679564232"><span class="hs-identifier hs-var">sprinkledDefs</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-23"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-24"></span><span>  </span><span id="local-6989586621679564333"><span class="annot"><span class="annottext">sprinkleDef :: (a, t a) -&gt; StateT TCState (ExceptT Error IO) (a, t (a, Variable))
-</span><a href="#local-6989586621679564333"><span class="hs-identifier hs-var hs-var">sprinkleDef</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679564331"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679564331"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679564330"><span class="annot"><span class="annottext">t a
-</span><a href="#local-6989586621679564330"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-25"></span><span>    </span><span id="local-6989586621679564329"><span class="annot"><span class="annottext">t (a, Variable)
-</span><a href="#local-6989586621679564329"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(a -&gt; StateT TCState (ExceptT Error IO) (a, Variable))
+</span><span id="line-24"></span><span>  </span><span id="local-6989586621679564230"><span class="annot"><span class="annottext">sprinkleDef :: (a, t a) -&gt; StateT TCState (ExceptT Error IO) (a, t (a, Variable))
+</span><a href="#local-6989586621679564230"><span class="hs-identifier hs-var hs-var">sprinkleDef</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679564228"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679564228"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679564227"><span class="annot"><span class="annottext">t a
+</span><a href="#local-6989586621679564227"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621679564226"><span class="annot"><span class="annottext">t (a, Variable)
+</span><a href="#local-6989586621679564226"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(a -&gt; StateT TCState (ExceptT Error IO) (a, Variable))
 -&gt; t a -&gt; StateT TCState (ExceptT Error IO) (t (a, Variable))
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; StateT TCState (ExceptT Error IO) (a, Variable)
 forall a. a -&gt; StateT TCState (ExceptT Error IO) (a, Variable)
-</span><a href="#local-6989586621679564328"><span class="hs-identifier hs-var">sprinkle</span></a></span><span> </span><span class="annot"><span class="annottext">t a
-</span><a href="#local-6989586621679564330"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679564225"><span class="hs-identifier hs-var">sprinkle</span></a></span><span> </span><span class="annot"><span class="annottext">t a
+</span><a href="#local-6989586621679564227"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-26"></span><span>    </span><span class="annot"><span class="annottext">(a, t (a, Variable))
 -&gt; StateT TCState (ExceptT Error IO) (a, t (a, Variable))
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679564331"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t (a, Variable)
-</span><a href="#local-6989586621679564329"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-27"></span><span>  </span><span id="local-6989586621679564328"><span class="annot"><span class="annottext">sprinkle :: a -&gt; StateT TCState (ExceptT Error IO) (a, Variable)
-</span><a href="#local-6989586621679564328"><span class="hs-identifier hs-var hs-var">sprinkle</span></a></span></span><span> </span><span id="local-6989586621679564327"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679564327"><span class="hs-identifier hs-var">ann</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-28"></span><span>    </span><span id="local-6989586621679564326"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679564326"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TC Variable
+</span><a href="#local-6989586621679564228"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t (a, Variable)
+</span><a href="#local-6989586621679564226"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>  </span><span id="local-6989586621679564225"><span class="annot"><span class="annottext">sprinkle :: a -&gt; StateT TCState (ExceptT Error IO) (a, Variable)
+</span><a href="#local-6989586621679564225"><span class="hs-identifier hs-var hs-var">sprinkle</span></a></span></span><span> </span><span id="local-6989586621679564224"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679564224"><span class="hs-identifier hs-var">ann</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-28"></span><span>    </span><span id="local-6989586621679564223"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679564223"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TC Variable
 </span><a href="IR.Constraint.Type.html#mkFlexVar"><span class="hs-identifier hs-var">mkFlexVar</span></a></span><span>
 </span><span id="line-29"></span><span>    </span><span class="annot"><span class="annottext">(a, Variable) -&gt; StateT TCState (ExceptT Error IO) (a, Variable)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679564327"><span class="hs-identifier hs-var">ann</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679564326"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679564224"><span class="hs-identifier hs-var">ann</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679564223"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-30"></span><span>
 </span><span id="line-31"></span><span>
 </span><span id="line-32"></span><span class="annot"><a href="IR.Constraint.Constrain.html#constrain"><span class="hs-identifier hs-type">constrain</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Constraint"><span class="hs-identifier hs-type">Constraint</span></a></span><span>
@@ -105,10 +105,10 @@ forall a. HasCallStack =&gt; a
 </span><span id="line-35"></span><span class="annot"><a href="IR.Constraint.Constrain.html#discardAnnotations"><span class="hs-identifier hs-type">discardAnnotations</span></a></span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span>
 </span><span id="line-37"></span><span id="discardAnnotations"><span class="annot"><span class="annottext">discardAnnotations :: Program (Annotations, Variable) -&gt; Program Variable
-</span><a href="IR.Constraint.Constrain.html#discardAnnotations"><span class="hs-identifier hs-var hs-var">discardAnnotations</span></a></span></span><span> </span><span id="local-6989586621679564322"><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564322"><span class="hs-identifier hs-var">sprinkledProg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-38"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679564321"><span class="annot"><span class="annottext">discardedDefs :: [(VarId, Expr Variable)]
-</span><a href="#local-6989586621679564321"><span class="hs-identifier hs-var hs-var">discardedDefs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="IR.Constraint.Constrain.html#discardAnnotations"><span class="hs-identifier hs-var hs-var">discardAnnotations</span></a></span></span><span> </span><span id="local-6989586621679564219"><span class="annot"><span class="annottext">Program (Annotations, Variable)
+</span><a href="#local-6989586621679564219"><span class="hs-identifier hs-var">sprinkledProg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679564218"><span class="annot"><span class="annottext">discardedDefs :: [(VarId, Expr Variable)]
+</span><a href="#local-6989586621679564218"><span class="hs-identifier hs-var hs-var">discardedDefs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">((VarId, Expr (Annotations, Variable)) -&gt; (VarId, Expr Variable))
 -&gt; [(VarId, Expr (Annotations, Variable))]
 -&gt; [(VarId, Expr Variable)]
@@ -128,15 +128,15 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; Expr (Annotations, Variable) -&gt; Expr Variable
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Annotations
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679564320"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679564320"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679564320"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program (Annotations, Variable)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679564217"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679564217"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679564217"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program (Annotations, Variable)
 -&gt; [(VarId, Expr (Annotations, Variable))]
 forall t. Program t -&gt; [(VarId, Expr t)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564322"><span class="hs-identifier hs-var">sprinkledProg</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679564219"><span class="hs-identifier hs-var">sprinkledProg</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-40"></span><span>  </span><span class="hs-keyword">in</span><span>  </span><span class="annot"><span class="annottext">Program (Annotations, Variable)
-</span><a href="#local-6989586621679564322"><span class="hs-identifier hs-var">sprinkledProg</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Variable)]
+</span><a href="#local-6989586621679564219"><span class="hs-identifier hs-var">sprinkledProg</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Variable)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Variable)]
-</span><a href="#local-6989586621679564321"><span class="hs-identifier hs-var">discardedDefs</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679564218"><span class="hs-identifier hs-var">discardedDefs</span></a></span><span> </span><span class="hs-special">}</span><span>
 </span><span id="line-41"></span></pre></body></html>
