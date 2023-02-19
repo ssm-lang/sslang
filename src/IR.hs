@@ -18,6 +18,7 @@ import           IR.SegmentLets                 ( segmentLets )
 import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
                                                 )
+import           IR.Pattern                     (checkAnomaly)
 import           Control.Monad                  ( (>=>)
                                                 , when
                                                 )
@@ -94,6 +95,11 @@ typecheck opt p = do
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . show ) p
   return p
 
+anomalycheck :: I.Program I.Type -> Pass (I.Program I.Type)
+anomalycheck p = do
+  checkAnomaly p
+  return p
+
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
@@ -110,4 +116,4 @@ transform opt p = do
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program I.Type)
-run opt = lower opt >=> typecheck opt >=> transform opt
+run opt = lower opt >=> typecheck opt >=> anomalycheck >=> transform opt
