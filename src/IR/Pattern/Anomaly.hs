@@ -32,7 +32,6 @@ import Data.List (
   find,
  )
 import qualified Data.Map as M
-import Data.Maybe (mapMaybe)
 import qualified Data.Set as S
 
 import qualified IR.IR as I
@@ -72,64 +71,35 @@ runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
 runAnomalyFn (AnomalyFn m) = runReaderT m
 
 
-{-
-checkProgram :: A.Program -> Pass ()
-checkProgram (A.Program topdefs) = runAnomalyFn (checkDefs ds) ctx
- where
-  tds = mapMaybe A.getTopTypeDef topdefs
-  ds = mapMaybe A.getTopDataDef topdefs
-  ctx = buildCtx tds
-
-checkDefs :: [A.Definition] -> AnomalyFn ()
-checkDefs = mapM_ checkDef
-
--- WARN: only body is checked
-checkDef :: A.Definition -> AnomalyFn ()
-checkDef d = checkExpr $ takeBody d
- where
-  takeBody (A.DefFn _ _ _ e) = e
-  takeBody (A.DefPat _ e) = e
-
-checkExprs :: [I.Expr] -> AnomalyFn ()
-checkExprs = mapM_ checkExpr
-
-checkExpr :: A.Expr -> AnomalyFn ()
-checkExpr (A.Id _) = return ()
-checkExpr (A.Lit _) = return ()
-checkExpr (A.ListExpr es) = checkExprs es
-checkExpr (A.Apply e1 e2) = checkExprs [e1, e2]
-checkExpr (A.Lambda _ e) = checkExpr e -- WARN: patterns here are not checked
-checkExpr (A.OpRegion e opRegion) = checkExpr e >> checkOpRegion opRegion
-checkExpr A.NoExpr = return ()
-checkExpr (A.Let ds e) = checkDefs ds >> checkExpr e
-checkExpr (A.While e1 e2) = checkExprs [e1, e2]
-checkExpr (A.Loop e) = checkExpr e
-checkExpr (A.Par es) = checkExprs es
-checkExpr (A.IfElse e1 e2 e3) = checkExprs [e1, e2, e3]
-checkExpr (A.After e1 e2 e3) = checkExprs [e1, e2, e3]
-checkExpr (A.Assign e1 e2) = checkExprs [e1, e2]
-checkExpr (A.Constraint e _) = checkExpr e
-checkExpr (A.Wait es) = checkExprs es
-checkExpr (A.Seq e1 e2) = checkExprs [e1, e2]
-checkExpr A.Break = return ()
-checkExpr (A.Match e arms) =
-  let (ps, es) = unzip arms in checkExpr e >> checkExprs es >> checkPats ps
-checkExpr (A.CQuote _) = return ()
-checkExpr (A.CCall _ es) = mapM_ checkExpr es
-checkExpr (A.Tuple es) = checkExprs es
-
-checkOpRegion :: A.OpRegion -> AnomalyFn ()
-checkOpRegion (A.NextOp _ e opRegion) = checkExpr e >> checkOpRegion opRegion
-checkOpRegion A.EOR = return ()
--}
-
-{-
 checkProgram :: I.Program t -> Pass ()
 checkProgram topdefs = runAnomalyFn (checkDefs ds) ctx
  where
-  tds = mapMaybe I.typeDefs topdefs
-  ds = mapMaybe I.programDefs topdefs
--}
+  tds = I.typeDefs topdefs
+  ds = I.programDefs topdefs
+  ctx = buildCtx tds
+
+
+checkDefs :: [(I.VarId, I.Expr t)] -> AnomalyFn ()
+checkDefs = mapM_ (\(_, e) -> checkExpr e)
+
+
+checkExprs :: [I.Expr t] -> AnomalyFn ()
+checkExprs = mapM_ checkExpr
+
+
+checkExpr :: I.Expr t -> AnomalyFn ()
+checkExpr (I.Var _ _) = return ()
+checkExpr (I.Data _ _) = return ()
+checkExpr (I.Lit _ _) = return ()
+checkExpr (I.App e1 e2 _) = checkExprs [e1, e2]
+checkExpr (I.Let bindings e _) =
+  let (_, es) = unzip bindings in checkExprs es >> checkExpr e
+checkExpr (I.Lambda _ e _) = checkExpr e
+checkExpr (I.Match e arms _) =
+  let (ps, es) = unzip arms in checkExpr e >> checkExprs es >> checkPats ps
+checkExpr (I.Prim _ es _) = checkExprs es
+checkExpr (I.Exception _ _) = return ()
+
 
 checkPats :: [I.Alt] -> AnomalyFn ()
 checkPats ps = do
@@ -214,7 +184,6 @@ usefulInductive pm pv =
         I.AltBinder _ -> wildCase
         I.AltData (I.DConId i) _ -> consCase i
         I.AltLit lit -> useful (PM.specializeLit lit pm) (PV.specialize pv)
-        _ -> error "can't happen"
 
 
 samplePat :: PM.PatMat -> Maybe I.Alt

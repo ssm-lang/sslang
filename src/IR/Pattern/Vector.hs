@@ -1,6 +1,5 @@
 module IR.Pattern.Vector where
 
-import Common.Identifiers (isVar)
 import qualified IR.IR as I
 
 
@@ -28,7 +27,7 @@ extend pv1 pv2 =
 
 hd :: PatVec -> I.Alt
 hd pv = case toList pv of
-  (x : xs) -> x
+  (x : _) -> x
   _ -> error "head on empty list"
 
 
@@ -39,8 +38,8 @@ tl pv = PatVec{ncol = ncol pv - 1, toList = tail $ toList pv}
 -- TODO: double check that this is correct
 specialize :: PatVec -> PatVec
 specialize pv = case hd pv of
-  I.AltData i [] -> tl pv
-  I.AltData i ps -> fromList ps `extend` tl pv
+  I.AltData _ [] -> tl pv
+  I.AltData _ ps -> fromList ps `extend` tl pv
   I.AltBinder _ -> error "wrong usage"
   _ -> error "wrong usage"
 
