@@ -1,0 +1,6 @@
+//main signature missing the cin argument
+main ( cout : & Int ) -> () =
+//main : &Int -> & Int -> () =
+  //fun (cint : &Int) (cout : &Int)
+    after 10 , (cout : & Int) <- 65
+    wait (cout : & Int)
