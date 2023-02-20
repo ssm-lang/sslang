@@ -1,0 +1,66 @@
+// checking that 5 tuples, 6 tuples.... can be declared with new syntax
+
+type Pair6 a b c d e f
+    Pair6 a b c d e f
+
+type Pair5 a b c d e
+    Pair5 a b c d e
+
+
+putip_ putc x =
+  if x < 10
+    putc (x + 48)
+  else
+    putip_ putc (x / 10)
+    putc (48 + x % 10)
+
+puti_ putc x =
+  if x < 0
+    putc 45 // -
+    putip_ putc (0 - x)
+  else
+    putip_ putc x
+
+// tests the pattern match of 3-tuple
+printl6_ puti putc p =
+  match p
+   (a,b,c,d,e,f) =  puti a
+                    putc 32
+                    puti b
+                    putc 32
+                    puti c
+                    putc 32
+                    puti d
+                    putc 32
+                    puti e
+                    putc 32
+                    puti f
+
+// tests the pattern match of 3-tuple
+printl5_ puti putc p =
+  match p
+   (a,b,c,d,e) = puti a
+                 putc 32
+                 puti b
+                 putc 32
+                 puti c
+                 putc 32
+                 puti d
+                 putc 32
+                 puti e
+                 
+main cin cout = 
+    let putc c = after 1, cout <- c
+                 wait cout
+    let puti = puti_ putc
+    let putnl _ = putc 10
+    let printl_5 l = printl5_ puti putc l
+    let printl_6 l = printl6_ puti putc l
+
+
+    let x = (1,2,3,4,5)
+    let y = (3,4,5,6,7,8)
+
+    printl_5 x
+    putnl ()
+    printl_6 y
