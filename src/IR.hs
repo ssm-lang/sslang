@@ -24,6 +24,7 @@ import           Control.Monad                  ( (>=>)
 import           System.Console.GetOpt          ( ArgDescr(..)
                                                 , OptDescr(..)
                                                 )
+import           Text.Show.Pretty
 
 -- | Operation modes for the IR compiler stage.
 --
@@ -91,7 +92,7 @@ typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
-  when (mode opt == DumpIRTypedShow) $ (throwError . Dump . show ) p
+  when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow ) p
   return p
 
 -- | IR transformations to prepare for codegen.
