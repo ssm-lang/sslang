@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module IR.OptimizeDupDrop where
 
@@ -26,20 +27,66 @@ import           Debug.Trace                    ( traceM )
 
 -- $external
 
--- | Insert dup and drop primitives throughout a program
+-- | Remove unnecessary dup and drop primitives throughout a program
 --
--- Applies `insertTop` to the program's definitions
+-- Applies `pruneTop` to the program's definitions
 optimizeDupDrop :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 optimizeDupDrop program = (`evalStateT` 0) $ do
     let programDefs = I.programDefs program
     let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef programDefs 
-    --traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
-    return program
+    traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
+    let defs = map pruneTop programDefs
+    let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef defs 
+    traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
+    return $ program { I.programDefs  = defs
+                     , I.programEntry = I.programEntry program
+                     , I.typeDefs     = I.typeDefs program
+                     }
 
 -- * Module internals, not intended for use outside this module
 --
 -- $internal
 
+-- | Prune referencing counting for top-level expressions
+pruneTop :: (I.VarId, I.Expr I.Type) -> (I.VarId, I.Expr I.Type)
+pruneTop (var, expr) = (var, ) $ pruneExpr expr
+
+-- | Prune reference counting for an expression
+pruneExpr :: I.Expr I.Type -> I.Expr I.Type
+pruneExpr dcon@I.Data{}     = dcon
+pruneExpr lit@I.Lit{}       = lit
+pruneExpr var@I.Var{}       = var
+pruneExpr (I.App f x t)     =
+    let f' = pruneExpr f
+        x' = pruneExpr x
+     in I.App f' x' t
+pruneExpr dup@(I.Prim I.Dup [e] typ) =
+    case e of
+        I.Var _ (I.TCon "&" _) -> dup
+        _ -> e
+pruneExpr drop@(I.Prim I.Drop [e, r]  typ) =
+    case e of
+        I.Var _ (I.TCon "&" _) -> drop
+        _ -> r
+pruneExpr (I.Prim p es typ) = I.Prim p (map pruneExpr es) typ
+pruneExpr (I.Let bins expr typ) = I.Let bins' expr' typ
+    where pruneBins (v, d) = (v, pruneExpr d)
+          bins' = pruneBins <$> bins
+          expr' = pruneExpr expr
+pruneExpr lam@(I.Lambda v e typ) = I.Lambda v (pruneExpr e) typ
+pruneExpr (I.Match e alts typ) =
+    let alts' = map pruneAlt alts
+        e'    = pruneExpr e
+     in I.Match e' alts' typ
+
+pruneAlt :: (I.Alt, I.Expr I.Type) -> (I.Alt, I.Expr I.Type)
+pruneAlt (I.AltDefault v, e)          = (I.AltDefault v, ) $ pruneExpr e
+pruneAlt (I.AltLit l, e)              = (I.AltLit l, ) $ pruneExpr e
+pruneAlt (I.AltData dcon binds, body) =
+    let body' = pruneExpr body in (I.AltData dcon binds, body')
+    -- This will do nothing until we fix insertAlt in insertRefCounting
+
+-- | Count dups and drops in a definition.
 countDupsAndDropsDef :: (I.VarId, I.Expr I.Type) -> (Int, Int)
 countDupsAndDropsDef def@(_,e) = countDupsAndDropsExpr e
 
