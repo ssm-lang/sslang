@@ -38,6 +38,7 @@ printl3_ puti putc (x,y,z) =
          putc 32
          puti z
 
+
                 
 main cin cout = 
      let putc c = after 1, cout <- c
@@ -51,7 +52,7 @@ main cin cout =
      let x = (1,2)
      let y = (3,4)
      let z = (7,8,9)
-     let nested = ((1,2),3)
+     
      printl2 x
      putnl ()
      printl2 y
