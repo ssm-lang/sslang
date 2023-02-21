@@ -1,0 +1,12 @@
+main =
+  let x = 5
+  if 1
+      1+x
+  else
+      0
+  if 1
+      1+x
+  else
+      x*2
+  ()
+

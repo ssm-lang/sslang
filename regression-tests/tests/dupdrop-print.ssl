@@ -1,0 +1,4 @@
+main (cin:&Int) (cout:&Int) =
+  after 1, cout <- 65
+  wait cout
+  ()
