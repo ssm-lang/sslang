@@ -173,7 +173,11 @@ usefulInductive pm pv =
                   else useful (PM.defaultize pm) (PV.tl pv)
            in case sample of
                 I.AltLit _ -> useful (PM.defaultize pm) (PV.tl pv)
-                I.AltData (I.DConId i) _ -> wildCaseCons i
+                I.AltData (I.DConId i) [] -> wildCaseCons i
+                I.AltData (I.DConId i) ps ->
+                  useful
+                    (PM.specializeCons (length ps) i pm)
+                    (PV.specializeWild (length ps) pv)
                 I.AltBinder Nothing -> error "can't happen"
                 I.AltBinder (Just (I.VarId i)) -> wildCaseCons i
       consCase cid = do

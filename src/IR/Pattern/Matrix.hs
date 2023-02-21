@@ -68,7 +68,6 @@ specializeLit lit pm =
             if lit' == lit then fromPatVec $ PV.tl pv else noRow
           I.AltBinder Nothing -> wildCase
           I.AltBinder _ -> wildCase
-          I.AltData _ [] -> noRow
           I.AltData _ _ -> noRow
 
 
@@ -85,10 +84,16 @@ specializeCons arity i pm =
      in case PV.hd pv of
           I.AltLit _ -> noRow
           I.AltBinder Nothing -> wildCase
-          I.AltBinder _ -> wildCase
+          I.AltBinder _ -> noRow
           I.AltData (I.DConId i') [] ->
             if i' == i then fromPatVec $ PV.tl pv else noRow
-          I.AltData _ _ -> noRow
+          I.AltData (I.DConId i') ps ->
+            if i' == i
+              then
+                let pv1 = PV.fromList ps
+                    pv2 = PV.tl pv
+                 in fromPatVec $ PV.extend pv1 pv2
+              else noRow
 
 
 defaultize :: PatMat -> PatMat
