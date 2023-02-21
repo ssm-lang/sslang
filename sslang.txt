@@ -2093,6 +2093,24 @@ segmentLets :: Program T -> Pass (Program T)
 segmentDefs :: [Def t] -> [[Def t]]
 segmentDefs' :: [Def' t] -> [[Def' t]]
 
+
+-- | Remove unnecessary Par expressions from the IR
+--   
+--   This pass detects unnecessary par expressions and then replaces them
+--   with equivalent sequential expressions.
+module IR.OptimizePar
+
+-- | Entry-point to Par Optimization.
+--   
+--   Maps over top level definitions, removing unnecessary pars.
+optimizePar :: Program Type -> Pass (Program Type)
+instance Control.Monad.State.Class.MonadState IR.OptimizePar.OptParCtx IR.OptimizePar.OptParFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.OptimizePar.OptParFn
+instance Control.Monad.Fail.MonadFail IR.OptimizePar.OptParFn
+instance GHC.Base.Monad IR.OptimizePar.OptParFn
+instance GHC.Base.Applicative IR.OptimizePar.OptParFn
+instance GHC.Base.Functor IR.OptimizePar.OptParFn
+
 module IR.DesugarPattern
 desugarPattern :: Program Type -> Pass (Program Type)
 instance GHC.Show.Show IR.DesugarPattern.CInfo

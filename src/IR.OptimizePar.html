@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingVia #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">{- | Remove unnecessary Par expressions from the IR
+
+This pass detects unnecessary par expressions and then replaces them with equivalent sequential expressions.
+-}</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">IR.OptimizePar</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>  </span><span class="annot"><a href="IR.OptimizePar.html#optimizePar"><span class="hs-identifier">optimizePar</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Common.Compiler.html"><span class="hs-identifier">Common.Compiler</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Common.Compiler.html"><span class="hs-identifier">Common.Compiler</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Compiler</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State.Lazy</span></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-15"></span><span>  </span><span class="annot"><span class="hs-identifier">MonadState</span></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>  </span><span class="annot"><span class="hs-identifier">StateT</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>  </span><span class="annot"><span class="hs-identifier">evalStateT</span></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>  </span><span class="annot"><span class="hs-identifier">gets</span></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="annot"><span class="hs-identifier">modify</span></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="IR.IR.html"><span class="hs-identifier">IR.IR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Literal"><span class="hs-identifier">Literal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#LitIntegral"><span class="hs-identifier">LitIntegral</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="IR.IR.html"><span class="hs-identifier">IR.IR</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">I</span></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- | Optimization Environment</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="OptParCtx"><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-var">OptParCtx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="OptParCtx"><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-var">OptParCtx</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="hs-comment">-- | 'numPars' the number of par nodes in the input program's IR.</span><span>
+</span><span id="line-28"></span><span>    </span><span id="numPars"><span class="annot"><span class="annottext">OptParCtx -&gt; Int
+</span><a href="IR.OptimizePar.html#numPars"><span class="hs-identifier hs-var hs-var">numPars</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | 'numLitInts' the number of &quot;bad&quot; par node in the input program's IR.</span><span>
+</span><span id="line-30"></span><span>    </span><span id="numBadPars"><span class="annot"><span class="annottext">OptParCtx -&gt; Int
+</span><a href="IR.OptimizePar.html#numBadPars"><span class="hs-identifier hs-var hs-var">numBadPars</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- | OptPar Monad</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="OptParFn"><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-var">OptParFn</span></a></span></span><span> </span><span id="local-6989586621679563914"><span class="annot"><a href="#local-6989586621679563914"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LiftFn"><span class="annot"><a href="IR.OptimizePar.html#LiftFn"><span class="hs-identifier hs-var">LiftFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679563914"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563909"><span id="local-6989586621679563911"><span class="annot"><span class="annottext">a -&gt; OptParFn b -&gt; OptParFn a
+(a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+(forall a b. (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b)
+-&gt; (forall a b. a -&gt; OptParFn b -&gt; OptParFn a) -&gt; Functor OptParFn
+forall a b. a -&gt; OptParFn b -&gt; OptParFn a
+forall a b. (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; OptParFn b -&gt; OptParFn a
+$c&lt;$ :: forall a b. a -&gt; OptParFn b -&gt; OptParFn a
+fmap :: (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+$cfmap :: forall a b. (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563897"><span id="local-6989586621679563899"><span id="local-6989586621679563901"><span id="local-6989586621679563903"><span id="local-6989586621679563905"><span class="annot"><span class="annottext">Functor OptParFn
+a -&gt; OptParFn a
+Functor OptParFn
+-&gt; (forall a. a -&gt; OptParFn a)
+-&gt; (forall a b. OptParFn (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; OptParFn a -&gt; OptParFn b -&gt; OptParFn c)
+-&gt; (forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b)
+-&gt; (forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn a)
+-&gt; Applicative OptParFn
+OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+OptParFn a -&gt; OptParFn b -&gt; OptParFn a
+OptParFn (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+(a -&gt; b -&gt; c) -&gt; OptParFn a -&gt; OptParFn b -&gt; OptParFn c
+forall a. a -&gt; OptParFn a
+forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn a
+forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+forall a b. OptParFn (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; OptParFn a -&gt; OptParFn b -&gt; OptParFn c
+forall (f :: * -&gt; *).
+Functor f
+-&gt; (forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: OptParFn a -&gt; OptParFn b -&gt; OptParFn a
+$c&lt;* :: forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn a
+*&gt; :: OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+$c*&gt; :: forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; OptParFn a -&gt; OptParFn b -&gt; OptParFn c
+$cliftA2 :: forall a b c.
+(a -&gt; b -&gt; c) -&gt; OptParFn a -&gt; OptParFn b -&gt; OptParFn c
+&lt;*&gt; :: OptParFn (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+$c&lt;*&gt; :: forall a b. OptParFn (a -&gt; b) -&gt; OptParFn a -&gt; OptParFn b
+pure :: a -&gt; OptParFn a
+$cpure :: forall a. a -&gt; OptParFn a
+$cp1Applicative :: Functor OptParFn
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563889"><span id="local-6989586621679563891"><span id="local-6989586621679563893"><span class="annot"><span class="annottext">Applicative OptParFn
+a -&gt; OptParFn a
+Applicative OptParFn
+-&gt; (forall a b. OptParFn a -&gt; (a -&gt; OptParFn b) -&gt; OptParFn b)
+-&gt; (forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b)
+-&gt; (forall a. a -&gt; OptParFn a)
+-&gt; Monad OptParFn
+OptParFn a -&gt; (a -&gt; OptParFn b) -&gt; OptParFn b
+OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+forall a. a -&gt; OptParFn a
+forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+forall a b. OptParFn a -&gt; (a -&gt; OptParFn b) -&gt; OptParFn b
+forall (m :: * -&gt; *).
+Applicative m
+-&gt; (forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; OptParFn a
+$creturn :: forall a. a -&gt; OptParFn a
+&gt;&gt; :: OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+$c&gt;&gt; :: forall a b. OptParFn a -&gt; OptParFn b -&gt; OptParFn b
+&gt;&gt;= :: OptParFn a -&gt; (a -&gt; OptParFn b) -&gt; OptParFn b
+$c&gt;&gt;= :: forall a b. OptParFn a -&gt; (a -&gt; OptParFn b) -&gt; OptParFn b
+$cp1Monad :: Applicative OptParFn
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563885"><span class="annot"><span class="annottext">Monad OptParFn
+Monad OptParFn
+-&gt; (forall a. String -&gt; OptParFn a) -&gt; MonadFail OptParFn
+String -&gt; OptParFn a
+forall a. String -&gt; OptParFn a
+forall (m :: * -&gt; *).
+Monad m -&gt; (forall a. String -&gt; m a) -&gt; MonadFail m
+fail :: String -&gt; OptParFn a
+$cfail :: forall a. String -&gt; OptParFn a
+$cp1MonadFail :: Monad OptParFn
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadFail</span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563879"><span id="local-6989586621679563881"><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563871"><span id="local-6989586621679563873"><span id="local-6989586621679563875"><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- | Example func to delete later! Demonstrates how to extract a value from the OptParFn Monad</span><span>
+</span><span id="line-45"></span><span class="annot"><a href="IR.OptimizePar.html#getNumberOfPars"><span class="hs-identifier hs-type">getNumberOfPars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-46"></span><span id="getNumberOfPars"><span class="annot"><span class="annottext">getNumberOfPars :: OptParFn Int
+</span><a href="IR.OptimizePar.html#getNumberOfPars"><span class="hs-identifier hs-var hs-var">getNumberOfPars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(OptParCtx -&gt; Int) -&gt; OptParFn Int
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">OptParCtx -&gt; Int
+</span><a href="IR.OptimizePar.html#numPars"><span class="hs-identifier hs-var hs-var">numPars</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- | Example func to delete later! Demonstrates how to modify a value in the OptParFn Monad</span><span>
+</span><span id="line-50"></span><span class="annot"><a href="IR.OptimizePar.html#updateNumberOfPars"><span class="hs-identifier hs-type">updateNumberOfPars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span id="updateNumberOfPars"><span class="annot"><span class="annottext">updateNumberOfPars :: Int -&gt; OptParFn ()
+</span><a href="IR.OptimizePar.html#updateNumberOfPars"><span class="hs-identifier hs-var hs-var">updateNumberOfPars</span></a></span></span><span> </span><span id="local-6989586621679563867"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679563867"><span class="hs-identifier hs-var">num</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">(OptParCtx -&gt; OptParCtx) -&gt; OptParFn ()
+forall s (m :: * -&gt; *). MonadState s m =&gt; (s -&gt; s) -&gt; m ()
+</span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="annot"><span class="annottext">((OptParCtx -&gt; OptParCtx) -&gt; OptParFn ())
+-&gt; (OptParCtx -&gt; OptParCtx) -&gt; OptParFn ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679563866"><span class="annot"><span class="annottext">OptParCtx
+</span><a href="#local-6989586621679563866"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptParCtx
+</span><a href="#local-6989586621679563866"><span class="hs-identifier hs-var">st</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">numPars :: Int
+</span><a href="IR.OptimizePar.html#numPars"><span class="hs-identifier hs-var">numPars</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679563867"><span class="hs-identifier hs-var">num</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- | Run a LiftFn computation.</span><span>
+</span><span id="line-56"></span><span id="local-6989586621679563935"><span class="annot"><a href="IR.OptimizePar.html#runLiftFn"><span class="hs-identifier hs-type">runLiftFn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679563935"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679563935"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-57"></span><span id="runLiftFn"><span class="annot"><span class="annottext">runLiftFn :: OptParFn a -&gt; Pass a
+</span><a href="IR.OptimizePar.html#runLiftFn"><span class="hs-identifier hs-var hs-var">runLiftFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.OptimizePar.html#LiftFn"><span class="hs-identifier hs-type">LiftFn</span></a></span><span> </span><span id="local-6989586621679563864"><span class="annot"><span class="annottext">StateT OptParCtx Pass a
+</span><a href="#local-6989586621679563864"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><span class="annottext">StateT OptParCtx Pass a -&gt; OptParCtx -&gt; Pass a
+forall (m :: * -&gt; *) s a. Monad m =&gt; StateT s m a -&gt; s -&gt; m a
+</span><span class="hs-identifier hs-var">evalStateT</span></span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="annottext">StateT OptParCtx Pass a
+</span><a href="#local-6989586621679563864"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="annottext">OptParCtx :: Int -&gt; Int -&gt; OptParCtx
+</span><a href="IR.OptimizePar.html#OptParCtx"><span class="hs-identifier hs-type">OptParCtx</span></a></span><span>
+</span><span id="line-61"></span><span>      </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">numPars :: Int
+</span><a href="IR.OptimizePar.html#numPars"><span class="hs-identifier hs-var">numPars</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-62"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">numBadPars :: Int
+</span><a href="IR.OptimizePar.html#numBadPars"><span class="hs-identifier hs-var">numBadPars</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-63"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">{- | Entry-point to Par Optimization.
+
+Maps over top level definitions, removing unnecessary pars.
+-}</span><span>
+</span><span id="line-70"></span><span class="annot"><a href="IR.OptimizePar.html#optimizePar"><span class="hs-identifier hs-type">optimizePar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span id="optimizePar"><span class="annot"><span class="annottext">optimizePar :: Program Type -&gt; Pass (Program Type)
+</span><a href="IR.OptimizePar.html#optimizePar"><span class="hs-identifier hs-var hs-var">optimizePar</span></a></span></span><span> </span><span id="local-6989586621679563863"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679563863"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">OptParFn (Program Type) -&gt; Pass (Program Type)
+forall a. OptParFn a -&gt; Pass a
+</span><a href="IR.OptimizePar.html#runLiftFn"><span class="hs-identifier hs-var">runLiftFn</span></a></span><span> </span><span class="annot"><span class="annottext">(OptParFn (Program Type) -&gt; Pass (Program Type))
+-&gt; OptParFn (Program Type) -&gt; Pass (Program Type)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679563862"><span class="annot"><span class="annottext">[(VarId, Expr Type)]
+</span><a href="#local-6989586621679563862"><span class="hs-identifier hs-var">optimizedDefs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarId, Expr Type) -&gt; OptParFn (VarId, Expr Type))
+-&gt; [(VarId, Expr Type)] -&gt; OptParFn [(VarId, Expr Type)]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">(VarId, Expr Type) -&gt; OptParFn (VarId, Expr Type)
+</span><a href="IR.OptimizePar.html#optimizeParTop"><span class="hs-identifier hs-var">optimizeParTop</span></a></span><span> </span><span class="annot"><span class="annottext">([(VarId, Expr Type)] -&gt; OptParFn [(VarId, Expr Type)])
+-&gt; [(VarId, Expr Type)] -&gt; OptParFn [(VarId, Expr Type)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(VarId, Expr Type)]
+forall t. Program t -&gt; [(VarId, Expr t)]
+</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679563863"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; OptParFn (Program Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; OptParFn (Program Type))
+-&gt; Program Type -&gt; OptParFn (Program Type)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679563863"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: [(VarId, Expr Type)]
+</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarId, Expr Type)]
+</span><a href="#local-6989586621679563862"><span class="hs-identifier hs-var">optimizedDefs</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- | Given a top-level definition, detect + replace unnecessary par expressions</span><span>
+</span><span id="line-77"></span><span class="annot"><a href="IR.OptimizePar.html#optimizeParTop"><span class="hs-identifier hs-type">optimizeParTop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span id="optimizeParTop"><span class="annot"><span class="annottext">optimizeParTop :: (VarId, Expr Type) -&gt; OptParFn (VarId, Expr Type)
+</span><a href="IR.OptimizePar.html#optimizeParTop"><span class="hs-identifier hs-var hs-var">optimizeParTop</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563858"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679563858"><span class="hs-identifier hs-var">nm</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679563857"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563857"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679563856"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563856"><span class="hs-identifier hs-var">rhs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; OptParFn (Expr Type)
+</span><a href="IR.OptimizePar.html#detectReplaceBadPar"><span class="hs-identifier hs-var">detectReplaceBadPar</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563857"><span class="hs-identifier hs-var">rhs</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679563854"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563854"><span class="hs-identifier hs-var">rhs''</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; OptParFn (Expr Type, Int)
+</span><a href="IR.OptimizePar.html#countPars"><span class="hs-identifier hs-var">countPars</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563856"><span class="hs-identifier hs-var">rhs'</span></a></span><span> </span><span class="hs-comment">-- calling this so we don't get an &quot;unused&quot; warning</span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679563852"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563852"><span class="hs-identifier hs-var">rhs'''</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; OptParFn (Expr Type, Int)
+</span><a href="IR.OptimizePar.html#countBadPars"><span class="hs-identifier hs-var">countBadPars</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563854"><span class="hs-identifier hs-var">rhs''</span></a></span><span> </span><span class="hs-comment">-- calling this so we don't get an &quot;unused&quot; warning</span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-comment">-- uncomment the line below to test countPars</span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-comment">-- (_, result) &lt;- countPars rhs</span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-comment">-- _ &lt;- fail (show nm ++ &quot;: Number of Par Exprs: &quot; ++ show result)</span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-comment">-- uncomment the two lines below to test countBadPars</span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-comment">-- (_, result') &lt;- countBadPars rhs</span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-comment">-- _ &lt;- fail (show nm ++ &quot;: Number of Bad Par Exprs: &quot; ++ show result')</span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><span class="annottext">(VarId, Expr Type) -&gt; OptParFn (VarId, Expr Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679563858"><span class="hs-identifier hs-var">nm</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563852"><span class="hs-identifier hs-var">rhs'''</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- | Detect Unnecessary Par Expressions + Replace With Equivalent Sequential Expression</span><span>
+</span><span id="line-92"></span><span class="annot"><a href="IR.OptimizePar.html#detectReplaceBadPar"><span class="hs-identifier hs-type">detectReplaceBadPar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span id="detectReplaceBadPar"><span class="annot"><span class="annottext">detectReplaceBadPar :: Expr Type -&gt; OptParFn (Expr Type)
+</span><a href="IR.OptimizePar.html#detectReplaceBadPar"><span class="hs-identifier hs-var hs-var">detectReplaceBadPar</span></a></span></span><span> </span><span id="local-6989586621679563850"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563850"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; OptParFn (Expr Type)
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563850"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-comment">-- for now, just return the same thing (don't do anyting)</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="hs-comment">{- | 1) Count Par Nodes
+
+Practice Exercise to Delete Later!
+
+Traverse the IR representation of the body of a top level defintion,
+and count the number of par expressions present.
+Return the body unchanged, as well as the count numPars.
+-}</span><span>
+</span><span id="line-105"></span><span class="annot"><a href="IR.OptimizePar.html#countPars"><span class="hs-identifier hs-type">countPars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span id="countPars"><span class="annot"><span class="annottext">countPars :: Expr Type -&gt; OptParFn (Expr Type, Int)
+</span><a href="IR.OptimizePar.html#countPars"><span class="hs-identifier hs-var hs-var">countPars</span></a></span></span><span> </span><span id="local-6989586621679563849"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563849"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-107"></span><span>  </span><span class="hs-comment">-- currently a stub</span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-comment">-- PUT YOUR IMPLEMENTATION HERE</span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621679563848"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679563848"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">OptParFn Int
+</span><a href="IR.OptimizePar.html#getNumberOfPars"><span class="hs-identifier hs-var">getNumberOfPars</span></a></span><span>
+</span><span id="line-110"></span><span>  </span><span class="annot"><span class="annottext">Int -&gt; OptParFn ()
+</span><a href="IR.OptimizePar.html#updateNumberOfPars"><span class="hs-identifier hs-var">updateNumberOfPars</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679563848"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- calling this so we don't get an &quot;unused&quot; warning</span><span>
+</span><span id="line-111"></span><span>  </span><span class="annot"><span class="annottext">(Expr Type, Int) -&gt; OptParFn (Expr Type, Int)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563849"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679563848"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="hs-comment">{- | 1.5) Implement IsBad Predicate
+
+Suggested by John during Monday Meeting.
+Returns true if par expr contains only instantaneous expressions as arguments.
+False otherwise.
+Useful for exercise 2.
+-}</span><span>
+</span><span id="line-121"></span><span class="annot"><a href="IR.OptimizePar.html#isBad"><span class="hs-identifier hs-type">isBad</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-122"></span><span id="isBad"><span class="annot"><span class="annottext">isBad :: Expr Type -&gt; Bool
+</span><a href="IR.OptimizePar.html#isBad"><span class="hs-identifier hs-var hs-var">isBad</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-comment">-- currently a stub</span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-comment">{- | 2) Count Bad Par Nodes
+
+Practice Exercise to Delete Later!
+
+Traverse the IR representation of the body of a top level defintion,
+and count the number of BAD par expressions present.
+Use the helper predicate &quot;isBad&quot; in your implementation.
+Return the body unchanged, as well as the count numBadPars.
+-}</span><span>
+</span><span id="line-134"></span><span class="annot"><a href="IR.OptimizePar.html#countBadPars"><span class="hs-identifier hs-type">countBadPars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.OptimizePar.html#OptParFn"><span class="hs-identifier hs-type">OptParFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span id="countBadPars"><span class="annot"><span class="annottext">countBadPars :: Expr Type -&gt; OptParFn (Expr Type, Int)
+</span><a href="IR.OptimizePar.html#countBadPars"><span class="hs-identifier hs-var hs-var">countBadPars</span></a></span></span><span> </span><span id="local-6989586621679563845"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563845"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-136"></span><span>  </span><span class="hs-comment">-- currently a stub</span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679563844"><span class="annot"><span class="annottext">y :: Bool
+</span><a href="#local-6989586621679563844"><span class="hs-identifier hs-var hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Bool
+</span><a href="IR.OptimizePar.html#isBad"><span class="hs-identifier hs-var">isBad</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Type -&gt; Expr Type
+forall t. Literal -&gt; t -&gt; Expr t
+</span><a href="IR.IR.html#Lit"><span class="hs-identifier hs-var">I.Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Literal
+</span><a href="IR.IR.html#LitIntegral"><span class="hs-identifier hs-var">LitIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">5</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; Type
+forall t. Expr t -&gt; t
+</span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563845"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- calling this so we don't get an &quot;unused&quot; warning</span><span>
+</span><span id="line-138"></span><span>  </span><span class="annot"><span class="annottext">(Expr Type, Int) -&gt; OptParFn (Expr Type, Int)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679563845"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679563844"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span></pre></body></html>
