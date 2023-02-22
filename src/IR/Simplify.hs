@@ -59,6 +59,7 @@ data OccInfo = Dead
              | OnceUnsafe
              | MultiUnsafe
              | Never
+             | ConstructorFunc
   deriving Show
   deriving Typeable
 
@@ -119,14 +120,15 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _       -> error
-          (  "ADD: Should never have seen this binder "
-          ++ show binder
-          ++ " before!"
-          ++ "\n"
-          ++ "occInfo: "
-          ++ show m
-          )
+        _ -> M.insert binder ConstructorFunc m
+--        _       -> error
+--          (  "ADD: Should never have seen this binder "
+--          ++ show binder
+--          ++ " before!"
+--          ++ "\n"
+--          ++ "occInfo: "
+--          ++ show m
+--          )
   modify $ \st -> st { occInfo = m' }
 
 -- | Update occInfo for the binder since we just spotted it
@@ -135,6 +137,15 @@ updateOccVar binder = do
   m       <- gets occInfo
   insidel <- insideLambda
   insidem <- insideMatch
+  case M.lookup binder m of
+        Nothing -> fail
+          (  "UDPATE: We should already know about this binder "
+          ++ show binder
+          ++ " :"
+          ++ show m
+          ++ "!"
+          )
+        _ -> ()
   let m' = case M.lookup binder m of
         Nothing -> error
           (  "UDPATE: We should already know about this binder "
@@ -201,7 +212,7 @@ insideMatch = do
 
 -- | Set simplifier to version 1 or 2
 simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-simplifyProgram = simplifyProgram2
+simplifyProgram = simplifyProgram1
 
 {- | Entry-point to Simplifer.
 
@@ -483,6 +494,7 @@ occAnalExpr p@(I.Match scrutinee arms _) = do
   recordEnteringMatch
   _ <- occAnalExpr scrutinee
   --let (alts, rhss) = unzip arms
+  mapM_ (occAnalAlt . fst) arms
   mapM_ (occAnalExpr . snd) arms
   recordExitingMatch
   m <- gets occInfo
@@ -492,6 +504,35 @@ occAnalExpr p@(I.Match scrutinee arms _) = do
 occAnalExpr e = do
   m <- gets occInfo
   pure (e, show m)
+
+{-
+-- | An alternative in a pattern-match.
+data Alt
+  = AltData DConId [Alt]
+  -- ^ @AltData d vs@ matches data constructor @d@, and recursive patterns @alts@.
+  | AltLit Literal
+  -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
+  | AltBinder Binder
+  -- ^ @AltBinder v@ matches anything, and bound to name @v@.
+  deriving (Eq, Show, Typeable, Data)
+-}
+
+occAnalAlt :: I.Alt -> SimplFn (I.Alt, String)
+occAnalAlt alt@(I.AltBinder binder) = do
+  case binder of
+    (Just nm) -> addOccVar nm
+    _ -> pure ()
+  m <- gets occInfo
+  pure (alt, show m)
+
+occAnalAlt alt@(I.AltData _ alts) = do
+  mapM_ occAnalAlt alts
+  m <- gets occInfo
+  pure (alt, show m)
+
+occAnalAlt lit = do
+  m <- gets occInfo
+  pure (lit, show m)
 
 -- NOTES --
 
