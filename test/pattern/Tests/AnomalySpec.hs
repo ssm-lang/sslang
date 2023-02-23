@@ -8,18 +8,22 @@ import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import qualified Front
 import qualified Front.Ast                     as A
-import           Front.Pattern.Anomaly          ( checkProgram )
-import qualified Front.Pattern.Matrix          as PM
+import qualified IR
+import qualified IR.IR                         as I
+import           IR.Pattern.Anomaly          ( checkProgram )
+import qualified IR.Pattern.Matrix          as PM
 
-doAnomalyCheck :: String -> Pass ()
-doAnomalyCheck s = Front.parseAst def s >>= checkProgram
+import           Control.Monad                  ( (>=>) )
+
+doAnomalyCheck :: String -> Pass (I.Program I.Type)
+doAnomalyCheck = Front.run def >=> IR.lower def >=> IR.typecheck def >=> IR.anomalycheck
 
 spec :: Spec
 spec = do
   describe "pure stuff" $ do
     it "defaultize" $ do
       PM.emptyWithCols 0
-        `shouldBe` (PM.defaultize . PM.singleCol $ [A.PatLit (A.LitInt 1)])
+        `shouldBe` (PM.defaultize . PM.singleCol $ [I.AltLit (I.LitIntegral 1)])
   describe "allows valid matches" $ do
     it "allows simple data constructor match" $ do
       shouldPass $ doAnomalyCheck [here|
