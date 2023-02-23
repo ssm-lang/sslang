@@ -15,6 +15,7 @@ import qualified Front.Ast                     as A
 
 import           Front.DesugarLists             ( desugarLists )
 import           Front.DesugarStrings           ( desugarStrings )
+import           Front.DesugarPatTup            ( desugarTupPat )
 import           Front.ParseOperators           ( parseOperators )
 import           Front.Parser                   ( parseProgram )
 import qualified Front.Pattern                 as Pattern
@@ -82,14 +83,15 @@ parseAst opt src = do
 
   astS <- desugarStrings astP
   astL <- desugarLists astS
+  astT <- desugarTupPat astL
 
   -- TODO: other desugaring
-  Pattern.checkAnomaly astL
+  Pattern.checkAnomaly astT
   --astD <- Pattern.desugarProgram astL
 
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astL
-  return astL
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astT
+  return astT
   
 -- | Semantic checking on an AST.
 checkAst :: Options -> A.Program -> Pass ()
