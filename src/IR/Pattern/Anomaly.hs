@@ -13,11 +13,9 @@ import Common.Compiler (
   fromString,
  )
 import Common.Identifiers (
-  DConId (..),
   Identifiable (..),
   Identifier (..),
   TConId (..),
-  isCons,
  )
 import Control.Monad (
   unless,
@@ -121,13 +119,13 @@ checkUseless ps = mapM_ (\(pm, p) -> checkUselessEach pm p) cases
       )
   cases =
     let vecs = map (\pat -> PV.fromList [pat]) ps
-        rows = map (\vec -> PM.fromPatVec vec) vecs
-        emptyMat = let r : _ = rows in PM.emptyWithCols $ PM.ncol r
-        patMats =
-          let accumRows = (\(ms, m) r -> (m : ms, PM.extend m r))
-              (pms, _) = foldl accumRows ([], emptyMat) rows
+        pats = map (\vec -> PM.fromPatVec vec) vecs
+        emptyMat = let p : _ = pats in PM.emptyWithCols $ PM.ncol p
+        patsBeforeIdx =
+          let accumRows = (\(ms, m) p -> (m : ms, PM.extend m p))
+              (pms, _) = foldl accumRows ([], emptyMat) pats
            in reverse pms
-     in zip patMats vecs
+     in zip patsBeforeIdx vecs
 
 
 checkExhaustive :: [I.Alt] -> AnomalyFn ()
@@ -173,20 +171,13 @@ usefulInductive pm pv =
                   else useful (PM.defaultize pm) (PV.tl pv)
            in case sample of
                 I.AltLit _ -> useful (PM.defaultize pm) (PV.tl pv)
-                I.AltData (I.DConId i) [] -> wildCaseCons i
-                I.AltData (I.DConId i) ps ->
-                  useful
-                    (PM.specializeCons (length ps) i pm)
-                    (PV.specializeWild (length ps) pv)
-                I.AltBinder Nothing -> error "can't happen"
-                I.AltBinder (Just (I.VarId i)) -> wildCaseCons i
-      consCase cid = do
-        c <- askCInfo cid
-        useful (PM.specializeCons (cArity c) cid pm) (PV.specialize pv)
+                I.AltData (I.DConId i) _ -> wildCaseCons i
+                I.AltBinder _ -> error "can't happen"
    in case PV.hd pv of
-        I.AltBinder Nothing -> wildCase
         I.AltBinder _ -> wildCase
-        I.AltData (I.DConId i) _ -> consCase i
+        I.AltData (I.DConId i) _ -> do
+          c <- askCInfo i
+          useful (PM.specializeCons (cArity c) i pm) (PV.specialize pv)
         I.AltLit lit -> useful (PM.specializeLit lit pm) (PV.specialize pv)
 
 
@@ -199,9 +190,8 @@ samplePat pm = case firstConsPatVec of
    where
     isConstructor p = case p of
       I.AltLit _ -> True
-      I.AltData (I.DConId i) _ -> isCons i
-      I.AltBinder Nothing -> False
-      I.AltBinder (Just (I.VarId i)) -> isCons i
+      I.AltData _ _ -> True
+      I.AltBinder _ -> False
   stripPat p = case p of
     I.AltLit _ -> Just p
     I.AltData _ _ -> Just p
@@ -238,11 +228,8 @@ hasCompleteCons cset pm = S.empty == foldr removeC cset (PM.toList pm)
  where
   removeC pv cset' = removeC' (PV.hd pv) cset'
   removeC' p cset' = case p of
-    I.AltData (DConId i) _ -> S.delete i cset'
-    I.AltBinder b ->
-      case b of
-        Just (I.VarId i) -> S.delete i cset'
-        _ -> cset'
+    I.AltData (I.DConId i) _ -> S.delete i cset'
+    I.AltBinder (Just (I.VarId i)) -> S.delete i cset'
     _ -> cset'
 
 

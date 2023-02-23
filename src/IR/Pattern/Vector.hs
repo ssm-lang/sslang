@@ -38,10 +38,10 @@ tl pv = PatVec{ncol = ncol pv - 1, toList = tail $ toList pv}
 -- TODO: double check that this is correct
 specialize :: PatVec -> PatVec
 specialize pv = case hd pv of
+  I.AltLit _ -> tl pv
   I.AltData _ [] -> tl pv
-  I.AltData _ ps -> fromList ps `extend` tl pv
+  I.AltData _ ps -> extend (fromList ps) (tl pv)
   I.AltBinder _ -> error "wrong usage"
-  _ -> error "wrong usage"
 
 
 specializeWild :: Int -> PatVec -> PatVec
@@ -52,4 +52,4 @@ specializeWild arity pv = case hd pv of
   wildCase =
     let pv1 = fromList $ replicate arity (I.AltBinder Nothing)
         pv2 = tl pv
-     in pv1 `extend` pv2
+     in extend pv1 pv2

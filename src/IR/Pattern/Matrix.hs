@@ -66,7 +66,6 @@ specializeLit lit pm =
      in case PV.hd pv of
           I.AltLit lit' ->
             if lit' == lit then fromPatVec $ PV.tl pv else noRow
-          I.AltBinder Nothing -> wildCase
           I.AltBinder _ -> wildCase
           I.AltData _ _ -> noRow
 
@@ -78,7 +77,7 @@ specializeCons arity i pm =
   noRow = emptyWithCols (arity + ncol pm - 1)
   specializeCons' pv =
     let wildCase =
-          let pv1 = PV.fromList (replicate arity (I.AltBinder Nothing))
+          let pv1 = PV.fromList $ replicate arity (I.AltBinder Nothing)
               pv2 = PV.tl pv
            in fromPatVec $ PV.extend pv1 pv2
      in case PV.hd pv of
@@ -105,7 +104,5 @@ defaultize pm =
     let wildCase = fromPatVec $ PV.tl pv
      in case PV.hd pv of
           I.AltLit _ -> noRow
-          I.AltBinder Nothing -> wildCase
           I.AltBinder _ -> wildCase
-          I.AltData _ [] -> noRow
           I.AltData _ _ -> noRow
