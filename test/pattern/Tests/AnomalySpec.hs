@@ -81,6 +81,9 @@ spec = do
       |]
     it "allows tuple match" $ do
       shouldPass $ doAnomalyCheck [here|
+        type Pair2 a b
+            Pair2 a b
+
         f x =
           match x
             (1, 2) = 1
