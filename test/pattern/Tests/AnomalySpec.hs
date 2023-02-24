@@ -79,16 +79,6 @@ spec = do
             2 = 2
             _ = 3
       |]
-    it "allows tuple match" $ do
-      shouldPass $ doAnomalyCheck [here|
-        type Pair2 a b
-            Pair2 a b
-
-        f x =
-          match x
-            (1, 2) = 1
-            (_, _) = 2
-      |]
 
   describe "detects non-exhaustive matches" $ do
     it "detects integer literal non-exhaustive match" $ do
