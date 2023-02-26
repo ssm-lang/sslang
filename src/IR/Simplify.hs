@@ -137,15 +137,6 @@ updateOccVar binder = do
   m       <- gets occInfo
   insidel <- insideLambda
   insidem <- insideMatch
-  case M.lookup binder m of
-        Nothing -> fail
-          (  "UDPATE: We should already know about this binder "
-          ++ show binder
-          ++ " :"
-          ++ show m
-          ++ "!"
-          )
-        _ -> ()
   let m' = case M.lookup binder m of
         Nothing -> error
           (  "UDPATE: We should already know about this binder "
@@ -346,7 +337,9 @@ simplExpr sub ins (I.Let binders body t) cont = do
             (I.Var _ _) -> do
               insertSubst v $ DoneEx e'
               pure (Nothing, M.empty) -- PASSES postinline
-            _ -> pure (Just (binder, rhs), sub) -- FAILS postinline; someday callsite inline
+            _ -> do
+              rhs' <- simplExpr sub ins rhs cont -- simplify the RHS
+              pure (Just (binder, rhs'), sub) -- FAILS postinline; someday callsite inline
       _ -> do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards
@@ -442,7 +435,7 @@ How do we handle each node?
 -}
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
 -- Occurrence Analysis over Let Expression
-occAnalExpr l@(I.Let binders body _) = do
+occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     (\(binder, rhs) -> do
       _ <- occAnalExpr rhs
@@ -450,7 +443,7 @@ occAnalExpr l@(I.Let binders body _) = do
         (Just nm) -> addOccVar nm
         _         -> pure ()
     )
-    binders
+    nameValPairs
   _ <- occAnalExpr body
   m <- gets occInfo
   pure (l, show m)

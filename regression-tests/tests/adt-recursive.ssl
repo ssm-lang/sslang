@@ -20,7 +20,7 @@ main (cin : &Int)( cout : & Int ) -> () =
   let e = OneChild 69 Leaf
   let b = TwoChildren d e 66
   let c = OneChild 67 Leaf
-  let root = TwoChildren z x 65
+  let root = TwoChildren b c 65
 
 // Pattern match on root of tree to extract the left most descendant.
   let lmd = match root

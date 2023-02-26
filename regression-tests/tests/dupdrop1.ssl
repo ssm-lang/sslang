@@ -23,7 +23,7 @@ main cin cout =
   17
 
   match z
-    Foo x = x + 1
+    Foo x_ = x_ + 1
     Bar = 42
 
   let d = match add x y
