@@ -16,10 +16,10 @@ atTop (t: Tree) -> Int =
         Leaf a = a
         Node _ a _ = a
 
-replaceTop (t: Tree) (a: Int) -> Tree =
+replaceTop (t: Tree) (a_: Int) -> Tree =
     match t
-        Leaf _ = Leaf a
-        Node l _ r = heapify (Node l a r)
+        Leaf _ = Leaf a_
+        Node l _ r = heapify (Node l a_ r)
 
 adjustLeft (t: Tree) -> Tree = 
     match t
