@@ -41,9 +41,9 @@ main cin cout =
     let printl l = printl_ puti putc l
 
     
-    let x = Pair3 1 2 3
-    let y = Pair3 4 5 6
+    let x_ = Pair3 1 2 3
+    let y_ = Pair3 4 5 6
     
-    printl x
+    printl x_
     putnl ()
-    printl y
+    printl y_
