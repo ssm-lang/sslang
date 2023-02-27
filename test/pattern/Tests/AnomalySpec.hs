@@ -104,3 +104,36 @@ spec = do
           match x
             Cons _ _ = 1
       |]
+
+  describe "detects useless arms" $ do
+    it "detects useless arms" $ do
+      shouldFail $ doAnomalyCheck [here|
+        type Foo
+          Foo1
+          Foo2
+        f x =
+          match x
+            Foo1 = 1
+            Foo2 = 2
+            _    = 3
+      |]
+    it "detects useless arms" $ do
+      shouldFail $ doAnomalyCheck [here|
+        x =
+          match True
+            True = 1
+            False = 2
+	    True = 3
+      |]
+    it "detects useless arms" $ do
+      shouldFail $ doAnomalyCheck [here|
+        type List a
+          Cons a (List a)
+          Nil
+        f x =
+          match x
+	    Nil = 0
+	    Cons _ Nil = 1
+	    Cons _ l = 2
+            Cons _ _ = 3
+      |]
