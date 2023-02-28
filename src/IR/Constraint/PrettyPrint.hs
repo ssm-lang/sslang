@@ -10,4 +10,4 @@ import           Common.Compiler
 -- Make Constraint an instance of Pretty!!!
 
 printConstraint :: Constraint -> String
-printConstraint = "test"
+printConstraint c = "test"
