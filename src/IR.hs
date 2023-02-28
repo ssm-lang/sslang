@@ -40,6 +40,7 @@ data Mode
   = Continue
   | DumpIR
   | DumpIRAnnotated
+  | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
   | DumpIRTypedShow
@@ -70,6 +71,11 @@ options =
       ["dump-ir-annotated"]
       (NoArg $ setMode DumpIRTyped)
       "Print the fully-typed IR just before type inference"
+  , Option
+      ""
+      ["dump-ir-constraints"]
+      (NoArg $ setMode DumpIRConstraints  )
+      "Print the constraint IR used by the constraint solver type inference"
   , Option
       ""
       ["dump-ir-typed"]
