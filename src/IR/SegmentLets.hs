@@ -1,5 +1,6 @@
 -- | Unroll let-def blocks to break apart non-mutually recursive definitions.
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 module IR.SegmentLets
   ( segmentLets
   , segmentDefs
@@ -29,7 +30,7 @@ import           Data.Graph                     ( SCC(..)
 import qualified Data.Set                      as S
 
 type T = I.Type
-type Def t = (I.Binder, I.Expr t)
+type Def t = (I.Binder t, I.Expr t)
 
 segmentLets :: I.Program T -> Compiler.Pass (I.Program T)
 segmentLets p =
@@ -44,7 +45,7 @@ segmentDefs :: [Def t] -> [[Def t]]
 segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
  where
   toGraph :: Def t -> State Int (Def t, I.VarId, [I.VarId])
-  toGraph d@(b, e) = do
+  toGraph d@(I._binderId -> b, e) = do
     v <- maybe (modify (+ 1) >> gets genVar) return b
     return (d, v, S.toList $ freeVars e)
 
@@ -57,9 +58,9 @@ segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
   genVar :: Int -> I.VarId
   genVar = genId . ("_wild" <>) . showId
 
-  ungenVar :: I.Binder -> I.Binder
-  ungenVar (Just v) = ungenId v
-  ungenVar Nothing  = Nothing
+  ungenVar :: I.Binder t -> I.Binder t
+  ungenVar b@I.Binder {I._binderId = Just v} = b {I._binderId = ungenId v}
+  ungenVar b = b
 
 type Def' t = (VarId, I.Expr t)
 
