@@ -27,4 +27,5 @@ unsafeTypecheckProgram pAnn = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
   Solve.run constraint
   program <- Elaborate.run pVar
-  return (program, printConstraint constraint)
+  c <- printConstraint constraint
+  return (program, c)
