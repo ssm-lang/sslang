@@ -67,4 +67,4 @@ printType (TVarN var)  = do
     return $ "TVarN " ++ p
 
 printCanType:: Can.Type -> TC String
-printCanType _ = error "not implemented"
+printCanType t = do return $ show t
