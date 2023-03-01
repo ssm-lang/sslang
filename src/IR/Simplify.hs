@@ -91,14 +91,6 @@ newtype SimplFn a = SimplFn (StateT SimplEnv Compiler.Pass a)
 
 -- | Run a SimplFn computation.
 runSimplFn :: SimplFn a -> Compiler.Pass a
--- evalStateT runs function in context and returns final value, without context
--- take state transformer monad and an initial state, and gives the initial state to the transformer monad. (and the transformer monad holds our monadic program)
--- runSimplFn takes in the Compiler.Pass wrapped inside a SimplFn
--- at the moment of evalStateT taking in m and SimplCtx, m has Compiler.Pass (from do) but not SimplCtx yet
--- but so you have m that doesn't have SimplCtx yet?? (IDK) -- look at stackoverflow post
--- state transformer: function that takes in state and returns final value (Compiler.Pass)
--- m is state transformer monad (result of do inside simplifyProgram)
--- SimplCtx is initial state
 runSimplFn (SimplFn m) = evalStateT
   m
   SimplEnv { occInfo     = M.empty
@@ -108,12 +100,6 @@ runSimplFn (SimplFn m) = evalStateT
            , subst       = M.empty
            }
 
--- | Clear Occurrence Information
-clearOccInfo :: SimplFn ()
-clearOccInfo = do
-  modify $ \st -> st { occInfo = M.empty}
- 
-
 -- | Add a binder to occInfo with category Dead by default
 addOccVar :: I.VarId -> SimplFn ()
 addOccVar binder = do
@@ -121,14 +107,6 @@ addOccVar binder = do
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
         _ -> M.insert binder ConstructorFunc m
---        _       -> error
---          (  "ADD: Should never have seen this binder "
---          ++ show binder
---          ++ " before!"
---          ++ "\n"
---          ++ "occInfo: "
---          ++ show m
---          )
   modify $ \st -> st { occInfo = m' }
 
 -- | Update occInfo for the binder since we just spotted it
@@ -201,17 +179,13 @@ insideMatch = do
   curCount <- gets countMatch
   return (curCount /= 0)
 
--- | Set simplifier to version 1 or 2
-simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-simplifyProgram = simplifyProgram1
-
 {- | Entry-point to Simplifer.
 
 Maps over top level definitions to create a new simplified Program
 Do we ever want to inline top-level definitions?
 -}
-simplifyProgram1 :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-simplifyProgram1 p = runSimplFn $ do -- everything in do expression will know about simplifier environment
+simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
+simplifyProgram p = runSimplFn $ do -- everything in do expression will know about simplifier environment
                                     -- run this do expression and give it the knowledge of my simplifier environment
   _                     <- runOccAnal p -- run the occurrence analyzer
   -- fail and print out the results of the occurence analyzer
@@ -224,30 +198,6 @@ simplifyProgram1 p = runSimplFn $ do -- everything in do expression will know ab
 simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
 simplTop (v, e) = do
   (,) v <$> simplExpr M.empty "inscopeset" e "context"
-
-{- | Entry-point to (I think) a "fixed" Simplifier 
-
-Maps over top level definitions to create a new simplified Program
-The "fix" is that it clears the occurence information after each run over a top level function
-This way, if two top level functions happen to contain variables with the same name, that is permitted.
--}
-simplifyProgram2 :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-simplifyProgram2 p = runSimplFn $ do -- everything in do expression will know about simplifier environment
-                                    -- run this do expression and give it the knowledge of my simplifier environment
-  --_                     <- runOccAnal p -- run the occurrence analyzer
-  -- fail and print out the results of the occurence analyzer
-  -- info <- runOccAnal p
-  -- _ <- Compiler.unexpected $ show info
-  simplifiedProgramDefs <- mapM simplTop2 (I.programDefs p)
-  return $ p { I.programDefs = simplifiedProgramDefs } -- this whole do expression returns a Compiler.Pass
-
--- | Simplify a top-level definition
-simplTop2 :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
-simplTop2 top@(v, e) = do
-  _ <- runOccAnalTop top
-  let top' = (,) v <$> simplExpr M.empty "inscopeset" e "context"
-  clearOccInfo -- there has to be a more elegant/less imperative way to do this
-  top'
 
 {- | Simplify an IR expression.
 
@@ -347,37 +297,6 @@ simplExpr sub ins (I.Let binders body t) cont = do
 -- for all other expressions, don't do anything
 simplExpr _ _ e _ = pure e
 
--- | Run the Occurence Analyser over a top-level definition
-runOccAnalTop ::  (I.VarId, I.Expr I.Type) -> SimplFn String
-runOccAnalTop topDef@(funcNm, _) = do
-  def' <- swallowArgs topDef
-  getOccInfoForDef $ (,) funcNm $ (occAnalExpr . snd) def'
-   where
-    {- Take in a top level function, "swallows" its args, and return its body.
-
-    "Swallow" means to add the argument to our occurrence info state.
-    It returns a top level function without curried arguments; just the body.
-    -}
-  swallowArgs :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
-  swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
-    addOccs (Just funcName) -- HACKY
-    let (args, body) = unfoldLambda l
-    mapM_ addOccs args
-    pure (funcName, body)
-    where
-    addOccs (Just nm) = addOccVar nm
-    addOccs Nothing   = pure ()
-  swallowArgs (name, e) = pure (name, e)
-  -- a hacky way to see the occurence info for a top def
-  getOccInfoForDef :: (I.VarId, SimplFn (I.Expr I.Type, String)) -> SimplFn String
-  getOccInfoForDef (v, tpl) = do
-        (_, occinfo) <- tpl
-        pure
-          $  "START topdef "
-          ++ show v
-          ++ " has OccInfo: "
-          ++ show occinfo
-          ++ " END"
 
 {- | Run occurrence analyser over each top level function
 
