@@ -111,20 +111,20 @@ type Carry
 
 incNumHelper (c : Carry) -> Carry =
     match c
-          Carry n b = match n 
-                            Nums d tl = match tl
-                                              Nil = match b
+          Carry l i = match l 
+                            Nums q tl = match tl
+                                              Nil = match i
                                                           True = Invalid
-                                                          _ = match d 
+                                                          _ = match q 
                                                                     Nine = Carry (Nums Zero Nil) True
-                                                                    _ = Carry (Nums (incDigit d) Nil) False
+                                                                    _ = Carry (Nums (incDigit q) Nil) False
                                               _ = let tl2 = incNumHelper (Carry tl False)
                                                   match tl2
-                                                        Carry n2 b = match b
-                                                                           True = match d
-                                                                                        Nine = Carry (Nums Zero n2) True
-                                                                                        _ = Carry (Nums (incDigit d) n2) False
-                                                                           False = Carry (Nums d n2) False
+                                                        Carry n9 o = match o
+                                                                           True = match q
+                                                                                        Nine = Carry (Nums Zero n9) True
+                                                                                        _ = Carry (Nums (incDigit q) n9) False
+                                                                           False = Carry (Nums q n9) False
                                                         _ = Invalid
                             _ = Invalid
           _ = Invalid
@@ -144,12 +144,12 @@ incDigit (d : Digit) -> Digit =
 
 incNumber (n : Number) -> Number =
     match n
-          Nums d tl = match (incNumHelper (Carry tl False))
-                            (Carry tl2 b) = match b
-                                                False = Nums d tl2
-                                                _ = match d 
+          Nums m tl = match (incNumHelper (Carry tl False))
+                            (Carry tl2 v) = match v
+                                                False = Nums m tl2
+                                                _ = match m 
                                                           Nine = Nums One (Nums Zero tl2)
-                                                          _ = Nums (incDigit d) tl2
+                                                          _ = Nums (incDigit m) tl2
                             _ = Nums Zero Nil
           _ = Nums Zero Nil
                                         
@@ -159,8 +159,8 @@ eqNumber (n : Number) (n2 : Number) -> Bool =
           Nil = match n2
                       Nil = True
                       _ = False
-          Nums d tl = match n2
-                            Nums d2 tl2 = match (eqDigit d d2)
+          Nums j tl = match n2
+                            Nums d2 tl2 = match (eqDigit j d2)
                                                 True = match (eqNumber tl tl2)
                                                              True = True
                                                              _ = False
@@ -169,17 +169,17 @@ eqNumber (n : Number) (n2 : Number) -> Bool =
 
 printNum (cout : & Int) (n : Number) -> () =
     match n
-          Nums d tl = match tl
-                            Nil = print cout (dtoc d)
-                            _ = print cout (dtoc d)
+          Nums p tl = match tl
+                            Nil = print cout (dtoc p)
+                            _ = print cout (dtoc p)
                                 printNum cout tl
           _ = ()
 
 divCount (a : Int) (b : Int) (res : Int) -> Int =
-    let q = a/b 
-    match q
+    let jackfruit = a/b 
+    match jackfruit
           0 = res
-          _ = divCount q b (res+1)
+          _ = divCount jackfruit b (res+1)
 
 pow (a : Int) (b : Int) -> Int =
     match b 
@@ -187,10 +187,10 @@ pow (a : Int) (b : Int) -> Int =
           _ = a * (pow a (b-1))
 
 mod (a : Int) (b : Int) -> Int =
-    let q = a / b
-    match q
+    let lychee = a / b
+    match lychee
           0 = 0
-          _ = a - (q * b)
+          _ = a - (lychee * b)
 
 itod (i :Int) -> Digit =
     match i
