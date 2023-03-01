@@ -9,3 +9,4 @@ build:
       - --odir=haddock-out
 ghc-options:
   "$targets": -O0 -j4 +RTS -A128m -n2m -RTS
+  "$everything": -haddock

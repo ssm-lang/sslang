@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Cannot unify: Int32 ~ ()")
+TypeError (ErrorMsg "Ill-typed expression. Expected Type Int32 [], but got Type () []")

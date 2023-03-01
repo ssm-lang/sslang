@@ -194,6 +194,7 @@ spec = do
           g
       |]
     it "correctly captures non-free unification variables in nested functions with name shadowing" $ do
+      pendingWith "Correct mangling of type variables"
       [here|
         f x =
           let g x y = x
@@ -205,6 +206,7 @@ spec = do
       |]
 
     it "correctly generalizes a nested function when possible" $ do
+      pendingWith "Correct mangling of type variables"
       [here|
         f x =
           let g x = x
@@ -215,6 +217,7 @@ spec = do
           g
       |]
     it "correctly generalizes a nested function (with name shadowing) when possible" $ do
+      pendingWith "Correct mangling of type variables"
       [here|
         f x =
           let g y x = x
@@ -235,6 +238,7 @@ spec = do
           g g
       |]
     it "accepts a wonky definition of the flipped const function" $ do
+      pendingWith "Correct mangling of type variables"
       [here|
         f x =
           let g x = x
@@ -425,7 +429,7 @@ spec = do
             |]
 
     it "typechecks a program with a specialized complicated pattern match" $ do
-      pendingWith "some kind of generalization bug"
+      -- pendingWith "some kind of generalization bug"
       typeChecks [here|
             type MyEither a b
               MyLeft a

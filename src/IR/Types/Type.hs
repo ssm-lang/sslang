@@ -229,7 +229,7 @@ tupleId i
 
 tempTupleId :: (Integral i, Identifiable v) => i -> v
 tempTupleId i
-  | i >= 2 && i <= 4 = fromString $ "Pair" ++ show (toInteger i)
+  | i >= 2 = fromString $ "Pair" ++ show (toInteger i)
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
 
 -- | More convenient representation of tuple types, for pattern-matching.

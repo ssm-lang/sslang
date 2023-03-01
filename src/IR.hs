@@ -9,6 +9,7 @@ import qualified IR.IR                         as I
 
 import           IR.ClassInstantiation          ( instProgram )
 import           IR.DConToFunc                  ( dConToFunc )
+import           IR.DesugarPattern              ( desugarPattern )
 import           IR.ExternToCall                ( externToCall )
 import           IR.InsertRefCounting           ( insertRefCounting )
 import           IR.LambdaLift                  ( liftProgramLambdas )
@@ -17,8 +18,6 @@ import           IR.SegmentLets                 ( segmentLets )
 import           IR.Types                       ( fromAnnotations
                                                 , typecheckProgram
                                                 )
-
-import           Common.Pretty                  ( spaghetti )
 import           Control.Monad                  ( (>=>)
                                                 , when
                                                 )
@@ -37,6 +36,7 @@ data Mode
   | DumpIRTyped
   | DumpIRTypedUgly
   | DumpIRInlined
+  | DumpIRTypedShow
   | DumpIRLifted
   | DumpIRFinal
   deriving (Eq, Show)
@@ -97,12 +97,13 @@ typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   p <- typecheckProgram p
   when (mode opt == DumpIRTyped) $ dump p
-  when (mode opt == DumpIRTypedUgly) $ (throwError . Dump . show . spaghetti) p
+  when (mode opt == DumpIRTypedShow) $ (throwError . Dump . show ) p
   return p
 
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
+  p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
   p <- dConToFunc p

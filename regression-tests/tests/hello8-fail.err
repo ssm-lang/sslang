@@ -1,1 +1,1 @@
-TypeError (ErrorMsg "Type constructor mismatch in annotation: \nAnnotated: ()\nActual: ->\n")
+TypeError (ErrorMsg "Ill-typed expression. Expected Type -> [FlexVar _t73,Type -> [Type & [Type Int32 []],Type () []]], but got Type -> [FlexVar _t73,Type -> [Type & [Type Int32 []],Type -> [Type & [Type Int32 []],Type () []]]]")
