@@ -9,7 +9,7 @@ module IR.IR
   ( Program(..)
   , TypeDef(..)
   , TypeVariant(..)
-  , Binder
+  , Binder(..)
   , Literal(..)
   , PrimOp(..)
   , Primitive(..)
@@ -33,8 +33,7 @@ module IR.IR
   , isValue
   , getAltDefault
   ) where
-import           Common.Identifiers             ( Binder
-                                                , CSym(..)
+import           Common.Identifiers             ( CSym(..)
                                                 , DConId(..)
                                                 , HasFreeVars(..)
                                                 , TConId(..)
@@ -98,6 +97,9 @@ data TypeVariant
   | VariantUnnamed [Type]        -- ^ An algebraic type with unnamed fields
   deriving (Show, Eq, Typeable, Data)
 
+-- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
+data Binder t = Binder {_binderId :: Maybe VarId, _binderType :: t}
+  deriving (Show, Eq, Typeable, Data, Functor, Foldable, Traversable)
 
 {- | Literal values supported by the language.
 
@@ -202,17 +204,17 @@ data Expr t
   {- ^ @App f a t@ applies function @f@ to argument @a@, producing a value of
   type @t@.
   -}
-  | Let [(Binder, Expr t)] (Expr t) t
+  | Let [(Binder t, Expr t)] (Expr t) t
   {- ^ @Let [(n, v)] b t@ binds value @v@ to variable @v@ in its body @b@.
 
   The bindings list may only be of length greater than 1 for a set of mutually
   co-recursive functions.
   -}
-  | Lambda Binder (Expr t) t
+  | Lambda (Binder t) (Expr t) t
   {- ^ @Lambda v b t@ constructs an anonymous function of type @t@ that binds
   a value to parameter @v@ in its body @b@.
   -}
-  | Match (Expr t) [(Alt, Expr t)] t
+  | Match (Expr t) [(Alt t, Expr t)] t
   {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
   @alts@, each producing a value of type @t@.
   -}
@@ -226,14 +228,14 @@ data Expr t
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 -- | An alternative in a pattern-match.
-data Alt
-  = AltData DConId [Alt]
+data Alt t
+  = AltData DConId [Alt t] t
   -- ^ @AltData d vs@ matches data constructor @d@, and recursive patterns @alts@.
-  | AltLit Literal
+  | AltLit Literal t
   -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
-  | AltBinder Binder
+  | AltBinder (Binder t)
   -- ^ @AltBinder v@ matches anything, and bound to name @v@.
-  deriving (Eq, Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 newtype ExceptType
   = ExceptDefault Literal
@@ -300,15 +302,15 @@ foldApp :: Expr t -> [(Expr t, t)] -> Expr t
 foldApp = foldr $ \(a, t) f -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
-unfoldLambda :: Expr t -> ([Binder], Expr t)
+unfoldLambda :: Expr t -> ([Binder t], Expr t)
 unfoldLambda (Lambda a b _) =
   let (as, body) = unfoldLambda b in (a : as, body)
 unfoldLambda e = ([], e)
 
 -- | Create a lambda chain given a list of argument-type pairs and a body.
-foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
+foldLambda :: [Binder Type] -> Expr Type -> Expr Type
 foldLambda args body = foldr chain body args
-  where chain (v, t) b = Lambda v b $ t `Arrow` extract b
+  where chain v@(Binder _ t) b = Lambda v b $ t `Arrow` extract b
 
 -- | Whether an expression is a value.
 isValue :: Expr t -> Bool
@@ -319,7 +321,7 @@ isValue Lambda{} = True
 isValue _        = False
 
 -- | Retrieve binder from Alt, assuming it is AltBinder.
-getAltDefault :: Alt -> Binder
+getAltDefault :: Alt t -> Binder t
 getAltDefault (AltBinder b) = b
 getAltDefault _ =
   error "Compiler Error: Should not have recursive patterns here"
@@ -329,17 +331,17 @@ instance HasFreeVars (Expr t) VarId where
   freeVars Data{}                           = S.empty
   freeVars Lit{}                            = S.empty
   freeVars (App    l                  r  _) = freeVars l `S.union` freeVars r
-  freeVars (Lambda (maybeToList -> v) b  _) = freeVars b \\ S.fromList v
+  freeVars (Lambda (maybeToList . _binderId -> v) b  _) = freeVars b \\ S.fromList v
   freeVars (Prim   _                  es _) = S.unions $ map freeVars es
   freeVars (Let (unzip ->(bs, ds)) b _) =
-    S.unions (map freeVars $ b : ds) \\ S.fromList (catMaybes bs)
+    S.unions (map freeVars $ b : ds) \\ S.fromList (catMaybes $ _binderId <$> bs)
   freeVars (Match s as _) = S.unions (freeVars s : map freeAltVars as)
    where
-    freeAltVars :: (Alt, Expr t) -> S.Set VarId
+    freeAltVars :: (Alt t, Expr t) -> S.Set VarId
     freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs                ) = S.unions $ map altBinders bs
-    altBinders (AltLit    _                 ) = S.empty
-    altBinders (AltBinder (maybeToList -> v)) = S.fromList v
+    altBinders (AltData _ bs               _) = S.unions $ map altBinders bs
+    altBinders (AltLit    _                _) = S.empty
+    altBinders (AltBinder (maybeToList . _binderId -> v)) = S.fromList v
   freeVars Exception{} = S.empty
 
 {- | Predicate of whether an expression "looks about right".
@@ -446,6 +448,8 @@ instance Pretty (Program Type) where
 
 -- | Pretty prints IR Expr nodes without type annotations
 instance Pretty (Expr ()) where
+  pretty = undefined
+    {-
   pretty a@App{} = pretty nm <+> hsep (parenz . fst <$> args)
    where
     (nm, args) = unfoldApp a
@@ -458,12 +462,12 @@ instance Pretty (Expr ()) where
   pretty (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
   pretty (Var v _                  ) = pretty v
   pretty (Lambda a              b _) = pretty "fun" <+> pretty a <+> pretty b
-  pretty (Let    [(Nothing, e)] b _) = pretty e <> line <> pretty b
+  -- pretty (Let    [(Nothing, e)] b _) = pretty e <> line <> pretty b
   pretty (Let    as             b _) = letexpr
    where
     letexpr = pretty "let" <+> vsep (map def as) <> line <> pretty b
-    def (Just v , e) = pretty v <+> equals <+> align (pretty e)
-    def (Nothing, e) = pretty '_' <+> equals <+> align (pretty e)
+    def (_binderId -> Just v, e) = pretty v <+> equals <+> align (pretty e)
+    def (_, e) = pretty '_' <+> equals <+> align (pretty e)
   pretty (Prim After [d, l, r] _) = ae
    where
     ae =
@@ -472,7 +476,7 @@ instance Pretty (Expr ()) where
   pretty (Match s      as     _) = pretty "match" <+> pretty s <> line <> arms
    where
     arms = vsep (map (indent indentNo . arm) as)
-    arm :: (Alt, Expr ()) -> Doc ann
+    arm :: (Alt t, Expr ()) -> Doc ann
     arm (a, e) = pretty a <+> equals <+> align (pretty e)
   pretty (Prim Loop [b] _) =
     pretty "loop" <> line <> indent indentNo (pretty b)
@@ -497,16 +501,19 @@ instance Pretty (Expr ()) where
   pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
   pretty (Exception et _       ) = pretty "__exception" <+> prettyet et
     where prettyet (ExceptDefault l) = pretty l
+    -}
 
-instance Pretty Alt where
-  pretty (AltData a b       ) = pretty a <+> hsep (map pretty b)
-  pretty (AltLit    a       ) = pretty a
-  pretty (AltBinder (Just v)) = pretty v
-  pretty (AltBinder Nothing ) = pretty '_'
+instance Pretty (Alt Type) where
+  pretty = undefined
+  -- pretty (AltData a b       _ ) = pretty a <+> hsep (map pretty b)
+  -- pretty (AltLit    a       _ ) = pretty a
+  -- pretty (AltBinder (_binderId -> Just v)) = pretty v
+  -- pretty (AltBinder (_binderId -> Nothing)) = pretty '_'
 
 instance Pretty Literal where
-  pretty (LitIntegral i) = pretty $ show i
-  pretty LitEvent        = pretty "()"
+  pretty = undefined
+  -- pretty (LitIntegral i) = pretty $ show i
+  -- pretty LitEvent        = pretty "()"
 
 instance Pretty PrimOp where
   pretty PrimNeg    = pretty "-"
@@ -528,44 +535,52 @@ instance Pretty PrimOp where
 
 -- | Dumpy Typeclass: generate comprehensive Doc representation of the IR
 instance Dumpy (Program Type) where
-  dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
-    vsep $ punctuate line tops
-   where
-    tops =
-      map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
+  dumpy = undefined
+  -- dumpy Program { programDefs = ds, typeDefs = tys, externDecls = xds } =
+  --   vsep $ punctuate line tops
+  --  where
+  --   tops =
+  --     map dumpyTypDef tys ++ map dumpyExternDecl xds ++ map dumpyFuncDef ds
+  --
+  --   -- Generates readable Doc representation of an IR Top Level Function
+  --   dumpyFuncDef :: (VarId, Expr Type) -> Doc ann
+  --   dumpyFuncDef (v, l@(Lambda _ _ ty)) =
+  --     pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
+  --    where
+  --     typSig = hsep args <+> rarrow <+> dumpy retTy
+  --     args   = zipWith
+  --       (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
+  --       argIds
+  --       argTys
+  --     (argIds, body ) = unfoldLambda l
+  --     (argTys, retTy) = unfoldArrow ty
+  --   dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
+  --
+  --   -- Generates readable Doc representation of an IR Type Definition
+  --   dumpyExternDecl :: Dumpy t => (VarId, t) -> Doc ann
+  --   dumpyExternDecl (v, t) = pretty "extern" <+> pretty v <+> colon <+> dumpy t
+  --
+  --   -- Generates readable Doc representation of an IR Type Definition
+  --   dumpyTypDef :: (TConId, TypeDef) -> Doc ann
+  --   dumpyTypDef (tcon, TypeDef { variants = vars }) =
+  --     pretty "type"
+  --       <+> pretty tcon
+  --       <+> line
+  --       <>  indent indentNo (vsep $ map dumpyDCon vars)
+  --       <>  line
+  --   dumpyDCon :: (DConId, TypeVariant) -> Doc ann
+  --   dumpyDCon (dcon, VariantNamed argz) =
+  --     pretty dcon <+> hsep (dumpy . snd <$> argz)
+  --   dumpyDCon (dcon, VariantUnnamed argz) =
+  --     pretty dcon <+> hsep (dumpy <$> argz)
+  -- -- TODO: how to represent entry point?
 
-    -- Generates readable Doc representation of an IR Top Level Function
-    dumpyFuncDef :: (VarId, Expr Type) -> Doc ann
-    dumpyFuncDef (v, l@(Lambda _ _ ty)) =
-      pretty v <+> typSig <+> pretty "=" <+> line <> indent 2 (dumpy body)
-     where
-      typSig = hsep args <+> rarrow <+> dumpy retTy
-      args   = zipWith
-        (\arg t -> parens $ pretty arg <+> pretty ":" <+> dumpy t)
-        argIds
-        argTys
-      (argIds, body ) = unfoldLambda l
-      (argTys, retTy) = unfoldArrow ty
-    dumpyFuncDef (v, e) = pretty v <+> pretty "=" <+> dumpy e
+instance Pretty (Binder Type) where
+  pretty Binder {_binderId = Just v} = pretty v
+  pretty Binder {_binderId = Nothing } = pretty '_'
 
-    -- Generates readable Doc representation of an IR Type Definition
-    dumpyExternDecl :: Dumpy t => (VarId, t) -> Doc ann
-    dumpyExternDecl (v, t) = pretty "extern" <+> pretty v <+> colon <+> dumpy t
-
-    -- Generates readable Doc representation of an IR Type Definition
-    dumpyTypDef :: (TConId, TypeDef) -> Doc ann
-    dumpyTypDef (tcon, TypeDef { variants = vars }) =
-      pretty "type"
-        <+> pretty tcon
-        <+> line
-        <>  indent indentNo (vsep $ map dumpyDCon vars)
-        <>  line
-    dumpyDCon :: (DConId, TypeVariant) -> Doc ann
-    dumpyDCon (dcon, VariantNamed argz) =
-      pretty dcon <+> hsep (dumpy . snd <$> argz)
-    dumpyDCon (dcon, VariantUnnamed argz) =
-      pretty dcon <+> hsep (dumpy <$> argz)
-  -- TODO: how to represent entry point?
+instance Dumpy (Binder Type) where
+  dumpy = pretty
 
 instance Dumpy (Expr Type) where
   dumpy (Var  v t  ) = typeAnn t $ pretty v
@@ -575,8 +590,8 @@ instance Dumpy (Expr Type) where
   dumpy (Let as b t) = typeAnn t $ parens letexpr
    where
     letexpr = pretty "let" <+> block dbar (map def as) <> semi <+> dumpy b
-    def (Just v , e) = pretty v <+> equals <+> braces (dumpy e)
-    def (Nothing, e) = pretty '_' <+> equals <+> braces (dumpy e)
+    def (_binderId -> Just v , e) = pretty v <+> equals <+> braces (dumpy e)
+    def (_, e) = pretty '_' <+> equals <+> braces (dumpy e)
   dumpy (Lambda a b t) =
     typeAnn t $ pretty "fun" <+> pretty a <+> braces (dumpy b)
   dumpy (Match s as t) = typeAnn t $ pretty "match" <+> dumpy s <+> arms
@@ -612,11 +627,11 @@ instance Dumpy (Expr Type) where
   dumpy (Exception et t) = typeAnn t $ pretty "exception" <+> dumpyet et
     where dumpyet (ExceptDefault l) = pretty l
 
-instance Dumpy Alt where
-  dumpy (AltData a b       ) = parens $ pretty a <+> hsep (map pretty b)
-  dumpy (AltLit    a       ) = pretty a
-  dumpy (AltBinder (Just v)) = pretty v
-  dumpy (AltBinder Nothing ) = pretty '_'
+instance Dumpy (Alt Type) where 
+  dumpy (AltData a b      _) = parens $ pretty a <+> hsep (map pretty b)
+  dumpy (AltLit    a      _) = pretty a
+  dumpy (AltBinder (_binderId -> Just v))        = pretty v
+  dumpy (AltBinder _)        = pretty '_'
 
 instance Dumpy Literal where
   dumpy (LitIntegral i) = pretty $ show i

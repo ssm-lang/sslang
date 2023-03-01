@@ -51,7 +51,6 @@ module Common.Identifiers
   , TVarIdx(..)
   , CSym(..)
   , HasFreeVars(..)
-  , Binder
   , Identifier(..)
   , isCons
   , isVar
@@ -219,9 +218,6 @@ instance Pretty TVarIdx where
 -- | Terms @t@ that have free variables @i@
 class Identifiable i => HasFreeVars t i | t -> i where
   freeVars :: t -> S.Set i
-
--- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
-type Binder = Maybe VarId
 
 -- | Whether an identifier refers to a type or data constructor.
 isCons :: Identifiable a => a -> Bool
