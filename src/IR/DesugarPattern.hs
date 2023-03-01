@@ -104,7 +104,7 @@ desugarExpr (I.Match e arms t) = do
       -- Bind scrutinee to a variable before threading it through desugarMatch
       var <- I.VarId <$> freshVar
       let et  = I.extract e
-      I.Let [(I.Binder {I._binderId = Just var, I._binderType = et}, e)]
+      I.Let [(I.BindVar var et, e)]
         <$> desugarMatch [I.Var var et] eqns (unreachableExpr t)
         <*> pure et
 desugarExpr e = return e
@@ -139,9 +139,9 @@ desugarMatch us eqs           def = foldrM desugarMatchGen def $ partitionEqs eq
       sameGroup (I.AltData{}:_, _) (I.AltData{}:_, _) = True
       sameGroup _ _ = False
 
-      isWildEq (I.AltBinder (I._binderId -> Nothing):_, _) = True
+      isWildEq (I.AltBinder I.BindAnon{}:_, _) = True
       isWildEq _ = False
-      isVarEq (I.AltBinder (I._binderId -> Just _):_, _) = True
+      isVarEq (I.AltBinder I.BindVar{}:_, _) = True
       isVarEq _ = False
       isConsEq (I.AltData{}:_, _) = True
       isConsEq _ = False
@@ -172,7 +172,7 @@ desugarMatchCons (u : us) qs@(q:_) def = do
   getCon _                             = error "can't happen 5"
   getTyp ((I.AltData _ _ t) : _, _)    = t
   getTyp _                             = error "no no no -- Simon Peyton Jones"
-  makeBinder vid t = I.AltBinder $ I.Binder {I._binderId = Just vid, I._binderType = t}
+  makeBinder vid t = I.AltBinder $ I.BindVar vid t
 
   sameConsAs c = filter ((== c) . getCon) qs
 
@@ -197,7 +197,7 @@ desugarMatchCons _ _ _ = error "can't happen 7"
 desugarMatchLit :: [I.Expr I.Type] -> [Equation] -> I.Expr I.Type -> DesugarFn (I.Expr I.Type)
 desugarMatchLit (u : us) qs def = do
   arms <- sequence [ (a,) <$> desugarMatch us [(as, e)] def | (a : as, e) <- qs ]
-  let defAlt = I.AltBinder $ I.Binder {I._binderId = Nothing, I._binderType = I.extract u}
+  let defAlt = I.AltBinder $ I.BindAnon $ I.extract u
   return $ I.Match u (arms ++ [(defAlt, def)]) (I.extract def)
   --                            ^^^^^^^^^^^
   -- WARN: we assume that PatLit is never exhaustive, so we add a default case

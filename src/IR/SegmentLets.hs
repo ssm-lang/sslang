@@ -59,7 +59,7 @@ segmentDefs = map fromSCC . stronglyConnComp . (`evalState` 0) . mapM toGraph
   genVar = genId . ("_wild" <>) . showId
 
   ungenVar :: I.Binder t -> I.Binder t
-  ungenVar b@I.Binder {I._binderId = Just v} = b {I._binderId = ungenId v}
+  ungenVar b@(I.BindVar v _) = b {I._binderId = ungenId v}
   ungenVar b = b
 
 type Def' t = (VarId, I.Expr t)

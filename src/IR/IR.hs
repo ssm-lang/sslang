@@ -32,6 +32,8 @@ module IR.IR
   , unfoldApp
   , isValue
   , getAltDefault
+  , pattern BindVar
+  , pattern BindAnon
   ) where
 import           Common.Identifiers             ( CSym(..)
                                                 , DConId(..)
@@ -100,6 +102,14 @@ data TypeVariant
 -- | A name to be bound; 'Nothing' represents a wildcard, e.g., @let _ = ...@.
 data Binder t = Binder {_binderId :: Maybe VarId, _binderType :: t}
   deriving (Show, Eq, Typeable, Data, Functor, Foldable, Traversable)
+
+-- | An anonymous (wildcard) binder.
+pattern BindAnon :: t -> Binder t
+pattern BindAnon t = Binder {_binderId = Nothing, _binderType = t}
+
+-- | A concrete, named binder.
+pattern BindVar :: VarId -> t -> Binder t
+pattern BindVar v t = Binder {_binderId = Just v, _binderType = t}
 
 {- | Literal values supported by the language.
 
