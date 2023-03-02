@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-| Description : Insert reference counting primitives
 
@@ -55,7 +56,6 @@ import           Control.Monad.State.Lazy       ( MonadState(..)
                                                 , forM
                                                 , modify
                                                 )
-import           Data.Maybe                     ( fromJust )
 import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 
@@ -277,25 +277,32 @@ insertExpr (I.Prim p    es   typ) = I.Prim p <$> mapM insertExpr es <*> pure typ
 insertExpr (I.Let  bins expr typ) = do
   bins' <- forM bins droppedBinder
   expr' <- insertExpr expr
-  return $ I.Let bins' (foldr (makeDrop . varFromBind) expr' bins') typ
+  return $ I.Let (map defFromBind bins') (foldr (makeDrop . varFromBind) expr' bins') typ
  where
-  varFromBind (v, d) = I.Var (fromJust v) (I.extract d)
-  droppedBinder (Nothing, d) = do
+  varFromBind (v, t, _) = I.Var v t
+  defFromBind (v, t, d) = (I.BindVar v t, d)
+
+  droppedBinder (I.BindAnon t, d) = do
     temp <- getFresh "_underscore"
     d'   <- insertExpr d
-    return (Just temp, d')
-  droppedBinder (v, d) = do
+    return (temp, t, d')
+  droppedBinder (I.BindVar v t, d) = do
     d' <- insertExpr d
-    return (v, d')
+    return (v, t, d')
+  droppedBinder _ = error "unreachable, fake non-exhaustive pattern"
 
-insertExpr lam@(I.Lambda _ _ typ) = do
-  let (args    , body) = I.unfoldLambda lam
-      (argTypes, _   ) = I.unfoldArrow typ
-  args' <- forM args $ maybe (getFresh "_arg") return -- handle _ arguments
-  let typedArgs = zipWith (\a b -> (Just a, b)) args' argTypes
-      argVars   = zipWith I.Var args' argTypes
+insertExpr lam@I.Lambda {} = do
+  let (args, body) = I.unfoldLambda lam
+  args' <- forM args $ \case
+    I.BindAnon t -> do
+      v <- getFresh "_arg"
+      return (v, t)
+    I.BindVar v t -> return (v, t)
+    _ -> error "unreachable, fake non-exhaustive pattern"
+  let argBinders = uncurry I.BindVar <$> args' -- zipWith (\(v, t) b -> (I.BindVar v t, b)) args' argTypes
+      argVars = uncurry I.Var <$> args'
   body' <- insertExpr body
-  return $ I.foldLambda typedArgs $ foldr makeDrop body' argVars
+  return $ I.foldLambda argBinders $ foldr makeDrop body' argVars
 
 insertExpr (I.Match v@I.Var{} alts typ) = do
   alts' <- forM alts insertAlt
@@ -303,7 +310,7 @@ insertExpr (I.Match v@I.Var{} alts typ) = do
 
 insertExpr (I.Match scrutExpr alts typ) = do
   scrutVar <- getFresh "_scrutinee"
-  insertExpr $ I.Let [(Just scrutVar, scrutExpr)]
+  insertExpr $ I.Let [(I.BindVar scrutVar $ I.extract scrutExpr, scrutExpr)]
                      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
                      typ
 insertExpr e@(I.Exception _ _) = return e
@@ -329,15 +336,17 @@ match v
                ) x
 @
 -}
-insertAlt :: (I.Alt, I.Expr I.Type) -> Fresh (I.Alt, I.Expr I.Type)
+insertAlt :: (I.Alt I.Type, I.Expr I.Type) -> Fresh (I.Alt I.Type, I.Expr I.Type)
 insertAlt (I.AltBinder v      , e   ) = (I.AltBinder v, ) <$> insertExpr e
-insertAlt (I.AltLit     l      , e   ) = (I.AltLit l, ) <$> insertExpr e
-insertAlt (I.AltData dcon binds, body) = do
+insertAlt (I.AltLit     l t    , e   ) = (I.AltLit l t, ) <$> insertExpr e
+insertAlt (I.AltData dcon binds t, body) = do
   body' <- insertExpr body
-  return (I.AltData dcon binds, foldr (dropDupLet . I.getAltDefault) body' binds)
+  -- NOTE: we don't recurse here because we assume alts are already desguared i.e., flat
+  return (I.AltData dcon binds t, foldr dropDupLet body' $ concatMap I.altBinders binds)
  where
-  dropDupLet Nothing  e = e
-  dropDupLet (Just v) e = makeDrop
-    varExpr
-    (I.Let [(Nothing, makeDup varExpr)] e (I.extract e))
-    where varExpr = I.Var v I.Unit -- FIXME: This should not be I.Unit; it should be the type of the argument of the data constructor
+  dropDupLet (I.BindAnon _)  e = e
+  dropDupLet (I.BindVar v t') e =
+    let varExpr = I.Var v t'
+        dupExpr = makeDup varExpr
+     in makeDrop varExpr (I.Let [(I.BindAnon $ I.extract dupExpr, dupExpr)] e (I.extract e))
+  dropDupLet _ _ = error "unreachable, fake non-exhaustive pattern"

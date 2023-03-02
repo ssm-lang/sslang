@@ -67,9 +67,7 @@ import           Control.Monad.Reader           ( MonadReader
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.Bifunctor                 ( first
-                                                , second
-                                                )
+import           Data.Bifunctor                 ( Bifunctor(..) )
 import           Data.Generics.Aliases          ( mkM )
 import           Data.Generics.Schemes          ( everywhereM )
 import           Data.List                      ( inits )
@@ -213,7 +211,7 @@ createFunc _    (_     , I.VariantNamed []    ) = Nothing
 createFunc tcon (dconid, I.VariantNamed params) = Just (func_name, lambda)
  where
   func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
-  lambda    = I.foldLambda (first Just <$> params) body
+  lambda    = I.foldLambda (uncurry I.BindVar <$> params) body
   body      = I.foldApp dcon args
   dcon      = I.Data (fromId dconid) t
   args      = reverse $ zip (uncurry I.Var <$> params) ts

@@ -18,7 +18,6 @@ import           Control.Monad.Reader           ( MonadReader(..)
                                                 , ReaderT(..)
                                                 , asks
                                                 )
-import           Data.Bifunctor                 ( first )
 import           Data.Generics.Aliases          ( mkM )
 import           Data.Generics.Schemes          ( everywhereM )
 import qualified Data.Set                      as S
@@ -66,7 +65,7 @@ makeExternFunc (x, t) = do
       body      = I.Prim (I.FfiCall $ fromId x) (map (uncurry I.Var) args) rt
   if null ats
     then Compiler.typeError errMsg
-    else return (liftExtern x, I.foldLambda (map (first Just) args) body)
+    else return (liftExtern x, I.foldLambda (map (uncurry I.BindVar) args) body)
  where
   errMsg = "Extern symbol does not have function type: " ++ show x
   argName :: Int -> I.VarId
