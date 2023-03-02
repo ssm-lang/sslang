@@ -28,6 +28,7 @@ module IR.IR
   , unfoldLambda
   , extract
   , inject
+  , injectMore
   , foldApp
   , unfoldApp
   , isValue
@@ -256,29 +257,49 @@ variantFields :: TypeVariant -> Int
 variantFields (VariantNamed   fields) = length fields
 variantFields (VariantUnnamed fields) = length fields
 
--- | Extract the type carried by an 'Expr'.
-extract :: Expr t -> t
-extract (Var  _ t     ) = t
-extract (Data _ t     ) = t
-extract (Lit  _ t     ) = t
-extract (Let    _ _ t ) = t
-extract (Lambda _ _ t ) = t
-extract (App    _ _ t ) = t
-extract (Match  _ _ t ) = t
-extract (Prim   _ _ t ) = t
-extract (Exception _ t) = t
+-- | Many data types carry other kinds of data, e.g., 'Expr' carries a type.
+class Carrier c where
+  -- | Extract the data carried by the carrier.
+  extract :: c a -> a
+  -- | Replace the data carried by the carrier.
+  inject :: a -> c a -> c a
 
--- | Replace the top-level type carried by an 'Expr'.
-inject :: t -> Expr t -> Expr t
-inject t (Var  v _      ) = Var v t
-inject t (Data d _      ) = Data d t
-inject t (Lit  l _      ) = Lit l t
-inject t (Let    ds b  _) = Let ds b t
-inject t (Lambda xs b  _) = Lambda xs b t
-inject t (App    h  a  _) = App h a t
-inject t (Match  s  as _) = Match s as t
-inject t (Prim   p  es _) = Prim p es t
-inject t (Exception et _) = Exception et t
+injectMore :: (Semigroup a, Carrier c) => a -> c a -> c a
+injectMore a c = inject (a <> extract c) c
+
+-- | Extract the type carried by an 'Expr'.
+instance Carrier Expr where
+  extract (Var  _ t     ) = t
+  extract (Data _ t     ) = t
+  extract (Lit  _ t     ) = t
+  extract (Let    _ _ t ) = t
+  extract (Lambda _ _ t ) = t
+  extract (App    _ _ t ) = t
+  extract (Match  _ _ t ) = t
+  extract (Prim   _ _ t ) = t
+  extract (Exception _ t) = t
+
+  inject t (Var  v _      ) = Var v t
+  inject t (Data d _      ) = Data d t
+  inject t (Lit  l _      ) = Lit l t
+  inject t (Let    ds b  _) = Let ds b t
+  inject t (Lambda xs b  _) = Lambda xs b t
+  inject t (App    h  a  _) = App h a t
+  inject t (Match  s  as _) = Match s as t
+  inject t (Prim   p  es _) = Prim p es t
+  inject t (Exception et _) = Exception et t
+
+instance Carrier Alt where
+  extract (AltData _ _ t) = t
+  extract (AltLit _ t) = t
+  extract (AltBinder b) = extract b
+  inject t (AltData d a _) = AltData d a t
+  inject t (AltLit l _) = AltLit l t
+  inject t (AltBinder b) = AltBinder $ inject t b
+
+instance Carrier Binder where
+  extract Binder{_binderType = t} = t
+  inject t b = b {_binderType = t}
 
 {- | Collect a curried application into the function and argument list.
 
