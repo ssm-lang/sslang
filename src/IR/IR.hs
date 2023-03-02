@@ -32,7 +32,7 @@ module IR.IR
   , foldApp
   , unfoldApp
   , isValue
-  , getAltDefault
+  , altBinders
   , pattern BindVar
   , pattern BindAnon
   ) where
@@ -50,7 +50,7 @@ import           Data.Data                      ( Data
                                                 )
 
 import           Data.Maybe                     ( catMaybes
-                                                , maybeToList
+                                                , maybeToList, mapMaybe
                                                 )
 import qualified Data.Set                      as S
 import           Data.Set                       ( (\\) )
@@ -351,11 +351,11 @@ isValue Lit{}    = True
 isValue Lambda{} = True
 isValue _        = False
 
--- | Retrieve binder from Alt, assuming it is AltBinder.
-getAltDefault :: Alt t -> Binder t
-getAltDefault (AltBinder b) = b
-getAltDefault _ =
-  error "Compiler Error: Should not have recursive patterns here"
+-- | Retrieve list of binders from an 'Alt'.
+altBinders :: Alt t -> [Binder t]
+altBinders (AltLit _ _) = []
+altBinders (AltBinder b) = [b]
+altBinders (AltData _ as _) = concatMap altBinders as
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v
@@ -369,10 +369,7 @@ instance HasFreeVars (Expr t) VarId where
   freeVars (Match s as _) = S.unions (freeVars s : map freeAltVars as)
    where
     freeAltVars :: (Alt t, Expr t) -> S.Set VarId
-    freeAltVars (a, e) = freeVars e \\ altBinders a
-    altBinders (AltData _ bs               _) = S.unions $ map altBinders bs
-    altBinders (AltLit    _                _) = S.empty
-    altBinders (AltBinder (maybeToList . _binderId -> v)) = S.fromList v
+    freeAltVars (a, e) = freeVars e \\ S.fromList (mapMaybe _binderId $ altBinders a)
   freeVars Exception{} = S.empty
 
 {- | Predicate of whether an expression "looks about right".
