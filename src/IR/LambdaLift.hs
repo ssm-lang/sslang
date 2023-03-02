@@ -59,7 +59,7 @@ data LiftCtx = LiftCtx
     lifted :: [(I.VarId, I.Expr I.Type)]
   , -- | 'anonCount' is a monotonically increasing counter used for creating
     --  unique identifiers for lifted lambdas.
-    anonCount :: Int
+    freshCounter :: Int
   }
 
 
@@ -84,7 +84,7 @@ runLiftFn globals (LiftFn m) =
       , currentFreeVars = M.empty
       , currentTrail = []
       , lifted = []
-      , anonCount = 0
+      , freshCounter = 0
       }
 
 
@@ -98,36 +98,59 @@ prependTrail cur = do
 -- | Construct a fresh variable name for a new lifted lambda.
 getFresh :: LiftFn Identifier
 getFresh = do
-  curCount <- gets anonCount
-  modify $ \st -> st{anonCount = anonCount st + 1}
+  curCount <- gets freshCounter
+  modify $ \st -> st{freshCounter = freshCounter st + 1}
   return $ "anon" <> fromString (show curCount)
 
 
--- | Store a new lifted lambda to later add to the program's top level definitions.
-addLifted :: Identifier -> I.Expr I.Type -> LiftFn ()
-addLifted name lam =
-  modify $ \st -> st{lifted = (fromId name, lam) : lifted st}
-
-
 -- | Update lift environment before entering a new scope (e.g. lambda body, match arm).
-withScope :: Maybe Identifier -> [I.Binder I.Type] -> LiftFn a -> LiftFn a
-withScope t (M.fromList . binderVars -> s) m = do
-  scope <- gets currentScope
-  trail <- gets currentTrail
-  modify $ \st -> st{currentScope = s `M.union` scope, currentTrail = maybeToList t <> trail}
+withEnclosingScope :: Maybe Identifier -> [I.Binder I.Type] -> LiftFn a -> LiftFn a
+withEnclosingScope t (binderVars -> s) m = do
+  (scope, trail) <- (,) <$> gets currentScope <*> gets currentTrail
+
+  modify $ \st ->
+    st
+      { currentScope = M.fromList s `M.union` scope -- Add bindings to inner scope
+      , currentTrail = maybeToList t <> trail -- Possibly extend trail
+      }
+
   a <- m
-  modify $ \st -> st{currentScope = scope, currentTrail = trail}
+
+  modify $ \st ->
+    st -- Restore state
+      { currentScope = scope
+      , currentTrail = trail
+      }
   return a
 
 
-withFreeScope :: Maybe Identifier -> [I.Binder I.Type] -> LiftFn a -> LiftFn (a, [(I.VarId, I.Type)])
-withFreeScope t bs m = do
-  free <- gets currentFreeVars
-  modify $ \st -> st{currentFreeVars = M.empty}
-  a <- withScope t bs m
+withLiftedScope :: Maybe Identifier -> [I.Binder I.Type] -> LiftFn a -> LiftFn (a, [(I.VarId, I.Type)])
+withLiftedScope t (binderVars -> s) m = do
+  (scope, trail, free) <- (,,) <$> gets currentScope <*> gets currentTrail <*> gets currentFreeVars
+
+  modify $ \st ->
+    st
+      { currentFreeVars = M.empty -- Reset accounting of free variables encountered
+      , currentScope = M.fromList s -- Clear the currentScope (which will not exist when the inner scope is lifted to the global scope)
+      , currentTrail = maybeToList t <> trail -- Possibly extend trail
+      }
+
+  a <- m
+
   free' <- gets currentFreeVars
-  modify $ \st -> st{currentFreeVars = free}
+  modify $ \st ->
+    st -- Restore state
+      { currentFreeVars = free
+      , currentScope = scope
+      , currentTrail = trail
+      }
   return (a, M.toList free')
+
+
+-- | Store a new lifted lambda to later add to the program's top level definitions.
+tellLifted :: Identifier -> I.Expr I.Type -> LiftFn ()
+tellLifted name lam =
+  modify $ \st -> st{lifted = (fromId name, lam) : lifted st}
 
 
 -- | Context management for lifting top level lambda definitions.
@@ -145,18 +168,15 @@ Program with the relative order of user definitions preserved.
 -}
 liftProgramLambdas :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 liftProgramLambdas p@I.Program{I.programDefs = defs} = runLiftFn (map (second I.extract) defs) $ do
-  liftedProgramDefs <- mapM liftLambdasTop defs
+  liftedProgramDefs <- mapM liftTop defs
   return $ p{I.programDefs = concat liftedProgramDefs}
-
-
--- | Given a top-level definition, lift out any lambda definitions.
-liftLambdasTop :: (I.VarId, I.Expr I.Type) -> LiftFn [(I.VarId, I.Expr I.Type)]
-liftLambdasTop (v, lam@I.Lambda{}) = do
-  let (bs, body) = I.unfoldLambda lam
-  body' <- withScope (Just $ fromId v) bs $ liftLambdas body
-  liftedLambdas <- extractLifted
-  return $ liftedLambdas ++ [(v, I.foldLambda bs body')]
-liftLambdasTop topDef = return [topDef]
+ where
+  liftTop (v, lam@I.Lambda{}) = do
+    let (bs, body) = I.unfoldLambda lam
+    body' <- withEnclosingScope (Just $ fromId v) bs $ liftLambdas body
+    liftedLambdas <- extractLifted
+    return $ liftedLambdas ++ [(v, I.foldLambda bs body')]
+  liftTop topDef = return [topDef]
 
 
 {- | Lifting logic for IR expressions.
@@ -179,24 +199,25 @@ liftLambdas (I.App e1 e2 t) = I.App <$> liftLambdas e1 <*> liftLambdas e2 <*> pu
 liftLambdas (I.Prim p exprs t) = I.Prim p <$> mapM liftLambdas exprs <*> pure t
 liftLambdas lam@(I.Lambda _ _ t) = do
   let (bs, body) = I.unfoldLambda lam
-  -- vs'        = zip vs $ fst (I.unfoldArrow t)
   lamName <- getFresh
   fullName <- prependTrail lamName
-  (body', free') <- withFreeScope (Just lamName) bs $ liftLambdas body
+  (body', free') <- withLiftedScope (Just lamName) bs $ do
+    liftLambdas body
 
   let freeActuals = map (\(v', t') -> (I.Var v' t', t')) free'
       liftedLam = I.foldLambda (map (uncurry I.BindVar) free' ++ bs) body'
 
-  addLifted fullName liftedLam
+  tellLifted fullName liftedLam
 
   return $ I.foldApp (I.Var (fromId fullName) t) freeActuals
 liftLambdas (I.Let ds e t) = do
-  -- let vs = binderVars $ map fst ds
-  ds' <- forM ds $ \(b@(I._binderId -> v), d) -> withScope (fromId <$> v) (map fst ds) $ (b,) <$> liftLambdas d
+  ds' <- forM ds $ \(b@(I._binderId -> v), d) ->
+    withEnclosingScope (fromId <$> v) (map fst ds) $ do
+      (b,) <$> liftLambdas d
   I.Let ds' <$> liftLambdas e <*> pure t
 liftLambdas (I.Match s as t) = do
   s' <- liftLambdas s
-  as' <- forM as $ \(a, e) -> withScope Nothing (I.altBinders a) $ (a,) <$> liftLambdas e
+  as' <- forM as $ \(a, e) -> withEnclosingScope Nothing (I.altBinders a) $ (a,) <$> liftLambdas e
   return $ I.Match s' as' t
 liftLambdas lit@I.Lit{} = return lit
 liftLambdas dat@I.Data{} = return dat
