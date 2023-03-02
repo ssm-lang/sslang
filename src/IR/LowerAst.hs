@@ -33,9 +33,9 @@ import IR.Types.Type (tempTupleId)
 untyped :: I.Annotations
 untyped = mempty
 
--- | Add a type annotation to an already-annotated term.
-pushAnn :: I.Expr I.Annotations -> I.Annotation -> I.Expr I.Annotations
-pushAnn e t = I.inject (I.Annotations [t] <> I.extract e) e
+-- | Construct a single annotation.
+ann :: I.Annotation -> I.Annotations
+ann t = I.Annotations [t]
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Annotations)
@@ -54,8 +54,8 @@ lowerProgram (A.Program ds) = do
   -- | Lower a top-level data definition into IR.
   lowerDataDef :: A.Definition -> Compiler.Pass (I.VarId, I.Expr I.Annotations)
   lowerDataDef d = lowerDef d >>= \case
-    (Just b , e) -> return (b, e)
-    (Nothing, _) -> Compiler.unexpected "Missing top-level binding"
+    (I.BindVar b _, e) -> return (b, e)
+    (_, _) -> Compiler.unexpected "Missing top-level binding"
     -- TODO: This might actually be ok, to allow top-level evaluation
 
   -- | Lower a top-level type definition into IR.
@@ -77,30 +77,21 @@ lowerProgram (A.Program ds) = do
   lowerExternDecl (A.ExternDecl i t) = (fromId i, ) <$> lowerType t
 
 -- | Lower an 'A.Definition' into a name and bound expression.
-lowerDef :: A.Definition -> Compiler.Pass (I.Binder, I.Expr I.Annotations)
+lowerDef :: A.Definition -> Compiler.Pass (I.Binder I.Annotations, I.Expr I.Annotations)
 lowerDef (A.DefPat aPat aBody) = do
   n <- lowerPatBinder aPat
-  t <- lowerPatType aPat
   b <- lowerExpr aBody
-  return (n, pushAnn b t)
-lowerDef (A.DefFn aName aPats aTy aBody) = do
-  -- Lower body
-  b <- lowerCurry aPats aBody
-
-  -- Push proper type annotation, if there is one
-  b <- case aTy of
-    A.TypProper ty -> pushAnn b . I.AnnType <$> lowerType ty
-    _              -> return b
-
-  -- Push argument + return type annotations, if there are any
-  b <- do
-    pts <- mapM lowerPatType aPats
-    rt  <- I.AnnType <$> case aTy of
-      A.TypReturn ty -> lowerType ty
-      _              -> return I.Hole
-    return $ pushAnn b $ I.AnnArrows pts rt
-
-  return (Just $ fromId aName, b)
+  return (n, b)
+lowerDef (A.DefFn aName aArgs (A.TypProper ty) aBody) = do
+  typAnn <- I.AnnType <$> lowerType ty
+  b <- lowerCurry aArgs aBody
+  return (I.BindVar (fromId aName) (ann typAnn), b)
+lowerDef (A.DefFn aName aArgs (A.TypReturn ty) aBody) = do
+  b <- lowerCurry aArgs (A.Constraint aBody ty)
+  return (I.BindVar (fromId aName) untyped, b)
+lowerDef (A.DefFn aName aArgs A.TypNone aBody) = do
+  b <- lowerCurry aArgs aBody
+  return (I.BindVar (fromId aName) untyped, b)
 
 -- | Curry and lower a list of arguments to a lambda body.
 lowerCurry :: [A.Pat] -> A.Expr -> Compiler.Pass (I.Expr I.Annotations)
@@ -127,8 +118,7 @@ lowerExpr a@(A.Apply l r) = case first lowerPrim (A.collectApp a) of
 lowerExpr (A.Let ds b) =
   I.Let <$> mapM lowerDef ds <*> lowerExpr b <*> pure untyped
 lowerExpr (A.Lambda ps b) = do
-  pts <- mapM lowerPatType ps
-  pushAnn <$> lowerCurry ps b <*> pure (I.AnnArrows pts $ I.AnnType I.Hole)
+  lowerCurry ps b
 lowerExpr (A.While c b) = do
   body <- lowerExpr (A.IfElse c (A.Lit A.LitEvent) A.Break `A.Seq` b)
   return $ I.Prim I.Loop [body] untyped
@@ -141,19 +131,23 @@ lowerExpr (A.After delay lhs rhs) =
 lowerExpr (A.Assign lhs rhs) =
   I.Prim I.Assign <$> mapM lowerExpr [lhs, rhs] <*> pure untyped
 lowerExpr (A.Constraint e ty) = do
-  pushAnn <$> lowerExpr e <*> (I.AnnType <$> lowerType ty)
+  e' <- lowerExpr e
+  ty' <- I.AnnType <$> lowerType ty
+  return $ I.injectMore (ann ty') e'
 lowerExpr (A.Wait exprs) =
   I.Prim I.Wait <$> mapM lowerExpr exprs <*> pure untyped
 lowerExpr (A.Seq l r) = do
   l' <- lowerExpr l
   r' <- lowerExpr r
-  return $ I.Let [(Nothing, l')] r' untyped
+  return $ I.Let [(I.BindAnon $ I.extract l', l')] r' untyped
 lowerExpr A.Break          = return $ I.Prim I.Break [] untyped
 lowerExpr (A.IfElse c t e) = do
   c' <- lowerExpr c
-  t' <- (I.AltBinder Nothing, ) <$> lowerExpr t
-  e' <- (I.AltLit (I.LitIntegral 0), ) <$> lowerExpr e
-  return $ I.Match c' [e', t'] untyped
+  t' <- lowerExpr t
+  e' <- lowerExpr e
+  let altT = (I.AltBinder $ I.BindAnon $ I.extract t', t')
+      altE = (I.AltLit (I.LitIntegral 0) $ I.extract e', e')
+  return $ I.Match c' [altE, altT] untyped
 lowerExpr (A.CQuote s) = return $ I.Prim (I.CQuote $ fromString s) [] untyped
 lowerExpr (A.CCall s es) =
   I.Prim (I.CCall $ fromId s) <$> mapM lowerExpr es <*> pure untyped
@@ -171,19 +165,21 @@ lowerExpr (A.Tuple es) =
 lowerExpr (A.ListExpr _) =
   Compiler.unexpected "lowerExpr: ListExprs should have already been desugared"
 
-
 -- | Lower an A.Pat into an I.Alt
-lowerPatAlt :: A.Pat -> Compiler.Pass I.Alt
-lowerPatAlt A.PatWildcard = return $ I.AltBinder Nothing
-lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltBinder (Just $ I.VarId i)
-                        | otherwise = return $ I.AltData (I.DConId i) []
-lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l
+lowerPatAlt :: A.Pat -> Compiler.Pass (I.Alt I.Annotations)
+lowerPatAlt A.PatWildcard = return $ I.AltBinder $ I.BindAnon untyped
+lowerPatAlt (A.PatId i) | isVar i   = return $ I.AltBinder $ I.BindVar (I.VarId i) untyped
+                        | otherwise = return $ I.AltData (I.DConId i) [] untyped
+lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l <*> pure untyped
 lowerPatAlt (A.PatTup ps) =
-  I.AltData (I.tempTupleId $ length ps) <$> mapM lowerPatAlt ps
+  I.AltData (I.tempTupleId $ length ps) <$> mapM lowerPatAlt ps <*> pure untyped
 lowerPatAlt p@(A.PatApp _) = case A.collectPApp p of
-  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps
+  (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps <*> pure untyped
   _ -> Compiler.unexpected "lowerPatAlt: app head should be a data constructor"
-lowerPatAlt (A.PatAnn _ p) = lowerPatAlt p
+lowerPatAlt (A.PatAnn typ p) = do
+  t <- I.AnnType <$> lowerType typ
+  a <- lowerPatAlt p
+  return $ I.injectMore (ann t) a
 lowerPatAlt (A.PatAs _ _) =
   Compiler.todo "lowerPatAlt cannot handle aliases yet"
 
@@ -216,30 +212,17 @@ lowerPrim (A.Id "<"    ) = Just $ I.PrimOp I.PrimLt
 lowerPrim _              = Nothing
 
 -- | Extract an optional identifier from an Ast pattern.
-lowerPatBinder :: A.Pat -> Compiler.Pass I.Binder
-lowerPatBinder (A.PatId v)      = return $ Just $ fromId v
-lowerPatBinder A.PatWildcard    = return Nothing
-lowerPatBinder (A.PatAnn _ pat) = lowerPatBinder pat
+lowerPatBinder :: A.Pat -> Compiler.Pass (I.Binder I.Annotations)
+lowerPatBinder (A.PatId v)      = return $ I.BindVar (fromId v) untyped
+lowerPatBinder A.PatWildcard    = return $ I.BindAnon untyped
+lowerPatBinder (A.PatAnn typ pat) = do
+  t <- I.AnnType <$> lowerType typ
+  b <- lowerPatBinder pat
+  return $ I.injectMore (ann t) b
 lowerPatBinder p =
   Compiler.todo
     $  "lowerPatBinder: should be desguared into pattern match: "
     ++ show p
-
--- | Extracts and lowers possible AST type annotation from a binding.
-lowerPatType :: A.Pat -> Compiler.Pass I.Annotation
-lowerPatType A.PatWildcard = return $ I.AnnType I.Hole
-lowerPatType (A.PatId i) | isCons i  = return $ I.AnnDCon (fromId i) []
-                         | otherwise = return $ I.AnnType I.Hole
-lowerPatType (A.PatLit _l) = Compiler.todo "lowerPatType for literals"
-lowerPatType (A.PatAs _ p) = lowerPatType p
-lowerPatType (A.PatTup bs) =
-  I.AnnDCon (I.tupleId $ length bs) <$> mapM lowerPatType bs
-lowerPatType p@(A.PatApp _) = case A.collectPApp p of
-  (A.PatId i, ps) | isCons i -> I.AnnDCon (fromId i) <$> mapM lowerPatType ps
-  _ -> Compiler.unexpected "lowerPatType cannot handle arbitrary patterns"
-lowerPatType (A.PatAnn typ p) = lowerPatType p >>= \case
-  I.AnnType I.Hole -> I.AnnType <$> lowerType typ
-  _ -> Compiler.unexpected "lowerPatType cannot handle stacked annotations"
 
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Typ -> Compiler.Pass I.Type
