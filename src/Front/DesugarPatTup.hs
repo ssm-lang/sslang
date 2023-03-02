@@ -19,7 +19,7 @@ desugarTupPat (A.Program decls) = return $ A.Program $ desugarTop <$> decls
                             A.PatTup _ -> let (pats, rese) = desugarPatTup rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
                                         (A.PatId (Identifier ("_temp_id_" ++ show n)) : pats, rese)
                             _ -> first (p:) $ desugarPatTup rps e (n+1)
-          desugarDef (A.DefPat p e) = A.DefPat p $ desugarExpr e
+          desugarDef (A.DefPat p e) = A.DefPat p e
           desugarExpr (A.Let defs e) = desugarLet defs e
           desugarExpr e = e
           desugarLet defs e = 
@@ -31,4 +31,5 @@ desugarTupPat (A.Program decls) = return $ A.Program $ desugarTop <$> decls
                         (A.DefPat p@(A.PatTup _) defe) ->
                             let (d, nexpr) = desugarPatTup rdefs (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
                                 ((A.DefPat (A.PatId (Identifier ("_temp_id_" ++ show n))) defe) : d, nexpr)
+                        fndef@(A.DefFn _ _ _ _) -> first (desugarDef fndef:) $ desugarPatTup rdefs e (n+1)
                         _ -> first (def:) $ desugarPatTup rdefs e (n+1)
