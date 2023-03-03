@@ -12,17 +12,19 @@ import           IR.Constraint.Monad            ( mkTCState
 import qualified IR.Constraint.Solve           as Solve
 import qualified IR.IR                         as I
 
-import IR.Constraint.PrettyPrint
+import IR.Constraint.PrettyPrint                (printConstraint
+                                                , Doc
+                                                )
 
 
 typecheckProgram
-  :: I.Program Can.Annotations -> Compiler.Pass (I.Program Can.Type, String)
+  :: I.Program Can.Annotations -> Compiler.Pass (I.Program Can.Type, Doc ann)
 typecheckProgram pAnn = case unsafeTypecheckProgram pAnn of
   Left  e     -> Compiler.throwError e
   Right pType -> return pType
 
 unsafeTypecheckProgram
-  :: I.Program Can.Annotations -> Either Compiler.Error (I.Program Can.Type, String)
+  :: I.Program Can.Annotations -> Either Compiler.Error (I.Program Can.Type, Doc ann)
 unsafeTypecheckProgram pAnn = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
   Solve.run constraint

@@ -1,4 +1,7 @@
-module IR.Constraint.PrettyPrint where
+module IR.Constraint.PrettyPrint (
+    printConstraint,
+    Doc
+) where
 
 import qualified IR.Constraint.Canonical       as Can
 import           IR.Constraint.Type            as Typ
@@ -16,37 +19,52 @@ import           IR.Constraint.Monad            ( TC )
 
 -- Has to operate inside TC monad to invoke toCanType!!!
     
-printConstraint :: Constraint -> TC String
+-- data Constraint
+--   = CTrue
+--   | CSaveTheEnvironment
+--   | CEqual Type Type
+--   | CPattern Type Type
+--   | CLocal Ident.Identifier Type
+--   | CForeign Can.Scheme Type
+--   | CAnd [Constraint]
+--   | CLet { _rigidVars :: [Variable]
+--          , _flexVars :: [Variable]
+--          , _header :: Map.Map Ident.Identifier Type
+--          , _headerCon :: Constraint
+--          , _bodyCon :: Constraint
+--          }
+
+printConstraint :: Constraint -> TC (Doc ann)
 printConstraint CTrue = do 
-    return "True"
+    return $ pretty "True"
 
 printConstraint CSaveTheEnvironment = do 
-    return "SaveTheEnvironment"
+    return $ pretty "SaveTheEnvironment"
 
 printConstraint (CEqual t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ "Equal " ++ p1 ++ p2
+    return $ pretty "Equal" <+> p1 <+> p2
 
 printConstraint (CPattern t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ "Pattern " ++ p1 ++ p2
+    return $ pretty "Pattern" <+> p1 <+> p2
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ "Local " ++ show i ++ p
+    return $ pretty "Local" <+> (pretty . show) i <+> p
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
-    let scheme = "Forall " ++ show vars ++ pct
+    let scheme = pretty "Forall" <+> (pretty . show) vars <+> pct
 
     p <- printType t
-    return $ "Foreign " ++ scheme ++ p
+    return $ pretty "Foreign" <+> scheme <+> p
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    return $ "And " ++ concat printed
+    return $ pretty "And" <+> vsep printed
 
 printConstraint (CLet r f h hc bc) = do
 
@@ -58,28 +76,25 @@ printConstraint (CLet r f h hc bc) = do
     phc <- printConstraint hc
     pbc <- printConstraint bc
 
-    return $ "Let {" ++ concat pr ++ concat pf ++ "placeholder" ++ phc ++ pbc ++ "}"
---   CLet { _rigidVars :: [Variable]
---          , _flexVars :: [Variable]
---          , _header :: Map.Map Ident.Identifier Type
---          , _headerCon :: Constraint
---          , _bodyCon :: Constraint
---          }
+    return $ pretty "Let" <+> pretty "rigidVars" <+> vsep pr 
+                          <+> pretty "flexVars"  <+> vsep pf
+                          <+> pretty "placeholder"
+                          <+> pretty "headerCon" <+> phc 
+                          <+> pretty "bodyCon"   <+> pbc
 
-
-printType:: Typ.Type -> TC String
+printType:: Typ.Type -> TC (Doc ann)
 printType (TConN i lst) = do 
     printed <- mapM printType lst
-    return $ "TConN " ++ show i ++ concat printed
+    return $ pretty "TConN" <+> (pretty . show) i <+> vsep printed
 
 printType (TVarN var) = do 
     p <- printVar var
-    return $ "TVarN " ++ p
+    return $ pretty "TVarN" <+> p
 
-printVar:: Variable -> TC String
+printVar:: Variable -> TC (Doc ann)
 printVar var = do
     can_t <- toCanType var
     printCanType can_t
 
-printCanType:: Can.Type -> TC String
-printCanType t = do return $ show t
+printCanType:: Can.Type -> TC (Doc ann)
+printCanType t = do return $ (pretty . show) t
