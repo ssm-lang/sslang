@@ -44,27 +44,27 @@ printConstraint CSaveTheEnvironment = do
 printConstraint (CEqual t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Equal" <+> p1 <+> p2
+    return $ pretty "Equal" <+> (parens . align . vsep) [p1, p2]
 
 printConstraint (CPattern t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Pattern" <+> p1 <+> p2
+    return $ pretty "Pattern" <+> (parens . align . vsep) [p1, p2]
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ pretty "Local" <+> (pretty . show) i <+> p
+    return $ pretty "Local" <+> (parens . align . vsep) [(pretty . show) i, p]
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
     let scheme = pretty "Forall" <+> (pretty . show) vars <+> pct
 
     p <- printType t
-    return $ pretty "Foreign" <+> scheme <+> p
+    return $ pretty "Foreign" <+> (parens . align . vsep) [scheme, p]
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    return $ pretty "And" <+> vsep printed
+    return $ pretty "And" <+> (brackets . align . vsep . punctuate comma) printed 
 
 printConstraint (CLet r f h hc bc) = do
 
@@ -76,20 +76,22 @@ printConstraint (CLet r f h hc bc) = do
     phc <- printConstraint hc
     pbc <- printConstraint bc
 
-    return $ pretty "Let" <+> pretty "rigidVars" <+> vsep pr 
-                          <+> pretty "flexVars"  <+> vsep pf
-                          <+> pretty "placeholder"
-                          <+> pretty "headerCon" <+> phc 
-                          <+> pretty "bodyCon"   <+> pbc
+    return $ pretty "Let" <+> (braces . align . vsep . punctuate comma) [ 
+                                pretty "rigidVars:" <+> (brackets . align . vsep . punctuate comma) pr,
+                                pretty "flexVars:"  <+> (brackets . align . vsep . punctuate comma) pf,
+                                pretty "placeholder!!!",
+                                pretty "headerCon:" <+> align phc, 
+                                pretty "bodyCon:"   <+> align pbc]
+                            
 
 printType:: Typ.Type -> TC (Doc ann)
 printType (TConN i lst) = do 
     printed <- mapM printType lst
-    return $ pretty "TConN" <+> (pretty . show) i <+> vsep printed
+    return $ pretty "TConN" <+> parens ((pretty . show) i <+> (brackets . vsep) printed)
 
 printType (TVarN var) = do 
     p <- printVar var
-    return $ pretty "TVarN" <+> p
+    return $ pretty "TVarN" <+> parens p
 
 printVar:: Variable -> TC (Doc ann)
 printVar var = do
