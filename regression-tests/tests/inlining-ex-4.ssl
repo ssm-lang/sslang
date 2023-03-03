@@ -25,5 +25,4 @@ main cin cout =
   let q = 2
   let r = 3 + q
   putd cout (r + q - q)
-
   

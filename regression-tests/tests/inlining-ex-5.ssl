@@ -26,8 +26,3 @@ main cin cout =
   let w = r + q    // 75
   // w
   putc cout w
-
-
-  
-
-
