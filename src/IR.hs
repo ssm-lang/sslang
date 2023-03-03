@@ -7,6 +7,7 @@ import Common.Compiler
 import Common.Default (Default (..))
 import qualified Front.Ast as A
 import qualified IR.IR as I
+import qualified IR.Pretty ()
 
 import Control.Monad (
   when,
@@ -21,10 +22,7 @@ import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.SegmentLets (segmentLets)
-import IR.Types (
-  fromAnnotations,
-  typecheckProgram,
- )
+import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
