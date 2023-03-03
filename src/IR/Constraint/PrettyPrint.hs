@@ -4,16 +4,18 @@ module IR.Constraint.PrettyPrint (
 ) where
 
 import qualified IR.Constraint.Canonical       as Can
+import qualified Common.Identifiers            as Ident
 import           IR.Constraint.Type            as Typ
 
 import           Prettyprinter
 import           Prettyprinter.Render.String
 
-import           Common.Compiler
+-- import           Common.Compiler
 
-import           Data.Map                       (foldWithKey)
+import           Data.Map                       as Map
 
 import           IR.Constraint.Monad            ( TC )
+import Control.Monad.ST (ST)
 
 -- Make Constraint an instance of Pretty!!!
 
@@ -44,42 +46,42 @@ printConstraint CSaveTheEnvironment = do
 printConstraint (CEqual t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Equal" <+> (parens . align . vsep) [p1, p2]
+    return $ pretty "Equal" <+> (align . parens . vsep) [p1, p2]
 
 printConstraint (CPattern t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Pattern" <+> (parens . align . vsep) [p1, p2]
+    return $ pretty "Pattern" <+> (align . parens . vsep) [p1, p2]
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ pretty "Local" <+> (parens . align . vsep) [(pretty . show) i, p]
+    return $ pretty "Local" <+> (align . parens . vsep) [(pretty . show) i, p]
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
     let scheme = pretty "Forall" <+> (pretty . show) vars <+> pct
 
     p <- printType t
-    return $ pretty "Foreign" <+> (parens . align . vsep) [scheme, p]
+    return $ pretty "Foreign" <+> (align . parens . vsep) [scheme, p]
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    return $ pretty "And" <+> (brackets . align . vsep . punctuate comma) printed 
+    return $ pretty "And" <+> (align . brackets . vsep . punctuate comma) printed 
 
 printConstraint (CLet r f h hc bc) = do
 
     pr <- mapM printVar r
     pf <- mapM printVar f
 
-    -- let pheader = foldWithKey (\k a lst -> (show k ++ printType a):lst) [] h
+    let pheader = printHeader h
 
     phc <- printConstraint hc
     pbc <- printConstraint bc
 
-    return $ pretty "Let" <+> (braces . align . vsep . punctuate comma) [ 
+    return $ pretty "Let" <+> (align . braces . vsep . punctuate comma) [ 
                                 pretty "rigidVars:" <+> (brackets . align . vsep . punctuate comma) pr,
                                 pretty "flexVars:"  <+> (brackets . align . vsep . punctuate comma) pf,
-                                pretty "placeholder!!!",
+                                pretty "header:"    <+> align pheader,
                                 pretty "headerCon:" <+> align phc, 
                                 pretty "bodyCon:"   <+> align pbc]
                             
@@ -100,3 +102,6 @@ printVar var = do
 
 printCanType:: Can.Type -> TC (Doc ann)
 printCanType t = do return $ (pretty . show) t
+
+printHeader:: Map.Map Ident.Identifier Type -> Doc ann
+printHeader headers = pretty "placeholder!!!"
