@@ -13,6 +13,7 @@ import           Prettyprinter.Render.String
 -- import           Common.Compiler
 
 import           Data.Map                       as Map
+import           Data.List                      as List
 
 import           IR.Constraint.Monad            ( TC )
 import Control.Monad.ST (ST)
@@ -73,7 +74,7 @@ printConstraint (CLet r f h hc bc) = do
     pr <- mapM printVar r
     pf <- mapM printVar f
 
-    let pheader = printHeader h
+    pheader <- printHeader h
 
     phc <- printConstraint hc
     pbc <- printConstraint bc
@@ -103,5 +104,12 @@ printVar var = do
 printCanType:: Can.Type -> TC (Doc ann)
 printCanType t = do return $ (pretty . show) t
 
-printHeader:: Map.Map Ident.Identifier Type -> Doc ann
-printHeader headers = pretty "placeholder!!!"
+printHeader:: Map.Map Ident.Identifier Type -> TC (Doc ann)
+printHeader headers = do 
+    lst <- mapM printPair $ toList headers
+    return $ (align . brackets . vsep) lst
+    where 
+        printPair (i, t) = do 
+            pt <- printType t
+            return $ (pretty . show) i <+> pt
+
