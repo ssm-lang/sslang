@@ -82,7 +82,7 @@ data GenFnState = GenFnState
   { -- | Function name
     fnName :: I.VarId
   , -- | Function parameters
-    fnParams :: [(I.Binder, I.Type)]
+    fnParams :: [I.Binder I.Type]
   , -- | Function return type
     fnRetTy :: I.Type
   , -- | Function body
@@ -122,9 +122,7 @@ runGenFn ::
   -- | Name of procedure
   I.VarId ->
   -- | Names and types of parameters to procedure
-  [(I.Binder, I.Type)] ->
-  -- | Name and type of return parameter of procedure
-  I.Type ->
+  [I.Binder I.Type] ->
   -- | Body of procedure
   I.Expr I.Type ->
   -- | Type information
@@ -135,26 +133,25 @@ runGenFn ::
   GenFn a ->
   -- | Pass on errors to caller
   Compiler.Pass a
-runGenFn name params ret body typeInfo globals (GenFn tra) =
+runGenFn name params body typeInfo globals (GenFn tra) =
   evalStateT tra $
     GenFnState
       { fnName = name
       , fnParams = params
-      , fnRetTy = ret
+      , fnRetTy = I.extract body
       , fnBody = body
       , fnLocals = M.empty
       , fnVars =
-          M.fromList $
-            mapMaybe (fmap resolveParam . fst) params
-              ++ map genGlobal globals
+          M.fromList $ mapMaybe resolveParam params ++ map genGlobal globals
       , fnTypeInfo = typeInfo
       , fnMaxWaits = 0
       , fnCases = 0
       , fnFresh = 0
       }
  where
-  resolveParam :: I.VarId -> (I.VarId, C.Exp)
-  resolveParam v = (v, acts_ $ fromId v)
+  resolveParam :: I.Binder I.Type -> Maybe (I.VarId, C.Exp)
+  resolveParam (I.BindVar v _) = Just (v, acts_ $ fromId v)
+  resolveParam _ = Nothing
 
   genGlobal :: (I.VarId, I.Type) -> (I.VarId, C.Exp)
   genGlobal (v, I.Arrow _ _) = (v, static_value $ closure_ v)
@@ -192,10 +189,10 @@ getFresh = do
 
 
 -- | Bind a variable to a C expression.
-addBinding :: I.Binder -> C.Exp -> GenFn ()
-addBinding (Just v) e =
+addBinding :: I.Binder I.Type-> C.Exp -> GenFn ()
+addBinding (I.BindVar v _) e =
   modify $ \st -> st{fnVars = M.insert v e $ fnVars st}
-addBinding Nothing _ = return ()
+addBinding _ _ = return ()
 
 
 -- | Register a new local variable, to be declared in activation record.
@@ -213,7 +210,7 @@ addLocal v t = do
 
 
 -- | Bind a variable to a C expression only while computing the given monad.
-withBindings :: [(I.Binder, C.Exp)] -> GenFn a -> GenFn a
+withBindings :: [(I.Binder I.Type, C.Exp)] -> GenFn a -> GenFn a
 withBindings bs m = do
   fnv <- gets fnVars
   mapM_ (uncurry addBinding) bs
@@ -226,7 +223,7 @@ withBindings bs m = do
 withNewLocal :: (I.VarId, I.Type) -> GenFn a -> GenFn a
 withNewLocal (v, t) m = do
   v' <- addLocal v t
-  withBindings [(Just v, acts_ $ fromId v')] m
+  withBindings [(I.BindVar v t, acts_ $ fromId v')] m
 
 
 -- | Register number of wait statements track of number of triggers needed.
@@ -248,10 +245,11 @@ genTmp ty = do
 
 
 -- | Translate a list of SSM parameters to C parameters.
-genParams :: [(I.Binder, I.Type)] -> [(CIdent, C.Type)]
+genParams :: [I.Binder I.Type] -> [(CIdent, C.Type)]
 genParams = zipWith genArg [0 ..]
  where
-  genArg i = bimap (maybe (arg_ i) fromId) (const value_t)
+   genArg _ (I.BindVar v _) = (fromId v, value_t)
+   genArg i _ = (arg_ i, value_t)
 
 
 -- | Translate a list of SSM local declarations to C declarations.
@@ -304,8 +302,8 @@ genProgram p = do
     TypegenInfo ->
     (I.VarId, I.Expr I.Type) ->
     Compiler.Pass ([C.Definition], [C.Definition])
-  genTop tinfo (name, l@(I.Lambda _ _ ty)) =
-    runGenFn (fromId name) (zip argIds argTys) retTy body tinfo tops $ do
+  genTop tinfo (name, l@I.Lambda{}) =
+    runGenFn (fromId name) argIds body tinfo tops $ do
       (stepDecl, stepDefn) <- genStep
       (enterDecl, enterDefn) <- genEnter
       (closureDecl, closureDefn) <- genStaticClosure
@@ -317,7 +315,6 @@ genProgram p = do
    where
     tops = map (second I.extract) $ I.programDefs p
     (argIds, body) = I.unfoldLambda l
-    (argTys, retTy) = I.unfoldArrow ty
   genTop _ (_, I.Lit _ _) = todo
   genTop _ (_, _) = nope
 
@@ -605,7 +602,7 @@ genExpr (I.Data dcon _) = do
 genExpr (I.Lit l ty) = do
   tmp <- genTmp ty
   return (tmp, [citems|$exp:tmp = $exp:(genLiteral l);|])
-genExpr (I.Let [(Just n, d)] b _) = do
+genExpr (I.Let [(I.BindVar n _, d)] b _) = do
   (defVal, defStms) <- genExpr d
   withNewLocal (n, I.extract d) $ do
     -- Look up n because withNewLocal may have mangled its name.
@@ -613,7 +610,7 @@ genExpr (I.Let [(Just n, d)] b _) = do
     let defInit = [citems|$exp:n' = $exp:defVal;|]
     (bodyVal, bodyStms) <- genExpr b
     return (bodyVal, defStms ++ defInit ++ bodyStms)
-genExpr (I.Let [(Nothing, d)] b _) = do
+genExpr (I.Let [(I.BindAnon _, d)] b _) = do
   (_, defStms) <- genExpr d -- Throw away value
   (bodyVal, bodyStms) <- genExpr b
   return (bodyVal, defStms ++ bodyStms)
@@ -685,7 +682,7 @@ genExpr (I.Match s as t) = do
       assignVal e = [citems|$exp:val = $exp:e;|]
       joinStm = [citems|$id:joinLabel:;|]
 
-      genArm :: (I.Alt, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
+      genArm :: (I.Alt I.Type, I.Expr I.Type) -> GenFn ([C.BlockItem], [C.BlockItem])
       genArm (alt, arm) = do
         armLabel <- freshLabel
         (altLabel, armBlk) <- withAltScope armLabel alt $ do
@@ -698,20 +695,19 @@ genExpr (I.Match s as t) = do
         [citems|$id:label:;|] ++ blk ++ [citems|goto $id:joinLabel;|]
       withAltScope ::
         CIdent ->
-        I.Alt ->
+        I.Alt I.Type ->
         GenFn [C.BlockItem] ->
         GenFn (C.BlockItem, [C.BlockItem])
-      withAltScope label (I.AltData dcon fields) m = do
+      withAltScope label a@(I.AltData dcon _ _) m = do
         destruct <- getsDCon dconDestruct dcon
         cas <- getsDCon dconCase dcon
-        let fieldBinds =
-              zipWith
-                (\field i -> (I.getAltDefault field, destruct i scrut))
-                fields
-                [0 ..]
+        -- NOTE: we assume here that this AltData is flat, i.e., the number of
+        -- fields in the AltData is the same as what we expect for this data
+        -- constructor (which we obtain from dconDestruct).
+        let fieldBinds = I.altBinders a `zip` map (`destruct` scrut) [0..]
         blk <- withBindings fieldBinds m
         return ([citem|case $exp:cas:;|], mkBlk label blk)
-      withAltScope label (I.AltLit l) m = do
+      withAltScope label (I.AltLit l _) m = do
         blk <- m
         return ([citem|case $exp:(genLiteralRaw l):;|], mkBlk label blk)
       withAltScope label (I.AltBinder b) m = do
