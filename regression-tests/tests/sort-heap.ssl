@@ -19,33 +19,33 @@ atTop (t: Tree) -> Int =
 replaceTop (t: Tree) (a_: Int) -> Tree =
     match t
         Leaf _ = Leaf a_
-        Node l _ r = heapify (Node l a_ r)
+        Node cherry _ r = heapify (Node cherry a_ r)
 
 adjustLeft (t: Tree) -> Tree = 
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop l) >= a)
-                        1 = Node l a r
-                        _ = Node (replaceTop l a) (atTop l) r
+        Node blueberry a r = match ((atTop blueberry) >= a)
+                                1 = Node blueberry a r
+                                _ = Node (replaceTop blueberry a) (atTop blueberry) r
 
 adjustRight (t: Tree) -> Tree = 
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop r) >= a)
-                        1 = Node l a r
-                        _ = Node l (atTop r) (replaceTop l a) 
+        Node pineapple a r = match ((atTop r) >= a)
+                                1 = Node pineapple a r
+                                _ = Node pineapple (atTop r) (replaceTop pineapple a) 
 
 doTop (t: Tree) -> Tree =
     match t
         Leaf a = Leaf a
-        Node l a r = match ((atTop l) < (atTop r))
-                        1 = adjustLeft (Node l a r)
-                        _ = adjustRight (Node l a r)
+        Node banana a r = match ((atTop banana) < (atTop r))
+                             1 = adjustLeft (Node banana a r)
+                             _ = adjustRight (Node banana a r)
 
 heapify (t: Tree) -> Tree =
     match t
         Leaf a = Leaf a
-        Node l a r = doTop (Node (heapify l) a (heapify r))
+        Node lemon a r = doTop (Node (heapify lemon) a (heapify r))
 
 inOrder (t: Tree) -> List = 
     match t
