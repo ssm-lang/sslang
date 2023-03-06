@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TupleSections #-}
 
 module IR.Constraint.Canonical
   ( Type(..)
@@ -57,8 +58,7 @@ schemeOf :: I.Type -> Scheme
 schemeOf t = Forall (freeVars t) t
 
 freeVars :: I.Type -> FreeVars
-freeVars t =
-  Map.fromList . map (\name -> (name, ())) . Set.toList $ Ident.freeVars t
+freeVars t = Map.fromList . map (, ()) . Set.toList $ Ident.freeVars t
 
 -- | KINDS
 

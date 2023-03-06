@@ -28,13 +28,9 @@ sprinkleVariables prog = do
     v <- mkFlexVar
     return (ann, v)
 
-
-constrain :: I.Program (Can.Annotations, Variable) -> TC Constraint
-constrain = undefined
-
 discardAnnotations
   :: I.Program (Can.Annotations, Variable) -> I.Program Variable
 discardAnnotations sprinkledProg =
   let discardedDefs =
-        map (second $ fmap (\(_, v) -> v)) (I.programDefs sprinkledProg)
+        map (second $ fmap snd) (I.programDefs sprinkledProg)
   in  sprinkledProg { I.programDefs = discardedDefs }

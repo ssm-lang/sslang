@@ -25,10 +25,8 @@ import           IR.SegmentLets                 ( segmentDefs' )
 
 
 type Attachment = (I.Annotations, Variable)
-
-type BinderDef = (I.Binder, I.Expr Attachment)
 type Def = (I.VarId, I.Expr Attachment)
-
+type BinderDef = (I.Binder Attachment, I.Expr Attachment)
 
 -- | DEFS
 
@@ -37,7 +35,7 @@ constrainBinderDefs :: [BinderDef] -> Constraint -> TC Constraint
 constrainBinderDefs binderDefs finalConstraint = do
   defs <- mapM
     (\(binder, expr) -> do
-      name <- binderToVarId binder
+      name <- Type.binderToVarId binder
       return (name, expr)
     )
     binderDefs
@@ -134,7 +132,7 @@ constrainApp func arg resultType = do
   argCon  <- constrainExprAttached arg argType
   return $ exists [argVar] (CAnd [funcCon, argCon])
 
-constrainLambda :: I.Binder -> I.Expr Attachment -> Type -> TC Constraint
+constrainLambda :: I.Binder t -> I.Expr Attachment -> Type -> TC Constraint
 constrainLambda binder body expected = do
   argName   <- binderToVarId binder
 
@@ -151,7 +149,7 @@ constrainLambda binder body expected = do
     ]
 
 constrainMatch
-  :: I.Expr Attachment -> [(I.Alt, I.Expr Attachment)] -> Type -> TC Constraint
+  :: I.Expr Attachment -> [(I.Alt t, I.Expr Attachment)] -> Type -> TC Constraint
 constrainMatch expr branches expected = do
   exprVar <- mkFlexVar
   let exprType = TVarN exprVar
@@ -164,7 +162,7 @@ constrainMatch expr branches expected = do
   return $ exists [exprVar] $ CAnd [exprCon, CAnd branchCons]
 
 
-constrainBranch :: I.Alt -> I.Expr Attachment -> Type -> Type -> TC Constraint
+constrainBranch :: I.Alt t -> I.Expr Attachment -> Type -> Type -> TC Constraint
 constrainBranch alt expr pExpect bExpect = do
   (Pattern.State headers pvars revCons) <- Pattern.add alt
                                                        pExpect
@@ -237,10 +235,3 @@ lookupPrim len prim = do
     I.PrimGe     -> Can.I32 --> Can.I32 --> Can.I32
     I.PrimLt     -> Can.I32 --> Can.I32 --> Can.I32
     I.PrimLe     -> Can.I32 --> Can.I32 --> Can.I32
-
--- | BINDER HELPERS
-
-
-binderToVarId :: I.Binder -> TC Ident.VarId
-binderToVarId Nothing    = freshVar
-binderToVarId (Just var) = return var

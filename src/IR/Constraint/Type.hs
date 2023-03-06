@@ -9,8 +9,10 @@ import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Error           as ET
 import           IR.Constraint.Monad            ( TC
                                                 , freshName
+                                                , freshVar
                                                 )
 import qualified IR.Constraint.UnionFind       as UF
+import qualified IR.IR                         as I
 
 
 -- | CONSTRAINTS
@@ -208,3 +210,8 @@ contentToErrorType _ content = case content of
 termToErrorType :: FlatType -> TC ET.Type
 termToErrorType term = case term of
   TCon1 name args -> ET.Type name <$> traverse toErrorType args
+
+
+binderToVarId :: I.Binder t -> TC Ident.VarId
+binderToVarId (I.BindVar var _) = return var
+binderToVarId _ = freshVar

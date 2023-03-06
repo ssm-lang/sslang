@@ -9,7 +9,6 @@ import qualified Data.Map.Strict               as Map
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Instantiate     as Inst
 import           IR.Constraint.Monad            ( TC
-                                                , freshVar
                                                 , getDConInfo
                                                 , throwError
                                                 )
@@ -30,7 +29,7 @@ data State = State
 add :: I.Alt t -> Type -> State -> TC State
 add alt expected state = case alt of
   I.AltBinder binder -> do
-    var <- binderToVarId binder
+    var <- Type.binderToVarId binder
     return $ addToHeaders (Ident.fromId var) expected state
   I.AltLit lit  _     -> return $ addLit lit expected state
   I.AltData dcon bs _ -> do
@@ -90,10 +89,3 @@ addLit lit expected state =
         I.LitIntegral _ -> CPattern Type.i32 expected
         I.LitEvent      -> CPattern Type.unit expected
   in  state { _revCons = litCon : _revCons state }
-
--- | BINDER HELPERS
-
-
-binderToVarId :: I.Binder t -> TC Ident.VarId
-binderToVarId (I.BindVar var _) = return var
-binderToVarId _ = freshvar

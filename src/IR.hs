@@ -28,6 +28,7 @@ import System.Console.GetOpt (
   OptDescr (..),
  )
 import Text.Show.Pretty
+import IR.Constraint.Typechecking
 
 
 {- | Operation modes for the IR compiler stage.

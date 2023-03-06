@@ -8,7 +8,6 @@ import qualified Data.Map.Strict               as Map
 import           Data.Map.Strict                ( (!) )
 import qualified Data.Vector                   as Vector
 import qualified Data.Vector.Mutable           as MVector
-import           GHC.Base                       ( liftM )
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Error           as ET
 import           IR.Constraint.Monad            ( TC
@@ -202,7 +201,7 @@ generalize youngMark visitMark youngRank pools = do
   -- start at low ranks so that we only have to pass
   -- over the information once.
   Vector.imapM_
-    (\rank table -> mapM_ (adjustRank youngMark visitMark rank) table)
+    (mapM_ . adjustRank youngMark visitMark)
     rankTable
 
   -- For variables that have rank lowerer than youngRank, register them in
@@ -293,7 +292,7 @@ introduce rank pools variables = do
 -- | TYPE TO VARIABLE
 
 typeToVariable :: Int -> Pools -> Type -> TC Variable
-typeToVariable rank pools tipe = typeToVar rank pools Map.empty tipe
+typeToVariable rank pools = typeToVar rank pools Map.empty
 
 typeToVar
   :: Int -> Pools -> Map.Map Ident.TVarId Variable -> Type -> TC Variable
@@ -422,4 +421,4 @@ restoreContent content = case content of
 
 traverseFlatType :: (Variable -> TC Variable) -> FlatType -> TC FlatType
 traverseFlatType f flatType = case flatType of
-  TCon1 name args -> liftM (TCon1 name) (traverse f args)
+  TCon1 name args -> fmap (TCon1 name) (traverse f args)
