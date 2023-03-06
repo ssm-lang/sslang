@@ -27,13 +27,13 @@ data State = State
   , _revCons :: [Constraint]
   }
 
-add :: I.Alt -> Type -> State -> TC State
+add :: I.Alt t -> Type -> State -> TC State
 add alt expected state = case alt of
   I.AltBinder binder -> do
     var <- binderToVarId binder
     return $ addToHeaders (Ident.fromId var) expected state
-  I.AltLit lit      -> return $ addLit lit expected state
-  I.AltData dcon bs -> do
+  I.AltLit lit  _     -> return $ addLit lit expected state
+  I.AltData dcon bs _ -> do
     maybeInfo <- getDConInfo dcon
     case maybeInfo of
       Just (_, typeName, typeVarNames, argTypes) ->
@@ -55,7 +55,7 @@ addData
   -> [Ident.TVarId]
   -> Ident.DConId
   -> [Can.Type]
-  -> [I.Alt]
+  -> [I.Alt t]
   -> Type
   -> State
   -> TC State
@@ -79,7 +79,7 @@ addData typeName typeVarNames ctorName ctorArgTypes as expected state = do
                  }
 
 addDataArg
-  :: Map.Map Ident.TVarId Type -> Can.Type -> I.Alt -> State -> TC State
+  :: Map.Map Ident.TVarId Type -> Can.Type -> I.Alt t -> State -> TC State
 addDataArg freeVarDict canType arg state = do
   tipe <- Inst.fromScheme freeVarDict canType
   add arg tipe state
@@ -89,11 +89,11 @@ addLit lit expected state =
   let litCon = case lit of
         I.LitIntegral _ -> CPattern Type.i32 expected
         I.LitEvent      -> CPattern Type.unit expected
-  in  state { _revCons = (litCon : _revCons state) }
+  in  state { _revCons = litCon : _revCons state }
 
 -- | BINDER HELPERS
 
 
-binderToVarId :: I.Binder -> TC Ident.VarId
-binderToVarId Nothing    = freshVar
-binderToVarId (Just var) = return var
+binderToVarId :: I.Binder t -> TC Ident.VarId
+binderToVarId (I.BindVar var _) = return var
+binderToVarId _ = freshvar
