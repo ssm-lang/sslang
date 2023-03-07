@@ -35,7 +35,7 @@ optimizeDupDrop program = (`evalStateT` 0) $ do
     let programDefs = I.programDefs program
     let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef programDefs 
     traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
-    let defs = map pruneTop programDefs
+    let defs = map optimizeTop programDefs
     let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef defs 
     traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
     return $ program { I.programDefs  = defs
@@ -47,7 +47,69 @@ optimizeDupDrop program = (`evalStateT` 0) $ do
 --
 -- $internal
 
--- | Prune referencing counting for top-level expressions
+-- | Optimize reference counting by moving drops as early (i.e. deep in tree) as possible
+optimizeTop :: (I.VarId, I.Expr I.Type) -> (I.VarId, I.Expr I.Type)
+optimizeTop (var, expr) = (var, ) $ optimizeExpr expr
+
+-- | Optimize reference counting for an expression
+optimizeExpr :: I.Expr I.Type -> (I.Expr I.Type)
+optimizeExpr drop@(I.Prim I.Drop [e, r] typ) =
+    case insertEarlyDrop e r of
+        Nothing -> drop
+        Just e' -> e'
+optimizeExpr dcon@I.Data{}     = dcon
+optimizeExpr lit@I.Lit{}       = lit
+optimizeExpr var@I.Var{}       = var
+optimizeExpr (I.App f x t)     =
+    let f' = optimizeExpr f
+        x' = optimizeExpr x
+     in I.App f' x' t
+optimizeExpr dup@(I.Prim I.Dup [e] typ) = dup
+optimizeExpr (I.Prim p es typ) = I.Prim p (map optimizeExpr es) typ
+optimizeExpr (I.Let bins expr typ) = I.Let bins' expr' typ
+    where optimizeBins (v, d) = (v, optimizeExpr d)
+          bins' = optimizeBins <$> bins
+          expr' = optimizeExpr expr
+optimizeExpr lam@(I.Lambda v e typ) = I.Lambda v (optimizeExpr e) typ
+optimizeExpr (I.Match e alts typ) =
+    let alts' = map optimizeAlt alts
+        e'    = optimizeExpr e
+     in I.Match e' alts' typ
+optimizeAlt :: (I.Alt, I.Expr I.Type) -> (I.Alt, I.Expr I.Type)
+optimizeAlt (I.AltDefault v, e)          = (I.AltDefault v, ) $ optimizeExpr e
+optimizeAlt (I.AltLit l, e)              = (I.AltLit l, ) $ optimizeExpr e
+optimizeAlt (I.AltData dcon binds, body) =
+    let body' = optimizeExpr body in (I.AltData dcon binds, body')
+    -- does this work?
+
+insertEarlyDrop :: I.Expr I.Type -> I.Expr I.Type -> Maybe (I.Expr I.Type)
+insertEarlyDrop dcon@I.Data{} v = Nothing
+insertEarlyDrop lit@I.Lit{}   v = Nothing
+insertEarlyDrop var@I.Var{}   v =
+    if var == v then Just (I.Prim I.Drop [var, v] (I.extract var)) else Nothing
+insertEarlyDrop (I.App f x t) v =
+    let f' = case insertEarlyDrop f v of
+                 Nothing -> f
+                 Just f' -> f'
+        x' = case insertEarlyDrop x v of
+                 Nothing -> x
+                 Just 
+        in 
+        -- check body of let/App first, to see if var is used
+        -- if not used, then put drop in binders
+        -- if there is no use of the var in the binders, then Nothing
+insertEarlyDrop dup@(I.Prim I.Dup [e] typ) v =
+    if e == v then Just e else Nothing
+insertEarlyDrop drop@(I.Prim I.Drop [e, r] typ) v =
+    if r == v then Just drop    -- is this right? stop if there's already a drop of this var
+              else case insertEarlyDrop e v of
+                       Nothing -> Nothing
+                       Just e' -> Just $ I.Prim I.Drop [e', r] typ
+insertEarlyDrop e v = Nothing 
+
+-- ignore below
+
+-- | Prune referencing counting for top-level expressions based on types
 pruneTop :: (I.VarId, I.Expr I.Type) -> (I.VarId, I.Expr I.Type)
 pruneTop (var, expr) = (var, ) $ pruneExpr expr
 
@@ -62,11 +124,11 @@ pruneExpr (I.App f x t)     =
      in I.App f' x' t
 pruneExpr dup@(I.Prim I.Dup [e] typ) =
     case e of
-        I.Var _ (I.TCon "&" _) -> dup
+        I.Var _ (I.Ref _) -> dup
         _ -> e
-pruneExpr drop@(I.Prim I.Drop [e, r]  typ) =
+pruneExpr drop@(I.Prim I.Drop [e, r] typ) =
     case e of
-        I.Var _ (I.TCon "&" _) -> drop
+        I.Var _ (I.Ref _) -> error "ref type" --drop
         _ -> r
 pruneExpr (I.Prim p es typ) = I.Prim p (map pruneExpr es) typ
 pruneExpr (I.Let bins expr typ) = I.Let bins' expr' typ
@@ -110,8 +172,3 @@ countDupsAndDropsExpr (I.Match e alts _t) =
      in (a + a', b + b')
 -- Ignore Data, Lit, Var
 countDupsAndDropsExpr _ = (0,0)
-
--- | Monad for creating fresh variables: add an Int to the pass
-type Fresh = StateT Int Compiler.Pass
-
--- $internal
