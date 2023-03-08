@@ -129,13 +129,14 @@ transform opt p = do
   p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
-  p <- dConToFunc p
+  -- p <- dConToFunc p
   p <- externToCall p
   p <- optimizePar p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
   p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   when (mode opt == DumpIRInlined) $ dump p
+  p <- dConToFunc p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p

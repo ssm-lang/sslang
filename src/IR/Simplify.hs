@@ -46,6 +46,30 @@ data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
   deriving (Typeable)
   deriving (Show)
 
+{- Trivial Constructor Argument Invariant
+type Color
+  RGB Int Int Int
+
+// Ex 1
+let x = RGB 5 4 3
+let y = x          //x is oncesafe so inline it (we already handle this case)
+
+// Ex 2
+let x = RGB 5 4 3
+let y = x 
+let z = x          // x is multisafe, so run post-inline unconditionally
+                   // post-inline unconditionally should return YES because
+                   // when procecssing RHS (RGB 5 4 3), it sees all the arguments 
+                   // to the data constructor RGB are trivial; (variable, literal, or type annotated variable)
+
+// Ex 3
+let a = fib 45
+let x = RGB a 4 3  // a cannot be marked oncesafe and inlined 
+                   // because a is an argument to a data constructor
+let z = match x
+          RGB r g b =  r + r +r +r +r +r +r 
+-}
+
 
 {-  | Occurrence Information for each binding
 
@@ -67,9 +91,17 @@ data OccInfo
   | OnceUnsafe
   | MultiUnsafe
   | Never
-  | ConstructorFunc
+  | DConTrivArgs
+  | ConsFuncArg
   deriving (Show)
   deriving (Typeable)
+
+{- WHAT WE WANT TO DO
+Have ocurrence analyzer peek at the RHS of variable it is going to mark oncesafe (for App nodes) - via unfoldApp (first argument will be DCons)
+If the RHS is an application of a data constructor, AND all its arguments are trivial, mark the variable DConTrivArgs.
+
+In pre-inline, have binders marked DConTrivArgs inlined unconditionally.
+-}
 
 
 -- | Simplifier Environment
@@ -120,7 +152,7 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _ -> M.insert binder ConstructorFunc m
+        _ -> M.insert binder ConsFuncArc m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -255,6 +287,12 @@ simplExpr sub ins (I.Prim prim args t) cont = do
   pure (I.Prim prim args' t)
 
 -- Simplify Match Expression
+{-
+let x = RGB 5 4 (fib 45)
+let x = Moose Chicken Cow Drumstick - record info in sub map in simplExpr for let expression
+match x =
+    whatevers...
+-}
 simplExpr sub ins (I.Match scrutinee arms t) cont = do
   scrutinee' <- simplExpr sub ins scrutinee cont
   let (pats, rhss) = unzip arms
@@ -304,6 +342,11 @@ simplExpr sub ins (I.Let binders body t) cont = do
           insertSubst v $ SuspEx rhs M.empty
           let sub' = M.singleton v (SuspEx rhs sub)
           pure (Nothing, sub')
+        (Just DConTrivArgs) -> do
+          -- get rid of this if nothing changes and merge with OnceSafe
+          insertSubst v $ SuspEx rhs M.empty
+          let sub' = M.singleton v (SuspEx rhs sub)
+          pure (Nothing, sub')
         _ -> do
           -- preinline test FAILS, so do post inline unconditionally
           e' <- simplExpr sub ins rhs cont -- process the RHS
@@ -314,7 +357,30 @@ simplExpr sub ins (I.Let binders body t) cont = do
               pure (Nothing, M.empty) -- PASSES postinline
             (I.Var _ _) -> do
               insertSubst v $ DoneEx e'
+              pure (Nothing, M.empty) -- PASSES postinline            
+            (I.Data _ _) -> do 
+              insertSubst v $ DoneEx e'
+              pure (Nothing, M.empty) -- PASSES postinline 
+            --App (Expr t) (Expr t) t
+            -- Moose - 3 Moose Cow Chicken Milk
+            -- (App (App (App Moose Cow), Chicken), Milk)
+            -- App (App (App (Moose ) (Cow)) Chicken) Milk
+            {-
+            if e' is (after flattening) -> App [Moose, Cow, Chicken, Milk] where Moose is DCon
+              check arguments to DCon Moose, and make sure all of them are literal or variable
+              insertSubst v $ DoneEx e'
               pure (Nothing, M.empty) -- PASSES postinline
+            -}
+            -- unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
+            -- unfoldApp :: Expr t -> (first thing, args)
+            -- App [Moose, Cow, Chicken, Milk] where Moose is DCon
+            --(I.App (I.Data _ _) _) -> do
+            -- 
+            -- RGB 5 4
+            -- let x = (App (App RGB 5) 4)
+            -- let y = x (fib 45)
+            --unfoldApp
+
             _ -> do
               rhs' <- simplExpr sub ins rhs cont -- we won't inline x, but still possible to simplify e (RHS)
               pure (Just (binder, rhs'), sub) -- FAILS postinline; someday callsite inline
