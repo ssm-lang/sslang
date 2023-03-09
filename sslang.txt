@@ -1050,118 +1050,6 @@ data Fixity
 Infixl :: Int -> Identifier -> Fixity
 Infixr :: Int -> Identifier -> Fixity
 
-module Front.Pattern.Common
-data CInfo
-CInfo :: Identifier -> Identifier -> Int -> CInfo
-[cName] :: CInfo -> Identifier
-[cType] :: CInfo -> Identifier
-[cArity] :: CInfo -> Int
-data TInfo
-TInfo :: Identifier -> Set Identifier -> TInfo
-[tName] :: TInfo -> Identifier
-[tCSet] :: TInfo -> Set Identifier
-buildTypeMap :: [TypeDef] -> Map Identifier TInfo
-buildConsMap :: [TypeDef] -> Map Identifier CInfo
-instance GHC.Show.Show Front.Pattern.Common.CInfo
-instance GHC.Classes.Eq Front.Pattern.Common.CInfo
-instance GHC.Show.Show Front.Pattern.Common.TInfo
-instance GHC.Classes.Eq Front.Pattern.Common.TInfo
-
-module Front.Pattern.Vector
-data PatVec
-PatVec :: Int -> [Pat] -> PatVec
-[ncol] :: PatVec -> Int
-[toList] :: PatVec -> [Pat]
-fromList :: [Pat] -> PatVec
-singleton :: Pat -> PatVec
-extend :: PatVec -> PatVec -> PatVec
-append :: Pat -> PatVec -> PatVec
-hd :: PatVec -> Pat
-tl :: PatVec -> PatVec
-specialize :: PatVec -> PatVec
-specializeWild :: Int -> PatVec -> PatVec
-instance GHC.Show.Show Front.Pattern.Vector.PatVec
-instance GHC.Classes.Eq Front.Pattern.Vector.PatVec
-
-module Front.Pattern.Matrix
-data PatMat
-PatMat :: Int -> Int -> [PatVec] -> PatMat
-[nrow] :: PatMat -> Int
-[ncol] :: PatMat -> Int
-[toList] :: PatMat -> [PatVec]
-singleCol :: [Pat] -> PatMat
-singleRow :: [Pat] -> PatMat
-fromPatVec :: PatVec -> PatMat
-emptyWithCols :: Int -> PatMat
-hd :: PatMat -> PatVec
-tl :: PatMat -> PatMat
-extend :: PatMat -> PatMat -> PatMat
-prepend :: PatVec -> PatMat -> PatMat
-specializeLit :: Literal -> PatMat -> PatMat
-specializeTup :: Int -> PatMat -> PatMat
-specializeCons :: Int -> Identifier -> PatMat -> PatMat
-defaultize :: PatMat -> PatMat
-instance GHC.Show.Show Front.Pattern.Matrix.PatMat
-instance GHC.Classes.Eq Front.Pattern.Matrix.PatMat
-
-module Front.Pattern.Anomaly
-data AnomalyCtx
-AnomalyCtx :: Map Identifier TInfo -> Map Identifier CInfo -> AnomalyCtx
-[typeMap] :: AnomalyCtx -> Map Identifier TInfo
-[consMap] :: AnomalyCtx -> Map Identifier CInfo
-newtype AnomalyFn a
-AnomalyFn :: ReaderT AnomalyCtx Pass a -> AnomalyFn a
-buildCtx :: [TypeDef] -> AnomalyCtx
-
--- | Run a AnomalyFn computation.
-runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
-checkProgram :: Program -> Pass ()
-checkDefs :: [Definition] -> AnomalyFn ()
-checkDef :: Definition -> AnomalyFn ()
-checkExprs :: [Expr] -> AnomalyFn ()
-checkExpr :: Expr -> AnomalyFn ()
-checkOpRegion :: OpRegion -> AnomalyFn ()
-checkPats :: [Pat] -> AnomalyFn ()
-checkUselessArm :: [Pat] -> AnomalyFn ()
-checkExhaustive :: [Pat] -> AnomalyFn ()
-useful :: PatVec -> PatMat -> AnomalyFn Bool
-usefulWildLit :: LitType -> PatVec -> PatMat -> AnomalyFn Bool
-samplePat :: PatMat -> Maybe Pat
-hasCompleteCons :: Set Identifier -> PatMat -> Bool
-hasCompleteLit :: LitType -> PatMat -> Bool
-wellFormed :: PatVec -> PatMat -> AnomalyFn ()
-wellFormedPat :: Pat -> PatMat -> AnomalyFn ()
-wellFormedCons :: TInfo -> PatMat -> AnomalyFn ()
-wellFormedTup :: Int -> PatMat -> AnomalyFn ()
-wellFormedLit :: Literal -> PatMat -> AnomalyFn ()
-wellFormedWild :: PatMat -> AnomalyFn ()
-data LitType
-LitIntT :: LitType
-LitStringT :: LitType
-LitRatT :: LitType
-LitCharT :: LitType
-LitEventT :: LitType
-litToType :: Literal -> LitType
-askCInfo :: Identifier -> AnomalyFn CInfo
-askTInfo :: Identifier -> AnomalyFn TInfo
-
--- | Report <a>Identifier</a> for error reporting.
-showId :: Identifier -> ErrorMsg
-showSet :: Set Identifier -> ErrorMsg
-throwMalformedError :: AnomalyFn a
-instance Control.Monad.Reader.Class.MonadReader Front.Pattern.Anomaly.AnomalyCtx Front.Pattern.Anomaly.AnomalyFn
-instance Control.Monad.Writer.Class.MonadWriter [Common.Compiler.Warning] Front.Pattern.Anomaly.AnomalyFn
-instance Control.Monad.Error.Class.MonadError Common.Compiler.Error Front.Pattern.Anomaly.AnomalyFn
-instance Control.Monad.Fail.MonadFail Front.Pattern.Anomaly.AnomalyFn
-instance GHC.Base.Monad Front.Pattern.Anomaly.AnomalyFn
-instance GHC.Base.Applicative Front.Pattern.Anomaly.AnomalyFn
-instance GHC.Base.Functor Front.Pattern.Anomaly.AnomalyFn
-instance GHC.Show.Show Front.Pattern.Anomaly.LitType
-instance GHC.Classes.Eq Front.Pattern.Anomaly.LitType
-
-module Front.Pattern
-checkAnomaly :: Program -> Pass ()
-
 
 -- | Check scoping rules and naming conventions for identifiers.
 --   
@@ -2092,6 +1980,97 @@ module IR.SegmentLets
 segmentLets :: Program T -> Pass (Program T)
 segmentDefs :: [Def t] -> [[Def t]]
 segmentDefs' :: [Def' t] -> [[Def' t]]
+
+module IR.Pattern.Vector
+data PatVec
+PatVec :: Int -> [Alt] -> PatVec
+[ncol] :: PatVec -> Int
+[toList] :: PatVec -> [Alt]
+fromList :: [Alt] -> PatVec
+singleton :: Alt -> PatVec
+extend :: PatVec -> PatVec -> PatVec
+hd :: PatVec -> Alt
+tl :: PatVec -> PatVec
+specialize :: PatVec -> PatVec
+specializeWild :: Int -> PatVec -> PatVec
+instance GHC.Show.Show IR.Pattern.Vector.PatVec
+instance GHC.Classes.Eq IR.Pattern.Vector.PatVec
+
+module IR.Pattern.Matrix
+data PatMat
+PatMat :: Int -> Int -> [PatVec] -> PatMat
+[nrow] :: PatMat -> Int
+[ncol] :: PatMat -> Int
+[toList] :: PatMat -> [PatVec]
+singleCol :: [Alt] -> PatMat
+singleRow :: [Alt] -> PatMat
+fromPatVec :: PatVec -> PatMat
+fromPatVecs :: [PatVec] -> PatMat
+emptyWithCols :: Int -> PatMat
+hd :: PatMat -> PatVec
+extend :: PatMat -> PatMat -> PatMat
+specializeLit :: Literal -> PatMat -> PatMat
+specializeCons :: Int -> Identifier -> PatMat -> PatMat
+defaultize :: PatMat -> PatMat
+instance GHC.Show.Show IR.Pattern.Matrix.PatMat
+instance GHC.Classes.Eq IR.Pattern.Matrix.PatMat
+
+module IR.Pattern.Common
+data CInfo
+CInfo :: Identifier -> Identifier -> Int -> CInfo
+[cName] :: CInfo -> Identifier
+[cType] :: CInfo -> Identifier
+[cArity] :: CInfo -> Int
+data TInfo
+TInfo :: Identifier -> Set Identifier -> TInfo
+[tName] :: TInfo -> Identifier
+[tCSet] :: TInfo -> Set Identifier
+buildTypeMap :: [(TConId, TypeDef)] -> Map Identifier TInfo
+buildConsMap :: [(TConId, TypeDef)] -> Map Identifier CInfo
+instance GHC.Show.Show IR.Pattern.Common.CInfo
+instance GHC.Classes.Eq IR.Pattern.Common.CInfo
+instance GHC.Show.Show IR.Pattern.Common.TInfo
+instance GHC.Classes.Eq IR.Pattern.Common.TInfo
+
+module IR.Pattern.Anomaly
+data AnomalyCtx
+AnomalyCtx :: Map Identifier TInfo -> Map Identifier CInfo -> AnomalyCtx
+[typeMap] :: AnomalyCtx -> Map Identifier TInfo
+[consMap] :: AnomalyCtx -> Map Identifier CInfo
+newtype AnomalyFn a
+AnomalyFn :: ReaderT AnomalyCtx Pass a -> AnomalyFn a
+buildCtx :: [(TConId, TypeDef)] -> AnomalyCtx
+
+-- | Run a AnomalyFn computation.
+runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
+checkProgram :: Program t -> Pass ()
+checkDefs :: [(VarId, Expr t)] -> AnomalyFn ()
+checkExprs :: [Expr t] -> AnomalyFn ()
+checkExpr :: Expr t -> AnomalyFn ()
+checkPats :: [Alt] -> AnomalyFn ()
+checkUseless :: [Alt] -> AnomalyFn ()
+checkExhaustive :: [Alt] -> AnomalyFn ()
+useful :: PatMat -> PatVec -> AnomalyFn Bool
+usefulInductive :: PatMat -> PatVec -> AnomalyFn Bool
+samplePat :: PatMat -> Maybe Alt
+askCInfo :: Identifier -> AnomalyFn CInfo
+askTInfo :: Identifier -> AnomalyFn TInfo
+hasCompleteCons :: Set Identifier -> PatMat -> Bool
+
+-- | Report <a>Identifier</a> for error reporting.
+showId :: Identifier -> ErrorMsg
+showSet :: Set Identifier -> ErrorMsg
+throwMalformedError :: AnomalyFn a
+instance Control.Monad.Reader.Class.MonadReader IR.Pattern.Anomaly.AnomalyCtx IR.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Writer.Class.MonadWriter [Common.Compiler.Warning] IR.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.Pattern.Anomaly.AnomalyFn
+instance Control.Monad.Fail.MonadFail IR.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Monad IR.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Applicative IR.Pattern.Anomaly.AnomalyFn
+instance GHC.Base.Functor IR.Pattern.Anomaly.AnomalyFn
+
+module IR.Pattern
+checkAnomaly :: Program t -> Pass ()
 
 
 -- | Remove unnecessary Par expressions from the IR
@@ -3036,6 +3015,7 @@ lower :: Options -> Program -> Pass (Program Annotations)
 --   
 --   After this stage, no compiler errors should be thrown.
 typecheck :: Options -> Program Annotations -> Pass (Program Type)
+anomalycheck :: Program Type -> Pass (Program Type)
 
 -- | IR transformations to prepare for codegen.
 transform :: Options -> Program Type -> Pass (Program Type)
