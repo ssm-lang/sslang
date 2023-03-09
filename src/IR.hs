@@ -20,6 +20,7 @@ import IR.InsertRefCounting (insertRefCounting)
 import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
+import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
 import IR.Types (
   fromAnnotations,
@@ -116,6 +117,12 @@ typecheck opt p = do
   return p
 
 
+anomalycheck :: I.Program I.Type -> Pass (I.Program I.Type)
+anomalycheck p = do
+  checkAnomaly p
+  return p
+
+
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
@@ -134,4 +141,4 @@ transform opt p = do
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program I.Type)
-run opt = lower opt >=> typecheck opt >=> transform opt
+run opt = lower opt >=> typecheck opt >=> anomalycheck >=> transform opt
