@@ -132,7 +132,7 @@ constrainApp func arg resultType = do
   argCon  <- constrainExprAttached arg argType
   return $ exists [argVar] (CAnd [funcCon, argCon])
 
-constrainLambda :: I.Binder t -> I.Expr Attachment -> Type -> TC Constraint
+constrainLambda :: I.Binder Attachment -> I.Expr Attachment -> Type -> TC Constraint
 constrainLambda binder body expected = do
   argName   <- binderToVarId binder
 
@@ -149,7 +149,7 @@ constrainLambda binder body expected = do
     ]
 
 constrainMatch
-  :: I.Expr Attachment -> [(I.Alt t, I.Expr Attachment)] -> Type -> TC Constraint
+  :: I.Expr Attachment -> [(I.Alt Attachment, I.Expr Attachment)] -> Type -> TC Constraint
 constrainMatch expr branches expected = do
   exprVar <- mkFlexVar
   let exprType = TVarN exprVar
@@ -162,7 +162,7 @@ constrainMatch expr branches expected = do
   return $ exists [exprVar] $ CAnd [exprCon, CAnd branchCons]
 
 
-constrainBranch :: I.Alt t -> I.Expr Attachment -> Type -> Type -> TC Constraint
+constrainBranch :: I.Alt Attachment -> I.Expr Attachment -> Type -> Type -> TC Constraint
 constrainBranch alt expr pExpect bExpect = do
   (Pattern.State headers pvars revCons) <- Pattern.add alt
                                                        pExpect
