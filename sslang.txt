@@ -1974,6 +1974,27 @@ module IR.SubstMagic
 substMagic :: (Data t, Data a) => Proxy t -> a -> a
 
 
+-- | Simple Inlining Optimization Pass
+--   
+--   Performs preinline and postinline unconditionally. TODO: Callsite
+--   Inline
+module IR.Simplify
+
+-- | Entry-point to Simplifer.
+--   
+--   Maps over top level definitions to create a new simplified Program
+simplifyProgram :: Program Type -> Pass (Program Type)
+instance GHC.Show.Show IR.Simplify.SubstRng
+instance GHC.Show.Show IR.Simplify.OccInfo
+instance GHC.Show.Show IR.Simplify.SimplEnv
+instance Control.Monad.State.Class.MonadState IR.Simplify.SimplEnv IR.Simplify.SimplFn
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.Simplify.SimplFn
+instance Control.Monad.Fail.MonadFail IR.Simplify.SimplFn
+instance GHC.Base.Monad IR.Simplify.SimplFn
+instance GHC.Base.Applicative IR.Simplify.SimplFn
+instance GHC.Base.Functor IR.Simplify.SimplFn
+
+
 -- | Unroll let-def blocks to break apart non-mutually recursive
 --   definitions.
 module IR.SegmentLets
@@ -2996,6 +3017,7 @@ DumpIR :: Mode
 DumpIRAnnotated :: Mode
 DumpIRTyped :: Mode
 DumpIRTypedUgly :: Mode
+DumpIRInlined :: Mode
 DumpIRTypedShow :: Mode
 DumpIRLifted :: Mode
 DumpIRFinal :: Mode
