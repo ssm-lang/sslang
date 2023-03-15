@@ -22,6 +22,7 @@ import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
+import IR.Simplify (simplifyProgram)
 import IR.Types (
   fromAnnotations,
   typecheckProgram,
@@ -43,6 +44,7 @@ data Mode
   | DumpIRAnnotated
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRInlined
   | DumpIRTypedShow
   | DumpIRLifted
   | DumpIRFinal
@@ -64,7 +66,7 @@ options =
   [ Option
       ""
       ["dump-ir"]
-      (NoArg $ setMode DumpIR)
+      (NoArg $ setMode DumpIRAnnotated)
       "Print the IR immediately after lowering"
   , Option
       ""
@@ -86,6 +88,11 @@ options =
       ["dump-ir-lifted"]
       (NoArg $ setMode DumpIRLifted)
       "Print the IR after lambda lifting"
+  , Option
+      ""
+      ["dump-ir-inlined"]
+      (NoArg $ setMode DumpIRInlined)
+      "Print IR after inlining optimization and before dup drops"
   , Option
       ""
       ["dump-ir-final"]
@@ -134,6 +141,8 @@ transform opt p = do
   p <- optimizePar p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
+  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p

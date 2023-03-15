@@ -1,0 +1,32 @@
+/*
+  stack build
+  cd regression-tests
+  ./runtests.sh -k tests/inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-lifted tests/inlining-ex-1.ssl
+  stack exec sslc -- --dump-ir-inlined tests/inlining-ex-1.ssl
+  stack exec sslc -- tests/inlining-ex-1.ssl
+
+Example: r and q are oncesafe.
+Input:
+main = 
+  let q = 5
+  IN
+  let r = q + 1 
+  IN 
+  r
+
+Expected Output:
+main = 
+  5 + 1
+
+*/
+
+// print single digit; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  let q = 5
+  let r = q + 1 
+  putd cout r
