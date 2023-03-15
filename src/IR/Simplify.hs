@@ -1,9 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Use record patterns" #-}
 
 {- | Simple Inlining Optimization Pass
 
@@ -34,8 +29,10 @@ import qualified IR.IR as I
 type InVar = I.VarId
 
 
--- type OutVar = I.VarId -- used by callsite inline
+-- | type OutVar = I.VarId -- used by callsite inline
 type InExpr = I.Expr I.Type
+
+
 type OutExpr = I.Expr I.Type
 type InScopeSet = String
 type Context = String
@@ -139,7 +136,7 @@ updateOccVar binder = do
                 ++ show m
                 ++ "!"
             )
-        Just Dead -> do
+        Just Dead ->
           -- we only handle OnceSafe currently
           -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
           if insidel || insidem
@@ -206,7 +203,6 @@ insideMatch = do
 {- | Entry-point to Simplifer.
 
 Maps over top level definitions to create a new simplified Program
-Do we ever want to inline top-level definitions?
 -}
 simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 simplifyProgram p = runSimplFn $ do
@@ -254,7 +250,7 @@ simplExpr sub ins (I.Prim prim args t) cont = do
   args' <- mapM (($ cont) . simplExpr sub ins) args
   pure (I.Prim prim args' t)
 
--- Simplify Match Expression
+-- | Simplify Match Expression
 simplExpr sub ins (I.Match scrutinee arms t) cont = do
   scrutinee' <- simplExpr sub ins scrutinee cont
   let (pats, rhss) = unzip arms
@@ -262,18 +258,18 @@ simplExpr sub ins (I.Match scrutinee arms t) cont = do
   let results = zip pats rhss'
   return (I.Match scrutinee' results t)
 
--- Simplify Application Expression
+-- | Simplify Application Expression
 simplExpr sub ins (I.App lhs rhs t) cont = do
   lhs' <- simplExpr sub ins lhs cont
   rhs' <- simplExpr sub ins rhs cont
   return (I.App lhs' rhs' t)
 
--- Simplify Lambda Expression
+-- | Simplify Lambda Expression
 simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   pure (I.Lambda binder body' t)
 
--- Simplify Variable Expression
+-- | Simplify Variable Expression
 simplExpr _ ins var@(I.Var v _) cont = do
   m <- gets subst
   case M.lookup v m of
@@ -281,7 +277,7 @@ simplExpr _ ins var@(I.Var v _) cont = do
     Just (SuspEx e s) -> simplExpr s ins e cont
     Just (DoneEx e) -> simplExpr M.empty ins e cont
 
--- Simplify Let Expressions
+-- | Simplify Let Expressions
 simplExpr sub ins (I.Let binders body t) cont = do
   simplified <- mapM simplBinder binders
   let (simplBinders, subs) = unzip simplified
@@ -322,7 +318,7 @@ simplExpr sub ins (I.Let binders body t) cont = do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards
 
--- for all other expressions, don't do anything
+-- | for all other expressions, don't do anything
 simplExpr _ _ e _ = pure e
 
 
@@ -377,7 +373,7 @@ How do we handle each node?
 - Prim Primitive [Expr t] t             DONE
 -}
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
--- Occurrence Analysis over Let Expression
+-- | Occurrence Analysis over Let Expression
 occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     ( \(binder, rhs) -> do
@@ -391,13 +387,13 @@ occAnalExpr l@(I.Let nameValPairs body _) = do
   m <- gets occInfo
   pure (l, show m)
 
--- Occurrence Analysis over Variable Expression
+-- | Occurrence Analysis over Variable Expression
 occAnalExpr var@(I.Var v _) = do
   updateOccVar v
   m <- gets occInfo
   return (var, show m)
 
--- Occurrence Analysis over Lambda Expression
+-- | Occurrence Analysis over Lambda Expression
 occAnalExpr l@(I.Lambda Nothing b _) = do
   recordEnteringLambda
   _ <- occAnalExpr b
@@ -412,31 +408,31 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
   m <- gets occInfo
   pure (l, show m)
 
--- Occurrence Analysis over Application Expression
+-- | Occurrence Analysis over Application Expression
 occAnalExpr a@(I.App lhs rhs _) = do
   _ <- occAnalExpr lhs
   _ <- occAnalExpr rhs
   m <- gets occInfo
   pure (a, show m)
 
--- Occurrence Analysis over Primitve Expression
+-- | Occurrence Analysis over Primitve Expression
 occAnalExpr p@(I.Prim _ args _) = do
   mapM_ occAnalExpr args
   m <- gets occInfo
   pure (p, show m)
 
--- Occurrence Analysis over Match Expression
+-- | Occurrence Analysis over Match Expression
 occAnalExpr p@(I.Match scrutinee arms _) = do
   recordEnteringMatch
   _ <- occAnalExpr scrutinee
-  --let (alts, rhss) = unzip arms
+  -- let (alts, rhss) = unzip arms
   mapM_ (occAnalAlt . fst) arms
   mapM_ (occAnalExpr . snd) arms
   recordExitingMatch
   m <- gets occInfo
   pure (p, show m)
 
--- for all other expressions, don't do anything
+-- | for all other expressions, don't do anything
 occAnalExpr e = do
   m <- gets occInfo
   pure (e, show m)
