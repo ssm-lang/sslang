@@ -41,11 +41,9 @@ jobs:
       with:
         os:  ${{ matrix.os }}
         resolver: ${{ matrix.resolver }}
-
-    - name: Build sslang compiler
-      run: |
-        stack build
+        ghc: ${{ matrix.ghc }}
+        cabal: ${{ matrix.cabal }}
 
     - name: Run sslang test suite
       run: |
-        stack test --stack-yaml stack.yaml
+        cabal test
