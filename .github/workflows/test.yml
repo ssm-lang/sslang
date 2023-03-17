@@ -4,28 +4,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '.github/**'
-      - 'package.yaml'
-      - 'sslang.cabal'
-      - 'stack.yaml'
-      - 'stack.yaml.lock'
-      - 'app/**'
-      - 'lib/**'
-      - 'regression-tests/**'
-      - 'src/**'
-      - 'test/**'
-      - 'unit-tests/**'
   pull_request:
-    paths:
-      - '.github/**'
-      - '*.yml'
-      - 'app/**'
-      - 'lib/**'
-      - 'regression-tests/**'
-      - 'src/**'
-      - 'test/**'
-      - 'unit-tests/**'
 
 jobs:
   test:
