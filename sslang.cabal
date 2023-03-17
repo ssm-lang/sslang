@@ -34,11 +34,6 @@ library
       Front.Identifiers
       Front.ParseOperators
       Front.Parser
-      Front.Pattern
-      Front.Pattern.Anomaly
-      Front.Pattern.Common
-      Front.Pattern.Matrix
-      Front.Pattern.Vector
       Front.Scanner
       Front.Scope
       Front.Token
@@ -68,6 +63,10 @@ library
       IR.LambdaLift
       IR.LowerAst
       IR.OptimizePar
+      IR.Pattern.Anomaly
+      IR.Pattern.Common
+      IR.Pattern.Matrix
+      IR.Pattern.Vector
       IR.SegmentLets
       IR.SubstMagic
       IR.Types
