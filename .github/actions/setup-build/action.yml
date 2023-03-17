@@ -35,15 +35,15 @@ runs:
         cabal update
         cabal freeze
 
-    - name: Cache .cabal/store and dist-newstyle
-      uses: actions/cache@v2
+    - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+      uses: actions/cache@v3
       with:
         path: |
+          ~/.cabal/packages
           ~/.cabal/store
           dist-newstyle
-        key: ${{ inputs.os }}-${{ inputs.ghc }}-${{ hashFiles('cabal.project.freeze') }}
-        restore-keys: |
-          ${{ inputs.os }}-${{ inputs.ghc }}-
+        key: ${{ inputs.os }}-${{ inputs.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+        restore-keys: ${{ inputs.os }}-${{ inputs.ghc }}-
 
     - name: Build
       shell: bash
