@@ -1,4 +1,9 @@
-cabal-version: >= 1.8
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
 name:           sslang
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
@@ -63,11 +68,13 @@ library
       IR.LambdaLift
       IR.LowerAst
       IR.OptimizePar
+      IR.Pattern
       IR.Pattern.Anomaly
       IR.Pattern.Common
       IR.Pattern.Matrix
       IR.Pattern.Vector
       IR.SegmentLets
+      IR.Simplify
       IR.SubstMagic
       IR.Types
       IR.Types.Inference
