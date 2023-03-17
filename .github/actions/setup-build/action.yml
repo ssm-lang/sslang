@@ -7,6 +7,12 @@ inputs:
   resolver:
     description: "Stack resolver"
     required: true
+  ghc:
+    description: "GHC version"
+    required: true
+  cabal:
+    description: "Cabal version"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -20,8 +26,8 @@ runs:
     - name: Setup cabal
       uses: haskell/actions/setup@v1.2
       with:
-        ghc-version: ${{ matrix.ghc }}
-        cabal-version: ${{ matrix.cabal }}
+        ghc-version: ${{ inputs.ghc }}
+        cabal-version: ${{ inputs.cabal }}
 
     - name: Cabal update and freeze
       shell: bash
@@ -35,9 +41,9 @@ runs:
         path: |
           ~/.cabal/store
           dist-newstyle
-        key: ${{ input.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ inputs.os }}-${{ inputs.ghc }}-${{ hashFiles('cabal.project.freeze') }}
         restore-keys: |
-          ${{ input.os }}-${{ matrix.ghc }}-
+          ${{ inputs.os }}-${{ inputs.ghc }}-
 
     - name: Build
       shell: bash
