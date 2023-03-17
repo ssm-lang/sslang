@@ -1,7 +1,6 @@
 *.log
 .stack-work/
 *~
-*.cabal
 
 haddock-out/
 
