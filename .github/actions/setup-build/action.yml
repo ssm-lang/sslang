@@ -20,10 +20,11 @@ runs:
     - name: Setup cabal
       uses: haskell/actions/setup@v1.2
       with:
-        ghc-version: ${{ input.ghc }}
-        cabal-version: ${{ input.cabal }}
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
 
     - name: Cabal update and freeze
+      shell: bash
       run:
         cabal v2-update
         cabal v2-freeze
@@ -34,11 +35,12 @@ runs:
         path: |
           ~/.cabal/store
           dist-newstyle
-        key: ${{ input.os }}-${{ input.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ input.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
         restore-keys: |
-          ${{ input.os }}-${{ input.ghc }}-
+          ${{ input.os }}-${{ matrix.ghc }}-
 
     - name: Build
+      shell: bash
       run: |
         cabal v2-build
 
