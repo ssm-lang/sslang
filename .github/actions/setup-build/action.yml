@@ -31,9 +31,9 @@ runs:
 
     - name: Cabal update and freeze
       shell: bash
-      run:
-        cabal v2-update
-        cabal v2-freeze
+      run: |
+        cabal update
+        cabal freeze
 
     - name: Cache .cabal/store and dist-newstyle
       uses: actions/cache@v2
@@ -48,6 +48,6 @@ runs:
     - name: Build
       shell: bash
       run: |
-        cabal v2-build
+        cabal build
 
 

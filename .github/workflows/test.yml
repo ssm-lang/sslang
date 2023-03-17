@@ -43,7 +43,6 @@ jobs:
         resolver: ${{ matrix.resolver }}
         ghc: ${{ matrix.ghc }}
         cabal: ${{ matrix.cabal }}
-
     - name: Run sslang test suite
       run: |
         cabal test
