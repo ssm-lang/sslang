@@ -1,4 +1,4 @@
-cabal-version: >= 3.6
+cabal-version: >= 1.8
 name:           sslang
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
