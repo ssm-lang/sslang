@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SSLC="stack exec sslc --"
+SSLC="cabal exec sslc --"
 pretty="--dump-ir-final"
 
 # Run as, e.g.,
