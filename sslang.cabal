@@ -146,16 +146,6 @@ test-suite pattern
     , template-haskell
   default-language: Haskell2010
 
-test-suite regression
-  type: exitcode-stdio-1.0
-  main-is: test/regression/Spec.hs
-  other-modules:
-      Paths_sslang
-  build-depends:
-      base >=4.7 && <5
-    , process
-  default-language: Haskell2010
-
 test-suite semant
   type: exitcode-stdio-1.0
   main-is: Spec.hs
