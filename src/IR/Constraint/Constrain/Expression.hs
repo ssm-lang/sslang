@@ -5,7 +5,6 @@ module IR.Constraint.Constrain.Expression where
 
 import qualified Common.Identifiers as Ident
 import Control.Monad (forM, zipWithM)
-import Data.Bifunctor (Bifunctor (..))
 import Data.Foldable (foldrM)
 import qualified Data.Map.Strict as Map
 import IR.Constraint.Canonical ((-->))
@@ -23,10 +22,9 @@ import IR.SegmentLets (segmentDefs')
 
 
 -- | HELPER ALIASES
-type Attachment = (I.Annotations, Variable)
-
-
 type Def = (I.VarId, I.Expr Attachment)
+
+
 type BinderDef = (I.Binder Attachment, I.Expr Attachment)
 
 
@@ -36,9 +34,19 @@ constrainBinderDefs binderDefs finalConstraint = do
   defs <- forM binderDefs \(binder, expr) -> do
     -- TODO: these binders will also contain annotations; we need to do
     -- something with them!
+
+    -- resolved I think?
     name <- Type.binderToVarId binder
     return (name, expr)
-  constrainDefs defs finalConstraint
+  consDefs <- constrainDefs defs finalConstraint
+  let annsVarPairs = map (uncarryAttachment . fst) binderDefs
+      vars = map snd annsVarPairs
+      exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
+      forBinders ((ann, var), exprTyp) = do
+        Ann.withAnnotations ann (TVarN var) \varExp ->
+          return $ CEqual varExp exprTyp
+  constraints <- mapM forBinders (zip annsVarPairs exprTyps)
+  return $ exists vars $ CAnd (consDefs : constraints)
 
 
 constrainDefs :: [Def] -> Constraint -> TC Constraint
@@ -86,7 +94,7 @@ constrainRecDefs defs finalConstraint = do
 -- | CONSTRAIN EXPRESSIONS
 constrainExprAttached :: I.Expr Attachment -> Type -> TC Constraint
 constrainExprAttached expr expected = do
-  let (anns, u) = first Can.unAnnotations $ I.extract expr
+  let (anns, u) = uncarryAttachment expr
   constraint <- Ann.withAnnotations anns expected $ constrainExpr expr
   return $ exists [u] $ CAnd [CEqual (TVarN u) expected, constraint]
 
@@ -127,7 +135,7 @@ constrainLambda :: I.Binder Attachment -> I.Expr Attachment -> Type -> TC Constr
 constrainLambda binder body expected = do
   argName <- binderToVarId binder
   resultVar <- mkFlexVar
-  let (anns, argVar) = first Can.unAnnotations $ I.extract binder
+  let (anns, argVar) = uncarryAttachment binder
       resultType = TVarN resultVar
 
   exists [argVar, resultVar] <$> Ann.withAnnotations anns (TVarN argVar) \argExpected -> do

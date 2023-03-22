@@ -34,6 +34,7 @@ module IR.IR
   , altBinders
   , pattern BindVar
   , pattern BindAnon
+  , Carrier
   ) where
 import           Common.Identifiers             ( CSym(..)
                                                 , DConId(..)

@@ -7,7 +7,7 @@ import Control.Monad (
   foldM,
   unless,
  )
-import Data.Bifunctor (Bifunctor (first), second)
+import Data.Bifunctor (second)
 import qualified Data.Map.Strict as Map
 import qualified IR.Constraint.Canonical as Can
 import qualified IR.Constraint.Constrain.Annotation as Ann
@@ -23,9 +23,6 @@ import qualified IR.IR as I
 
 -- | CONSTRAIN ALT
 type Header = Map.Map Ident.Identifier Type
-
-
-type Attachment = (I.Annotations, Variable)
 
 
 data State = State
@@ -58,9 +55,9 @@ emptyState = State Map.empty [] []
 
 addBinder :: I.Binder Attachment -> Type -> State -> TC State
 addBinder binder expected (State headers vars revCons) = do
-  let (anns, var) = first Can.unAnnotations $ I.extract binder
+  let (anns, var) = uncarryAttachment binder
   cons <- Ann.withAnnotations anns (TVarN var) \varExpected ->
-    return $ CEqual varExpected expected
+    return $ exists [var] $ CEqual varExpected expected
   return $ State headers (vars ++ [var]) (cons : revCons)
 
 
