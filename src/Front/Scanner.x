@@ -392,7 +392,7 @@ lineFirstToken' i _ = do
 
     PendingBlockNL margin sepToken
       | tCol <= margin ->
-        lexErr i $ "cannot start block at lower indentation than before"
+        lexErr i $ "cannot start block after a new line layout keyword at lower indentation than before"
 
       | otherwise -> do
         -- We were about to start a block in a new line, and we encountered the
