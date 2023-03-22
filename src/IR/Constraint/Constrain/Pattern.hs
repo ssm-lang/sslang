@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 module IR.Constraint.Constrain.Pattern where
 
 import qualified Common.Identifiers as Ident
@@ -5,9 +7,10 @@ import Control.Monad (
   foldM,
   unless,
  )
-import Data.Bifunctor (second)
+import Data.Bifunctor (Bifunctor (first), second)
 import qualified Data.Map.Strict as Map
 import qualified IR.Constraint.Canonical as Can
+import qualified IR.Constraint.Constrain.Annotation as Ann
 import qualified IR.Constraint.Instantiate as Inst
 import IR.Constraint.Monad (
   TC,
@@ -20,6 +23,8 @@ import qualified IR.IR as I
 
 -- | CONSTRAIN ALT
 type Header = Map.Map Ident.Identifier Type
+
+
 type Attachment = (I.Annotations, Variable)
 
 
@@ -34,7 +39,8 @@ add :: I.Alt Attachment -> Type -> State -> TC State
 add alt expected state = case alt of
   I.AltBinder binder -> do
     var <- Type.binderToVarId binder
-    return $ addToHeaders (Ident.fromId var) expected state
+    state' <- addBinder binder expected state
+    return $ addToHeaders (Ident.fromId var) expected state'
   I.AltLit lit _ -> return $ addLit lit expected state
   I.AltData dcon bs _ -> do
     maybeInfo <- getDConInfo dcon
@@ -48,6 +54,14 @@ add alt expected state = case alt of
 
 emptyState :: State
 emptyState = State Map.empty [] []
+
+
+addBinder :: I.Binder Attachment -> Type -> State -> TC State
+addBinder binder expected (State headers vars revCons) = do
+  let (anns, var) = first Can.unAnnotations $ I.extract binder
+  cons <- Ann.withAnnotations anns (TVarN var) \varExpected ->
+    return $ CEqual varExpected expected
+  return $ State headers (vars ++ [var]) (cons : revCons)
 
 
 addToHeaders :: Ident.Identifier -> Type -> State -> State
