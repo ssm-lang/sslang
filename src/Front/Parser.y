@@ -93,6 +93,7 @@ topDef                                --> TopDef
   | defType                             { TopType $1 }
   | defCBlock                           { TopCDefs $1 }
   | defExtern                           { TopExtern $1 }
+  | 'import' string '{' string '}'      { Import $2 $4 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef
@@ -284,7 +285,6 @@ exprBlk                               --> Expr
   | 'while' exprOp '{' expr '}'         { While $2 $4 }
   | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
   | 'match' exprOp '{' matchArms '}'    { Match $2 $4 }
-  | 'import' string '{' string '}'               { Import $3 }
   | csym '(' ')'                        { CCall $1 [] }
   | csym '(' exprTups ')'               { CCall $1 $3 }
   | exprApp                             { $1 }
