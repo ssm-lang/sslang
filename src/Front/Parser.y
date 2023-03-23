@@ -93,8 +93,11 @@ topDef                                --> TopDef
   | defType                             { TopType $1 }
   | defCBlock                           { TopCDefs $1 }
   | defExtern                           { TopExtern $1 }
-  | 'import' string '{' string '}'      { Import $2 $4 }
+  | defImport                           { TopImport $1 }
 
+-- | Import Definition
+defImport
+: 'import' id '{' id '}'      { Import $2 $4 }
 -- | Algebraic data type definition.
 defType                               --> TypeDef
   : 'type' id ids '{' typeVariants '}'  { TypeDef { typeName = $2
