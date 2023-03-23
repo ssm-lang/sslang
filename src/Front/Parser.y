@@ -41,6 +41,7 @@ import Data.Bifunctor (first)
   'fun'     { Token (_, TFun) }
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
+  'import'  { Token (_, TImport) }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
   '->'      { Token (_, TRarrow) }
@@ -283,6 +284,7 @@ exprBlk                               --> Expr
   | 'while' exprOp '{' expr '}'         { While $2 $4 }
   | 'fun' pats '{' expr '}'             { Lambda $2 $4 }
   | 'match' exprOp '{' matchArms '}'    { Match $2 $4 }
+  | 'import' string '{' string '}'               { Import $3 }
   | csym '(' ')'                        { CCall $1 [] }
   | csym '(' exprTups ')'               { CCall $1 $3 }
   | exprApp                             { $1 }

@@ -132,6 +132,7 @@ tokens :-
     let                 { layout    TLet    TDBar }
     match               { layoutNL  TMatch  TBar }
     loop                { layout    TLoop   TSemicolon }
+    import              { layoutNL  TImport TSemicolon }
     \=                  { layout    TEq     TSemicolon }
     \<\-                { layout    TLarrow TSemicolon }
     \=\>                { layout    TDRarrow TSemicolon}
