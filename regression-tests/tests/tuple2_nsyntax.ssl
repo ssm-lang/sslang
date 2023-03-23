@@ -40,9 +40,9 @@ main cin cout =
     let printl l = printl_ puti putc l
 
 
-    let x = (1,2)
-    let y = (3,4)
+    let x_ = (1,2)
+    let y_ = (3,4)
 
-    printl x
+    printl x_
     putnl ()
-    printl y
+    printl y_
