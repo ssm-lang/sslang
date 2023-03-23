@@ -39,8 +39,8 @@ main cin cout =
     let puti = puti_ putc
     let putnl _ = putc 10
     let print_nest l = print_nested puti putc l
-    let z = ((4,5),6)
+    let s = ((4,5),6)
 
-    print_nest z
+    print_nest s
 
 

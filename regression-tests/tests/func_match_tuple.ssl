@@ -51,25 +51,25 @@ main cin cout =
      // test let match on function parameters on 2-tuples
      let left_elimination (x,y) = x
      let right_elimcation (x,y) = y
-     let foo (x,y) (z,w) = x + z
-     let foo2 (x,y) (z,w) (s,t) = x + w + s
-     let x = (1,2)
-     let y = (3,4)
-     let z = (7,8,9)
+     let foo (x1,y1) (z1,w1) = x1 + z1
+     let foo2 (x2,y2) (z2,w2) (s2,t2) = x2 + w2 + s2
+     let x3 = (1,2)
+     let y3 = (3,4)
+     let z3 = (7,8,9)
      let (a,b,c) = (10,11,12)
      
-     printl2 x
+     printl2 x3
      putnl ()
-     printl2 y
+     printl2 y3
      putnl ()
-     printl3 z
+     printl3 z3
      putnl ()
-     puti (left_elimination x)
+     puti (left_elimination x3)
      putnl ()
-     puti (right_elimcation y)
+     puti (right_elimcation y3)
      putnl ()
-     puti (foo x y)
+     puti (foo x3 y3)
      putnl ()
-     puti (foo2 x y x)
+     puti (foo2 x3 y3 x3)
      putnl ()
      puti a
