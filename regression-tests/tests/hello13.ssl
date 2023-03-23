@@ -1,5 +1,5 @@
-putc_ (cout : &Int) c =
-  after 1, cout <- c
+putc_ (cout : &Int) d =
+  after 1, cout <- d
   wait cout
 
 eof_ (cout : &Int) _ =

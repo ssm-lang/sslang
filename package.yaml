@@ -33,6 +33,7 @@ library:
   - syb
   - unification-fd
   - vector
+  - pretty-show
 
   build-tools:
   - happy
