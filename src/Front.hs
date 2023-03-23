@@ -102,7 +102,7 @@ parseAst opt src = do
   astT <- desugarTupPat astL
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astT
-  return astL
+  return astT
 
 
 -- | Semantic checking on an AST.
