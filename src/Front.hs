@@ -23,7 +23,7 @@ import Front.Parser (parseProgram)
 import Front.Scanner (scanTokens)
 import Front.Scope (scopeProgram)
 import Front.Token (prettyTokens)
-
+import Front.DesugarPatTup (desugarTupPat)
 
 import Common.Pretty (Pretty (pretty))
 import Control.Monad (when)
