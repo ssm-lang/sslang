@@ -1,74 +1,51 @@
-module Front.DesugarPatTup where
+module Front.DesugarPatTup (desugarPatTup) where
 
 import qualified Common.Compiler as Compiler
 import Common.Identifiers
+import Data.Bifunctor (first)
+import Data.Generics (Data (..), everywhere, mkT)
 import qualified Front.Ast as A
-import           Data.Bifunctor                 ( first )
-import Data.Generics (everywhere, mkT, Data(..))
 
 
+desugarPatTup :: A.Program -> Compiler.Pass A.Program
+desugarPatTup p = return $ desugarSubst p
 
--- desugarTupPat :: A.Program -> Compiler.Pass A.Program
--- desugarTupPat (A.Program decls) = return $ A.Program $ desugarTop <$> decls
---     where desugarTop (A.TopDef defs) = A.TopDef $ desugarDef defs
---           desugarTop t = t
---           desugarDef (A.DefFn i [] t e) = A.DefFn i [] t $ desugarExpr e
---           desugarDef (A.DefFn i ps t e) =
---                 let (pats, rese) = desugarPatTup ps e (0::Int) in
---                     A.DefFn i pats t $ desugarExpr rese
---                 where desugarPatTup [] ex _ = ([],ex)
---                       desugarPatTup (p:rps) ex n = 
---                         case p of
---                             A.PatTup _ -> let (pats, rese) = desugarPatTup rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
---                                         (A.PatId (fromString ("_temp_id_" ++ show n)) : pats, rese)
---                             _ -> first (p:) $ desugarPatTup rps e (n+1)
---           desugarDef (A.DefPat p e) = A.DefPat p e
---           desugarExpr (A.Let defs e) = desugarLet defs e
---           desugarExpr e = e
---           desugarLet defs e = 
---             let (ndefs, rese) = desugarPatTup defs e (0::Int) in
---                 A.Let ndefs $ desugarExpr rese
---             where desugarPatTup [] ex _ = ([],ex)
---                   desugarPatTup (def:rdefs) ex n =
---                     case def of
---                         (A.DefPat p@(A.PatTup _) defe) ->
---                             let (d, nexpr) = desugarPatTup rdefs (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
---                                 ((A.DefPat (A.PatId (fromString ("_temp_id_" ++ show n))) defe) : d, nexpr)
---                         fndef@(A.DefFn _ _ _ _) -> first (desugarDef fndef:) $ desugarPatTup rdefs e (n+1)
---                         _ -> first (def:) $ desugarPatTup rdefs e (n+1)
 
-desugarTupPat :: A.Program -> Compiler.Pass A.Program
-desugarTupPat p = return $ magicSubst p
+desugarSubst :: (Data a) => a -> a
+desugarSubst = desugarExpr . desugarDef
 
-magicSubst :: (Data a) => a -> a
-magicSubst = magicSubstExpr . magicSubstDef
 
-magicSubstDef :: (Data a) => a -> a
-magicSubstDef = (everywhere $ mkT $ substDef)
+desugarDef :: (Data a) => a -> a
+desugarDef = (everywhere $ mkT $ substDef)
 
-magicSubstExpr :: (Data a) => a -> a
-magicSubstExpr = (everywhere $ mkT $ substExpr)
+
+desugarExpr :: (Data a) => a -> a
+desugarExpr = (everywhere $ mkT $ substExpr)
 
 
 substDef :: A.Definition -> A.Definition
 substDef (A.DefFn i ps t e) = A.DefFn i pats t rese
-                where desugarPatTup [] ex _ = ([],ex)
-                      desugarPatTup (p:rps) ex n = 
-                        case p of
-                            A.PatTup _ -> let (rpats, rexpr) = desugarPatTup rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
-                                        (A.PatId (fromString ("_temp_id_" ++ show n)) : rpats, rexpr)
-                            _ -> first (p:) $ desugarPatTup rps e (n+1)
-                      (pats, rese) = desugarPatTup ps e (0::Int)
+ where
+  desugarPat [] ex _ = ([], ex)
+  desugarPat (p : rps) ex n =
+    case p of
+      A.PatTup _ ->
+        let (rpats, rexpr) = desugarPat rps (A.Match (A.Id (Identifier ("_temp_id_" ++ show n))) [(p, ex)]) (n + 1)
+         in (A.PatId (fromString ("_temp_id_" ++ show n)) : rpats, rexpr)
+      _ -> first (p :) $ desugarPat rps e (n + 1)
+  (pats, rese) = desugarPat ps e (0 :: Int)
 substDef e = e
+
 
 substExpr :: A.Expr -> A.Expr
 substExpr (A.Let defs e) = A.Let ndefs $ rese
-    where desugarPatTup [] ex _ = ([],ex)
-          desugarPatTup (def:rdefs) ex n =
-                    case def of
-                        (A.DefPat p@(A.PatTup _) defe) ->
-                            let (d, nexpr) = desugarPatTup rdefs (A.Match (A.Id (fromString ("_temp_id_" ++ show n))) [(p,ex)]) (n+1) in
-                                ((A.DefPat (A.PatId (fromString ("_temp_id_" ++ show n))) defe) : d, nexpr)
-                        _ -> first (def:) $ desugarPatTup rdefs e (n+1)
-          (ndefs, rese) = desugarPatTup defs e (0::Int)
+ where
+  desugarPat [] ex _ = ([], ex)
+  desugarPat (def : rdefs) ex n =
+    case def of
+      (A.DefPat p@(A.PatTup _) defe) ->
+        let (d, nexpr) = desugarPat rdefs (A.Match (A.Id (fromString ("_temp_id_" ++ show n))) [(p, ex)]) (n + 1)
+         in ((A.DefPat (A.PatId (fromString ("_temp_id_" ++ show n))) defe) : d, nexpr)
+      _ -> first (def :) $ desugarPat rdefs e (n + 1)
+  (ndefs, rese) = desugarPat defs e (0 :: Int)
 substExpr e = e

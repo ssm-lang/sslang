@@ -16,14 +16,13 @@ import Common.Default (Default (..))
 import qualified Front.Ast as A
 
 import Front.DesugarLists (desugarLists)
+import Front.DesugarPatTup (desugarPatTup)
 import Front.DesugarStrings (desugarStrings)
-import Front.DesugarPatTup  (desugarTupPat)
 import Front.ParseOperators (parseOperators)
 import Front.Parser (parseProgram)
 import Front.Scanner (scanTokens)
 import Front.Scope (scopeProgram)
 import Front.Token (prettyTokens)
-import Front.DesugarPatTup (desugarTupPat)
 
 import Common.Pretty (Pretty (pretty))
 import Control.Monad (when)
@@ -31,6 +30,7 @@ import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
  )
+
 
 -- | Operation modes for the front end compiler stage.
 data Mode
@@ -99,7 +99,7 @@ parseAst opt src = do
 
   astS <- desugarStrings astP
   astL <- desugarLists astS
-  astT <- desugarTupPat astL
+  astT <- desugarPatTup astL
 
   when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astT
   return astT
