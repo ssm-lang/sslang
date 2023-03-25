@@ -995,6 +995,9 @@ module Front.DesugarLists
 -- | Desugar ListExpr nodes inside of an AST <a>Program</a>.
 desugarLists :: Program -> Pass Program
 
+module Front.DesugarPatTup
+desugarPatTup :: Program -> Pass Program
+
 
 -- | Desugar String Literal nodes into ListExpr nodes
 module Front.DesugarStrings
