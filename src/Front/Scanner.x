@@ -91,7 +91,7 @@ tokens :-
     @newline            ;
 
     -- First non-whitespace character of line.
-    ()                  { lineFirstToken }
+    ()                  { \i l -> updateMargin i >> lineFirstToken i l }
   }
 
   <blockStart> {
@@ -101,12 +101,28 @@ tokens :-
 
     -- If we're about to start a block, newlines don't matter.
     @newline            ;
+    -- @newline            { \_ _ -> alexSetStartCode blockLineStart >> alexMonadScan }
 
     -- Explicitly start a block at lBrace.
     \{                  { lBrace }
 
     -- Implicitly start a block at first non-whitespace character of block.
     ()                  { blockFirstToken }
+  }
+
+    <blockLineStart> {
+    $blank+             ;
+    "//".*              ;
+    @commentL           { commentBegin }
+
+    -- If we're about to start a block, newlines don't matter.
+    @newline            ;
+
+    -- Explicitly start a block at lBrace.
+    \{                  { \i l -> updateMargin i >> lBrace i l }
+
+    -- Implicitly start a block at first non-whitespace character of block.
+    ()                  { \i l -> updateMargin i >> blockFirstToken i l }
   }
 
   <0> {
@@ -235,6 +251,7 @@ data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
   , lastCtxCode :: Int            -- ^ last seen scanning code before block
+  , lineMargin :: Int
   }
 
 -- | Initial Alex monad state.
@@ -243,6 +260,7 @@ alexInitUserState = AlexUserState
   { usContext = [ImplicitBlock 1 TDBar]
   , commentLevel = 0
   , lastCtxCode = 0
+  , lineMargin = 0
   }
 
 -- | Enter a new context by pushing it onto stack.
@@ -348,6 +366,16 @@ gotoStartLine _ _ = do
   alexSetStartCode lineStart
   alexMonadScan
 
+extractMargin :: AlexUserState -> Int
+extractMargin (AlexUserState _ _ _ m) = m
+
+updateMargin :: AlexInput -> Alex ()
+updateMargin i = do 
+  let c = alexColumn $ alexPosition i
+  st <- alexGetUserState
+  alexSetUserState $ st { lineMargin = c } 
+     
+
 -- | First token in a line.
 lineFirstToken :: AlexAction Token
 lineFirstToken i len
@@ -360,9 +388,11 @@ lineFirstToken i len
 -- | First token in a line that isn't the last line.
 lineFirstToken' :: AlexAction Token
 lineFirstToken' i _ = do
+  st <- alexGetUserState
   let tCol = alexColumn $ alexPosition i
       emptySpan = alexEmptySpan $ alexPosition i
       (_, _, _, tokenStr) = i
+      lineMargin = extractMargin st
 
   alexSetStartCode 0
 
@@ -530,6 +560,8 @@ layout ttype sepToken i len = do
 -- | First token in a block (epsilon action).
 blockFirstToken :: AlexAction Token
 blockFirstToken i _ = do
+  st <- alexGetUserState
+  let lineMargin = extractMargin st
   alexSetStartCode 0
 
   -- Check the top of the context stack to obtain saved separator token.
@@ -540,7 +572,7 @@ blockFirstToken i _ = do
 
   -- Assert that indentation of this token is greater than that of layout token.
   let tCol = alexColumn $ alexPosition i
-  when (tCol <= margin) $ do
+  when (tCol <= lineMargin) $ do
     lexErr i $ "cannot start block at lower indentation than before"
 
   -- About to start a block; remember current indentation level and separator.
