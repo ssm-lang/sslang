@@ -40,13 +40,13 @@ constrainBinderDefs binderDefs finalConstraint = do
     return (name, expr)
   consDefs <- constrainDefs defs finalConstraint
   let annsVarPairs = map (uncarryAttachment . fst) binderDefs
-      vars = map snd annsVarPairs
+      -- vars = map snd annsVarPairs
       exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
-      forBinders ((ann, var), exprTyp) = do
+      forBinders ((ann, var), exprTyp) = exists [var] <$> do
         Ann.withAnnotations ann (TVarN var) \varExp ->
           return $ CEqual varExp exprTyp
   constraints <- mapM forBinders (zip annsVarPairs exprTyps)
-  return $ exists vars $ CAnd (consDefs : constraints)
+  return $ CAnd (consDefs : constraints)
 
 
 constrainDefs :: [Def] -> Constraint -> TC Constraint

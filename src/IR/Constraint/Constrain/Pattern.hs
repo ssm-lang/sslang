@@ -56,8 +56,8 @@ emptyState = State Map.empty [] []
 addBinder :: I.Binder Attachment -> Type -> State -> TC State
 addBinder binder expected (State headers vars revCons) = do
   let (anns, var) = uncarryAttachment binder
-  cons <- Ann.withAnnotations anns (TVarN var) \varExpected ->
-    return $ exists [var] $ CEqual varExpected expected
+  cons <- exists [var] <$> Ann.withAnnotations anns (TVarN var) \varExpected ->
+    return $ CEqual varExpected expected
   return $ State headers (vars ++ [var]) (cons : revCons)
 
 
