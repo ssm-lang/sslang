@@ -287,12 +287,12 @@ simplExpr sub ins (I.Let binders body t) cont = do
   if null binders' then pure body' else pure (I.Let binders' body' t)
  where
   simplBinder ::
-    (I.Binder, I.Expr I.Type) ->
-    SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
+    (I.Binder t, I.Expr I.Type) ->
+    SimplFn (Maybe (I.Binder t, I.Expr I.Type), Subst)
   simplBinder (binder, rhs) = do
     m <- gets occInfo
     case binder of
-      (Just v) -> case M.lookup v m of
+      (I.BindVar v _) -> case M.lookup v m of
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
           -- preinline test PASSES
@@ -349,10 +349,10 @@ runOccAnal I.Program{I.programDefs = defs} = do
   It returns a top level function without curried arguments; just the body.
   -}
   swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
-  swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
+  swallowArgs (funcName, l@I.Lambda {}) = do
     addOccs (Just funcName) -- HACKY
     let (args, body) = unfoldLambda l
-    mapM_ addOccs args
+    mapM_ (addOccs . binderToVarId) args
     pure (funcName, body)
    where
     addOccs (Just nm) = addOccVar nm
@@ -378,7 +378,7 @@ occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     ( \(binder, rhs) -> do
         _ <- occAnalExpr rhs
-        case binder of
+        case binderToVarId binder of
           (Just nm) -> addOccVar nm
           _ -> pure ()
     )
@@ -394,15 +394,15 @@ occAnalExpr var@(I.Var v _) = do
   return (var, show m)
 
 -- | Occurrence Analysis over Lambda Expression
-occAnalExpr l@(I.Lambda Nothing b _) = do
+occAnalExpr l@(I.Lambda (I.BindVar v _) b _) = do
   recordEnteringLambda
+  addOccVar v
   _ <- occAnalExpr b
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
-occAnalExpr l@(I.Lambda (Just binder) b _) = do
+occAnalExpr l@(I.Lambda _ b _) = do
   recordEnteringLambda
-  addOccVar binder
   _ <- occAnalExpr b
   recordExitingLambda
   m <- gets occInfo
@@ -439,17 +439,21 @@ occAnalExpr e = do
 
 
 -- | Run Ocurrence Analyser Over a Match Arm
-occAnalAlt :: I.Alt -> SimplFn (I.Alt, String)
+occAnalAlt :: I.Alt t -> SimplFn (I.Alt t, String)
 occAnalAlt alt@(I.AltBinder binder) = do
-  case binder of
+  case binderToVarId binder of
     (Just nm) -> addOccVar nm
     _ -> pure ()
   m <- gets occInfo
   pure (alt, show m)
-occAnalAlt alt@(I.AltData _ alts) = do
+occAnalAlt alt@(I.AltData _ alts _) = do
   mapM_ occAnalAlt alts
   m <- gets occInfo
   pure (alt, show m)
 occAnalAlt lit = do
   m <- gets occInfo
   pure (lit, show m)
+
+binderToVarId :: I.Binder t -> Maybe I.VarId
+binderToVarId (I.BindVar var _) = Just var
+binderToVarId _ = Nothing

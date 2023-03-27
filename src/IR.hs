@@ -24,10 +24,7 @@ import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
 import IR.Simplify (simplifyProgram)
-import IR.Types (
-  fromAnnotations,
-  typecheckProgram,
- )
+import IR.Types (fromAnnotations,)
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
