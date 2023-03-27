@@ -53,12 +53,12 @@ main cin cout =
     let printl_4 l = printl4_ puti putc l
 
 
-    let x = (1,2,3)
-    let y = (3,4,5)
-    let z = (4,5,6,7)
+    let x_ = (1,2,3)
+    let y_ = (3,4,5)
+    let z_ = (4,5,6,7)
 
-    printl_3 x
+    printl_3 x_
     putnl ()
-    printl_3 y
+    printl_3 y_
     putnl ()
-    printl_4 z
+    printl_4 z_

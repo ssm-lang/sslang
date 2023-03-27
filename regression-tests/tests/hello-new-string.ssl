@@ -2,8 +2,8 @@ type String
   Cons Int String
   Nil
 
-putc (cout : &Int) c =
-  after 1, cout <- c
+putc (cout : &Int) d =
+  after 1, cout <- d
   wait cout
 
 puts cout s =
