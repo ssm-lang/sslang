@@ -29,6 +29,7 @@ import qualified Data.Map as M
 import qualified Data.Maybe as Ma
 import IR.IR (unfoldLambda)
 import qualified IR.IR as I
+import qualified Data.Type.Bool as literal
 
 
 type InVar = I.VarId
@@ -83,14 +84,16 @@ MultiUnsafe: Binder may occur many times, including inside lambdas.
 LoopBreaker: Chosen to break dependency between mutually recursive defintions.
 Never: Never inline; we use this to develop our inliner incrementally.
 -}
+data DConArg = DConArg
+
 data OccInfo
-  = Dead
-  | LoopBreaker -- TBD
-  | OnceSafe
-  | MultiSafe
-  | OnceUnsafe
-  | MultiUnsafe
-  | Never
+  = Dead (Maybe DConArg)
+  | LoopBreaker -- TBD 
+  | OnceSafe (Maybe DConArg)
+  | MultiSafe (Maybe DConArg)
+  | OnceUnsafe (Maybe DConArg)
+  | MultiUnsafe (Maybe DConArg)
+  | Never (Maybe DConArg)
   | DConTrivArgs
   | ConsFuncArg
   deriving (Show)
@@ -302,6 +305,7 @@ simplExpr sub ins (I.Match scrutinee arms t) cont = do
 
 -- Simplify Application Expression
 simplExpr sub ins (I.App lhs rhs t) cont = do
+  -- look to see if we are going into a DCon
   lhs' <- simplExpr sub ins lhs cont
   rhs' <- simplExpr sub ins rhs cont
   return (I.App lhs' rhs' t)
@@ -342,6 +346,8 @@ simplExpr sub ins (I.Let binders body t) cont = do
           insertSubst v $ SuspEx rhs M.empty
           let sub' = M.singleton v (SuspEx rhs sub)
           pure (Nothing, sub')
+          -- let x = RGB a b c
+          --  x
         (Just DConTrivArgs) -> do
           -- get rid of this if nothing changes and merge with OnceSafe
           insertSubst v $ SuspEx rhs M.empty
@@ -485,6 +491,95 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
   pure (l, show m)
 
 -- Occurrence Analysis over Application Expression
+{-
+1) Change occurence analysis so that: 
+  - we carry the information of whether or not a binder is literal/nontrivial (for help with DCon stuff later, without having to "trace it" when trying to inline)
+  - when we enter app node, we mark its arguments as a DConArg
+
+2) Change inlining step to not allow a binder of type DConArgCheck True NonTrivial to be inlined. 
+
+typedef isDConArg = Bool
+
+  let x = lambda whatever // occInfo: {x : Never (DConArgCheck False NonTrivial)}
+  let y = x  // occInfo: {x : OnceSafe (DConArgCheck False NonTrivial), y : Never (DConArgCheck False NonTrivial)}
+  let z = RGB y u c // occInfo: {x : OnceSafe (DConArgCheck False NonTrivial), y : OnceSafe (DConArgCheck True NonTrivial)} 
+    // so now y is gonna not be inlined cus it's True + NonTrivial
+
+We record whether a binder eventually resolves to a literal (doing this incrementally bottom up).
+We record whether a binder is an argument to a data constructor.
+typename isDConArg Bool -- or whatever is typedef in haskell
+data status = Literal | NonTrival
+DConArgCheck isDConArg status
+
+------------------------------------------------------------------------------
+data ____ = Just DConArg | Nothing
+data status = Literal | NonTrival
+
+****
+data status = Literal | NonTrival
+data ___ = (DConArgCheck Bool status)
+
+isEventuallyLiteral
+isDCon
+typedef isDCon
+data ___ = (DConArgCheck isDCon isTrivial)
+
+-- data _____ = DConArgLiteral | DConArgNonTriv | Literal | NonTrivial
+1) in occAnalExpr. For app nodes, if func == data constructor, then mark its arguments (Just DConArg)
+      everything else is same thing with (Nothing)
+2) in simplExpr. When trying to inline, if arg is OnceSafe or MultiSafe AND Just DConArg, then we check to see if it's a literal/variables. If it is inline. 
+
+Question: if we allow a dconarg to be inlined when it's a literal OR A VARIABLE, 
+  do we have to worry about another identifer needing to be marked as Just DConarg too?
+both y and x are oncesafe
+
+  let x = lambda whatever
+  let y = x
+  ...
+  let z = RGB y u c
+
+y's right hand side is just x, so it is "trivial"
+x not marked as a data constructor argument
+we inline y,
+
+  let x = lambda whatever
+  ...
+  let z = RGB x u c
+
+X is oncesafe but it's a non trivial constructor arg so we want to stop it getting inlined
+  let x = lambda whatever
+  ...
+  let y = RGB x u c
+  ...
+
+X is multisafe but it's a non trivial constructor arg so we want to stop it getting inlined
+  let x = lambda whatever
+  let z = RGB 5 6 7
+  ...
+  match z 
+    RGB 3 3 3 = let y = RGB x u c 
+                in 4
+    RGB 4 4 4 = x
+    RGB a b d = d + x
+
+_____________
+
+  let x = 5 // occInfo: {x : Never (Literal)}
+  let y = x // occInfo : if y's RHS is in the map. Retrieve it's Literal/Not Literal Info
+                   occInfo:     {y: Never (Literal), x: OnceSafe (Literal)}
+  let z = RGB y 5 6 then we can see that y: OnceSafe (Literal) so we can inline unconditionally no problemo
+ 
+
+  let x = lambda whatever // occInfo: {x : Never (NonTrivial)}
+  let y = x // occInfo : if y's RHS is in the map. Retrieve it's Literal/Not Literal Info
+                   occInfo:     {y: Never (NonTrivial), x: OnceSafe (NonTrivla)}
+  let z = RGB y 5 6 then we can see that y: OnceSafe (NonTrivial) so we don't inline unconditionally anymore. -> instead maybe delegate to CallSite or wahtever
+
+  PreInlineUnconditionally: if the thing is in a DCon argument, it needs to be OnceSafe + Literal
+
+I am a data constructor argument
+I eventually become non-trivial/trivial
+-}
 occAnalExpr a@(I.App lhs rhs _) = do
     -- first do unfoldApp on a to see if first argument is DCon
   -- if the first argument IS DCon: -- mark its arguments as Never???
