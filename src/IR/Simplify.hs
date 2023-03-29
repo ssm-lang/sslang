@@ -54,7 +54,7 @@ type Color
 let x = RGB 5 4 3
 let y = x          //x is oncesafe so inline it (we already handle this case)
 
-// Ex 2
+// Ex 2 Post-inline unconditionally
 let x = RGB 5 4 3
 let y = x 
 let z = x          // x is multisafe, so run post-inline unconditionally
@@ -429,6 +429,11 @@ runOccAnal I.Program{I.programDefs = defs} = do
     addOccs Nothing = pure ()
   swallowArgs (name, e) = pure (name, e)
 
+markVarNever :: I.VarId -> SimplFn ()
+markVarNever binder = do
+  m <- gets occInfo
+  let m' = M.insert binder Never m
+  modify $ \st -> st{occInfo = m'}
 
 {- | Run the Ocurrence Analyzer over an IR expression node
 
@@ -470,6 +475,7 @@ occAnalExpr l@(I.Lambda Nothing b _) = do
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
+
 occAnalExpr l@(I.Lambda (Just binder) b _) = do
   recordEnteringLambda
   addOccVar binder
@@ -480,10 +486,32 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
 
 -- Occurrence Analysis over Application Expression
 occAnalExpr a@(I.App lhs rhs _) = do
-  _ <- occAnalExpr lhs
-  _ <- occAnalExpr rhs
-  m <- gets occInfo
-  pure (a, show m)
+    -- first do unfoldApp on a to see if first argument is DCon
+  -- if the first argument IS DCon: -- mark its arguments as Never???
+  --    -> mark the variable DConTrivArgs and then have preinline unconditionally handle it
+  -- else:
+  --    -> occAnalExpr lhs
+  --    -> occAnalExpr rhs
+  -- RGB 3 4 5
+  -- unfoldApp (RGB 3 4 5) -> ((Data Dcon), [3,4,5])
+  --unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
+  let (func, args) = I.unfoldApp a
+  case func of
+    I.Data _ _ -> do
+      let _ = markArgTriv <$> args -- fix type of args which is a list of tuples instead of list of exprs
+      m <- gets occInfo
+      pure (a, show m)
+      --Var VarId t
+      where x = 4
+            markArgTriv arg = case arg of 
+              I.Var v _ -> markVarNever v
+              _ -> pure () -- idk we should probably revisit this
+    _ -> (do
+      _ <- occAnalExpr lhs
+      _ <- occAnalExpr rhs
+      m <- gets occInfo
+      pure (a, show m))
+  
 
 -- Occurrence Analysis over Primitve Expression
 occAnalExpr p@(I.Prim _ args _) = do
