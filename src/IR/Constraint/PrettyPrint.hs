@@ -8,15 +8,13 @@ import qualified Common.Identifiers            as Ident
 import           IR.Constraint.Type            as Typ
 
 import           Prettyprinter
-import           Prettyprinter.Render.String
+-- import           Prettyprinter.Render.String
 
 -- import           Common.Compiler
 
 import           Data.Map                       as Map
-import           Data.List                      as List
 
 import           IR.Constraint.Monad            ( TC )
-import Control.Monad.ST (ST)
 
 -- Make Constraint an instance of Pretty!!!
 
@@ -39,7 +37,7 @@ import Control.Monad.ST (ST)
 
 printConstraint :: Constraint -> TC (Doc ann)
 printConstraint CTrue = do 
-    return $ pretty "True"
+    return $ pretty "true"
 
 printConstraint CSaveTheEnvironment = do 
     return $ pretty "SaveTheEnvironment"
@@ -47,27 +45,29 @@ printConstraint CSaveTheEnvironment = do
 printConstraint (CEqual t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Equal" <+> (align . parens . vsep) [p1, p2]
+    return $ (align . hsep) [p1, pretty "=", p2]
 
 printConstraint (CPattern t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
-    return $ pretty "Pattern" <+> (align . parens . vsep) [p1, p2]
+    return $ (align . hsep) [p1, pretty "=p", p2]
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ pretty "Local" <+> (align . parens . vsep) [(pretty . show) i, p]
+    return $ pretty "local" <+> (align . parens . hsep) [(pretty . show) i, p]
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
-    let scheme = pretty "Forall" <+> (pretty . show) vars <+> pct
+    let scheme = pretty "∀" <+> (pretty . show) vars <+> dot <+> pct
 
     p <- printType t
-    return $ pretty "Foreign" <+> (align . parens . vsep) [scheme, p]
+    return $ pretty "foreign" <+> (align . parens . vsep) [scheme, p]
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    return $ pretty "And" <+> (align . brackets . vsep . punctuate comma) printed 
+    let joined = (vsep . punctuate (pretty " ∧")) printed
+    -- let joined = concatWith (surround (pretty " ∧ ")) printed
+    return joined
 
 printConstraint (CLet r f h hc bc) = do
 
@@ -79,22 +79,29 @@ printConstraint (CLet r f h hc bc) = do
     phc <- printConstraint hc
     pbc <- printConstraint bc
 
-    return $ pretty "Let" <+> (align . braces . vsep . punctuate comma) [ 
-                                pretty "rigidVars:" <+> (brackets . align . vsep . punctuate comma) pr,
-                                pretty "flexVars:"  <+> (brackets . align . vsep . punctuate comma) pf,
-                                pretty "header:"    <+> align pheader,
-                                pretty "headerCon:" <+> align phc, 
-                                pretty "bodyCon:"   <+> align pbc]
+    return $ (align . vsep) [pretty "let" <+> pheader, 
+                            indent 2 (vsep [ 
+                                align $ pretty "rigid" <+> colon <+> (align . hsep . punctuate comma) pr ,
+                                -- pretty "∀"  <+> 
+                                align $ pretty "flex " <+> colon <+> (align . hsep . punctuate comma) pf,
+                                
+                                align lbracket,
+                                align $ indent 2 phc,
+                                align rbracket
+                            ]),
+                            align (pretty "in"), 
+                            indent 2 $ align pbc]
                             
 
 printType:: Typ.Type -> TC (Doc ann)
 printType (TConN i lst) = do 
     printed <- mapM printType lst
-    return $ pretty "TConN" <+> parens ((pretty . show) i <+> (brackets . vsep) printed)
+    if show i == "->"
+        then let [a, b] = printed in return $ parens $ a <+> pretty "->" <+> b
+        else return $ pretty i <+> hsep printed
+    
 
-printType (TVarN var) = do 
-    p <- printVar var
-    return $ pretty "TVarN" <+> parens p
+printType (TVarN var) = do printVar var
 
 printVar:: Variable -> TC (Doc ann)
 printVar var = do
@@ -102,14 +109,13 @@ printVar var = do
     printCanType can_t
 
 printCanType:: Can.Type -> TC (Doc ann)
-printCanType t = do return $ (pretty . show) t
+printCanType t = do return $ pretty t
 
 printHeader:: Map.Map Ident.Identifier Type -> TC (Doc ann)
 printHeader headers = do 
     lst <- mapM printPair $ toList headers
-    return $ (align . brackets . vsep) lst
+    return $ (align . vsep . punctuate semi) lst
     where 
         printPair (i, t) = do 
             pt <- printType t
-            return $ (pretty . show) i <+> pt
-
+            return $ (pretty . show) i <+> colon <+> pt
