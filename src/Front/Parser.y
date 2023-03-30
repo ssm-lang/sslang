@@ -42,6 +42,7 @@ import Data.Bifunctor (first)
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
   'import'  { Token (_, TImport) }
+  'as'      { Token (_, TAs)  }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
   '->'      { Token (_, TRarrow) }
@@ -97,7 +98,19 @@ topDef                                --> TopDef
 
 -- | Import Definition
 defImport
-: 'import' id '{' id '}'      { Import $2 $4 }
+: 'import' string '{' importItems '}'      { Import { importFile = $2
+                                                      , importList = $4
+                                                    }
+                                           }
+
+importItem
+:   id                             { OneItem $1 }
+  | id 'as' id                      { TwoItem $1 $3 }
+
+importItems
+: importItem              {[$1]}
+  | importItem ',' importItems                   { $1 : $3 }
+
 -- | Algebraic data type definition.
 defType                               --> TypeDef
   : 'type' id ids '{' typeVariants '}'  { TypeDef { typeName = $2

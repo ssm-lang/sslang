@@ -1,3 +1,7 @@
+type List
+  Cons Int List
+  Nil
+
 puts cout s =
   match s
     Cons c ss =
@@ -7,3 +11,7 @@ puts cout s =
       wait cout
       puts cout ss
     Nil = ()
+
+main cin cout =
+  after 1, cout <- 10
+  wait cout

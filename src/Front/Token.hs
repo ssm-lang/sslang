@@ -61,6 +61,7 @@ data TokenType
   | TRbrace
   | TLbracket
   | TRbracket
+  | TAs
   | TImport
   | TInteger Integer
   | TString String
@@ -129,6 +130,7 @@ instance Pretty TokenType where
   pretty TLbracket = pretty "["
   pretty TRbracket = pretty "]"
   pretty TImport = pretty "import"
+  pretty TAs = pretty "as"
   pretty (TInteger i) = pretty $ show i
   pretty (TString s) = pretty $ "\"" <> s <> "\""
   pretty (TId i) = pretty i

@@ -154,6 +154,7 @@ tokens :-
     \_                  { keyword TUnderscore }
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
+    as                  { keyword TAs }
 
     -- Reserved keywords.
     do                  { reserved TDo }

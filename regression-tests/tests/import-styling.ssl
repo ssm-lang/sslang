@@ -1,8 +1,7 @@
-import "import-puts-example.ssl" {"puts"}
+import "import-puts-example.ssl" {puts, foo, bar}
+
+import "sample.ssl" {puts as x, foo as y, bar as z}
 
 main cin cout =
-// check multi element list using puts import
-  let multi_lst = [49,50,51]
-  puts cout multi_lst
   after 1, cout <- 10
   wait cout

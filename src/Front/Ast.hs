@@ -21,7 +21,19 @@ data TopDef
   | TopType TypeDef       -- ^ Define an algebraic data type
   | TopCDefs String       -- ^ Inlined block of C definitions
   | TopExtern ExternDecl  -- ^ Declare external symbol for FFI
+  | TopImport Import   -- ^ Top Level import statement
   deriving (Eq, Show, Typeable, Data)
+
+data Import = Import
+  { importFile :: String
+  , importList :: [ImportItem]
+  }
+  deriving (Eq, Show, Typeable, Data)
+
+data ImportItem
+  = TwoItem Identifier Identifier
+  | OneItem Identifier
+ deriving (Eq, Show, Typeable, Data)
 
 -- | Associate a type with a symbol
 data ExternDecl = ExternDecl Identifier Typ
