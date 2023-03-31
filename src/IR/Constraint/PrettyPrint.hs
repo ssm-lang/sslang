@@ -8,9 +8,6 @@ import qualified Common.Identifiers            as Ident
 import           IR.Constraint.Type            as Typ
 
 import           Prettyprinter
--- import           Prettyprinter.Render.String
-
--- import           Common.Compiler
 
 import           Data.Map                       as Map
 
@@ -61,12 +58,11 @@ printConstraint (CForeign (Can.Forall vars ct) t) = do
     let scheme = pretty "∀" <+> (pretty . show) vars <+> dot <+> pct
 
     p <- printType t
-    return $ pretty "foreign" <+> (align . parens . vsep) [scheme, p]
+    return $ pretty "foreign" <+> (align . parens . hsep) [scheme, p]
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
     let joined = (vsep . punctuate (pretty " ∧")) printed
-    -- let joined = concatWith (surround (pretty " ∧ ")) printed
     return joined
 
 printConstraint (CLet r f h hc bc) = do
@@ -82,7 +78,6 @@ printConstraint (CLet r f h hc bc) = do
     return $ (align . vsep) [pretty "let" <+> pheader, 
                             indent 2 (vsep [ 
                                 align $ pretty "rigid" <+> colon <+> (align . hsep . punctuate comma) pr ,
-                                -- pretty "∀"  <+> 
                                 align $ pretty "flex " <+> colon <+> (align . hsep . punctuate comma) pf,
                                 
                                 align lbracket,
@@ -94,7 +89,7 @@ printConstraint (CLet r f h hc bc) = do
                             
 
 printType:: Typ.Type -> TC (Doc ann)
-printType (TConN i lst) = do 
+printType c@(TConN i lst) = do 
     printed <- mapM printType lst
     if show i == "->"
         then let [a, b] = printed in return $ parens $ a <+> pretty "->" <+> b

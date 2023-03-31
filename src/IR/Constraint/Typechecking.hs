@@ -27,7 +27,8 @@ unsafeTypecheckProgram
   :: I.Program Can.Annotations -> Either Compiler.Error (I.Program Can.Type, Doc ann)
 unsafeTypecheckProgram pAnn = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
+  c <- printConstraint constraint
   Solve.run constraint
   program <- Elaborate.run pVar
-  c <- printConstraint constraint
+  -- c <- printConstraint constraint
   return (program, c)
