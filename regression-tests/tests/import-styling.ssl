@@ -1,6 +1,6 @@
 import "import-puts-example.ssl" {puts, foo, bar}
 
-import "sample.ssl" {puts as x, foo as y, bar as z}
+import "sample.ssl" {one as x, two as y, three as z}
 
 main cin cout =
   after 1, cout <- 10
