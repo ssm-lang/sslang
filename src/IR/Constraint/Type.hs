@@ -153,17 +153,17 @@ u8 = TConN "UInt8" []
 
 mkFlexVar :: TC Variable
 mkFlexVar = do
-  name <- freshName "~_t"
+  name <- freshName "'t"
   UF.fresh $ mkDescriptor $ FlexVar name
 
 mkIRFlexVar :: TC Variable
 mkIRFlexVar = do
-  name <- freshName "~_ir_t"
+  name <- freshName "'ir_t"
   UF.fresh $ mkDescriptor $ FlexVar name
 
 mkRigidVar :: TC Variable
 mkRigidVar = do
-  name <- freshName "_t"
+  name <- freshName "~t"
   UF.fresh $ mkDescriptor $ RigidVar name
 
 -- | TO CANONICAL TYPE

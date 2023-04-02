@@ -59,7 +59,7 @@ printConstraint (CPattern t1 t2) = do
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ pretty "local" <+> (align . parens . hsep) [(pretty . show) i, pretty "<:", p]
+    return $ pretty "local" <+> (align . hsep) [(pretty . show) i, pretty "<:", p]
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
@@ -136,15 +136,15 @@ printType (TConN i lst) = do
 
 printType (TVarN var) = do printVar var
 
-printVar:: Variable -> TC (Doc ann)
+printVar :: Variable -> TC (Doc ann)
 printVar var = do
     can_t <- toCanType var
     printCanType can_t
 
-printCanType:: Can.Type -> TC (Doc ann)
+printCanType :: Can.Type -> TC (Doc ann)
 printCanType t = do return $ pretty t
 
-printHeader:: Map.Map Ident.Identifier Type -> TC (Doc ann)
+printHeader :: Map.Map Ident.Identifier Type -> TC (Doc ann)
 printHeader headers = do 
     lst <- mapM printPair $ toList headers
     return $ (align . vsep) lst

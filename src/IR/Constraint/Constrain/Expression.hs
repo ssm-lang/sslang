@@ -13,6 +13,7 @@ import qualified IR.Constraint.Constrain.Pattern
                                                as Pattern
 import           IR.Constraint.Monad            ( TC
                                                 , freshVar
+                                                , freshAnnVar
                                                 , getExtern
                                                 , throwError
                                                 )
@@ -92,7 +93,7 @@ constrainExprAnnotated expr [] expected = constrainExpr expr expected
 constrainExprAnnotated expr (Can.AnnDCon _ _ : anns) expected =
   constrainExprAnnotated expr anns expected
 constrainExprAnnotated expr (ann : anns) expected = do
-  dummyId                          <- Ident.fromId <$> freshVar
+  dummyId                          <- Ident.fromId <$> freshAnnVar
   (Ann.State rigidMap flexs, tipe) <- Ann.add ann
   innerConstraint                  <- constrainExprAnnotated expr anns tipe
   return $ CLet { _rigidVars = Map.elems rigidMap

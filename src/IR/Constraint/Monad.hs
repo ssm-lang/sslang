@@ -69,7 +69,13 @@ freshVar :: TC VarId
 freshVar = do
   n <- State.gets _freshVar
   State.modify $ \state -> state { _freshVar = n + 1 }
-  return $ Ident.fromString $ "_tc_anon_" ++ show n
+  return $ Ident.fromString $ "$tc" ++ show n
+
+freshAnnVar :: TC VarId
+freshAnnVar = do
+  n <- State.gets _freshVar
+  State.modify $ \state -> state { _freshVar = n + 1 }
+  return $ Ident.fromString $ "$ann_tc" ++ show n
 
 getDConInfo :: DConId -> TC (Maybe DConInfo)
 getDConInfo dcon = do
