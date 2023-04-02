@@ -59,18 +59,18 @@ printConstraint (CPattern t1 t2) = do
 
 printConstraint (CLocal i t) = do
     p <- printType t
-    return $ pretty "local" <+> (align . parens . hsep) [(pretty . show) i, p]
+    return $ pretty "local" <+> (align . parens . hsep) [(pretty . show) i, pretty "<:", p]
 
 printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
-    let scheme = pretty "∀" <+> (pretty . show) vars <+> dot <+> pct
+    let scheme = pretty "forall" <+> (pretty . show) vars <+> dot <+> pct
 
     p <- printType t
-    return $ pretty "foreign" <+> (align . parens . hsep) [scheme, p]
+    return $ pretty "foreign" <+> (align . hsep) [scheme, pretty "<:", p]
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    let joined = (vsep . punctuate semi) printed
+    let joined = vsep printed
     return joined
 
 printConstraint c@(CLet r f h hc bc) = do
@@ -97,24 +97,24 @@ printConstraint c@(CLet r f h hc bc) = do
                     pretty "in", 
                     indentation pbc
                 ]
-            (CLet _ _ outer (CLet [] [] inner CTrue innerbc) _) | outer == inner -> do
+            (CLet _ _ o (CLet [] [] i CTrue innerbc) _) | o == i -> do
                 pinnerbc <- printConstraint innerbc
                 return [
-                    pretty "let rec",
+                    pretty "let rec" <+> list (pf ++ pr),
                     indentation (
                         align pheader
                     ),
-                    pretty "given" <+> list (pf ++ pr),
+                    pretty "given",
                     indentation pinnerbc,
                     pretty "in", 
                     indentation pbc
                     ]
             _ -> return [ 
-                    pretty "let",
+                    pretty "let" <+> list (pf ++ pr),
                     indentation (
                         align pheader
                     ),
-                    pretty "given" <+> list (pf ++ pr),
+                    pretty "given",
                     indentation (
                         align phc
                     ),
