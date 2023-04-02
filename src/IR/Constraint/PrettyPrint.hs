@@ -5,13 +5,18 @@ module IR.Constraint.PrettyPrint (
 
 import qualified IR.Constraint.Canonical       as Can
 import qualified Common.Identifiers            as Ident
-import           IR.Constraint.Type            as Typ
+import IR.Constraint.Type as Typ
+    ( toCanType,
+      Constraint(CLet, CTrue, CSaveTheEnvironment, CEqual, CPattern,
+                 CLocal, CForeign, CAnd),
+      Type(..),
+      Variable )
 
 import           Prettyprinter
 
-import           Data.Map                       as Map
+import           Data.Map                      as Map  ( toList, Map, null )
 
-import           IR.Constraint.Monad            ( TC )
+import           IR.Constraint.Monad                   ( TC )  
 
 -- Make Constraint an instance of Pretty!!!
 
@@ -31,6 +36,9 @@ import           IR.Constraint.Monad            ( TC )
 --          , _headerCon :: Constraint
 --          , _bodyCon :: Constraint
 --          }
+
+indentation :: Doc ann -> Doc ann
+indentation = indent 2
 
 printConstraint :: Constraint -> TC (Doc ann)
 printConstraint CTrue = do 
@@ -62,11 +70,10 @@ printConstraint (CForeign (Can.Forall vars ct) t) = do
 
 printConstraint (CAnd lst) = do
     printed <- mapM printConstraint lst
-    let joined = (vsep . punctuate (pretty " ∧")) printed
+    let joined = (vsep . punctuate semi) printed
     return joined
 
-printConstraint (CLet r f h hc bc) = do
-
+printConstraint c@(CLet r f h hc bc) = do
     pr <- mapM printVar r
     pf <- mapM printVar f
 
@@ -75,21 +82,52 @@ printConstraint (CLet r f h hc bc) = do
     phc <- printConstraint hc
     pbc <- printConstraint bc
 
-    return $ (align . vsep) [pretty "let" <+> pheader, 
-                            indent 2 (vsep [ 
-                                align $ pretty "rigid" <+> colon <+> (align . hsep . punctuate comma) pr ,
-                                align $ pretty "flex " <+> colon <+> (align . hsep . punctuate comma) pf,
-                                
-                                align lbracket,
-                                align $ indent 2 phc,
-                                align rbracket
-                            ]),
-                            align (pretty "in"), 
-                            indent 2 $ align pbc]
-                            
+    blocks <- case c of 
+            (CLet _ _ _ _ CTrue) | Map.null h -> return [ 
+                    pretty "exists" <+> list (pf ++ pr),
+                    indentation (
+                        align phc
+                    )
+                ]
+            (CLet [] [] _ CTrue _) -> return [ 
+                    pretty "def",
+                    indentation (
+                        align pheader
+                    ),
+                    pretty "in", 
+                    indentation pbc
+                ]
+            (CLet _ _ outer (CLet [] [] inner CTrue innerbc) _) | outer == inner -> do
+                pinnerbc <- printConstraint innerbc
+                return [
+                    pretty "let rec",
+                    indentation (
+                        align pheader
+                    ),
+                    pretty "given" <+> list (pf ++ pr),
+                    indentation pinnerbc,
+                    pretty "in", 
+                    indentation pbc
+                    ]
+            _ -> return [ 
+                    pretty "let",
+                    indentation (
+                        align pheader
+                    ),
+                    pretty "given" <+> list (pf ++ pr),
+                    indentation (
+                        align phc
+                    ),
+                    pretty "in", 
+                    indentation pbc
+                ]
 
-printType:: Typ.Type -> TC (Doc ann)
-printType c@(TConN i lst) = do 
+    return $ (align . vsep) blocks
+
+
+
+printType :: Typ.Type -> TC (Doc ann)
+printType (TConN i lst) = do 
     printed <- mapM printType lst
     if show i == "->"
         then let [a, b] = printed in return $ parens $ a <+> pretty "->" <+> b
@@ -109,7 +147,7 @@ printCanType t = do return $ pretty t
 printHeader:: Map.Map Ident.Identifier Type -> TC (Doc ann)
 printHeader headers = do 
     lst <- mapM printPair $ toList headers
-    return $ (align . vsep . punctuate semi) lst
+    return $ (align . vsep) lst
     where 
         printPair (i, t) = do 
             pt <- printType t

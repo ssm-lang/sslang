@@ -59,11 +59,11 @@ mkDConMap I.Program { I.typeDefs = tdefs } = foldl
   getVariantArgTypes (I.VariantNamed   ns) = map snd ns
   getVariantArgTypes (I.VariantUnnamed ts) = ts
 
-freshName :: TC TVarId
-freshName = do
+freshName :: String -> TC TVarId
+freshName prefix = do
   n <- State.gets _freshName
   State.modify $ \state -> state { _freshName = n + 1 }
-  return $ Ident.fromString $ "_t" ++ show n
+  return $ Ident.fromString $ prefix ++ show n
 
 freshVar :: TC VarId
 freshVar = do
