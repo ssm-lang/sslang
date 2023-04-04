@@ -47,20 +47,23 @@ optimizeDupDrop program = (`evalStateT` 0) $ do
 --
 -- $internal
 
--- Elimination Patterns
+-- ** Elimination Patterns
 
--- Pattern: drop (dup v1) v1 -> v1
+-- | Pattern: drop (dup v1) v1 -> v1
 fusePair :: I.Expr I.Type -> Maybe (I.Expr I.Type)
 fusePair drop@(I.Prim I.Drop [v1, dup@(I.Prim I.Dup [v2] _)] _)
     | v1 == v2  = Just v1
     | otherwise = Nothing
 
--- Pattern: drop (f (dup v1)) v1 -> f v1
+-- | Pattern: drop (f (dup v1)) v1 -> f v1
 eliminateConsumptionPat :: I.Expr I.Type -> Maybe (I.Expr I.Type)
 eliminateConsumptionPat (I.Prim I.Drop [v1, I.App f (I.Prim I.Dup [v2] t2) t3] t2)
     | v1 == v2  = Just $ I.App f v2 t3
     | otherwise = Nothing
 
+-- ** Transformations/Tree rotations
+
+-- | Swap a drop with a function application
 -- case 1
 --   let _ = f x
 --   let _ = drop y r
@@ -75,6 +78,8 @@ swapAppAndDrop all@(I.Prim I.Drop [v1, I.App f v2@I.Var{} t2] t1) =
     if v1 /= v2
     then I.App f v1 t2
     else all
+
+-- ** Tree algorithm (WIP)
 
 -- | Optimize reference counting by moving drops as early (i.e. deep in tree) as possible
 optimizeTop :: (I.VarId, I.Expr I.Type) -> (I.VarId, I.Expr I.Type)
@@ -176,6 +181,8 @@ pruneAlt (I.AltLit l, e)              = (I.AltLit l, ) $ pruneExpr e
 pruneAlt (I.AltData dcon binds, body) =
     let body' = pruneExpr body in (I.AltData dcon binds, body')
     -- This will do nothing until we fix insertAlt in insertRefCounting
+
+-- ** Debugging utilities
 
 -- | Count dups and drops in a definition.
 countDupsAndDropsDef :: (I.VarId, I.Expr I.Type) -> (Int, Int)
