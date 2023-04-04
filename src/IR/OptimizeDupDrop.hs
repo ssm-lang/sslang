@@ -47,6 +47,35 @@ optimizeDupDrop program = (`evalStateT` 0) $ do
 --
 -- $internal
 
+-- Elimination Patterns
+
+-- Pattern: drop (dup v1) v1 -> v1
+fusePair :: I.Expr I.Type -> Maybe (I.Expr I.Type)
+fusePair drop@(I.Prim I.Drop [v1, dup@(I.Prim I.Dup [v2] _)] _)
+    | v1 == v2  = Just v1
+    | otherwise = Nothing
+
+-- Pattern: drop (f (dup v1)) v1 -> f v1
+eliminateConsumptionPat :: I.Expr I.Type -> Maybe (I.Expr I.Type)
+eliminateConsumptionPat (I.Prim I.Drop [v1, I.App f (I.Prim I.Dup [v2] t2) t3] t2)
+    | v1 == v2  = Just $ I.App f v2 t3
+    | otherwise = Nothing
+
+-- case 1
+--   let _ = f x
+--   let _ = drop y r
+-- just swap the two
+-- case 2
+--   drop y (f x)
+-- would insert a let:
+--   let _ = drop y () in f x
+-- a compelling example
+swapAppAndDrop :: I.Expr I.Type -> I.Expr I.Type
+swapAppAndDrop all@(I.Prim I.Drop [v1, I.App f v2@I.Var{} t2] t1) =
+    if v1 /= v2
+    then I.App f v1 t2
+    else all
+
 -- | Optimize reference counting by moving drops as early (i.e. deep in tree) as possible
 optimizeTop :: (I.VarId, I.Expr I.Type) -> (I.VarId, I.Expr I.Type)
 optimizeTop (var, expr) = (var, ) $ optimizeExpr expr
@@ -93,8 +122,8 @@ insertEarlyDrop (I.App f x t) v =
                  Just f' -> f'
         x' = case insertEarlyDrop x v of
                  Nothing -> x
-                 Just 
-        in 
+                 Just x' -> x'
+        in return $ I.App f' x' t
         -- check body of let/App first, to see if var is used
         -- if not used, then put drop in binders
         -- if there is no use of the var in the binders, then Nothing
