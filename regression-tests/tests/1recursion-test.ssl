@@ -1,0 +1,81 @@
+main cin cout =
+  let z = w  // this is okay
+      w = 5
+------------------------------------
+//  Let [(Binder, Expr t)] (Expr t) t
+
+  let z = w  // this is okay
+      w = RGB 4 5 y 
+      y = 2
+If this let has more than one binder, we need to TS its binders.
+Otherwise, annotate the binder and move on to the body.
+
+Since the let has more than one binder, let's create a graph input from its binders.
+z's RHS is a variable, so that's equivalent to graph edge (z -> w)
+w's RHS is a data constructor, which just makes (w -> [])
+we looked at all of w's arguments, so we are done looking at w.
+y's RHS is a liter, which does not produce an edge.
+Now that we have looked at all the binders, we collect all produced edges and give them to TS.
+
+Now just annotate 
+let y = 2
+    w = RGB 4 5 y
+    z = w
+
+let y = 2 //occInfo : { y : Never (DConArgCheck False Trivial)}
+    w = RGB 4 5 y //occInfo : { w: Never (DConArgCheck False NonTrivial), y : OnceSafe (DConArgCheck True Trivial)}
+    z = w //occInfo : {z : Never (DConArgCheck False NonTrivial), 
+                       w: OnceSafe (DConArgCheck False NonTrivial), 
+                       y : OnceSafe (DConArgCheck True Trivial)}
+
+
+TS input: 
+   z -> w 
+   w -> y
+   y -> []
+TS output:
+  y -> [], w -> y, z -> w 
+  
+------------------------------------
+ let  z = w  // this is okay
+      w = 4 + 5 + y
+      y = 2
+
+TS Input:
+   z -> w 
+   w -> []
+   y -> []
+TS Output: 
+   w -> [], y -> [], z -> w,
+
+Let w = 4 + 5 + y 
+    y = 2 
+    z = w
+-------------------------------------------
+
+  let x = 5
+      y = x
+
+
+ topological sorting:     
+    x -> []
+    y -> x 
+
+  //  Let [(Binder, Expr t)] (Expr t) t
+  //  Let [(z, Var w), (w, Lit 5)] (<body>) t
+  //
+  
+  let z = w  // this is not okay
+  let w = 5
+
+  after 1, cout <- 5 + 48    // Should print 5
+  wait cout
+  after 1, cout <- 10
+  wait cout
+
+
+
+//     z = w 
+//     w = z  // codegen cannot handle mutually recursive bindings
+//  let a = b  // nested lets cannot be mutually recursive (This should be obvious)
+//  let b = 9

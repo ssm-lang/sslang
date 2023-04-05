@@ -29,7 +29,6 @@ import qualified Data.Map as M
 import qualified Data.Maybe as Ma
 import IR.IR (unfoldLambda)
 import qualified IR.IR as I
-import qualified Data.Type.Bool as literal
 
 
 type InVar = I.VarId
@@ -47,6 +46,7 @@ data SubstRng = DoneEx OutExpr | SuspEx InExpr Subst
   deriving (Typeable)
   deriving (Show)
 
+
 {- Trivial Constructor Argument Invariant
 type Color
   RGB Int Int Int
@@ -57,20 +57,19 @@ let y = x          //x is oncesafe so inline it (we already handle this case)
 
 // Ex 2 Post-inline unconditionally
 let x = RGB 5 4 3
-let y = x 
+let y = x
 let z = x          // x is multisafe, so run post-inline unconditionally
                    // post-inline unconditionally should return YES because
-                   // when procecssing RHS (RGB 5 4 3), it sees all the arguments 
+                   // when procecssing RHS (RGB 5 4 3), it sees all the arguments
                    // to the data constructor RGB are trivial; (variable, literal, or type annotated variable)
 
 // Ex 3
 let a = fib 45
-let x = RGB a 4 3  // a cannot be marked oncesafe and inlined 
+let x = RGB a 4 3  // a cannot be marked oncesafe and inlined
                    // because a is an argument to a data constructor
 let z = match x
-          RGB r g b =  r + r +r +r +r +r +r 
+          RGB r g b =  r + r +r +r +r +r +r
 -}
-
 
 {-  | Occurrence Information for each binding
 
@@ -84,20 +83,31 @@ MultiUnsafe: Binder may occur many times, including inside lambdas.
 LoopBreaker: Chosen to break dependency between mutually recursive defintions.
 Never: Never inline; we use this to develop our inliner incrementally.
 -}
-data DConArg = DConArg
+
+-- | Whether the expression is an argument to a data constructor
+type DConArg = Bool
+
+-- | Whether the variable eventually resolves to a literal
+type Trivial = Bool
+
+-- | Stores the status of the binder, and whether it's an argument to a data constructor
+data DConArgCheck 
+  = DConArgCheck DConArg Trivial
+  deriving (Show)
+
 
 data OccInfo
-  = Dead (Maybe DConArg)
-  | LoopBreaker -- TBD 
-  | OnceSafe (Maybe DConArg)
-  | MultiSafe (Maybe DConArg)
-  | OnceUnsafe (Maybe DConArg)
-  | MultiUnsafe (Maybe DConArg)
-  | Never (Maybe DConArg)
-  | DConTrivArgs
+  = Dead DConArgCheck
+  | LoopBreaker -- TBD
+  | OnceSafe DConArgCheck
+  | MultiSafe DConArgCheck
+  | OnceUnsafe DConArgCheck
+  | MultiUnsafe DConArgCheck
+  | Never DConArgCheck
   | ConsFuncArg
   deriving (Show)
   deriving (Typeable)
+
 
 {- WHAT WE WANT TO DO
 Have ocurrence analyzer peek at the RHS of variable it is going to mark oncesafe (for App nodes) - via unfoldApp (first argument will be DCons)
@@ -105,7 +115,6 @@ If the RHS is an application of a data constructor, AND all its arguments are tr
 
 In pre-inline, have binders marked DConTrivArgs inlined unconditionally.
 -}
-
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
@@ -155,7 +164,7 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _ -> M.insert binder ConsFuncArc m
+        _ -> M.insert binder ConsFuncArg m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -339,17 +348,10 @@ simplExpr sub ins (I.Let binders body t) cont = do
     m <- gets occInfo
     case binder of
       (Just v) -> case M.lookup v m of
-        (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
-        (Just OnceSafe) -> do
+        (Just (Dead _)) -> pure (Nothing, sub) -- get rid of this dead binding
+        (Just (OnceSafe _)) -> do
           -- preinline test PASSES
           -- bind x to E singleton :: k -> a -> Map k a
-          insertSubst v $ SuspEx rhs M.empty
-          let sub' = M.singleton v (SuspEx rhs sub)
-          pure (Nothing, sub')
-          -- let x = RGB a b c
-          --  x
-        (Just DConTrivArgs) -> do
-          -- get rid of this if nothing changes and merge with OnceSafe
           insertSubst v $ SuspEx rhs M.empty
           let sub' = M.singleton v (SuspEx rhs sub)
           pure (Nothing, sub')
@@ -363,30 +365,10 @@ simplExpr sub ins (I.Let binders body t) cont = do
               pure (Nothing, M.empty) -- PASSES postinline
             (I.Var _ _) -> do
               insertSubst v $ DoneEx e'
-              pure (Nothing, M.empty) -- PASSES postinline            
-            (I.Data _ _) -> do 
-              insertSubst v $ DoneEx e'
-              pure (Nothing, M.empty) -- PASSES postinline 
-            --App (Expr t) (Expr t) t
-            -- Moose - 3 Moose Cow Chicken Milk
-            -- (App (App (App Moose Cow), Chicken), Milk)
-            -- App (App (App (Moose ) (Cow)) Chicken) Milk
-            {-
-            if e' is (after flattening) -> App [Moose, Cow, Chicken, Milk] where Moose is DCon
-              check arguments to DCon Moose, and make sure all of them are literal or variable
-              insertSubst v $ DoneEx e'
               pure (Nothing, M.empty) -- PASSES postinline
-            -}
-            -- unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
-            -- unfoldApp :: Expr t -> (first thing, args)
-            -- App [Moose, Cow, Chicken, Milk] where Moose is DCon
-            --(I.App (I.Data _ _) _) -> do
-            -- 
-            -- RGB 5 4
-            -- let x = (App (App RGB 5) 4)
-            -- let y = x (fib 45)
-            --unfoldApp
-
+            -- (I.Data _ _) -> do
+            --   insertSubst v $ DoneEx e'
+            --   pure (Nothing, M.empty) -- PASSES postinline
             _ -> do
               rhs' <- simplExpr sub ins rhs cont -- we won't inline x, but still possible to simplify e (RHS)
               pure (Just (binder, rhs'), sub) -- FAILS postinline; someday callsite inline
@@ -435,11 +417,13 @@ runOccAnal I.Program{I.programDefs = defs} = do
     addOccs Nothing = pure ()
   swallowArgs (name, e) = pure (name, e)
 
+
 markVarNever :: I.VarId -> SimplFn ()
 markVarNever binder = do
   m <- gets occInfo
   let m' = M.insert binder Never m
   modify $ \st -> st{occInfo = m'}
+
 
 {- | Run the Ocurrence Analyzer over an IR expression node
 
@@ -481,7 +465,6 @@ occAnalExpr l@(I.Lambda Nothing b _) = do
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
-
 occAnalExpr l@(I.Lambda (Just binder) b _) = do
   recordEnteringLambda
   addOccVar binder
@@ -492,17 +475,17 @@ occAnalExpr l@(I.Lambda (Just binder) b _) = do
 
 -- Occurrence Analysis over Application Expression
 {-
-1) Change occurence analysis so that: 
+1) Change occurence analysis so that:
   - we carry the information of whether or not a binder is literal/nontrivial (for help with DCon stuff later, without having to "trace it" when trying to inline)
   - when we enter app node, we mark its arguments as a DConArg
 
-2) Change inlining step to not allow a binder of type DConArgCheck True NonTrivial to be inlined. 
+2) Change inlining step to not allow a binder of type DConArgCheck True NonTrivial to be inlined.
 
 typedef isDConArg = Bool
 
   let x = lambda whatever // occInfo: {x : Never (DConArgCheck False NonTrivial)}
   let y = x  // occInfo: {x : OnceSafe (DConArgCheck False NonTrivial), y : Never (DConArgCheck False NonTrivial)}
-  let z = RGB y u c // occInfo: {x : OnceSafe (DConArgCheck False NonTrivial), y : OnceSafe (DConArgCheck True NonTrivial)} 
+  let z = RGB y u c // occInfo: {x : OnceSafe (DConArgCheck False NonTrivial), y : OnceSafe (DConArgCheck True NonTrivial)}
     // so now y is gonna not be inlined cus it's True + NonTrivial
 
 We record whether a binder eventually resolves to a literal (doing this incrementally bottom up).
@@ -527,9 +510,9 @@ data ___ = (DConArgCheck isDCon isTrivial)
 -- data _____ = DConArgLiteral | DConArgNonTriv | Literal | NonTrivial
 1) in occAnalExpr. For app nodes, if func == data constructor, then mark its arguments (Just DConArg)
       everything else is same thing with (Nothing)
-2) in simplExpr. When trying to inline, if arg is OnceSafe or MultiSafe AND Just DConArg, then we check to see if it's a literal/variables. If it is inline. 
+2) in simplExpr. When trying to inline, if arg is OnceSafe or MultiSafe AND Just DConArg, then we check to see if it's a literal/variables. If it is inline.
 
-Question: if we allow a dconarg to be inlined when it's a literal OR A VARIABLE, 
+Question: if we allow a dconarg to be inlined when it's a literal OR A VARIABLE,
   do we have to worry about another identifer needing to be marked as Just DConarg too?
 both y and x are oncesafe
 
@@ -556,8 +539,8 @@ X is multisafe but it's a non trivial constructor arg so we want to stop it gett
   let x = lambda whatever
   let z = RGB 5 6 7
   ...
-  match z 
-    RGB 3 3 3 = let y = RGB x u c 
+  match z
+    RGB 3 3 3 = let y = RGB x u c
                 in 4
     RGB 4 4 4 = x
     RGB a b d = d + x
@@ -568,7 +551,6 @@ _____________
   let y = x // occInfo : if y's RHS is in the map. Retrieve it's Literal/Not Literal Info
                    occInfo:     {y: Never (Literal), x: OnceSafe (Literal)}
   let z = RGB y 5 6 then we can see that y: OnceSafe (Literal) so we can inline unconditionally no problemo
- 
 
   let x = lambda whatever // occInfo: {x : Never (NonTrivial)}
   let y = x // occInfo : if y's RHS is in the map. Retrieve it's Literal/Not Literal Info
@@ -581,7 +563,7 @@ I am a data constructor argument
 I eventually become non-trivial/trivial
 -}
 occAnalExpr a@(I.App lhs rhs _) = do
-    -- first do unfoldApp on a to see if first argument is DCon
+  -- first do unfoldApp on a to see if first argument is DCon
   -- if the first argument IS DCon: -- mark its arguments as Never???
   --    -> mark the variable DConTrivArgs and then have preinline unconditionally handle it
   -- else:
@@ -596,17 +578,19 @@ occAnalExpr a@(I.App lhs rhs _) = do
       let _ = markArgTriv <$> args -- fix type of args which is a list of tuples instead of list of exprs
       m <- gets occInfo
       pure (a, show m)
+     where
       --Var VarId t
-      where x = 4
-            markArgTriv arg = case arg of 
-              I.Var v _ -> markVarNever v
-              _ -> pure () -- idk we should probably revisit this
-    _ -> (do
-      _ <- occAnalExpr lhs
-      _ <- occAnalExpr rhs
-      m <- gets occInfo
-      pure (a, show m))
-  
+      x = 4
+      markArgTriv arg = case arg of
+        I.Var v _ -> markVarNever v
+        _ -> pure () -- idk we should probably revisit this
+    _ ->
+      ( do
+          _ <- occAnalExpr lhs
+          _ <- occAnalExpr rhs
+          m <- gets occInfo
+          pure (a, show m)
+      )
 
 -- Occurrence Analysis over Primitve Expression
 occAnalExpr p@(I.Prim _ args _) = do
