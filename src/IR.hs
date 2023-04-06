@@ -118,7 +118,6 @@ typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
   (p, constraints) <- typecheckProgram p
   when (mode opt == DumpIRConstraints) $ dump $ show constraints
-  -- when (True) $ dump $ show constraints
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p

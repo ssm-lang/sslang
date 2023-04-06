@@ -83,6 +83,9 @@ printConstraint c@(CLet r f h hc bc) = do
     pbc <- printConstraint bc
 
     blocks <- case c of 
+            -- (CLet _ [v] _ (CAnd ((CEqual (TVarN v') _):xs)) CTrue) | Map.null h && v == v'-> do
+            --     block <- printConstraint (CAnd xs)
+            --     return [block]
             (CLet _ _ _ _ CTrue) | Map.null h -> return [ 
                     pretty "exists" <+> list (pf ++ pr),
                     indentation (
