@@ -21,10 +21,8 @@ import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.SegmentLets (segmentLets)
-import IR.Types (
-  fromAnnotations,
-  typecheckProgram,
- )
+import IR.Types.Type (fromAnnotations)
+import IR.Constraint.Typechecking (typecheckProgram)
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
