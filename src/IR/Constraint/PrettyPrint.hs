@@ -73,7 +73,57 @@ printConstraint (CAnd lst) = do
     let joined = vsep printed
     return joined
 
-printConstraint c@(CLet r f h hc bc) = do
+printConstraint (CLet _ [v] h (CAnd ((CEqual (TVarN v') _):xs)) CTrue) | Map.null h && v == v' = do
+    printConstraint (CAnd xs)
+
+printConstraint (CLet r f h hc CTrue) | Map.null h = do
+    pr <- mapM printVar r
+    pf <- mapM printVar f
+
+    phc <- printConstraint hc
+    
+    return $ (align . vsep) [ 
+            pretty "exists" <+> list (pf ++ pr),
+            indentation (
+                align phc
+            )
+        ]
+
+printConstraint (CLet [] [] h CTrue bc) = do 
+    pheader <- printHeader h
+    pbc <- printConstraint bc
+
+    return $ (align . vsep) [ 
+            pretty "def",
+            indentation (
+                align pheader
+            ),
+            pretty "in", 
+            indentation pbc
+        ]
+
+printConstraint (CLet r f o (CLet [] [] i CTrue innerbc) bc) | o == i = do
+    pr <- mapM printVar r
+    pf <- mapM printVar f
+
+    pheader <- printHeader o
+
+    pbc <- printConstraint bc
+
+    pinnerbc <- printConstraint innerbc
+
+    return $ (align . vsep) [
+            pretty "let rec" <+> list (pf ++ pr),
+            indentation (
+                align pheader
+            ),
+            pretty "given",
+            indentation pinnerbc,
+            pretty "in", 
+            indentation pbc
+        ]
+
+printConstraint (CLet r f h hc bc) = do
     pr <- mapM printVar r
     pf <- mapM printVar f
 
@@ -81,51 +131,19 @@ printConstraint c@(CLet r f h hc bc) = do
 
     phc <- printConstraint hc
     pbc <- printConstraint bc
-
-    blocks <- case c of 
-            -- (CLet _ [v] _ (CAnd ((CEqual (TVarN v') _):xs)) CTrue) | Map.null h && v == v'-> do
-            --     block <- printConstraint (CAnd xs)
-            --     return [block]
-            (CLet _ _ _ _ CTrue) | Map.null h -> return [ 
-                    pretty "exists" <+> list (pf ++ pr),
-                    indentation (
-                        align phc
-                    )
-                ]
-            (CLet [] [] _ CTrue _) -> return [ 
-                    pretty "def",
-                    indentation (
-                        align pheader
-                    ),
-                    pretty "in", 
-                    indentation pbc
-                ]
-            (CLet _ _ o (CLet [] [] i CTrue innerbc) _) | o == i -> do
-                pinnerbc <- printConstraint innerbc
-                return [
-                    pretty "let rec" <+> list (pf ++ pr),
-                    indentation (
-                        align pheader
-                    ),
-                    pretty "given",
-                    indentation pinnerbc,
-                    pretty "in", 
-                    indentation pbc
-                    ]
-            _ -> return [ 
-                    pretty "let" <+> list (pf ++ pr),
-                    indentation (
-                        align pheader
-                    ),
-                    pretty "given",
-                    indentation (
-                        align phc
-                    ),
-                    pretty "in", 
-                    indentation pbc
-                ]
-
-    return $ (align . vsep) blocks
+            
+    return $ (align . vsep) [ 
+            pretty "let" <+> list (pf ++ pr),
+            indentation (
+                align pheader
+            ),
+            pretty "given",
+            indentation (
+                align phc
+            ),
+            pretty "in", 
+            indentation pbc
+        ]
 
 
 
