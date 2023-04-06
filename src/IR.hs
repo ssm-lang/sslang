@@ -20,9 +20,12 @@ import IR.InsertRefCounting (insertRefCounting)
 import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
+import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
-import IR.Types.Type (fromAnnotations)
-import IR.Constraint.Typechecking (typecheckProgram)
+import IR.Constraint.Typechecking ( typecheckProgram )
+import IR.Types.Type ( fromAnnotations )
+import IR.Simplify (simplifyProgram)
+
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
@@ -41,6 +44,7 @@ data Mode
   | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRInlined
   | DumpIRTypedShow
   | DumpIRLifted
   | DumpIRFinal
@@ -62,7 +66,7 @@ options =
   [ Option
       ""
       ["dump-ir"]
-      (NoArg $ setMode DumpIR)
+      (NoArg $ setMode DumpIRAnnotated)
       "Print the IR immediately after lowering"
   , Option
       ""
@@ -89,6 +93,11 @@ options =
       ["dump-ir-lifted"]
       (NoArg $ setMode DumpIRLifted)
       "Print the IR after lambda lifting"
+  , Option
+      ""
+      ["dump-ir-inlined"]
+      (NoArg $ setMode DumpIRInlined)
+      "Print IR after inlining optimization and before dup drops"
   , Option
       ""
       ["dump-ir-final"]
@@ -121,6 +130,12 @@ typecheck opt p = do
   return p
 
 
+anomalycheck :: I.Program I.Type -> Pass (I.Program I.Type)
+anomalycheck p = do
+  checkAnomaly p
+  return p
+
+
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
@@ -132,6 +147,8 @@ transform opt p = do
   p <- optimizePar p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
+  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p
@@ -139,4 +156,4 @@ transform opt p = do
 
 -- | IR compiler stage.
 run :: Options -> A.Program -> Pass (I.Program I.Type)
-run opt = lower opt >=> typecheck opt >=> transform opt
+run opt = lower opt >=> typecheck opt >=> anomalycheck >=> transform opt

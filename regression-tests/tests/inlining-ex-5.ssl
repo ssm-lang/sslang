@@ -1,0 +1,28 @@
+/*
+Example:  r is multiunsafe; q and w are OnceSafe, post-inline inlines r
+Input:
+main cin cout = 
+  let r = 25
+  let q = r + 25   // 50
+  let w = r + q    // 75
+  w
+
+Expected Output:
+main cin cout = 
+  (25 + 25 + q)
+  
+*/
+
+// print character followed by newline
+putc cout_ c =
+  after 1, cout_ <- c
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+main cin cout = 
+  let r = 25
+  let q = r + 25   // 50
+  let w = r + q    // 75
+  // w
+  putc cout w

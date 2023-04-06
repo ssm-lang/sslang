@@ -24,11 +24,11 @@ puti_ putc x =
 // tests the pattern match of 3-tuple
 printl6_ puti putc p =
   match p
-   (a,b,c,d,e,f) =  puti a
+   (a,b,r,d,e,f) =  puti a
                     putc 32
                     puti b
                     putc 32
-                    puti c
+                    puti r
                     putc 32
                     puti d
                     putc 32
@@ -39,11 +39,11 @@ printl6_ puti putc p =
 // tests the pattern match of 3-tuple
 printl5_ puti putc p =
   match p
-   (a,b,c,d,e) = puti a
+   (a,b,r,d,e) = puti a
                  putc 32
                  puti b
                  putc 32
-                 puti c
+                 puti r
                  putc 32
                  puti d
                  putc 32

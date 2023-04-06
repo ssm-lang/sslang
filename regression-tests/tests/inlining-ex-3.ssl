@@ -1,0 +1,38 @@
+/* 
+Example: n is oncesafe; TODO: case elimination!
+Input:
+main = 
+  let n = 5
+  IN
+  match n
+    5 = 
+      putd cout 3
+    _ = 
+      putd cout 5
+
+Expected Output (for now):
+main = 
+  match 5
+    5 = 
+      putd cout 3
+    _ = 
+      putd cout 5
+
+Expected Output (with case elimination):
+main = 
+  putd cout 3
+  
+*/
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  let n = 5
+  match n
+    5 = 
+      putd cout 3
+    _ = 
+      putd cout 5

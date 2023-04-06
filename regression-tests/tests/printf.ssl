@@ -19,8 +19,8 @@ type Decimal
     PDecimal Digits Digits
     NDecimal Digits Digits
 
-print_char (cout : & Int) (c : Int) -> () =
-    after 10 , (cout : & Int) <- c
+print_char (cout : & Int) (c_ : Int) -> () =
+    after 10 , (cout : & Int) <- c_
     wait (cout : & Int)
 
 print_digit (cout : & Int) (c : Int) -> () =
@@ -34,8 +34,8 @@ print_digits (cout: & Int) (d: Digits) -> () =
       print_digits cout ds
     DNil = ()
 
-print_integer (cout: & Int) (i: Integer) -> () =
-  match i
+print_integer (cout: & Int) (i_: Integer) -> () =
+  match i_
     PInteger ds = print_digits cout ds
     NInteger ds =
       print_char cout 45
