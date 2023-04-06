@@ -21,8 +21,10 @@ import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.SegmentLets (segmentLets)
-import IR.Constraint.Typechecking ( typecheckProgram, TypecheckOptions(..) )
-import IR.Types.Type ( fromAnnotations )
+import IR.Types (
+  fromAnnotations,
+  typecheckProgram,
+ )
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
@@ -39,7 +41,6 @@ data Mode
   | DumpIR
   | DumpIRAnnotated
   | DumpIRConstraints
-  | DumpIRNoAuxiliary
   | DumpIRTyped
   | DumpIRTypedUgly
   | DumpIRTypedShow
@@ -75,11 +76,6 @@ options =
       ["dump-ir-constraints"]
       (NoArg $ setMode DumpIRConstraints  )
       "Print the constraint IR used by the constraint solver type inference"
-  , Option
-      ""
-      ["dump-ir-constraints-no-auxiliary"]
-      (NoArg $ setMode DumpIRNoAuxiliary  )
-      "Print the constraint IR used by the constraint solver type inference without auxiliary constraints"
   , Option
       ""
       ["dump-ir-typed"]
@@ -120,14 +116,9 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-
-  let typecheck_opt = case mode opt of
-        DumpIRConstraints -> PrintConstraints
-        DumpIRNoAuxiliary -> PrintNoAuxiliary
-        _ -> None
-
-  (p, constraints) <- typecheckProgram p typecheck_opt 
-  when (mode opt == DumpIRConstraints || mode opt == DumpIRNoAuxiliary) $ dump $ show constraints
+  (p, constraints) <- typecheckProgram p
+  when (mode opt == DumpIRConstraints) $ dump $ show constraints
+  -- when (True) $ dump $ show constraints
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p

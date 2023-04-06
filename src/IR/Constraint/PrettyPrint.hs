@@ -1,6 +1,5 @@
 module IR.Constraint.PrettyPrint (
     printConstraint,
-    PrintingOptions(..),
     Doc
 ) where
 
@@ -16,9 +15,10 @@ import IR.Constraint.Type as Typ
 import           Prettyprinter
 
 import           Data.Map                      as Map  ( toList, Map, null )
--- import           Data.List                     as List ( isPrefixOf )
 
 import           IR.Constraint.Monad                   ( TC )  
+
+-- Make Constraint an instance of Pretty!!!
 
 -- Has to operate inside TC monad to invoke toCanType!!!
     
@@ -37,67 +37,59 @@ import           IR.Constraint.Monad                   ( TC )
 --          , _bodyCon :: Constraint
 --          }
 
-data PrintingOptions = Pretty | NoAuxiliary deriving (Eq)
-
 indentation :: Doc ann -> Doc ann
 indentation = indent 2
 
-printConstraint :: PrintingOptions -> Constraint -> TC (Doc ann)
-printConstraint _ CTrue = do 
+printConstraint :: Constraint -> TC (Doc ann)
+printConstraint CTrue = do 
     return $ pretty "true"
 
-printConstraint _ CSaveTheEnvironment = do 
+printConstraint CSaveTheEnvironment = do 
     return $ pretty "SaveTheEnvironment"
 
-printConstraint _ (CEqual t1 t2) = do
+printConstraint (CEqual t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
     return $ (align . hsep) [p1, pretty "=", p2]
 
-printConstraint _ (CPattern t1 t2) = do
+printConstraint (CPattern t1 t2) = do
     p1 <- printType t1
     p2 <- printType t2
     return $ (align . hsep) [p1, pretty "=p", p2]
 
-printConstraint _ (CLocal i t) = do
+printConstraint (CLocal i t) = do
     p <- printType t
-    return $ (align . hsep) [(pretty . show) i, pretty "<:", p]
+    return $ pretty "local" <+> (align . hsep) [(pretty . show) i, pretty "<:", p]
 
-printConstraint _ (CForeign (Can.Forall vars ct) t) = do
+printConstraint (CForeign (Can.Forall vars ct) t) = do
     pct <- printCanType ct
     let scheme = pretty "forall" <+> (pretty . show) vars <+> dot <+> pct
 
     p <- printType t
-    return $ pretty "primitive" <+> (align . hsep) [scheme, pretty "<:", p]
+    return $ pretty "foreign" <+> (align . hsep) [scheme, pretty "<:", p]
 
-printConstraint opt (CAnd lst) = do
-    printed <- mapM (printConstraint opt) lst
+printConstraint (CAnd lst) = do
+    printed <- mapM printConstraint lst
     let joined = vsep printed
     return joined
 
-printConstraint opt c@(CLet r f h hc bc) = do
+printConstraint c@(CLet r f h hc bc) = do
     pr <- mapM printVar r
     pf <- mapM printVar f
 
     pheader <- printHeader h
 
-    phc <- printConstraint opt hc
-    pbc <- printConstraint opt bc
+    phc <- printConstraint hc
+    pbc <- printConstraint bc
 
     blocks <- case c of 
-            (CLet _ [v] _ (CAnd ((CEqual (TVarN v') _):xs)) CTrue) | opt == NoAuxiliary && Map.null h && v == v'-> do
-                block <- printConstraint opt (CAnd xs)
-                return [block]
-
-            (CLet _ _ _ _ CTrue) | Map.null h -> 
-                return [ 
+            (CLet _ _ _ _ CTrue) | Map.null h -> return [ 
                     pretty "exists" <+> list (pf ++ pr),
                     indentation (
                         align phc
                     )
                 ]
-            (CLet [] [] _ CTrue _) -> 
-                return [ 
+            (CLet [] [] _ CTrue _) -> return [ 
                     pretty "def",
                     indentation (
                         align pheader
@@ -106,7 +98,7 @@ printConstraint opt c@(CLet r f h hc bc) = do
                     indentation pbc
                 ]
             (CLet _ _ o (CLet [] [] i CTrue innerbc) _) | o == i -> do
-                pinnerbc <- printConstraint opt innerbc
+                pinnerbc <- printConstraint innerbc
                 return [
                     pretty "let rec" <+> list (pf ++ pr),
                     indentation (
@@ -117,8 +109,7 @@ printConstraint opt c@(CLet r f h hc bc) = do
                     pretty "in", 
                     indentation pbc
                     ]
-            _ -> 
-                return [ 
+            _ -> return [ 
                     pretty "let" <+> list (pf ++ pr),
                     indentation (
                         align pheader
