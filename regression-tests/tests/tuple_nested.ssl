@@ -1,4 +1,4 @@
-// tests whether a 2-tuple(Pair) can be implemented in Ssland with ADTs
+// checking that 3-tuples and 4-tuples can be declared with new syntax
 type Pair2 a b
     Pair2 a b
 
@@ -24,25 +24,23 @@ puti_ putc x =
   else
     putip_ putc x
 
-// tests the pattern match of pairs
-printl_ puti putc p =
-  match p
-    (x,y) = puti x
-            putc 32
-            puti y
-
+// test match nested tuples ((x,y),z)
+print_nested puti putc tuptup = 
+    match tuptup 
+      ((x,y),z) = puti x
+                  putc 32
+                  puti y
+                  putc 32
+                  puti z
 
 main cin cout = 
     let putc c = after 1, cout <- c
                  wait cout
     let puti = puti_ putc
     let putnl _ = putc 10
-    let printl l = printl_ puti putc l
+    let print_nest l = print_nested puti putc l
+    let s = ((4,5),6)
+
+    print_nest s
 
 
-    let x_ = Pair2 1 2
-    let y_ = Pair2 3 4
-
-    printl x_
-    putnl ()
-    printl y_
