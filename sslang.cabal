@@ -1,0 +1,252 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           sslang
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/sedwards-lab/sslang#README>
+homepage:       https://github.com/sedwards-lab/sslang#readme
+bug-reports:    https://github.com/sedwards-lab/sslang/issues
+author:         Stephen A. Edwards
+maintainer:     sedwards@cs.columbia.edu
+copyright:      2021 Stephen A. Edwards
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/sedwards-lab/sslang
+
+library
+  exposed-modules:
+      Codegen
+      Codegen.Codegen
+      Codegen.LibSSM
+      Codegen.Typegen
+      Common.Compiler
+      Common.Default
+      Common.Identifiers
+      Common.Pretty
+      Front
+      Front.Ast
+      Front.DesugarLists
+      Front.DesugarStrings
+      Front.Identifiers
+      Front.ParseOperators
+      Front.Parser
+      Front.Scanner
+      Front.Scope
+      Front.Token
+      IR
+      IR.ClassInstantiation
+      IR.Constraint.Canonical
+      IR.Constraint.Constrain
+      IR.Constraint.Constrain.Annotation
+      IR.Constraint.Constrain.Expression
+      IR.Constraint.Constrain.Pattern
+      IR.Constraint.Constrain.Program
+      IR.Constraint.Elaborate
+      IR.Constraint.Error
+      IR.Constraint.Instantiate
+      IR.Constraint.Monad
+      IR.Constraint.Occurs
+      IR.Constraint.Solve
+      IR.Constraint.Type
+      IR.Constraint.Typechecking
+      IR.Constraint.Unify
+      IR.Constraint.UnionFind
+      IR.DConToFunc
+      IR.DesugarPattern
+      IR.ExternToCall
+      IR.InsertRefCounting
+      IR.IR
+      IR.LambdaLift
+      IR.LowerAst
+      IR.OptimizePar
+      IR.Pattern
+      IR.Pattern.Anomaly
+      IR.Pattern.Common
+      IR.Pattern.Matrix
+      IR.Pattern.Vector
+      IR.SegmentLets
+      IR.Simplify
+      IR.SubstMagic
+      IR.Types
+      IR.Types.Inference
+      IR.Types.Type
+      IR.Types.Typechecking
+      IR.Types.Unification
+  other-modules:
+      Paths_sslang
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -fwrite-ide-info -hiedir=.hie
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , comonad
+    , composition
+    , containers
+    , language-c-quote
+    , mainland-pretty
+    , mtl
+    , pretty-show
+    , prettyprinter >=1.7.0
+    , srcloc
+    , syb
+    , unification-fd
+    , vector
+  default-language: Haskell2010
+
+executable sslc
+  main-is: Main.hs
+  other-modules:
+      Paths_sslang
+  hs-source-dirs:
+      app
+  ghc-options: -Wall
+  build-depends:
+      base >=4.7 && <5
+    , prettyprinter >=1.7.0
+    , sslang
+  default-language: Haskell2010
+
+test-suite pattern
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Data.String.SourceCode
+      Sslang.Test
+      Tests.AnomalySpec
+      Paths_sslang
+  hs-source-dirs:
+      test/lib
+      test/pattern
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      HUnit
+    , base >=4.7 && <5
+    , call-stack
+    , comonad
+    , containers
+    , deepseq
+    , here
+    , hspec
+    , sslang
+    , syb
+    , template-haskell
+  default-language: Haskell2010
+
+test-suite regression
+  type: exitcode-stdio-1.0
+  main-is: test/regression/Spec.hs
+  other-modules:
+      Paths_sslang
+  build-depends:
+      base >=4.7 && <5
+    , process
+  default-language: Haskell2010
+
+test-suite semant
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Data.String.SourceCode
+      Sslang.Test
+      Tests.ScopingSpec
+      Tests.TypeInferSpec
+      Paths_sslang
+  hs-source-dirs:
+      test/lib
+      test/semant
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      HUnit
+    , base >=4.7 && <5
+    , call-stack
+    , comonad
+    , containers
+    , deepseq
+    , here
+    , hspec
+    , sslang
+    , syb
+    , template-haskell
+  default-language: Haskell2010
+
+test-suite text
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Data.String.SourceCode
+      Sslang.Test
+      Tests.ParseBlockSpec
+      Tests.ParseCommentsSpec
+      Tests.ParseInlineCSpec
+      Tests.ParsePatternMatchSpec
+      Tests.PrettyAstSpec
+      Tests.ScanBlocksSpec
+      Tests.ScanCommentsSpec
+      Tests.ScanConditionalsSpec
+      Tests.ScanInlineCSpec
+      Tests.ScanLetSpec
+      Tests.ScanNumbersSpec
+      Tests.ScanOperatorsSpec
+      Tests.ScanPatternMatchSpec
+      Paths_sslang
+  hs-source-dirs:
+      test/lib
+      test/text
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      HUnit
+    , base >=4.7 && <5
+    , call-stack
+    , comonad
+    , containers
+    , deepseq
+    , here
+    , hspec
+    , sslang
+    , syb
+    , template-haskell
+  default-language: Haskell2010
+
+test-suite trans
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Data.String.SourceCode
+      Sslang.Test
+      Tests.LiftProgramLambdasSpec
+      Tests.NormalizeSpec
+      Paths_sslang
+  hs-source-dirs:
+      test/lib
+      test/trans
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      HUnit
+    , base >=4.7 && <5
+    , call-stack
+    , comonad
+    , containers
+    , deepseq
+    , here
+    , hspec
+    , sslang
+    , syb
+    , template-haskell
+  default-language: Haskell2010

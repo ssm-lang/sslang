@@ -4,27 +4,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '.github/**'
-      - 'package.yaml'
-      - 'stack.yaml'
-      - 'stack.yaml.lock'
-      - 'app/**'
-      - 'lib/**'
-      - 'regression-tests/**'
-      - 'src/**'
-      - 'test/**'
-      - 'unit-tests/**'
   pull_request:
-    paths:
-      - '.github/**'
-      - '*.yml'
-      - 'app/**'
-      - 'lib/**'
-      - 'regression-tests/**'
-      - 'src/**'
-      - 'test/**'
-      - 'unit-tests/**'
 
 jobs:
   test:
@@ -34,6 +14,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         resolver: [lts-18.6]
+        ghc: ["8.10.7"]
+        cabal: ["3.6.2"]
 
     steps:
     - uses: actions/checkout@v2
@@ -41,11 +23,9 @@ jobs:
       with:
         os:  ${{ matrix.os }}
         resolver: ${{ matrix.resolver }}
-
-    - name: Build sslang compiler
-      run: |
-        stack build
+        ghc: ${{ matrix.ghc }}
+        cabal: ${{ matrix.cabal }}
 
     - name: Run sslang test suite
       run: |
-        stack test --stack-yaml stack.yaml
+        cabal test

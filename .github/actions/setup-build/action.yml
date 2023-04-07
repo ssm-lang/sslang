@@ -1,4 +1,4 @@
-name: "Setup cached build environment"
+name: "Setup cached build environment with cabal"
 description: "Setup the build using cache"
 inputs:
   os:
@@ -7,22 +7,15 @@ inputs:
   resolver:
     description: "Stack resolver"
     required: true
+  ghc:
+    description: "GHC version"
+    required: true
+  cabal:
+    description: "Cabal version"
+    required: true
 runs:
   using: "composite"
   steps:
-    - name: Cache Stack files
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.stack
-          .stack-work
-        # tie cache to Stack resolver and package config
-        # https://raehik.github.io/2021/03/01/caching-stack-and-cabal-haskell-builds-on-github-actions.html
-        key: ${{ inputs.os }}-stack-${{ inputs.resolver }}-${{ hashFiles('stack.yaml.lock', 'package.yaml') }}
-        restore-keys: |
-          ${{ inputs.os }}-stack-${{ inputs.resolver }}-
-          ${{ inputs.os }}-stack-
-
     - name: Install Ubuntu dependencies
       if: ${{ inputs.os == 'ubuntu-latest' }}
       shell: bash
@@ -30,18 +23,31 @@ runs:
         sudo apt-get update
         sudo apt-get install -y build-essential gcc valgrind clang
 
-    - name: Install Haskell Stack
-      uses: haskell/actions/setup@v1
+    - name: Setup cabal
+      uses: haskell/actions/setup@v1.2
       with:
-        enable-stack: true
-        stack-version: latest
+        ghc-version: ${{ inputs.ghc }}
+        cabal-version: ${{ inputs.cabal }}
 
-    - name: Setup Haskell Stack
+    - name: Cabal update and freeze
       shell: bash
       run: |
-        stack setup --resolver ${{ inputs.resolver }}
+        cabal update
+        cabal freeze
 
-    - name: Install dependencies
+    - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cabal/packages
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ inputs.os }}-${{ inputs.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+        restore-keys: ${{ inputs.os }}-${{ inputs.ghc }}-
+
+    - name: Build
       shell: bash
       run: |
-        stack build --no-terminal --only-dependencies
+        cabal build
+
+

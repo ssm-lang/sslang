@@ -28,7 +28,7 @@ jobs:
 
     - name: Build documentation
       run: |
-        stack haddock --no-haddock-deps
+        cabal haddock
 
     - name: Deploy documentation
       if: ${{ github.ref == 'refs/heads/main' }}
