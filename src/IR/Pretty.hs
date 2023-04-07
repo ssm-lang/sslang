@@ -129,7 +129,7 @@ prettyApp (Prim (FfiCall s) es _) = pretty s <+> hsep (map prettyAtom es)
 prettyApp (Prim New [e] _) = "new" <+> prettyAtom e
 prettyApp (Prim Deref [e] _) = "deref" <+> prettyAtom e
 prettyApp (Prim Dup [r] _) = "%dup" <+> prettyAtom r
-prettyApp (Prim Drop [e, r] _) = group $ "%do" <> flatAlt "{ " "{" <> line <> prettyAtom e <> flatAlt " }" "}" <+> "%dropping" <+> prettyAtom r
+prettyApp (Prim Drop [e, r] _) = group $ "%do" <+> flatAlt "{ " "{" <> line <> indents (prettyAtom e) <> line <> flatAlt " }" "}" <+> "%dropping" <+> prettyAtom r
 prettyApp (Exception et _) = "%exception" <+> pretty et
 prettyApp e@App{} =
   let (f, map fst -> as) = unfoldApp e
@@ -142,7 +142,7 @@ prettyAtom (Var v _) = pretty v
 prettyAtom (Lit l _) = pretty l
 prettyAtom (Data d _) = pretty d
 prettyAtom (Prim Break _ _) = "break"
-prettyAtom e = pretty e
+prettyAtom e = parens $ pretty e
 
 
 instance Pretty ExceptType where
