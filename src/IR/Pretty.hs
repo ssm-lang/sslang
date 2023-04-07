@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -6,15 +7,8 @@
 module IR.Pretty () where
 
 import Common.Pretty
-import Control.Monad (void)
 import IR.IR
-import IR.Types.Type (
-  Annotation,
-  Annotations,
-  Type,
-  unfoldArrow,
-  pattern Arrow,
- )
+import IR.Types.Type (unfoldArrow)
 
 
 {- | Pretty Typeclass: pretty print the IR
@@ -38,33 +32,21 @@ instance Pretty (Program Type) where
     -- Generates readable Doc representation of an IR Top Level Function
     prettyFuncDef :: (VarId, Expr Type) -> Doc ann
     prettyFuncDef (v, l@(Lambda _ _ ty)) =
-      pretty v <+> typSig <+> pretty "=" <+> line
-        <> indent
-          2
-          (pretty (void body))
+      pretty v <+> typSig <+> "=" <+> line <> indent 2 (pretty body)
      where
       typSig = hsep args <+> rarrow <+> pretty retTy
-      args =
-        zipWith
-          (\arg t -> parens $ pretty arg <+> pretty ":" <+> pretty t)
-          argIds
-          argTys
+      args = zipWith (\arg t -> parens $ pretty arg <+> ":" <+> pretty t) argIds argTys
       (argIds, body) = unfoldLambda l
       (argTys, retTy) = unfoldArrow ty -- FIXME
-    prettyFuncDef (v, e) = pretty v <+> pretty "=" <+> pretty (void e)
+    prettyFuncDef (v, e) = pretty v <+> "=" <+> pretty e
 
     prettyExternDecl :: (Pretty t) => (VarId, t) -> Doc ann
-    prettyExternDecl (v, t) =
-      pretty "extern" <+> pretty v <+> colon <+> pretty t
+    prettyExternDecl (v, t) = "extern" <+> pretty v <+> colon <+> pretty t
 
     -- Generates readable Doc representation of an IR Type Definition
     prettyTypDef :: (TConId, TypeDef) -> Doc ann
     prettyTypDef (tcon, TypeDef{variants = vars}) =
-      pretty "type"
-        <+> pretty tcon
-        <+> line
-        <> indent indentNo (vsep $ map prettyDCon vars)
-        <> line
+      "type" <+> pretty tcon <+> line <> indent indentNo (vsep $ map prettyDCon vars) <> line
     prettyDCon :: (DConId, TypeVariant) -> Doc ann
     prettyDCon (dcon, VariantNamed argz) =
       pretty dcon <+> hsep (pretty . snd <$> argz)
@@ -72,100 +54,133 @@ instance Pretty (Program Type) where
       pretty dcon <+> hsep (pretty <$> argz)
 
 
+indents :: Doc ann -> Doc ann
+indents = indent 2
+
+
+lineSep :: Doc ann -> Doc ann
+lineSep = flatAlt line
+
+
+altBlock :: Doc ann -> Doc ann
+altBlock d = indents $ flatAlt "" "{ " <> align d <> flatAlt "" " }"
+
+
+groupLine :: Doc ann -> Doc ann
+groupLine d = group $ align d
+
+
 -- | Pretty prints IR Expr nodes without type annotations
-instance Pretty (Expr ()) where
-  pretty = undefined
+instance Pretty (Expr Type) where
+  pretty = prettySeq
 
 
-{-
-pretty a@App{} = pretty nm <+> hsep (parenz . fst <$> args)
- where
-  (nm, args) = unfoldApp a
-  -- insert (usually) necessary parens
-  parenz :: Expr () -> Doc ann
-  parenz v@(Var _ _) = pretty v  -- variables
-  parenz l@(Lit _ _) = pretty l  -- literals
-  parenz e           = parens (pretty e)
-  -- TODO: minimum parens algo
-pretty (Prim Wait es _           ) = pretty "wait" <+> vsep (map pretty es)
-pretty (Var v _                  ) = pretty v
-pretty (Lambda a              b _) = pretty "fun" <+> pretty a <+> pretty b
--- pretty (Let    [(Nothing, e)] b _) = pretty e <> line <> pretty b
-pretty (Let    as             b _) = letexpr
- where
-  letexpr = pretty "let" <+> vsep (map def as) <> line <> pretty b
-  def (_binderId -> Just v, e) = pretty v <+> equals <+> align (pretty e)
-  def (_, e) = pretty '_' <+> equals <+> align (pretty e)
-pretty (Prim After [d, l, r] _) = ae
- where
-  ae =
-    pretty "after" <+> pretty d <> comma <+> pretty l <+> larrow <+> pretty r
-pretty (Prim  Assign [l, r] _) = parens $ pretty l <+> larrow <+> pretty r
-pretty (Match s      as     _) = pretty "match" <+> pretty s <> line <> arms
- where
-  arms = vsep (map (indent indentNo . arm) as)
-  arm :: (Alt t, Expr ()) -> Doc ann
-  arm (a, e) = pretty a <+> equals <+> align (pretty e)
-pretty (Prim Loop [b] _) =
-  pretty "loop" <> line <> indent indentNo (pretty b)
-pretty (Prim (PrimOp po) [l, r] _) = pretty l <+> pretty po <+> pretty r
-pretty (Data d _                 ) = pretty d
-pretty (Lit  l _                 ) = pretty l
-pretty (Prim New [r] _           ) = pretty "new" <+> pretty r
-pretty (Prim Dup [r] _           ) = pretty "__dup" <+> parens (pretty r)
-pretty (Prim Drop [e, r] _) =
-  pretty "__drop"
-    <+> parens (line <> indent 2 (pretty e) <> line)
-    <+> pretty r
-pretty (Prim Deref [r] _) = pretty "deref" <+> parens (pretty r)
-pretty (Prim Par   es  _) = pretty "par" <+> block dbar (map pretty es)
-pretty (Prim Break []  _) = pretty "break"
-pretty (Prim (CCall s) es _) =
-  pretty "$" <> pretty s <> parens (hsep $ punctuate comma $ map pretty es)
-pretty (Prim (FfiCall s) es _) = pretty s <+> hsep (map (parens . pretty) es)
-pretty (Prim (CQuote  s) [] _) = pretty "$$" <> pretty s <> pretty "$$"
+prettyDef :: (Binder Type, Expr Type) -> Doc ann
+prettyDef (v, e) = pretty v <+> "=" <+> groupLine (pretty e)
 
--- pretty (Prim Return [e] _        ) = pretty "return" <+> braces (pretty e)
-pretty (Prim p _ _) = error "Primitive expression not well-formed: " $ show p
-pretty (Exception et _       ) = pretty "__exception" <+> prettyet et
-  where prettyet (ExceptDefault l) = pretty l
-  -}
+
+prettySeq :: Expr Type -> Doc ann
+prettySeq (Let [(BindAnon _, e)] b _) = prettyStm e <> lineSep "; " <> prettySeq b
+prettySeq (Let [d] b _) = "let" <+> prettyDef d <> lineSep "; " <> prettySeq b
+prettySeq (Let ds b _) = "let" <+> align (vsep $ map prettyDef ds) <> lineSep "; " <> prettySeq b
+prettySeq e = prettyStm e
+
+
+prettyStm :: Expr Type -> Doc ann
+prettyStm (Prim After [d, l, r] _) = "after" <+> prettyOp d <> "," <+> prettyOp l <+> "<-" <+> groupLine (prettyOp r)
+prettyStm (Prim Assign [l, r] _) = prettyOp l <+> "<-" <+> groupLine (prettyOp r)
+prettyStm e = prettyOp e
+
+
+prettyOp :: Expr Type -> Doc ann
+-- TODO: fix precedence and associativity here
+prettyOp (Prim (PrimOp po) [o] _) = pretty po <+> prettyOp o
+prettyOp (Prim (PrimOp po) [l, r] _) = prettyOp l <+> pretty po <+> prettyOp r
+prettyOp e = prettyBlk e
+
+
+prettyBlk :: Expr Type -> Doc ann
+prettyBlk (Match s as _) =
+  groupLine $
+    "match" <> prettyOp s <> lineSep " "
+      <> altBlock (vsep $ punctuate (lineSep " | ") $ map prettyArm as)
+prettyBlk (Lambda a b _) =
+  -- TODO: uncurry?
+  "fun" <+> pretty a <> lineSep " " <> altBlock (pretty b)
+prettyBlk (Prim Loop [b] _) = "loop" <> lineSep " " <> altBlock (pretty b)
+prettyBlk (Prim Wait es _) =
+  groupLine $
+    "wait" <> lineSep " "
+      <> altBlock (vsep $ punctuate (lineSep " || ") $ map pretty es)
+prettyBlk (Prim Par es _) =
+  groupLine $
+    "par" <> lineSep " "
+      <> altBlock (vsep $ punctuate (lineSep " || ") $ map pretty es)
+prettyBlk (Prim (CCall s) es _) = "$" <> pretty s <> parens (hsep $ punctuate ", " $ map pretty es)
+prettyBlk e = prettyApp e
+
+
+prettyArm :: (Alt Type, Expr Type) -> Doc ann
+prettyArm (a, e) = pretty a <+> "=" <+> groupLine (pretty e)
+
+
+prettyApp :: Expr Type -> Doc ann
+prettyApp (Prim (FfiCall s) es _) = pretty s <+> hsep (map prettyAtom es)
+prettyApp (Prim New [e] _) = "new" <+> prettyAtom e
+prettyApp (Prim Deref [e] _) = "deref" <+> prettyAtom e
+prettyApp (Prim Dup [r] _) = "%dup" <+> prettyAtom r
+prettyApp (Prim Drop [e, r] _) = group $ "%do" <> flatAlt "{ " "{" <> line <> prettyAtom e <> flatAlt " }" "}" <+> "%dropping" <+> prettyAtom r
+prettyApp (Exception et _) = "%exception" <+> pretty et
+prettyApp e@App{} =
+  let (f, map fst -> as) = unfoldApp e
+   in prettyAtom f <+> hsep (map prettyAtom as)
+prettyApp e = prettyAtom e
+
+
+prettyAtom :: Expr Type -> Doc ann
+prettyAtom (Var v _) = pretty v
+prettyAtom (Lit l _) = pretty l
+prettyAtom (Data d _) = pretty d
+prettyAtom (Prim Break _ _) = "break"
+prettyAtom e = pretty e
+
+
+instance Pretty ExceptType where
+  pretty (ExceptDefault l) = pretty l
+
 
 instance Pretty (Alt Type) where
-  pretty = undefined
+  pretty (AltData d [] _) = pretty d
+  pretty (AltData d as _) = parens $ pretty d <+> hsep (map pretty as)
+  pretty (AltLit a _) = pretty a
+  pretty (AltBinder b) = pretty b
 
-
--- pretty (AltData a b       _ ) = pretty a <+> hsep (map pretty b)
--- pretty (AltLit    a       _ ) = pretty a
--- pretty (AltBinder (_binderId -> Just v)) = pretty v
--- pretty (AltBinder (_binderId -> Nothing)) = pretty '_'
 
 instance Pretty Literal where
-  pretty = undefined
+  pretty (LitIntegral i) = pretty $ show i
+  pretty LitEvent = "()"
 
-
--- pretty (LitIntegral i) = pretty $ show i
--- pretty LitEvent        = pretty "()"
 
 instance Pretty PrimOp where
-  pretty PrimNeg = pretty "-"
-  pretty PrimNot = pretty "!"
-  pretty PrimBitNot = pretty "~"
-  pretty PrimAdd = pretty "+"
-  pretty PrimSub = pretty "-"
-  pretty PrimMul = pretty "*"
-  pretty PrimDiv = pretty "/"
-  pretty PrimMod = pretty "%"
-  pretty PrimBitAnd = pretty "&"
-  pretty PrimBitOr = pretty "|"
-  pretty PrimEq = pretty "=="
-  pretty PrimNeq = pretty "!="
-  pretty PrimGt = pretty ">"
-  pretty PrimGe = pretty ">="
-  pretty PrimLt = pretty "<"
-  pretty PrimLe = pretty "<="
+  pretty PrimNeg = "-"
+  pretty PrimNot = "!"
+  pretty PrimBitNot = "~"
+  pretty PrimAdd = "+"
+  pretty PrimSub = "-"
+  pretty PrimMul = "*"
+  pretty PrimDiv = "/"
+  pretty PrimMod = "%"
+  pretty PrimBitAnd = "&"
+  pretty PrimBitOr = "|"
+  pretty PrimEq = "=="
+  pretty PrimNeq = "!="
+  pretty PrimGt = ">"
+  pretty PrimGe = ">="
+  pretty PrimLt = "<"
+  pretty PrimLe = "<="
 
 
 instance Pretty (Binder Type) where
-  pretty Binder{_binderId = Just v} = pretty v
-  pretty Binder{_binderId = Nothing} = pretty '_'
+  pretty (BindVar v t) = parens $ pretty v <> ":" <+> pretty t
+  pretty (BindAnon t) = parens $ "_:" <+> pretty t
+  pretty _ = error "Non-exhaustive Pretty (Binder Type)"
