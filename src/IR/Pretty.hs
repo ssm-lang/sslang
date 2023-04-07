@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -7,6 +8,8 @@
 module IR.Pretty () where
 
 import Common.Pretty
+import Data.Char (GeneralCategory (..), generalCategory, isSpace)
+import Data.List (dropWhileEnd)
 import IR.IR
 import IR.Types.Type (pattern Hole)
 
@@ -60,11 +63,26 @@ Reverts
 * curried funcs of one arg back to multiple arg funcs
 -}
 instance Pretty (Program Type) where
-  pretty Program{programDefs = ds, typeDefs = tys, externDecls = xds} =
-    vsep $ punctuate line tops
+  pretty Program{programDefs, typeDefs, externDecls, cDefs} =
+    vsep $
+      punctuate line $
+        concat
+          [ cDefsChunk
+          , map prettyTypDef typeDefs
+          , map prettyExternDecl externDecls
+          , map prettyDataDef programDefs
+          ]
    where
-    tops =
-      map prettyTypDef tys ++ map prettyExternDecl xds ++ map prettyDataDef ds
+    cDefsChunk
+      | null $ dropWhile isSpace $ dropWhileEnd isSpace cDefs' = []
+      | otherwise = ["$$$" <> hardline <> pretty cDefs' <> hardline <> "$$$"]
+    cDefs' = dropWhile isLineBreak $ dropWhileEnd isLineBreak cDefs
+    isLineBreak (generalCategory -> LineSeparator) = True
+    isLineBreak (generalCategory -> ParagraphSeparator) = True
+    isLineBreak '\n' = True
+    isLineBreak '\r' = True
+    isLineBreak _ = False
+
 
     -- Generates readable Doc representation of an IR Top Level Function
     prettyDataDef :: (VarId, Expr Type) -> Doc ann
@@ -127,8 +145,12 @@ prettyBlk e@Lambda{} =
       args = hsep $ map (prettyBinderTyped True) as
    in "fun" <+> args <> layoutBlock (pretty b)
 prettyBlk (Prim Loop [b] _) = "loop" <> layoutBlock (pretty b)
+prettyBlk (Prim Wait [e] _) =
+  "wait" <+> prettyApp e
 prettyBlk (Prim Wait es _) =
   "wait" <> layoutBlock (vsep $ punctuate (lineSep " || ") $ map pretty es)
+prettyBlk (Prim Par [e] _) =
+  "par" <+> prettyApp e
 prettyBlk (Prim Par es _) =
   "par" <> layoutBlock (vsep $ punctuate (lineSep " || ") $ map pretty es)
 prettyBlk (Prim Drop [e, r] _) =
@@ -158,6 +180,7 @@ prettyAtom (Var v _) = pretty v
 prettyAtom (Lit l _) = pretty l
 prettyAtom (Data d _) = pretty d
 prettyAtom (Prim Break _ _) = "break"
+prettyAtom (Prim (CQuote c) _ _) = "$$" <> pretty c <> "$$"
 prettyAtom e = parens $ pretty e
 
 
