@@ -18,17 +18,22 @@ import IR.Constraint.PrettyPrint                (printConstraint
 
 
 typecheckProgram
-  :: I.Program Can.Annotations -> Compiler.Pass (I.Program Can.Type, Doc ann)
-typecheckProgram pAnn = case unsafeTypecheckProgram pAnn of
+  :: I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type, Maybe(Doc ann))
+typecheckProgram pAnn print = case unsafeTypecheckProgram pAnn print of
   Left  e     -> Compiler.throwError e
   Right pType -> return pType
 
 unsafeTypecheckProgram
-  :: I.Program Can.Annotations -> Either Compiler.Error (I.Program Can.Type, Doc ann)
-unsafeTypecheckProgram pAnn = runTC (mkTCState pAnn) $ do
+  :: I.Program Can.Annotations -> Bool -> Either Compiler.Error (I.Program Can.Type, Maybe(Doc ann))
+unsafeTypecheckProgram pAnn print = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
-  c <- printConstraint constraint
+  doc <- if print 
+         then do
+            c <- printConstraint constraint
+            return $ Just c
+          else
+            return Nothing
+      
   Solve.run constraint
   program <- Elaborate.run pVar
-  -- c <- printConstraint constraint
-  return (program, c)
+  return (program, doc)
