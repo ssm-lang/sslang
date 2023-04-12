@@ -24,30 +24,30 @@ puti_ putc x =
 // tests the pattern match of 3-tuple
 printl6_ puti putc p =
   match p
-   (a,b,apricot,d,e,f) =  puti a
-                          putc 32
-                          puti b
-                          putc 32
-                          puti apricot
-                          putc 32
-                          puti d
-                          putc 32
-                          puti e
-                          putc 32
-                          puti f
+   (a,b,r,d,e,f) =  puti a
+                    putc 32
+                    puti b
+                    putc 32
+                    puti r
+                    putc 32
+                    puti d
+                    putc 32
+                    puti e
+                    putc 32
+                    puti f
 
 // tests the pattern match of 3-tuple
 printl5_ puti putc p =
   match p
-   (a,b,raisin,d,e) = puti a
-                      putc 32
-                      puti b
-                      putc 32
-                      puti raisin
-                      putc 32
-                      puti d
-                      putc 32
-                      puti e
+   (a,b,r,d,e) = puti a
+                 putc 32
+                 puti b
+                 putc 32
+                 puti r
+                 putc 32
+                 puti d
+                 putc 32
+                 puti e
                  
 main cin cout = 
     let putc c = after 1, cout <- c

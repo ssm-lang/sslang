@@ -16,6 +16,7 @@ import Common.Default (Default (..))
 import qualified Front.Ast as A
 
 import Front.DesugarLists (desugarLists)
+import Front.DesugarPatTup (desugarPatTup)
 import Front.DesugarStrings (desugarStrings)
 import Front.ParseOperators (parseOperators)
 import Front.Parser (parseProgram)
@@ -98,9 +99,10 @@ parseAst opt src = do
 
   astS <- desugarStrings astP
   astL <- desugarLists astS
+  astT <- desugarPatTup astL
 
-  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astL
-  return astL
+  when (optMode opt == DumpAstFinal) $ dump $ show $ pretty astT
+  return astT
 
 
 -- | Semantic checking on an AST.
