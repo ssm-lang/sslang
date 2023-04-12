@@ -100,12 +100,12 @@ topDef                                --> TopDef
 
 -- | Import Definition
 defImport
-: 'import' importPath                 { Import { importFile = (ImportSymbol $2)
+: 'import' '{' importPath '}'               { Import { importFile = (ImportSymbol $3)
                                                 , elementList = [] }}
-  | 'import' importPath 'as' id       { Import { importFile = (ImportAs $2 $4)
+  | 'import' '{' importPath 'as' id '}'      { Import { importFile = (ImportAs $3 $5)
                                                 , elementList = [] }}
-  | 'import' importPath 'with' '{' elementItems '}' { Import { importFile = (ImportSymbol $2)
-                                                  , elementList = $5 }}
+  | 'import' '{' importPath 'with' '{' elementItems '}' '}' { Import { importFile = (ImportSymbol $3)
+                                                  , elementList = $6 }}
 
 importPath
 :   id                             { [$1] }

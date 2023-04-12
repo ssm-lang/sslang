@@ -132,7 +132,7 @@ tokens :-
     let                 { layout    TLet    TDBar }
     match               { layoutNL  TMatch  TBar }
     loop                { layout    TLoop   TSemicolon }
-    import              { layoutNL  TImport TSemicolon }
+    import              { layout  TImport TSemicolon }
     \=                  { layout    TEq     TSemicolon }
     \<\-                { layout    TLarrow TSemicolon }
     \=\>                { layout    TDRarrow TSemicolon}
@@ -140,6 +140,7 @@ tokens :-
     wait                { layout    TWait   TDBar }
     fun                 { layoutNL  TFun    TSemicolon }
     type                { layoutNL  TType   TBar }
+    with                { layout TWith TSemicolon }
 
     -- Keywords that just do as they be.
     extern              { keyword TExtern }
@@ -156,7 +157,6 @@ tokens :-
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
     as                  { keyword TAs }
-    with                { keyword TWith }
    
 
     -- Reserved keywords.
