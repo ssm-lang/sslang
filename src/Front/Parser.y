@@ -101,23 +101,23 @@ topDef                                --> TopDef
 -- | Import Definition
 defImport
 : 'import' importPath                 { Import { importFile = (ImportSymbol $2)
-                                                , importList = [] }}
+                                                , elementList = [] }}
   | 'import' importPath 'as' id       { Import { importFile = (ImportAs $2 $4)
-                                                , importList = [] }}
-  | 'import' importPath 'with' '{' importItems '}' { Import { importFile = (ImportSymbol $2)
-                                                  , importList = $5 }}
+                                                , elementList = [] }}
+  | 'import' importPath 'with' '{' elementItems '}' { Import { importFile = (ImportSymbol $2)
+                                                  , elementList = $5 }}
 
 importPath
 :   id                             { [$1] }
   | id '.' importPath                      { $1 : $3 }
 
-importItem
+elementItem
 :   id                             { ElementSymbol $1 }
   | id 'as' id                     { ElementAs $1 $3 }
 
-importItems
-: importItem              { [$1] }
-  | importItem ',' importItems                   { $1 : $3 }
+elementItems
+: elementItem              { [$1] }
+  | elementItem ',' elementItems                   { $1 : $3 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef

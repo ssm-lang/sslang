@@ -26,7 +26,7 @@ data TopDef
 
 data Import = Import
   { importFile :: ImportItem
-  , importList :: [ImportElement]
+  , elementList :: [ImportElement]
   }
   deriving (Eq, Show, Typeable, Data)
 
