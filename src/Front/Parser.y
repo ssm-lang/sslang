@@ -111,9 +111,13 @@ importPath
 :   id                             { [$1] }
   | id '.' importPath                      { $1 : $3 }
 
+importItem
+:   id                             { ElementSymbol $1 }
+  | id 'as' id                     { ElementAs $1 $3 }
+
 importItems
-: id              { [$1] }
-  | id ',' importItems                   { $1 : $3 }
+: importItem              { [$1] }
+  | importItem ',' importItems                   { $1 : $3 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef

@@ -26,13 +26,18 @@ data TopDef
 
 data Import = Import
   { importFile :: ImportItem
-  , importList :: [Identifier]
+  , importList :: [ImportElement]
   }
   deriving (Eq, Show, Typeable, Data)
 
 data ImportItem
   = ImportAs [Identifier] Identifier
   | ImportSymbol [Identifier]
+ deriving (Eq, Show, Typeable, Data)
+
+data ImportElement
+  = ElementAs Identifier Identifier
+  | ElementSymbol Identifier
  deriving (Eq, Show, Typeable, Data)
 
 -- | Associate a type with a symbol

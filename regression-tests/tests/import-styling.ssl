@@ -4,7 +4,7 @@ import Foo.Bar.Baz as Baz
 import Foo.Bar.Baz with { foo, bar }
 import Foo.Bar.Baz with
   foo,
-  bar
+  bar as baz
 
 main cin cout =
   after 1, cout <- 10
