@@ -151,10 +151,13 @@ tokens :-
     \;                  { keyword TSemicolon }
     \:                  { keyword TColon }
     \,                  { keyword TComma }
+    \.                  { keyword TDot }
     \_                  { keyword TUnderscore }
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
     as                  { keyword TAs }
+    with                { keyword TWith }
+   
 
     -- Reserved keywords.
     do                  { reserved TDo }

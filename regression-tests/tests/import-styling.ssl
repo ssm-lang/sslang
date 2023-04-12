@@ -1,6 +1,10 @@
-import "import-puts-example.ssl" {puts, foo, bar}
-
-import "sample.ssl" {one as x, two as y, three as z}
+import Foo
+import Foo.Bar.Baz
+import Foo.Bar.Baz as Baz
+import Foo.Bar.Baz with { foo, bar }
+import Foo.Bar.Baz with
+  foo,
+  bar
 
 main cin cout =
   after 1, cout <- 10

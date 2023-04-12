@@ -52,6 +52,7 @@ data TokenType
   | TSemicolon
   | TBar
   | TComma
+  | TDot
   | TUnderscore
   | TAt
   | TAmpersand
@@ -62,6 +63,7 @@ data TokenType
   | TLbracket
   | TRbracket
   | TAs
+  | TWith
   | TImport
   | TInteger Integer
   | TString String
@@ -131,6 +133,7 @@ instance Pretty TokenType where
   pretty TRbracket = pretty "]"
   pretty TImport = pretty "import"
   pretty TAs = pretty "as"
+  pretty TWith = pretty "with"
   pretty (TInteger i) = pretty $ show i
   pretty (TString s) = pretty $ "\"" <> s <> "\""
   pretty (TId i) = pretty i

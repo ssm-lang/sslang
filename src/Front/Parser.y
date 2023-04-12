@@ -42,6 +42,7 @@ import Data.Bifunctor (first)
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
   'import'  { Token (_, TImport) }
+  'with'    { Token (_, TWith) }
   'as'      { Token (_, TAs)  }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
@@ -52,6 +53,7 @@ import Data.Bifunctor (first)
   ':'       { Token (_, TColon) }
   ';'       { Token (_, TSemicolon) }
   ','       { Token (_, TComma) }
+  '.'       { Token (_, TDot) }
   '_'       { Token (_, TUnderscore) }
   '@'       { Token (_, TAt) }
   '&'       { Token (_, TAmpersand) }
@@ -98,18 +100,20 @@ topDef                                --> TopDef
 
 -- | Import Definition
 defImport
-: 'import' string '{' importItems '}'      { Import { importFile = $2
-                                                      , importList = $4
-                                                    }
-                                           }
+: 'import' importPath                 { Import { importFile = (ImportSymbol $2)
+                                                , importList = [] }}
+  | 'import' importPath 'as' id       { Import { importFile = (ImportAs $2 $4)
+                                                , importList = [] }}
+  | 'import' importPath 'with' '{' importItems '}' { Import { importFile = (ImportSymbol $2)
+                                                  , importList = $5 }}
 
-importItem
-:   id                             { OneItem $1 }
-  | id 'as' id                      { TwoItem $1 $3 }
+importPath
+:   id                             { [$1] }
+  | id '.' importPath                      { $1 : $3 }
 
 importItems
-: importItem              {[$1]}
-  | importItem ',' importItems                   { $1 : $3 }
+: id              { [$1] }
+  | id ',' importItems                   { $1 : $3 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef

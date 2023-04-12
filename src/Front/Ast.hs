@@ -25,14 +25,14 @@ data TopDef
   deriving (Eq, Show, Typeable, Data)
 
 data Import = Import
-  { importFile :: String
-  , importList :: [ImportItem]
+  { importFile :: ImportItem
+  , importList :: [Identifier]
   }
   deriving (Eq, Show, Typeable, Data)
 
 data ImportItem
-  = TwoItem Identifier Identifier
-  | OneItem Identifier
+  = ImportAs [Identifier] Identifier
+  | ImportSymbol [Identifier]
  deriving (Eq, Show, Typeable, Data)
 
 -- | Associate a type with a symbol
