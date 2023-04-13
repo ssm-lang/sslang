@@ -6,7 +6,7 @@ import Foo.Bar.Baz as Baz
 
 import Foo.Bar.Baz with doo, bar
 
-import Foo.Bar.Baz with {
+import Foo.Bar.Baz with { 
                     foo,
                     bar as baz
 }
