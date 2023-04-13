@@ -213,6 +213,19 @@ instance Pretty TopDef where
   pretty (TopType   t ) = pretty t
   pretty (TopCDefs  ds) = pretty "$$" <> pretty ds <> pretty "$$"
   pretty (TopExtern x ) = pretty x
+  pretty (TopImport i) = pretty i
+
+instance Pretty Import where
+    pretty (Import {importFile = file, elementList = els} ) = 
+        pretty "import" <+> pretty file <+> pretty "with" <+> pretty els
+
+instance Pretty ImportItem where
+    pretty (ImportAs is i) = hsep (map pretty is) <+> pretty "as" <+> pretty i
+    pretty (ImportSymbol is) = hsep (map pretty is)
+
+instance Pretty ImportElement where
+    pretty (ElementAs s a) = pretty s <+> pretty "as" <+> pretty a
+    pretty (ElementSymbol s) = pretty s
 
 instance Pretty ExternDecl where
   pretty (ExternDecl i t) = pretty "extern" <+> pretty i <+> colon <+> pretty t
