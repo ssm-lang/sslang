@@ -134,6 +134,7 @@ instance Pretty TokenType where
   pretty TImport = pretty "import"
   pretty TAs = pretty "as"
   pretty TWith = pretty "with"
+  pretty TDot = pretty "."
   pretty (TInteger i) = pretty $ show i
   pretty (TString s) = pretty $ "\"" <> s <> "\""
   pretty (TId i) = pretty i
