@@ -43,7 +43,7 @@ $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z_] [a-zA-Z0-9_']*
 
-$symbolBase         = [\!\#\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolBase         = [\!\#\%\&\+\-\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]
 $symbolAfterSlash   = [$symbolBase\_\:\"\']
 $symbolAny          = [$symbolBase\_\:\"\'\*]

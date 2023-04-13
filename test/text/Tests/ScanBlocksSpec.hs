@@ -12,7 +12,7 @@ spec = do
   it "supports line continuations" $ do
     let input = [here|
           some long line
-              is continued with more indentation
+              is continued withe more indentation
           but this is not
         |]
         output =
@@ -21,7 +21,7 @@ spec = do
           , TId "line"
           , TId "is"
           , TId "continued"
-          , TId "with"
+          , TId "withe"
           , TId "more"
           , TId "indentation"
           , TDBar
