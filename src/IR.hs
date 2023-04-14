@@ -13,6 +13,7 @@ import Control.Monad (
   (>=>),
  )
 import IR.ClassInstantiation (instProgram)
+import IR.Constraint.Typechecking (typecheckProgram)
 import IR.DConToFunc (dConToFunc)
 import IR.DesugarPattern (desugarPattern)
 import IR.ExternToCall (externToCall)
@@ -22,9 +23,8 @@ import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
-import IR.Constraint.Typechecking ( typecheckProgram )
-import IR.Types.Type ( fromAnnotations )
 import IR.Simplify (simplifyProgram)
+import IR.Types.Type (fromAnnotations)
 
 import System.Console.GetOpt (
   ArgDescr (..),
@@ -76,7 +76,7 @@ options =
   , Option
       ""
       ["dump-ir-constraints"]
-      (NoArg $ setMode DumpIRConstraints  )
+      (NoArg $ setMode DumpIRConstraints)
       "Print the constraint IR used by the constraint solver type inference"
   , Option
       ""
