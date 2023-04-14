@@ -59,7 +59,7 @@ spec = do
                 adder = foo_adder_anon0 w
             adder y
         |]
-    lifted `shouldPassAs` unlifted
+    unlifted `shouldPassAs` lifted
 
   it "lifts lambdas with free variables in let bindings" $ do
     pendingWith "typecheck reorders top-level defs"
@@ -87,7 +87,7 @@ spec = do
                 dec = foo_dec_anon1 w
             adder y + dec y
         |]
-    lifted `shouldPassAs` unlifted
+    unlifted `shouldPassAs` lifted
 
   it "lifts nested lambdas with free variables" $ do
     let unlifted = parseLift [here|
@@ -109,4 +109,4 @@ spec = do
                 g = foo_g_anon0 x z
             g y
         |]
-    lifted `shouldPassAs` unlifted
+    unlifted `shouldPassAs` lifted
