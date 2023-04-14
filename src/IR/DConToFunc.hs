@@ -214,7 +214,7 @@ createFunc tcon (dconid, I.VariantNamed params) = Just (func_name, lambda)
   lambda    = I.foldLambda (uncurry I.BindVar <$> params) body
   body      = I.foldApp dcon args
   dcon      = I.Data (fromId dconid) t
-  args      = reverse $ zip (uncurry I.Var <$> params) ts
+  args      = zip (uncurry I.Var <$> params) ts
   tconTyp   = I.TCon tcon []
   (t : ts)  = reverse $ foldr1 I.Arrow . reverse <$> tail
     (inits $ reverse ((snd <$> params) ++ [tconTyp]))
