@@ -327,7 +327,7 @@ unfoldApp e = (e, [])
 'foldApp' is the inverse of 'unfoldApp'.
 -}
 foldApp :: Expr t -> [(Expr t, t)] -> Expr t
-foldApp = foldr $ \(a, t) f -> App f a t
+foldApp = foldl $ \f (a, t) -> App f a t
 
 -- | Collect a curried list of function arguments from a nesting of lambdas.
 unfoldLambda :: Expr t -> ([Binder t], Expr t)
