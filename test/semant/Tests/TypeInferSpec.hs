@@ -302,7 +302,7 @@ spec = do
       a2a `shouldPassAs` b2b
 
   describe "checks kindness of type constructors" $ do
-    it "rejects partially-applied, user-defined type constructos" $ do
+    it "rejects partially-applied, user-defined type constructors 1" $ do
       typeErrors [here|
         type MyEither a b
           MyLeft a
@@ -311,6 +311,7 @@ spec = do
         l : MyEither () = MyLeft ()
       |]
 
+    it "rejects partially-applied, user-defined type constructors 2" $ do
       typeErrors [here|
         type MyEither a b
           MyLeft a
@@ -319,6 +320,7 @@ spec = do
         l : MyEither () = MyLeft
       |]
 
+    it "rejects partially-applied, user-defined type constructors 3" $ do
       typeErrors [here|
         type MyEither a b
           MyLeft a
@@ -327,6 +329,7 @@ spec = do
         l : MyEither = MyLeft
       |]
 
+    it "rejects partially-applied, user-defined type constructors 4" $ do
       typeErrors [here|
         type MyEither a b
           MyLeft a
