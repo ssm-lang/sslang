@@ -19,14 +19,14 @@
 </span><span id="line-17"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="cArity"><span class="annot"><span class="annottext">CInfo -&gt; Int
 </span><a href="IR.Pattern.Common.html#cArity"><span class="hs-identifier hs-var hs-var">cArity</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-18"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679566506"><span id="local-6989586621679566508"><span class="annot"><span class="annottext">CInfo -&gt; CInfo -&gt; Bool
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679575357"><span id="local-6989586621679575359"><span class="annot"><span class="annottext">CInfo -&gt; CInfo -&gt; Bool
 (CInfo -&gt; CInfo -&gt; Bool) -&gt; (CInfo -&gt; CInfo -&gt; Bool) -&gt; Eq CInfo
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: CInfo -&gt; CInfo -&gt; Bool
 $c/= :: CInfo -&gt; CInfo -&gt; Bool
 == :: CInfo -&gt; CInfo -&gt; Bool
 $c== :: CInfo -&gt; CInfo -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679566499"><span id="local-6989586621679566501"><span id="local-6989586621679566503"><span class="annot"><span class="annottext">Int -&gt; CInfo -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679575350"><span id="local-6989586621679575352"><span id="local-6989586621679575354"><span class="annot"><span class="annottext">Int -&gt; CInfo -&gt; ShowS
 [CInfo] -&gt; ShowS
 CInfo -&gt; String
 (Int -&gt; CInfo -&gt; ShowS)
@@ -48,14 +48,14 @@ $cshowsPrec :: Int -&gt; CInfo -&gt; ShowS
 </span><span id="line-24"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="tCSet"><span class="annot"><span class="annottext">TInfo -&gt; Set Identifier
 </span><a href="IR.Pattern.Common.html#tCSet"><span class="hs-identifier hs-var hs-var">tCSet</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">S.Set</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
 </span><span id="line-25"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679566491"><span id="local-6989586621679566493"><span class="annot"><span class="annottext">TInfo -&gt; TInfo -&gt; Bool
+</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679575342"><span id="local-6989586621679575344"><span class="annot"><span class="annottext">TInfo -&gt; TInfo -&gt; Bool
 (TInfo -&gt; TInfo -&gt; Bool) -&gt; (TInfo -&gt; TInfo -&gt; Bool) -&gt; Eq TInfo
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: TInfo -&gt; TInfo -&gt; Bool
 $c/= :: TInfo -&gt; TInfo -&gt; Bool
 == :: TInfo -&gt; TInfo -&gt; Bool
 $c== :: TInfo -&gt; TInfo -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679566485"><span id="local-6989586621679566487"><span id="local-6989586621679566489"><span class="annot"><span class="annottext">Int -&gt; TInfo -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679575336"><span id="local-6989586621679575338"><span id="local-6989586621679575340"><span class="annot"><span class="annottext">Int -&gt; TInfo -&gt; ShowS
 [TInfo] -&gt; ShowS
 TInfo -&gt; String
 (Int -&gt; TInfo -&gt; ShowS)
@@ -81,46 +81,46 @@ forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef) -&gt; Map Identifier TInfo -&gt; Map Identifier TInfo
-</span><a href="#local-6989586621679566482"><span class="hs-identifier hs-var">tAcc</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier TInfo
+</span><a href="#local-6989586621679575333"><span class="hs-identifier hs-var">tAcc</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier TInfo
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">M.empty</span></span><span>
 </span><span id="line-31"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-32"></span><span>  </span><span id="local-6989586621679566482"><span class="annot"><span class="annottext">tAcc :: (TConId, TypeDef) -&gt; Map Identifier TInfo -&gt; Map Identifier TInfo
-</span><a href="#local-6989586621679566482"><span class="hs-identifier hs-var hs-var">tAcc</span></a></span></span><span> </span><span id="local-6989586621679566480"><span class="annot"><span class="annottext">(TConId, TypeDef)
-</span><a href="#local-6989586621679566480"><span class="hs-identifier hs-var">td'</span></a></span></span><span> </span><span id="local-6989586621679566479"><span class="annot"><span class="annottext">Map Identifier TInfo
-</span><a href="#local-6989586621679566479"><span class="hs-identifier hs-var">tmap'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-33"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span id="local-6989586621679566477"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566477"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679566476"><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679566476"><span class="hs-identifier hs-var">td</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef)
-</span><a href="#local-6989586621679566480"><span class="hs-identifier hs-var">td'</span></a></span><span>
-</span><span id="line-34"></span><span>        </span><span id="local-6989586621679566475"><span class="annot"><span class="annottext">clist :: [Identifier]
-</span><a href="#local-6989586621679566475"><span class="hs-identifier hs-var hs-var">clist</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((DConId, TypeVariant) -&gt; Identifier)
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679575333"><span class="annot"><span class="annottext">tAcc :: (TConId, TypeDef) -&gt; Map Identifier TInfo -&gt; Map Identifier TInfo
+</span><a href="#local-6989586621679575333"><span class="hs-identifier hs-var hs-var">tAcc</span></a></span></span><span> </span><span id="local-6989586621679575331"><span class="annot"><span class="annottext">(TConId, TypeDef)
+</span><a href="#local-6989586621679575331"><span class="hs-identifier hs-var">td'</span></a></span></span><span> </span><span id="local-6989586621679575330"><span class="annot"><span class="annottext">Map Identifier TInfo
+</span><a href="#local-6989586621679575330"><span class="hs-identifier hs-var">tmap'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span id="local-6989586621679575328"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679575328"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679575327"><span class="annot"><span class="annottext">TypeDef
+</span><a href="#local-6989586621679575327"><span class="hs-identifier hs-var">td</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef)
+</span><a href="#local-6989586621679575331"><span class="hs-identifier hs-var">td'</span></a></span><span>
+</span><span id="line-34"></span><span>        </span><span id="local-6989586621679575326"><span class="annot"><span class="annottext">clist :: [Identifier]
+</span><a href="#local-6989586621679575326"><span class="hs-identifier hs-var hs-var">clist</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((DConId, TypeVariant) -&gt; Identifier)
 -&gt; [(DConId, TypeVariant)] -&gt; [Identifier]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
-</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-type">DConId</span></a></span><span> </span><span id="local-6989586621679566473"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566473"><span class="hs-identifier hs-var">cid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypeVariant
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-type">DConId</span></a></span><span> </span><span id="local-6989586621679575324"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679575324"><span class="hs-identifier hs-var">cid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypeVariant
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566473"><span class="hs-identifier hs-var">cid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(DConId, TypeVariant)] -&gt; [Identifier])
+</span><a href="#local-6989586621679575324"><span class="hs-identifier hs-var">cid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(DConId, TypeVariant)] -&gt; [Identifier])
 -&gt; [(DConId, TypeVariant)] -&gt; [Identifier]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TypeDef -&gt; [(DConId, TypeVariant)]
 </span><a href="IR.IR.html#variants"><span class="hs-identifier hs-var hs-var">I.variants</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679566476"><span class="hs-identifier hs-var">td</span></a></span><span>
-</span><span id="line-35"></span><span>        </span><span id="local-6989586621679566471"><span class="annot"><span class="annottext">cset :: Set Identifier
-</span><a href="#local-6989586621679566471"><span class="hs-identifier hs-var hs-var">cset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Identifier] -&gt; Set Identifier
+</span><a href="#local-6989586621679575327"><span class="hs-identifier hs-var">td</span></a></span><span>
+</span><span id="line-35"></span><span>        </span><span id="local-6989586621679575322"><span class="annot"><span class="annottext">cset :: Set Identifier
+</span><a href="#local-6989586621679575322"><span class="hs-identifier hs-var hs-var">cset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Identifier] -&gt; Set Identifier
 forall a. Ord a =&gt; [a] -&gt; Set a
 </span><span class="hs-identifier hs-var">S.fromList</span></span><span> </span><span class="annot"><span class="annottext">[Identifier]
-</span><a href="#local-6989586621679566475"><span class="hs-identifier hs-var">clist</span></a></span><span>
+</span><a href="#local-6989586621679575326"><span class="hs-identifier hs-var">clist</span></a></span><span>
 </span><span id="line-36"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; TInfo -&gt; Map Identifier TInfo -&gt; Map Identifier TInfo
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">M.insert</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566477"><span class="hs-identifier hs-var">typ</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TInfo :: Identifier -&gt; Set Identifier -&gt; TInfo
+</span><a href="#local-6989586621679575328"><span class="hs-identifier hs-var">typ</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TInfo :: Identifier -&gt; Set Identifier -&gt; TInfo
 </span><a href="IR.Pattern.Common.html#TInfo"><span class="hs-identifier hs-type">TInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">tName :: Identifier
 </span><a href="IR.Pattern.Common.html#tName"><span class="hs-identifier hs-var">tName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566477"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tCSet :: Set Identifier
+</span><a href="#local-6989586621679575328"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tCSet :: Set Identifier
 </span><a href="IR.Pattern.Common.html#tCSet"><span class="hs-identifier hs-var">tCSet</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Identifier
-</span><a href="#local-6989586621679566471"><span class="hs-identifier hs-var">cset</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Identifier TInfo
-</span><a href="#local-6989586621679566479"><span class="hs-identifier hs-var">tmap'</span></a></span><span>
+</span><a href="#local-6989586621679575322"><span class="hs-identifier hs-var">cset</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Identifier TInfo
+</span><a href="#local-6989586621679575330"><span class="hs-identifier hs-var">tmap'</span></a></span><span>
 </span><span id="line-37"></span><span>
 </span><span id="line-38"></span><span>
 </span><span id="line-39"></span><span class="annot"><a href="IR.Pattern.Common.html#buildConsMap"><span class="hs-identifier hs-type">buildConsMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#TypeDef"><span class="hs-identifier hs-type">I.TypeDef</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="IR.Pattern.Common.html#CInfo"><span class="hs-identifier hs-type">CInfo</span></a></span><span>
@@ -133,57 +133,57 @@ forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef) -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
-</span><a href="#local-6989586621679566467"><span class="hs-identifier hs-var">cAcc</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
+</span><a href="#local-6989586621679575318"><span class="hs-identifier hs-var">cAcc</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">M.empty</span></span><span>
 </span><span id="line-41"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-42"></span><span>  </span><span id="local-6989586621679566467"><span class="annot"><span class="annottext">cAcc :: (TConId, TypeDef) -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
-</span><a href="#local-6989586621679566467"><span class="hs-identifier hs-var hs-var">cAcc</span></a></span></span><span> </span><span id="local-6989586621679566466"><span class="annot"><span class="annottext">(TConId, TypeDef)
-</span><a href="#local-6989586621679566466"><span class="hs-identifier hs-var">td'</span></a></span></span><span> </span><span id="local-6989586621679566465"><span class="annot"><span class="annottext">Map Identifier CInfo
-</span><a href="#local-6989586621679566465"><span class="hs-identifier hs-var">cmap'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-43"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span id="local-6989586621679566464"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566464"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679566463"><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679566463"><span class="hs-identifier hs-var">td</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef)
-</span><a href="#local-6989586621679566466"><span class="hs-identifier hs-var">td'</span></a></span><span>
-</span><span id="line-44"></span><span>        </span><span id="local-6989586621679566462"><span class="annot"><span class="annottext">clist :: [(DConId, TypeVariant)]
-</span><a href="#local-6989586621679566462"><span class="hs-identifier hs-var hs-var">clist</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef -&gt; [(DConId, TypeVariant)]
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621679575318"><span class="annot"><span class="annottext">cAcc :: (TConId, TypeDef) -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
+</span><a href="#local-6989586621679575318"><span class="hs-identifier hs-var hs-var">cAcc</span></a></span></span><span> </span><span id="local-6989586621679575317"><span class="annot"><span class="annottext">(TConId, TypeDef)
+</span><a href="#local-6989586621679575317"><span class="hs-identifier hs-var">td'</span></a></span></span><span> </span><span id="local-6989586621679575316"><span class="annot"><span class="annottext">Map Identifier CInfo
+</span><a href="#local-6989586621679575316"><span class="hs-identifier hs-var">cmap'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">TConId</span></a></span><span> </span><span id="local-6989586621679575315"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679575315"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679575314"><span class="annot"><span class="annottext">TypeDef
+</span><a href="#local-6989586621679575314"><span class="hs-identifier hs-var">td</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef)
+</span><a href="#local-6989586621679575317"><span class="hs-identifier hs-var">td'</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span id="local-6989586621679575313"><span class="annot"><span class="annottext">clist :: [(DConId, TypeVariant)]
+</span><a href="#local-6989586621679575313"><span class="hs-identifier hs-var hs-var">clist</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeDef -&gt; [(DConId, TypeVariant)]
 </span><a href="IR.IR.html#variants"><span class="hs-identifier hs-var hs-var">I.variants</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDef
-</span><a href="#local-6989586621679566463"><span class="hs-identifier hs-var">td</span></a></span><span>
-</span><span id="line-45"></span><span>        </span><span id="local-6989586621679566461"><span class="annot"><span class="annottext">cAcc' :: (DConId, TypeVariant)
+</span><a href="#local-6989586621679575314"><span class="hs-identifier hs-var">td</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621679575312"><span class="annot"><span class="annottext">cAcc' :: (DConId, TypeVariant)
 -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
-</span><a href="#local-6989586621679566461"><span class="hs-identifier hs-var hs-var">cAcc'</span></a></span></span><span> </span><span id="local-6989586621679566460"><span class="annot"><span class="annottext">(DConId, TypeVariant)
-</span><a href="#local-6989586621679566460"><span class="hs-identifier hs-var">tvp</span></a></span></span><span> </span><span id="local-6989586621679566459"><span class="annot"><span class="annottext">Map Identifier CInfo
-</span><a href="#local-6989586621679566459"><span class="hs-identifier hs-var">cmap''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-46"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-type">DConId</span></a></span><span> </span><span id="local-6989586621679566458"><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566458"><span class="hs-identifier hs-var">cid</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679566457"><span class="annot"><span class="annottext">TypeVariant
-</span><a href="#local-6989586621679566457"><span class="hs-identifier hs-var">tvars</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(DConId, TypeVariant)
-</span><a href="#local-6989586621679566460"><span class="hs-identifier hs-var">tvp</span></a></span><span>
-</span><span id="line-47"></span><span>              </span><span id="local-6989586621679566456"><span class="annot"><span class="annottext">arity :: Int
-</span><a href="#local-6989586621679566456"><span class="hs-identifier hs-var hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TypeVariant
-</span><a href="#local-6989586621679566457"><span class="hs-identifier hs-var">tvars</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-48"></span><span>                </span><span class="annot"><a href="IR.IR.html#VariantUnnamed"><span class="hs-identifier hs-type">I.VariantUnnamed</span></a></span><span> </span><span id="local-6989586621679566454"><span class="annot"><a href="#local-6989586621679566454"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int
+</span><a href="#local-6989586621679575312"><span class="hs-identifier hs-var hs-var">cAcc'</span></a></span></span><span> </span><span id="local-6989586621679575311"><span class="annot"><span class="annottext">(DConId, TypeVariant)
+</span><a href="#local-6989586621679575311"><span class="hs-identifier hs-var">tvp</span></a></span></span><span> </span><span id="local-6989586621679575310"><span class="annot"><span class="annottext">Map Identifier CInfo
+</span><a href="#local-6989586621679575310"><span class="hs-identifier hs-var">cmap''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-type">DConId</span></a></span><span> </span><span id="local-6989586621679575309"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679575309"><span class="hs-identifier hs-var">cid</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679575308"><span class="annot"><span class="annottext">TypeVariant
+</span><a href="#local-6989586621679575308"><span class="hs-identifier hs-var">tvars</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(DConId, TypeVariant)
+</span><a href="#local-6989586621679575311"><span class="hs-identifier hs-var">tvp</span></a></span><span>
+</span><span id="line-47"></span><span>              </span><span id="local-6989586621679575307"><span class="annot"><span class="annottext">arity :: Int
+</span><a href="#local-6989586621679575307"><span class="hs-identifier hs-var hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TypeVariant
+</span><a href="#local-6989586621679575308"><span class="hs-identifier hs-var">tvars</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-48"></span><span>                </span><span class="annot"><a href="IR.IR.html#VariantUnnamed"><span class="hs-identifier hs-type">I.VariantUnnamed</span></a></span><span> </span><span id="local-6989586621679575305"><span class="annot"><a href="#local-6989586621679575305"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679566454"><span class="hs-identifier hs-var">tl</span></a></span><span>
-</span><span id="line-49"></span><span>                </span><span class="annot"><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-type">I.VariantNamed</span></a></span><span> </span><span id="local-6989586621679566451"><span class="annot"><a href="#local-6989586621679566451"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)] -&gt; Int
+</span><a href="#local-6989586621679575305"><span class="hs-identifier hs-var">tl</span></a></span><span>
+</span><span id="line-49"></span><span>                </span><span class="annot"><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-type">I.VariantNamed</span></a></span><span> </span><span id="local-6989586621679575302"><span class="annot"><a href="#local-6989586621679575302"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679566451"><span class="hs-identifier hs-var">tl</span></a></span><span>
-</span><span id="line-50"></span><span>              </span><span id="local-6989586621679566450"><span class="annot"><span class="annottext">c :: CInfo
-</span><a href="#local-6989586621679566450"><span class="hs-identifier hs-var hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CInfo :: Identifier -&gt; Identifier -&gt; Int -&gt; CInfo
+</span><a href="#local-6989586621679575302"><span class="hs-identifier hs-var">tl</span></a></span><span>
+</span><span id="line-50"></span><span>              </span><span id="local-6989586621679575301"><span class="annot"><span class="annottext">c :: CInfo
+</span><a href="#local-6989586621679575301"><span class="hs-identifier hs-var hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CInfo :: Identifier -&gt; Identifier -&gt; Int -&gt; CInfo
 </span><a href="IR.Pattern.Common.html#CInfo"><span class="hs-identifier hs-type">CInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">cName :: Identifier
 </span><a href="IR.Pattern.Common.html#cName"><span class="hs-identifier hs-var">cName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566458"><span class="hs-identifier hs-var">cid</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">cType :: Identifier
+</span><a href="#local-6989586621679575309"><span class="hs-identifier hs-var">cid</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">cType :: Identifier
 </span><a href="IR.Pattern.Common.html#cType"><span class="hs-identifier hs-var">cType</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566464"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">cArity :: Int
+</span><a href="#local-6989586621679575315"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">cArity :: Int
 </span><a href="IR.Pattern.Common.html#cArity"><span class="hs-identifier hs-var">cArity</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679566456"><span class="hs-identifier hs-var">arity</span></a></span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679575307"><span class="hs-identifier hs-var">arity</span></a></span><span class="hs-special">}</span><span>
 </span><span id="line-51"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; CInfo -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">M.insert</span></span><span> </span><span class="annot"><span class="annottext">Identifier
-</span><a href="#local-6989586621679566458"><span class="hs-identifier hs-var">cid</span></a></span><span> </span><span class="annot"><span class="annottext">CInfo
-</span><a href="#local-6989586621679566450"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
-</span><a href="#local-6989586621679566459"><span class="hs-identifier hs-var">cmap''</span></a></span><span>
+</span><a href="#local-6989586621679575309"><span class="hs-identifier hs-var">cid</span></a></span><span> </span><span class="annot"><span class="annottext">CInfo
+</span><a href="#local-6989586621679575301"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
+</span><a href="#local-6989586621679575310"><span class="hs-identifier hs-var">cmap''</span></a></span><span>
 </span><span id="line-52"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">((DConId, TypeVariant)
  -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo)
 -&gt; Map Identifier CInfo
@@ -194,7 +194,7 @@ Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(DConId, TypeVariant)
 -&gt; Map Identifier CInfo -&gt; Map Identifier CInfo
-</span><a href="#local-6989586621679566461"><span class="hs-identifier hs-var">cAcc'</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
-</span><a href="#local-6989586621679566465"><span class="hs-identifier hs-var">cmap'</span></a></span><span> </span><span class="annot"><span class="annottext">[(DConId, TypeVariant)]
-</span><a href="#local-6989586621679566462"><span class="hs-identifier hs-var">clist</span></a></span><span>
+</span><a href="#local-6989586621679575312"><span class="hs-identifier hs-var">cAcc'</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier CInfo
+</span><a href="#local-6989586621679575316"><span class="hs-identifier hs-var">cmap'</span></a></span><span> </span><span class="annot"><span class="annottext">[(DConId, TypeVariant)]
+</span><a href="#local-6989586621679575313"><span class="hs-identifier hs-var">clist</span></a></span><span>
 </span><span id="line-53"></span></pre></body></html>

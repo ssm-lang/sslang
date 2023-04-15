@@ -2297,17 +2297,23 @@ type TC a = StateT TCState (ExceptT Error IO) a
 type DConInfo = (DConId, TConId, [TVarId], [Type])
 type DConMap = Map DConId DConInfo
 data TCState
-TCState :: Int -> Int -> DConMap -> Map TConId Kind -> Map VarId Type -> TCState
-[_freshName] :: TCState -> Int
-[_freshVar] :: TCState -> Int
+TCState :: Int -> DConMap -> Map TConId Kind -> Map VarId Type -> TCState
+[_freshCtr] :: TCState -> Int
 [_dconMap] :: TCState -> DConMap
 [_kindMap] :: TCState -> Map TConId Kind
 [_externMap] :: TCState -> Map VarId Type
 runTC :: TCState -> TC a -> Either Error a
 mkTCState :: Program Annotations -> TCState
 mkDConMap :: Program Annotations -> DConMap
-freshName :: TC TVarId
+
+-- | Generate a fresh identifier based on some prefix.
+freshName :: String -> TC TVarId
+
+-- | Generate a fresh program variable name, e.g., for anonymous binders.
 freshVar :: TC VarId
+
+-- | Generate a fresh type identifier to be associated with annotations.
+freshAnnVar :: TC VarId
 getDConInfo :: DConId -> TC (Maybe DConInfo)
 getKind :: TConId -> TC (Maybe Kind)
 getExtern :: VarId -> TC (Maybe Type)
@@ -2388,6 +2394,7 @@ u8 :: Type
 
 -- | MAKE FLEX VARIABLES
 mkFlexVar :: TC Variable
+mkIRFlexVar :: TC Variable
 mkRigidVar :: TC Variable
 
 -- | TO CANONICAL TYPE
@@ -2400,6 +2407,7 @@ contentToErrorType :: Variable -> Content -> TC Type
 termToErrorType :: FlatType -> TC Type
 instance GHC.Classes.Ord IR.Constraint.Type.Mark
 instance GHC.Classes.Eq IR.Constraint.Type.Mark
+instance GHC.Classes.Eq IR.Constraint.Type.Type
 
 module IR.Constraint.Unify
 
@@ -2435,6 +2443,10 @@ unifyFlex :: Context -> Content -> Content -> Unify ()
 unifyRigid :: Context -> Content -> Content -> Unify ()
 unifyStructure :: Context -> FlatType -> Content -> Content -> Unify ()
 unifyArgs :: Context -> [Variable] -> [Variable] -> (() -> TC r) -> (() -> TC r) -> TC r
+
+module IR.Constraint.PrettyPrint
+printConstraint :: Constraint -> TC (Doc ann)
+data Doc ann
 
 module IR.Constraint.Occurs
 occurs :: Variable -> TC Bool
@@ -2578,12 +2590,12 @@ constrain :: Program (Annotations, Variable) -> TC Constraint
 discardAnnotations :: Program (Annotations, Variable) -> Program Variable
 
 module IR.Constraint.Typechecking
-typecheckProgram :: Program Annotations -> Pass (Program Type)
+typecheckProgram :: Program Annotations -> Bool -> Pass (Program Type, Maybe (Doc ann))
 
 
 -- | Wrapper module around other types-related modules and definitions.
 module IR.Types
-typecheckProgram :: Program Annotations -> Pass (Program Type)
+typecheckProgram :: Program Annotations -> Bool -> Pass (Program Type, Maybe (Doc ann))
 
 
 -- | Lower the representation of a sslang Ast into sslang IR.
@@ -3008,52 +3020,6 @@ instance GHC.Base.Applicative IR.DConToFunc.ArityFn
 instance GHC.Base.Functor IR.DConToFunc.ArityFn
 
 
--- | Intermediate representation (IR) stages of the compiler pipeline.
-module IR
-
--- | Operation modes for the IR compiler stage.
---   
---   By default, <a>Continue</a> completes the pipeline end-to-end.
-data Mode
-Continue :: Mode
-DumpIR :: Mode
-DumpIRAnnotated :: Mode
-DumpIRTyped :: Mode
-DumpIRTypedUgly :: Mode
-DumpIRInlined :: Mode
-DumpIRTypedShow :: Mode
-DumpIRLifted :: Mode
-DumpIRFinal :: Mode
-
--- | Compiler options for the IR compiler stage.
-newtype Options
-Options :: Mode -> Options
-[mode] :: Options -> Mode
-
--- | CLI options for the IR compiler stage.
-options :: [OptDescr (Options -> Options)]
-
--- | Lower from AST to IR (with annotations).
-lower :: Options -> Program -> Pass (Program Annotations)
-
--- | Type inference + check against type annotations.
---   
---   After this stage, no compiler errors should be thrown.
-typecheck :: Options -> Program Annotations -> Pass (Program Type)
-anomalycheck :: Program Type -> Pass (Program Type)
-
--- | IR transformations to prepare for codegen.
-transform :: Options -> Program Type -> Pass (Program Type)
-
--- | IR compiler stage.
-run :: Options -> Program -> Pass (Program Type)
-instance GHC.Show.Show IR.Mode
-instance GHC.Classes.Eq IR.Mode
-instance GHC.Show.Show IR.Options
-instance GHC.Classes.Eq IR.Options
-instance Common.Default.Default IR.Options
-
-
 -- | Translate SSM program to C compilation unit.
 --   
 --   What is expected of the IR:
@@ -3344,6 +3310,53 @@ instance GHC.Classes.Eq Codegen.Mode
 instance GHC.Show.Show Codegen.Options
 instance GHC.Classes.Eq Codegen.Options
 instance Common.Default.Default Codegen.Options
+
+
+-- | Intermediate representation (IR) stages of the compiler pipeline.
+module IR
+
+-- | Operation modes for the IR compiler stage.
+--   
+--   By default, <a>Continue</a> completes the pipeline end-to-end.
+data Mode
+Continue :: Mode
+DumpIR :: Mode
+DumpIRAnnotated :: Mode
+DumpIRConstraints :: Mode
+DumpIRTyped :: Mode
+DumpIRTypedUgly :: Mode
+DumpIRInlined :: Mode
+DumpIRTypedShow :: Mode
+DumpIRLifted :: Mode
+DumpIRFinal :: Mode
+
+-- | Compiler options for the IR compiler stage.
+newtype Options
+Options :: Mode -> Options
+[mode] :: Options -> Mode
+
+-- | CLI options for the IR compiler stage.
+options :: [OptDescr (Options -> Options)]
+
+-- | Lower from AST to IR (with annotations).
+lower :: Options -> Program -> Pass (Program Annotations)
+
+-- | Type inference + check against type annotations.
+--   
+--   After this stage, no compiler errors should be thrown.
+typecheck :: Options -> Program Annotations -> Pass (Program Type)
+anomalycheck :: Program Type -> Pass (Program Type)
+
+-- | IR transformations to prepare for codegen.
+transform :: Options -> Program Type -> Pass (Program Type)
+
+-- | IR compiler stage.
+run :: Options -> Program -> Pass (Program Type)
+instance GHC.Show.Show IR.Mode
+instance GHC.Classes.Eq IR.Mode
+instance GHC.Show.Show IR.Options
+instance GHC.Classes.Eq IR.Options
+instance Common.Default.Default IR.Options
 
 
 -- | Wrapper around the unification-fd library.
