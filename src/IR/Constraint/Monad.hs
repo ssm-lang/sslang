@@ -5,6 +5,7 @@ import           Common.Identifiers             ( DConId(..)
                                                 , TConId(..)
                                                 , TVarId(..)
                                                 , VarId(..)
+                                                , fromId
                                                 )
 import qualified Common.Identifiers            as Ident
 import qualified Control.Monad.Except          as Except
@@ -25,8 +26,7 @@ type DConInfo = (DConId, TConId, [TVarId], [Can.Type])
 type DConMap = Map.Map DConId DConInfo
 
 data TCState = TCState
-  { _freshName :: Int -- fresh tvar name
-  , _freshVar  :: Int -- fresh var name for replace binders in tc
+  { _freshCtr  :: Int -- Used for generating fresh variable names
   , _dconMap   :: DConMap
   , _kindMap   :: Map.Map TConId Can.Kind
   , _externMap :: Map.Map VarId Can.Type
@@ -38,8 +38,7 @@ runTC state m = unsafePerformIO $ Except.runExceptT $ State.evalStateT m state
 mkTCState :: I.Program Can.Annotations -> TCState
 mkTCState prog =
   let kenv = Map.fromList $ map (second $ length . I.targs) $ I.typeDefs prog
-  in  TCState { _freshName = 0
-              , _freshVar  = 0
+  in  TCState { _freshCtr  = 0
               , _dconMap   = mkDConMap prog
               , _kindMap   = Map.union kenv Can.builtinKinds
               , _externMap = Map.fromList $ I.externDecls prog
@@ -59,17 +58,20 @@ mkDConMap I.Program { I.typeDefs = tdefs } = foldl
   getVariantArgTypes (I.VariantNamed   ns) = map snd ns
   getVariantArgTypes (I.VariantUnnamed ts) = ts
 
-freshName :: TC TVarId
-freshName = do
-  n <- State.gets _freshName
-  State.modify $ \state -> state { _freshName = n + 1 }
-  return $ Ident.fromString $ "_t" ++ show n
+-- | Generate a fresh identifier based on some prefix.
+freshName :: String -> TC TVarId
+freshName prefix = do
+  n <- State.gets _freshCtr
+  State.modify $ \state -> state { _freshCtr = n + 1 }
+  return $ Ident.fromString $ prefix ++ show n
 
+-- | Generate a fresh program variable name, e.g., for anonymous binders.
 freshVar :: TC VarId
-freshVar = do
-  n <- State.gets _freshVar
-  State.modify $ \state -> state { _freshVar = n + 1 }
-  return $ Ident.fromString $ "_tc_anon_" ++ show n
+freshVar = fromId <$> freshName "__anon_binder"
+
+-- | Generate a fresh type identifier to be associated with annotations.
+freshAnnVar :: TC VarId
+freshAnnVar = fromId <$> freshName "$ann"
 
 getDConInfo :: DConId -> TC (Maybe DConInfo)
 getDConInfo dcon = do
