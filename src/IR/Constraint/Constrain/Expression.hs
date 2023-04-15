@@ -11,11 +11,7 @@ import IR.Constraint.Canonical ((-->))
 import qualified IR.Constraint.Canonical as Can
 import qualified IR.Constraint.Constrain.Annotation as Ann
 import qualified IR.Constraint.Constrain.Pattern as Pattern
-import IR.Constraint.Monad (
-  TC,
-  getExtern,
-  throwError,
- )
+import IR.Constraint.Monad (TC, freshAnnVar, getExtern, throwError)
 import IR.Constraint.Type as Type
 import qualified IR.IR as I
 import IR.SegmentLets (segmentDefs')
@@ -42,9 +38,10 @@ constrainBinderDefs binderDefs finalConstraint = do
   let annsVarPairs = map (uncarryAttachment . fst) binderDefs
       -- vars = map snd annsVarPairs
       exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
-      forBinders ((ann, var), exprTyp) = exists [var] <$> do
-        Ann.withAnnotations ann (TVarN var) \varExp ->
-          return $ CEqual varExp exprTyp
+      forBinders ((ann, var), exprTyp) =
+        exists [var] <$> do
+          Ann.withAnnotations ann (TVarN var) \varExp ->
+            return $ CEqual varExp exprTyp
   constraints <- mapM forBinders (zip annsVarPairs exprTyps)
   return $ CAnd (consDefs : constraints)
 
@@ -97,6 +94,25 @@ constrainExprAttached expr expected = do
   let (anns, u) = uncarryAttachment expr
   constraint <- Ann.withAnnotations anns expected $ constrainExpr expr
   return $ exists [u] $ CAnd [CEqual (TVarN u) expected, constraint]
+
+
+constrainExprAnnotated ::
+  I.Expr Attachment -> [Can.Annotation] -> Type -> TC Constraint
+constrainExprAnnotated expr [] expected = constrainExpr expr expected
+constrainExprAnnotated expr (Can.AnnDCon _ _ : anns) expected =
+  constrainExprAnnotated expr anns expected
+constrainExprAnnotated expr (ann : anns) expected = do
+  dummyId <- Ident.fromId <$> freshAnnVar
+  (Ann.State rigidMap flexs, tipe) <- Ann.add ann
+  innerConstraint <- constrainExprAnnotated expr anns tipe
+  return $
+    CLet
+      { _rigidVars = Map.elems rigidMap
+      , _flexVars = flexs
+      , _header = Map.singleton dummyId tipe
+      , _headerCon = innerConstraint
+      , _bodyCon = CLocal dummyId expected
+      }
 
 
 constrainExpr :: I.Expr Attachment -> Type -> TC Constraint

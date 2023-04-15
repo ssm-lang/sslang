@@ -25,7 +25,7 @@ sprinkleVariables prog = do
     expr' <- mapM sprinkle expr
     return (name, expr')
   sprinkle ann = do
-    v <- mkFlexVar
+    v <- mkIRFlexVar
     return (ann, v)
 
 discardAnnotations

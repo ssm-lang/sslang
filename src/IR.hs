@@ -14,6 +14,7 @@ import Control.Monad (
   (>=>),
  )
 import IR.ClassInstantiation (instProgram)
+import IR.Constraint.Typechecking (typecheckProgram)
 import IR.DConToFunc (dConToFunc)
 import IR.DesugarPattern (desugarPattern)
 import IR.ExternToCall (externToCall)
@@ -24,7 +25,7 @@ import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
 import IR.Simplify (simplifyProgram)
-import IR.Types (fromAnnotations,)
+import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
@@ -41,6 +42,7 @@ data Mode
   = Continue
   | DumpIR
   | DumpIRAnnotated
+  | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
   | DumpIRInlined
@@ -72,6 +74,11 @@ options =
       ["dump-ir-annotated"]
       (NoArg $ setMode DumpIRTyped)
       "Print the fully-typed IR just before type inference"
+  , Option
+      ""
+      ["dump-ir-constraints"]
+      (NoArg $ setMode DumpIRConstraints)
+      "Print the constraint IR used by the constraint solver type inference"
   , Option
       ""
       ["dump-ir-typed"]
@@ -117,7 +124,8 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  p <- typecheckProgram p
+  (p, constraints) <- typecheckProgram p (mode opt == DumpIRConstraints)
+  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraints
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p

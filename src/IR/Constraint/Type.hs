@@ -52,6 +52,7 @@ data FlatType = TCon1 Ident.TConId [Variable]
 data Type
   = TConN Ident.TConId [Type]
   | TVarN Variable
+  deriving (Eq)
 
 
 -- | DESCRIPTORS
@@ -178,13 +179,18 @@ u8 = TConN "UInt8" []
 -- | MAKE FLEX VARIABLES
 mkFlexVar :: TC Variable
 mkFlexVar = do
-  name <- freshName
+  name <- freshName "'t"
+  UF.fresh $ mkDescriptor $ FlexVar name
+
+mkIRFlexVar :: TC Variable
+mkIRFlexVar = do
+  name <- freshName "'ir_t"
   UF.fresh $ mkDescriptor $ FlexVar name
 
 
 mkRigidVar :: TC Variable
 mkRigidVar = do
-  name <- freshName
+  name <- freshName "~t"
   UF.fresh $ mkDescriptor $ RigidVar name
 
 

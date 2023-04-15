@@ -1,27 +1,44 @@
-module IR.Constraint.Typechecking
-  ( typecheckProgram
-  ) where
+module IR.Constraint.Typechecking (
+  typecheckProgram,
+) where
 
-import qualified Common.Compiler               as Compiler
-import qualified IR.Constraint.Canonical       as Can
-import qualified IR.Constraint.Constrain       as Constrain
-import qualified IR.Constraint.Elaborate       as Elaborate
-import           IR.Constraint.Monad            ( mkTCState
-                                                , runTC
-                                                )
-import qualified IR.Constraint.Solve           as Solve
-import qualified IR.IR                         as I
+import qualified Common.Compiler as Compiler
+import qualified IR.Constraint.Canonical as Can
+import qualified IR.Constraint.Constrain as Constrain
+import qualified IR.Constraint.Elaborate as Elaborate
+import IR.Constraint.Monad (
+  mkTCState,
+  runTC,
+ )
+import qualified IR.Constraint.Solve as Solve
+import qualified IR.IR as I
+
+import IR.Constraint.PrettyPrint (
+  Doc,
+  printConstraint,
+ )
 
 
 typecheckProgram
-  :: I.Program Can.Annotations -> Compiler.Pass (I.Program Can.Type)
-typecheckProgram pAnn = case unsafeTypecheckProgram pAnn of
-  Left  e     -> Compiler.throwError e
+  :: I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type, Maybe (Doc ann))
+typecheckProgram pAnn prettyprint = case unsafeTypecheckProgram pAnn prettyprint of
+  Left e -> Compiler.throwError e
   Right pType -> return pType
 
+
 unsafeTypecheckProgram
-  :: I.Program Can.Annotations -> Either Compiler.Error (I.Program Can.Type)
-unsafeTypecheckProgram pAnn = runTC (mkTCState pAnn) $ do
+  :: I.Program Can.Annotations -> Bool -> Either Compiler.Error (I.Program Can.Type, Maybe (Doc ann))
+unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
+
+  -- Depends on being called before solve
+  doc <- getDoc constraint prettyprint
+
   Solve.run constraint
-  Elaborate.run pVar
+  program <- Elaborate.run pVar
+  return (program, doc)
+ where
+  getDoc constraint True = do
+    c <- printConstraint constraint
+    return $ Just c
+  getDoc _ False = return Nothing
