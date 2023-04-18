@@ -38,17 +38,6 @@ constrainBinderDefs binderDefs finalConstraint = do
   constrainDefs defs finalConstraint
 
 
--- consDefs <- constrainDefs defs finalConstraint
--- let annsVarPairs = map (uncarryAttachment . fst) binderDefs
---     -- vars = map snd annsVarPairs
---     exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
---     forBinders ((ann, var), exprTyp) =
---       exists [var] <$> do
---         Ann.withAnnotations ann (TVarN var) \varExp ->
---           return $ CEqual varExp exprTyp
--- constraints <- mapM forBinders (zip annsVarPairs exprTyps)
--- return $ CAnd (consDefs : constraints)
-
 constrainDefs :: [Def] -> Constraint -> TC Constraint
 constrainDefs defs finalConstraint = do
   let segments = segmentDefs' defs
