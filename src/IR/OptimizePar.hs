@@ -24,10 +24,10 @@ import qualified IR.IR as I
 
 -- | Optimization Environment
 data OptParCtx = OptParCtx
-  { -- | 'numPars' the number of par nodes in the input program's IR.
-    numPars :: Int
-  , -- | 'numLitInts' the number of "bad" par node in the input program's IR.
-    numBadPars :: Int
+  { numPars :: Int
+  -- ^ 'numPars' the number of par nodes in the input program's IR.
+  , numBadPars :: Int
+  -- ^ 'numLitInts' the number of "bad" par node in the input program's IR.
   }
 
 

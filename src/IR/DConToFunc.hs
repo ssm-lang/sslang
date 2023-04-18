@@ -4,8 +4,8 @@
 
 Worked example of ADT definition and corresponding constructor functions:
 
-> type Shape 
->   Square Int 
+> type Shape
+>   Square Int
 >   Rect Int Int
 
 Let's turn data constructor `Square` into constructor function `__Square`:
@@ -26,10 +26,10 @@ Representing constructor functions in the IR:
 Every top-level function has the form (I.VarId, I.Expr Poly.Type) = (functionName, functionBody)
 The function body is a lambda expression representing a call to the fully applied data constructor.
 
-Let's turn the top-level func for `Square` into IR: 
+Let's turn the top-level func for `Square` into IR:
 
 @
-(__Square, body) 
+(__Square, body)
 body = fun arg0 { App L R t } : Int -> Shape
  where L = Square : Int -> Shape
        R = arg0 : type Int
@@ -43,55 +43,61 @@ Next `Rect` turns into this:
 body = fun arg0 { fun arg1 { App L R t } : Int -> Shape } : Int -> Int -> Shape
  where L = App L2 R2 t
        R = arg1 : Int
-       t = Shape, because the type of a fully applied data constructor 
+       t = Shape, because the type of a fully applied data constructor
            is its type constructor
         where L2 = Rect : Int -> Int -> Shape
               R  = arg0 : Int
-              t = Int -> Shape, because at this point in the inner App, 
+              t = Int -> Shape, because at this point in the inner App,
                   Rect is partially applied with only 1 arg.
 @
 -}
-module IR.DConToFunc
-  ( dConToFunc
-  ) where
+module IR.DConToFunc (
+  dConToFunc,
+) where
 
-import qualified Common.Compiler               as Compiler
+import qualified Common.Compiler as Compiler
 
-import           Common.Compiler                ( MonadError )
-import           Common.Identifiers             ( fromId
-                                                , fromString
-                                                , ident
-                                                )
+import Common.Compiler (MonadError)
+import Common.Identifiers (
+  fromId,
+  fromString,
+  ident,
+ )
 
-import           Control.Monad.Reader           ( MonadReader
-                                                , ReaderT(..)
-                                                , asks
-                                                )
-import           Data.Bifunctor                 ( Bifunctor(..) )
-import           Data.Generics.Aliases          ( mkM )
-import           Data.Generics.Schemes          ( everywhereM )
-import           Data.List                      ( inits )
-import qualified Data.Map                      as M
-import           Data.Maybe                     ( mapMaybe )
-import qualified IR.IR                         as I
-import qualified IR.Types                      as I
+import Control.Monad.Reader (
+  MonadReader,
+  ReaderT (..),
+  asks,
+ )
+import Data.Bifunctor (Bifunctor (..))
+import Data.Generics.Aliases (mkM)
+import Data.Generics.Schemes (everywhereM)
+import Data.List (inits)
+import qualified Data.Map as M
+import Data.Maybe (mapMaybe)
+import qualified IR.IR as I
+import qualified IR.Types as I
 
--- | Environment storing arity of each 'DCon' 
+
+-- | Environment storing arity of each 'DCon'
 type ArityEnv = M.Map I.DConId Int
+
 
 -- | Arity Reader Monad
 newtype ArityFn a = ArityFn (ReaderT ArityEnv Compiler.Pass a)
-  deriving Functor                      via (ReaderT ArityEnv Compiler.Pass)
-  deriving Applicative                  via (ReaderT ArityEnv Compiler.Pass)
-  deriving Monad                        via (ReaderT ArityEnv Compiler.Pass)
-  deriving MonadFail                    via (ReaderT ArityEnv Compiler.Pass)
-  deriving (MonadError Compiler.Error)  via (ReaderT ArityEnv Compiler.Pass)
-  deriving (MonadReader ArityEnv)       via (ReaderT ArityEnv Compiler.Pass)
+  deriving (Functor) via (ReaderT ArityEnv Compiler.Pass)
+  deriving (Applicative) via (ReaderT ArityEnv Compiler.Pass)
+  deriving (Monad) via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadFail) via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadError Compiler.Error) via (ReaderT ArityEnv Compiler.Pass)
+  deriving (MonadReader ArityEnv) via (ReaderT ArityEnv Compiler.Pass)
+
 
 -- | Run a computation within an arity environment
 runArityFn :: [(I.TConId, I.TypeDef)] -> ArityFn a -> Compiler.Pass a
 runArityFn tds (ArityFn m) = runReaderT m $ M.fromList env
-  where env = concatMap (map (second I.variantFields) . I.variants . snd) tds
+ where
+  env = concatMap (map (second I.variantFields) . I.variants . snd) tds
 
 
 {- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish two tasks:
@@ -100,10 +106,10 @@ runArityFn tds (ArityFn m) = runReaderT m $ M.fromList env
   2. Turn non-nullary data constuctors into calls to top level constructor funcs
 -}
 dConToFunc :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
+dConToFunc p@I.Program{I.programDefs = defs, I.typeDefs = tDefs} =
   runArityFn tDefs $ do
     defs'' <- defs' -- user defined functions
-    return p { I.programDefs = tDefs' ++ defs'' } -- constructor funcs ++ user funcs
+    return p{I.programDefs = tDefs' ++ defs''} -- constructor funcs ++ user funcs
  where
   tDefs' = concat (createFuncs <$> tDefs) -- top-level constructor functions
   defs' =
@@ -128,9 +134,9 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
     Black
     RGB Int Int Int
 
-  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color = 
+  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color =
   RGB __arg0 __arg1 __arg2
-    
+
   main ( cout : & Int ) -> () = ()
   @
   This is okay.
@@ -141,9 +147,9 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
     Black
     RGB Int Int Int
 
-  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  __RGB (r : Int) (g : Int) (b : Int) -> Color =
   RGB r (g+2) b
-    
+
   main ( cout : & Int ) -> () = ()
   @
   dConToFunc (without filtering defs!) produces
@@ -153,12 +159,12 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
     Black
     RGB Int Int Int
 
-  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color = 
+  __RGB (__arg0 : Int) (__arg1 : Int) (__arg2 : Int) -> Color =
   RGB __arg0 __arg1 __arg2
 
-  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  __RGB (r : Int) (g : Int) (b : Int) -> Color =
   RGB r (g+2) b
-    
+
   main ( cout : & Int ) -> () = ()
   @
   This is not okay, because there are two functions named > __RGB.
@@ -177,15 +183,16 @@ dConToFunc p@I.Program { I.programDefs = defs, I.typeDefs = tDefs } =
     Black
     RGB Int Int Int
 
-  __RGB (r : Int) (g : Int) (b : Int) -> Color = 
+  __RGB (r : Int) (g : Int) (b : Int) -> Color =
   RGB r (g+2) b
-    
+
   main ( cout : & Int ) -> () = ()
   @
   Now this is okay.
     -}
-  createFuncs (tconid, I.TypeDef { I.variants = vars }) =
+  createFuncs (tconid, I.TypeDef{I.variants = vars}) =
     createFunc tconid `mapMaybe` vars
+
 
 {- | Replace data constructor application with function application
 
@@ -199,39 +206,47 @@ dataToApp a@(I.Data dconid t) = do
     _ -> return $ I.Var (nameFunc dconid) t
 dataToApp a = pure a
 
+
 {- | Create a top level function for each data constructor
 
-  Returns Nothing for nullary data constructors, 
+  Returns Nothing for nullary data constructors,
   which don't need top-level constructor functions.
 -}
 createFunc
   :: I.TConId -> (I.DConId, I.TypeVariant) -> Maybe (I.Binder I.Type, I.Expr I.Type)
-  -- case of nullary dcon; guarantees params to be non-empty in the next pattern
-createFunc _    (_     , I.VariantNamed []    ) = Nothing
+-- case of nullary dcon; guarantees params to be non-empty in the next pattern
+createFunc _ (_, I.VariantNamed []) = Nothing
 createFunc tcon (dconid, I.VariantNamed params) = Just (I.BindVar func_name $ I.extract lambda, lambda)
  where
   func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
-  lambda    = I.foldLambda (uncurry I.BindVar <$> params) body
-  body      = I.foldApp dcon args
-  dcon      = I.Data (fromId dconid) t
-  args      = zip (uncurry I.Var <$> params) ts
-  tconTyp   = I.TCon tcon []
-  (t : ts)  = reverse $ foldr1 I.Arrow . reverse <$> tail
-    (inits $ reverse ((snd <$> params) ++ [tconTyp]))
-  {- Turns a list of types into arrow types representing nested lambdas
-     @[Int, Int, Shape]@ becomes
-     @[Int -> Int -> Shape, Int -> Shape, Shape]@
-     @(t:ts)@ is permitted because params is always non-empty
-     @tail@ is permitted because inits on a non-empty list always returns a list of at least two elements.
-  -}
-createFunc tcon (dcon, I.VariantUnnamed params) = createFunc
-  tcon
-  (dcon, I.VariantNamed argNames)
-  where argNames = zipWith (\t i -> (nameArg i, t)) params [0 ..]
+  lambda = I.foldLambda (uncurry I.BindVar <$> params) body
+  body = I.foldApp dcon args
+  dcon = I.Data (fromId dconid) t
+  args = zip (uncurry I.Var <$> params) ts
+  tconTyp = I.TCon tcon []
+  (t : ts) =
+    reverse $
+      foldr1 I.Arrow . reverse
+        <$> tail
+          (inits $ reverse ((snd <$> params) ++ [tconTyp]))
+{- Turns a list of types into arrow types representing nested lambdas
+   @[Int, Int, Shape]@ becomes
+   @[Int -> Int -> Shape, Int -> Shape, Shape]@
+   @(t:ts)@ is permitted because params is always non-empty
+   @tail@ is permitted because inits on a non-empty list always returns a list of at least two elements.
+-}
+createFunc tcon (dcon, I.VariantUnnamed params) =
+  createFunc
+    tcon
+    (dcon, I.VariantNamed argNames)
+ where
+  argNames = zipWith (\t i -> (nameArg i, t)) params [0 ..]
+
 
 -- | Create a name for the constructor function
 nameFunc :: I.DConId -> I.VarId
 nameFunc dconid = fromString $ "__" ++ ident dconid
+
 
 -- | Create a name for a constructor function argument
 nameArg :: Int -> I.VarId

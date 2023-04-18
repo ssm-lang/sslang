@@ -80,8 +80,8 @@ constrainExprAttached expr expected = do
   return $ exists [u] $ CAnd [CEqual (TVarN u) expected, constraint]
 
 
-constrainExprAnnotated ::
-  I.Expr Attachment -> [Can.Annotation] -> Type -> TC Constraint
+constrainExprAnnotated
+  :: I.Expr Attachment -> [Can.Annotation] -> Type -> TC Constraint
 constrainExprAnnotated expr [] expected = constrainExpr expr expected
 constrainExprAnnotated expr (Can.AnnDCon _ _ : anns) expected =
   constrainExprAnnotated expr anns expected
@@ -148,8 +148,8 @@ constrainLambda binder body expected = do
         ]
 
 
-constrainMatch ::
-  I.Expr Attachment -> [(I.Alt Attachment, I.Expr Attachment)] -> Type -> TC Constraint
+constrainMatch
+  :: I.Expr Attachment -> [(I.Alt Attachment, I.Expr Attachment)] -> Type -> TC Constraint
 constrainMatch expr branches expected = do
   exprVar <- mkFlexVar
   let exprType = TVarN exprVar

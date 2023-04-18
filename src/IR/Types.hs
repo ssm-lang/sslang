@@ -2,4 +2,5 @@
 module IR.Types (module IR.Types.Type) where
 
 -- TODO: Combine Types.Type with Constraint.Canonical
-import           IR.Types.Type
+import IR.Types.Type
+

@@ -75,8 +75,8 @@ lowerProgram (A.Program ds) = do
       , I.TypeDef{I.targs = map TVarId $ A.typeParams td, I.variants = tds}
       )
    where
-    lowerTypeVariant ::
-      A.TypeVariant -> Compiler.Pass (I.DConId, I.TypeVariant)
+    lowerTypeVariant
+      :: A.TypeVariant -> Compiler.Pass (I.DConId, I.TypeVariant)
     lowerTypeVariant (A.VariantUnnamed vn ts) =
       (fromId vn,) . I.VariantUnnamed <$> mapM lowerType ts
   lowerExternDecl :: A.ExternDecl -> Compiler.Pass (I.VarId, I.Type)

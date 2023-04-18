@@ -1,8 +1,8 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 
-{-| Description : Insert reference counting primitives
+{- | Description : Insert reference counting primitives
 
 This inserts @dup@ and @drop@ primitives according to a caller @dup@,
 callee @drop@ policy.  The value returned by a function should be
@@ -44,78 +44,93 @@ Try running @sslc --dump-ir-final@ on an example to see the inserted
 
 Our approach was inspired by Perceus
 <https://www.microsoft.com/en-us/research/publication/perceus-garbage-free-reference-counting-with-reuse/>
-
 -}
 module IR.InsertRefCounting where
 
-import qualified Common.Compiler               as Compiler
-import           Common.Identifiers
-import           Control.Monad.State.Lazy       ( MonadState(..)
-                                                , StateT(..)
-                                                , evalStateT
-                                                , forM
-                                                , modify
-                                                )
-import qualified IR.IR                         as I
-import qualified IR.Types                      as I
+import qualified Common.Compiler as Compiler
+import Common.Identifiers
+import Control.Monad.State.Lazy (
+  MonadState (..),
+  StateT (..),
+  evalStateT,
+  forM,
+  modify,
+ )
+import qualified IR.IR as I
+import qualified IR.Types as I
 
 
 -- * The external interface
 
--- $external
 
--- | Insert dup and drop primitives throughout a program
---
--- Applies `insertTop` to the program's definitions
+-- \$external
+
+{- | Insert dup and drop primitives throughout a program
+
+ Applies `insertTop` to the program's definitions
+-}
 insertRefCounting :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 insertRefCounting program = (`evalStateT` 0) $ do
   defs <- mapM insertTop $ I.programDefs program
-  return $ program { I.programDefs  = defs
-                   , I.programEntry = I.programEntry program
-                   , I.typeDefs     = I.typeDefs program
-                   }
+  return $
+    program
+      { I.programDefs = defs
+      , I.programEntry = I.programEntry program
+      , I.typeDefs = I.typeDefs program
+      }
 
 
 -- * Module internals, not intended for use outside this module
---
--- $internal
 
+
+--
+-- \$internal
 
 -- | Monad for creating fresh variables: add an Int to the pass
 type Fresh = StateT Int Compiler.Pass
 
--- | Create a fresh variable name with the given suffix
---
--- Creates a new variable ID of the form "anon1," "anon2,"
--- etc. followed by the supplied suffix
+
+{- | Create a fresh variable name with the given suffix
+
+ Creates a new variable ID of the form "anon1," "anon2,"
+ etc. followed by the supplied suffix
+-}
 getFresh :: String -> Fresh I.VarId
 getFresh str = do
   curCount <- get
   modify (+ 1)
   return $ fromString $ ("anon" <> show curCount) ++ str
 
+
 -- | Make a dup primitive that returns the type of its argument
 makeDup
-  :: I.Expr I.Type -- ^ The variable to duplicate and return
-  -> I.Expr I.Type -- ^ The @dup@ call
+  :: I.Expr I.Type
+  -- ^ The variable to duplicate and return
+  -> I.Expr I.Type
+  -- ^ The @dup@ call
 makeDup e = I.Prim I.Dup [e] $ I.extract e
+
 
 -- | Make a drop primitive with unit type
 makeDrop
-  :: I.Expr I.Type -- ^ The expression to evaluate and return
-  -> I.Expr I.Type -- ^ The variable to drop afterwards
-  -> I.Expr I.Type -- ^ The @drop@ call
+  :: I.Expr I.Type
+  -- ^ The expression to evaluate and return
+  -> I.Expr I.Type
+  -- ^ The variable to drop afterwards
+  -> I.Expr I.Type
+  -- ^ The @drop@ call
 makeDrop r e = I.Prim I.Drop [e, r] I.Unit
 
 
+-- \$internal
 
--- $internal
+{- | Insert referencing counting for top-level expressions
 
--- | Insert referencing counting for top-level expressions
---
--- Applies `insertExpr` to a top-level delcaration
+ Applies `insertExpr` to a top-level delcaration
+-}
 insertTop :: (I.Binder I.Type, I.Expr I.Type) -> Fresh (I.Binder I.Type, I.Expr I.Type)
-insertTop (var, expr) = (var, ) <$> insertExpr expr
+insertTop (var, expr) = (var,) <$> insertExpr expr
+
 
 {- | Insert reference counting into an expression
 
@@ -138,7 +153,7 @@ remains
 > True
 
 because they are functions whose results are returned with an existing reference
-  
+
 * A __variable reference__ becomes a call to dup because it introduces
   another reference to the named object, e.g.,
 
@@ -257,23 +272,16 @@ becomes
       _ = 3
   ) anon0_scruitinee
 @
-
 -}
 
 --
 insertExpr :: I.Expr I.Type -> Fresh (I.Expr I.Type)
-
-insertExpr dcon@I.Data{}          = return dcon
-
-insertExpr lit@I.Lit{}            = return lit
-
-insertExpr var@I.Var{}            = return $ makeDup var
-
+insertExpr dcon@I.Data{} = return dcon
+insertExpr lit@I.Lit{} = return lit
+insertExpr var@I.Var{} = return $ makeDup var
 insertExpr (I.App f x t) = I.App <$> insertExpr f <*> insertExpr x <*> pure t
-
-insertExpr (I.Prim p    es   typ) = I.Prim p <$> mapM insertExpr es <*> pure typ
-
-insertExpr (I.Let  bins expr typ) = do
+insertExpr (I.Prim p es typ) = I.Prim p <$> mapM insertExpr es <*> pure typ
+insertExpr (I.Let bins expr typ) = do
   bins' <- forM bins droppedBinder
   expr' <- insertExpr expr
   return $ I.Let (map defFromBind bins') (foldr (makeDrop . varFromBind) expr' bins') typ
@@ -283,13 +291,12 @@ insertExpr (I.Let  bins expr typ) = do
 
   droppedBinder (I.BindAnon t, d) = do
     temp <- getFresh "_underscore"
-    d'   <- insertExpr d
+    d' <- insertExpr d
     return (temp, t, d')
   droppedBinder (I.BindVar v t, d) = do
     d' <- insertExpr d
     return (v, t, d')
-
-insertExpr lam@I.Lambda {} = do
+insertExpr lam@I.Lambda{} = do
   let (args, body) = I.unfoldLambda lam
   args' <- forM args $ \case
     I.BindAnon t -> do
@@ -300,17 +307,18 @@ insertExpr lam@I.Lambda {} = do
       argVars = uncurry I.Var <$> args'
   body' <- insertExpr body
   return $ I.foldLambda argBinders $ foldr makeDrop body' argVars
-
 insertExpr (I.Match v@I.Var{} alts typ) = do
   alts' <- forM alts insertAlt
   return $ I.Match v alts' typ
-
 insertExpr (I.Match scrutExpr alts typ) = do
   scrutVar <- getFresh "_scrutinee"
-  insertExpr $ I.Let [(I.BindVar scrutVar $ I.extract scrutExpr, scrutExpr)]
-                     (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
-                     typ
+  insertExpr $
+    I.Let
+      [(I.BindVar scrutVar $ I.extract scrutExpr, scrutExpr)]
+      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
+      typ
 insertExpr e@(I.Exception _ _) = return e
+
 
 {- | Insert dups and drops into pattern match arms
 
@@ -334,14 +342,14 @@ match v
 @
 -}
 insertAlt :: (I.Alt I.Type, I.Expr I.Type) -> Fresh (I.Alt I.Type, I.Expr I.Type)
-insertAlt (I.AltBinder v      , e   ) = (I.AltBinder v, ) <$> insertExpr e
-insertAlt (I.AltLit     l t    , e   ) = (I.AltLit l t, ) <$> insertExpr e
+insertAlt (I.AltBinder v, e) = (I.AltBinder v,) <$> insertExpr e
+insertAlt (I.AltLit l t, e) = (I.AltLit l t,) <$> insertExpr e
 insertAlt (I.AltData dcon binds t, body) = do
   body' <- insertExpr body
   -- NOTE: we don't recurse here because we assume alts are already desguared i.e., flat
   return (I.AltData dcon binds t, foldr dropDupLet body' $ concatMap I.altBinders binds)
  where
-  dropDupLet (I.BindAnon _)  e = e
+  dropDupLet (I.BindAnon _) e = e
   dropDupLet (I.BindVar v t') e =
     let varExpr = I.Var v t'
         dupExpr = makeDup varExpr

@@ -171,7 +171,7 @@ usefulInductive pm pv =
                      in fmap or . mapM f $ S.toList (tCSet t)
                   else useful (PM.defaultize pm) (PV.tl pv)
            in case sample of
-                I.AltLit {} -> useful (PM.defaultize pm) (PV.tl pv)
+                I.AltLit{} -> useful (PM.defaultize pm) (PV.tl pv)
                 I.AltData (I.DConId i) _ _ -> wildCaseCons i
                 I.AltBinder _ -> error "can't happen"
    in case PV.hd pv of
@@ -190,12 +190,12 @@ samplePat pm = case firstConsPatVec of
   firstConsPatVec = find (isConstructor . PV.hd) (PM.toList pm)
    where
     isConstructor p = case p of
-      I.AltLit {} -> True
-      I.AltData {} -> True
+      I.AltLit{} -> True
+      I.AltData{} -> True
       I.AltBinder _ -> False
   stripPat p = case p of
-    I.AltLit {} -> Just p
-    I.AltData {} -> Just p
+    I.AltLit{} -> Just p
+    I.AltData{} -> Just p
     I.AltBinder (I.BindAnon _) -> error "can't happen"
     I.AltBinder _ -> Just p
 

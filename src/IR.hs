@@ -14,6 +14,7 @@ import Control.Monad (
   (>=>),
  )
 import IR.ClassInstantiation (instProgram)
+import IR.Constraint.Typechecking
 import IR.DConToFunc (dConToFunc)
 import IR.DesugarPattern (desugarPattern)
 import IR.ExternToCall (externToCall)
@@ -30,7 +31,6 @@ import System.Console.GetOpt (
   OptDescr (..),
  )
 import Text.Show.Pretty
-import IR.Constraint.Typechecking
 
 
 {- | Operation modes for the IR compiler stage.

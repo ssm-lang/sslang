@@ -56,8 +56,9 @@ emptyState = State Map.empty [] []
 addBinder :: I.Binder Attachment -> Type -> State -> TC State
 addBinder binder expected (State headers vars revCons) = do
   let (anns, var) = uncarryAttachment binder
-  cons <- exists [var] <$> Ann.withAnnotations anns (TVarN var) \varExpected ->
-    return $ CEqual varExpected expected
+  cons <-
+    exists [var] <$> Ann.withAnnotations anns (TVarN var) \varExpected ->
+      return $ CEqual varExpected expected
   return $ State headers (vars ++ [var]) (cons : revCons)
 
 
@@ -67,15 +68,15 @@ addToHeaders name tipe (State headers vars revCons) =
    in State newHeaders vars revCons
 
 
-addData ::
-  Ident.TConId ->
-  [Ident.TVarId] ->
-  Ident.DConId ->
-  [Can.Type] ->
-  [I.Alt Attachment] ->
-  Type ->
-  State ->
-  TC State
+addData
+  :: Ident.TConId
+  -> [Ident.TVarId]
+  -> Ident.DConId
+  -> [Can.Type]
+  -> [I.Alt Attachment]
+  -> Type
+  -> State
+  -> TC State
 addData typeName typeVarNames ctorName ctorArgTypes as expected state = do
   unless (length ctorArgTypes == length as) $
     throwError $
@@ -99,8 +100,8 @@ addData typeName typeVarNames ctorName ctorArgTypes as expected state = do
       }
 
 
-addDataArg ::
-  Map.Map Ident.TVarId Type -> Can.Type -> I.Alt Attachment -> State -> TC State
+addDataArg
+  :: Map.Map Ident.TVarId Type -> Can.Type -> I.Alt Attachment -> State -> TC State
 addDataArg freeVarDict canType arg state = do
   tipe <- Inst.fromScheme freeVarDict canType
   add arg tipe state

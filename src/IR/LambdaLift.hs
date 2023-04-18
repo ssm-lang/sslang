@@ -41,26 +41,26 @@ binderVars [] = []
 
 -- | Lifting Environment
 data LiftCtx = LiftCtx
-  { -- | 'globalScope' is a set containing top-level identifiers. All scopes,
-    -- regardless of depth, have access to these identifiers.
-    globalScope :: M.Map I.VarId I.Type
-  , -- | 'currentScope' is a set containing the identifiers available in the
-    -- current scope.
-    currentScope :: M.Map I.VarId I.Type
-  , -- | 'currentTrail' is a list of strings tracing the surrounding scopes in
-    -- terms of language constructs and relevant identifiers. It is used for
-    -- creating unique identifiers for lifted lambdas.
-    currentTrail :: [Identifier]
-  , -- | Free variable encounetered during the a descent. These need to be added
-    -- as arguments to lifted closures, and applied at the original site of the
-    -- closure.
-    currentFreeVars :: M.Map I.VarId I.Type
-  , -- | 'lifted' is a list of lifted lambdas created while descending into a
-    -- top-level definition.
-    lifted :: [(I.Binder I.Type, I.Expr I.Type)]
-  , -- | 'anonCount' is a monotonically increasing counter used for creating
-    -- unique identifiers for lifted lambdas.
-    freshCounter :: Int
+  { globalScope :: M.Map I.VarId I.Type
+  -- ^ 'globalScope' is a set containing top-level identifiers. All scopes,
+  -- regardless of depth, have access to these identifiers.
+  , currentScope :: M.Map I.VarId I.Type
+  -- ^ 'currentScope' is a set containing the identifiers available in the
+  -- current scope.
+  , currentTrail :: [Identifier]
+  -- ^ 'currentTrail' is a list of strings tracing the surrounding scopes in
+  -- terms of language constructs and relevant identifiers. It is used for
+  -- creating unique identifiers for lifted lambdas.
+  , currentFreeVars :: M.Map I.VarId I.Type
+  -- ^ Free variable encounetered during the a descent. These need to be added
+  -- as arguments to lifted closures, and applied at the original site of the
+  -- closure.
+  , lifted :: [(I.Binder I.Type, I.Expr I.Type)]
+  -- ^ 'lifted' is a list of lifted lambdas created while descending into a
+  -- top-level definition.
+  , freshCounter :: Int
+  -- ^ 'anonCount' is a monotonically increasing counter used for creating
+  -- unique identifiers for lifted lambdas.
   }
 
 
@@ -205,26 +205,26 @@ liftLambdas (I.Prim p exprs t) = I.Prim p <$> mapM liftLambdas exprs <*> pure t
 liftLambdas lam@I.Lambda{} = getFresh >>= liftLambda lam []
 liftLambdas (I.Let ds b t)
   | all (isLambda . snd) ds = do
-    -- e.g.,  let f x = ...
-    --            g y = ...
-    --        ...
-    -- Bindings (e.g., f, g) might be recursive and apppear inside definitions.
-    let binders = map fst ds
-    ds' <- forM ds $ \(x, d) -> do
-      fn <- getFresh
-      d' <- liftLambda d binders $ maybe fn fromId $ I._binderId x
-      -- TODO: handle recursive bindings
-      return (x, d')
-    b' <- withEnclosingScope Nothing binders $ liftLambdas b
-    return $ I.Let ds' b' t
+      -- e.g.,  let f x = ...
+      --            g y = ...
+      --        ...
+      -- Bindings (e.g., f, g) might be recursive and apppear inside definitions.
+      let binders = map fst ds
+      ds' <- forM ds $ \(x, d) -> do
+        fn <- getFresh
+        d' <- liftLambda d binders $ maybe fn fromId $ I._binderId x
+        -- TODO: handle recursive bindings
+        return (x, d')
+      b' <- withEnclosingScope Nothing binders $ liftLambdas b
+      return $ I.Let ds' b' t
   | length ds == 1 = do
-    -- e.g.,  let x = ...
-    --        ...
-    -- Binding is not recursive, so x cannot appear in definition.
-    let (x, d) = head ds
-    d' <- liftLambdas d
-    e' <- withEnclosingScope Nothing [x] $ liftLambdas b
-    return $ I.Let [(x, d')] e' t
+      -- e.g.,  let x = ...
+      --        ...
+      -- Binding is not recursive, so x cannot appear in definition.
+      let (x, d) = head ds
+      d' <- liftLambdas d
+      e' <- withEnclosingScope Nothing [x] $ liftLambdas b
+      return $ I.Let [(x, d')] e' t
   | otherwise = error $ "Let expressions should only bind a list of values, or a single non-value " ++ show ds
  where
   isLambda I.Lambda{} = True
@@ -250,14 +250,15 @@ liftLambda lam letBinds letName = do
   -- Lift lambda body to the top-level
   tellLifted fullName $ I.foldLambda (map (uncurry I.BindVar) free ++ bs) body'
 
-  let -- Helper function to prepend arguments to a function type
-      prependArrow ts t' = let (ats', rt') = I.unfoldArrow t' in I.foldArrow (ts ++ ats', rt')
+  let
+    -- Helper function to prepend arguments to a function type
+    prependArrow ts t' = let (ats', rt') = I.unfoldArrow t' in I.foldArrow (ts ++ ats', rt')
 
-      -- 'tails' of the types of free variables in lambda body
-      (liftedLamType : intermediateTypes) = tails $ map snd free
+    -- 'tails' of the types of free variables in lambda body
+    (liftedLamType : intermediateTypes) = tails $ map snd free
 
-      -- Construct arguments to be folded into the call site
-      freeActuals = zipWith (\(v', t') ts -> (I.Var v' t', prependArrow ts (I.extract lam))) free intermediateTypes
+    -- Construct arguments to be folded into the call site
+    freeActuals = zipWith (\(v', t') ts -> (I.Var v' t', prependArrow ts (I.extract lam))) free intermediateTypes
 
   -- Replace lambda with call to lifted top-level lambda applied to all free variables
   return $ I.foldApp (I.Var (fromId fullName) $ prependArrow liftedLamType (I.extract lam)) freeActuals

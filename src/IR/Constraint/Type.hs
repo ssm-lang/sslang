@@ -182,6 +182,7 @@ mkFlexVar = do
   name <- freshName "'t"
   UF.fresh $ mkDescriptor $ FlexVar name
 
+
 mkIRFlexVar :: TC Variable
 mkIRFlexVar = do
   name <- freshName "'ir_t"

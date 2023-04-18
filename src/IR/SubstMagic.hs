@@ -1,16 +1,18 @@
--- | Substitute AST nodes with magical primitives.
 {-# LANGUAGE OverloadedStrings #-}
-module IR.SubstMagic
-  ( substMagic
-  ) where
 
-import qualified IR.IR                         as I
+-- | Substitute AST nodes with magical primitives.
+module IR.SubstMagic (
+  substMagic,
+) where
 
-import           Data.Data                      ( Proxy(..) )
-import           Data.Generics                  ( Data(..)
-                                                , everywhere
-                                                , mkT
-                                                )
+import qualified IR.IR as I
+
+import Data.Data (Proxy (..))
+import Data.Generics (
+  Data (..),
+  everywhere,
+  mkT,
+ )
 
 
 {- | Substitute AST nodes with magical primitives.
@@ -35,6 +37,7 @@ substMagic (Proxy :: Proxy Annotated.Type) myProg
 -}
 substMagic :: (Data t, Data a) => Proxy t -> a -> a
 substMagic p = everywhere $ mkT $ substMagicExpr p
+
 
 -- | Replace applications to built-in names with corresponding primitives.
 substMagicExpr :: Proxy t -> I.Expr t -> I.Expr t

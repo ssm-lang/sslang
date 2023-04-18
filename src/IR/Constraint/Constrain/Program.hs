@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+
 module IR.Constraint.Constrain.Program where
 
 import qualified Common.Identifiers as Ident
@@ -21,8 +22,8 @@ constrain prog = do
 -- | EXTERN DECLS
 
 -- TODO: do I still need this? depends on whether these are only used in fficall prim
-constrainExternDecls ::
-  [(Ident.VarId, Can.Type)] -> Constraint -> TC Constraint
+constrainExternDecls
+  :: [(Ident.VarId, Can.Type)] -> Constraint -> TC Constraint
 constrainExternDecls decls finalConstraint =
   foldrM constrainExternDecl finalConstraint decls
 
@@ -56,13 +57,13 @@ constrainTypeDef tcon (I.TypeDef variants args) finalConstraint =
     variants
 
 
-constrainVariant ::
-  Ident.TConId ->
-  [Ident.TVarId] ->
-  Ident.DConId ->
-  I.TypeVariant ->
-  Constraint ->
-  TC Constraint
+constrainVariant
+  :: Ident.TConId
+  -> [Ident.TVarId]
+  -> Ident.DConId
+  -> I.TypeVariant
+  -> Constraint
+  -> TC Constraint
 constrainVariant tcon targs dcon (I.VariantUnnamed dargs) finalConstraint = do
   let typ = Can.foldArrow (dargs, Can.TCon tcon (map Can.TVar targs))
       scheme = Can.Forall (Map.fromList (map (,()) targs)) typ
@@ -72,8 +73,8 @@ constrainVariant _ _ _ (I.VariantNamed _) _ =
 
 
 -- | HELPER: CONSTRAIN NAME TO TYPE
-constrainDeclaration ::
-  Ident.Identifier -> Can.Scheme -> Constraint -> TC Constraint
+constrainDeclaration
+  :: Ident.Identifier -> Can.Scheme -> Constraint -> TC Constraint
 constrainDeclaration name scheme finalConstraint = do
   v <- mkFlexVar
   let t = TVarN v

@@ -47,11 +47,10 @@ specialize pv = case hd pv of
 specializeWild :: Int -> PatVec t -> PatVec t
 specializeWild arity pv = case hd pv of
   I.AltBinder b -> wildCase
-    where
-      wildCase =
-        let binder = I.BindAnon $ I.extract b
-            pv1 = fromList $ replicate arity (I.AltBinder binder)
-            pv2 = tl pv
-        in extend pv1 pv2
+   where
+    wildCase =
+      let binder = I.BindAnon $ I.extract b
+          pv1 = fromList $ replicate arity (I.AltBinder binder)
+          pv2 = tl pv
+       in extend pv1 pv2
   _ -> error "wrong usage"
-

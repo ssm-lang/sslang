@@ -67,7 +67,7 @@ specializeLit lit pm =
           I.AltLit lit' _ ->
             if lit' == lit then fromPatVec $ PV.tl pv else noRow
           I.AltBinder _ -> wildCase
-          I.AltData {} -> noRow
+          I.AltData{} -> noRow
 
 
 specializeCons :: Int -> Identifier -> PatMat t -> PatMat t
@@ -76,21 +76,21 @@ specializeCons arity i pm =
  where
   noRow = emptyWithCols (arity + ncol pm - 1)
   specializeCons' pv = case PV.hd pv of
-          I.AltLit _ _ -> noRow
-          I.AltBinder b@I.BindAnon{} -> 
-            let pv1 = PV.fromList $ replicate arity (I.AltBinder b)
-                pv2 = PV.tl pv
-            in fromPatVec $ PV.extend pv1 pv2
-          I.AltBinder _ -> noRow
-          I.AltData (I.DConId i') [] _ ->
-            if i' == i then fromPatVec $ PV.tl pv else noRow
-          I.AltData (I.DConId i') ps _ ->
-            if i' == i
-              then
-                let pv1 = PV.fromList ps
-                    pv2 = PV.tl pv
-                 in fromPatVec $ PV.extend pv1 pv2
-              else noRow
+    I.AltLit _ _ -> noRow
+    I.AltBinder b@I.BindAnon{} ->
+      let pv1 = PV.fromList $ replicate arity (I.AltBinder b)
+          pv2 = PV.tl pv
+       in fromPatVec $ PV.extend pv1 pv2
+    I.AltBinder _ -> noRow
+    I.AltData (I.DConId i') [] _ ->
+      if i' == i then fromPatVec $ PV.tl pv else noRow
+    I.AltData (I.DConId i') ps _ ->
+      if i' == i
+        then
+          let pv1 = PV.fromList ps
+              pv2 = PV.tl pv
+           in fromPatVec $ PV.extend pv1 pv2
+        else noRow
 
 
 defaultize :: PatMat t -> PatMat t
@@ -101,6 +101,6 @@ defaultize pm =
   defaultize' pv =
     let wildCase = fromPatVec $ PV.tl pv
      in case PV.hd pv of
-          I.AltLit {} -> noRow
-          I.AltBinder {} -> wildCase
-          I.AltData {} -> noRow
+          I.AltLit{} -> noRow
+          I.AltBinder{} -> wildCase
+          I.AltData{} -> noRow
