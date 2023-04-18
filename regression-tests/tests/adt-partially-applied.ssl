@@ -22,7 +22,7 @@ main (cin : &Int) ( cout : & Int ) -> () =
   let a = square_con 16
 
   // fully applied
-  let b = Square 16                // in a later pass, this call to constructor func should be optimized out
+  let z = Square 16                // in a later pass, this call to constructor func should be optimized out
 
   // unapplied
   let c = Square                 
@@ -37,7 +37,7 @@ main (cin : &Int) ( cout : & Int ) -> () =
   // nullary dcon (should not get changed to func app!)
   let g = Leaf
 
-  after 10 , (cout : & Int) <- perimeter b + 2
+  after 10 , (cout : & Int) <- perimeter z + 2
   wait (cout : & Int)
   after 1, (cout : & Int) <- perimeter f         
   wait (cout : & Int)

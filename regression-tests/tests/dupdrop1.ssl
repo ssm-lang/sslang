@@ -23,13 +23,13 @@ main cin cout =
   17
 
   match z
-    Foo x = x + 1
+    Foo x_ = x_ + 1
     Bar = 42
 
   let d = match add x y
            10 = 5
            _ = 3
-  after 1, cout <- d + 48   // add 5 3 = 7, so d = "3"
+  after 1, cout <- d + 48   // add 5 3 = 7, so d = "3" //after 1, cout <- let __pat_anon1 = add x y
   wait cout
   after 1, cout <- 10
   wait cout

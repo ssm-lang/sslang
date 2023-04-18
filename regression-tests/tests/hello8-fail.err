@@ -1,1 +1,0 @@
-TypeError (ErrorMsg "Type constructor mismatch in annotation: \nAnnotated: ()\nActual: ->\n")
