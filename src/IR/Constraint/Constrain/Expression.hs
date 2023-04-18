@@ -18,7 +18,7 @@ import IR.SegmentLets (segmentDefs')
 
 
 -- | HELPER ALIASES
-type Def = (I.VarId, I.Expr Attachment)
+type Def = (I.VarId, [I.Annotation], Variable, I.Expr Attachment)
 
 
 type BinderDef = (I.Binder Attachment, I.Expr Attachment)
@@ -33,18 +33,21 @@ constrainBinderDefs binderDefs finalConstraint = do
 
     -- resolved I think?
     name <- Type.binderToVarId binder
-    return (name, expr)
-  consDefs <- constrainDefs defs finalConstraint
-  let annsVarPairs = map (uncarryAttachment . fst) binderDefs
-      -- vars = map snd annsVarPairs
-      exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
-      forBinders ((ann, var), exprTyp) =
-        exists [var] <$> do
-          Ann.withAnnotations ann (TVarN var) \varExp ->
-            return $ CEqual varExp exprTyp
-  constraints <- mapM forBinders (zip annsVarPairs exprTyps)
-  return $ CAnd (consDefs : constraints)
+    let (anns, uvar) = uncarryAttachment binder
+    return (name, anns, uvar, expr)
+  constrainDefs defs finalConstraint
 
+
+-- consDefs <- constrainDefs defs finalConstraint
+-- let annsVarPairs = map (uncarryAttachment . fst) binderDefs
+--     -- vars = map snd annsVarPairs
+--     exprTyps = map (TVarN . snd . uncarryAttachment . snd) binderDefs
+--     forBinders ((ann, var), exprTyp) =
+--       exists [var] <$> do
+--         Ann.withAnnotations ann (TVarN var) \varExp ->
+--           return $ CEqual varExp exprTyp
+-- constraints <- mapM forBinders (zip annsVarPairs exprTyps)
+-- return $ CAnd (consDefs : constraints)
 
 constrainDefs :: [Def] -> Constraint -> TC Constraint
 constrainDefs defs finalConstraint = do
@@ -54,26 +57,18 @@ constrainDefs defs finalConstraint = do
 
 constrainRecDefs :: [Def] -> Constraint -> TC Constraint
 constrainRecDefs defs finalConstraint = do
-  flexVars <- mapM (const mkFlexVar) defs
-  let flexHeaderList =
-        zipWith
-          (\(name, _) flexVar -> (Ident.fromId name, TVarN flexVar))
-          defs
-          flexVars
-      flexHeaders = Map.fromList flexHeaderList
-  headerConstraints <-
-    zipWithM
-      (\(_, e) (_, tipe) -> constrainExprAttached e tipe)
-      defs
-      flexHeaderList
+  let flexVars = [uvar | (_, _, uvar, _) <- defs]
+      flexHeader = Map.fromList [(Ident.fromId name, TVarN uvar) | (name, _, uvar, _) <- defs]
+  headerConstraints <- forM defs \(_, anns, uvar, e) -> do
+    Ann.withAnnotations anns (TVarN uvar) $ constrainExprAttached e
   if shouldGeneralize
     then
       return $
         CLet
           []
           flexVars
-          flexHeaders
-          (CLet [] [] flexHeaders CTrue (CAnd headerConstraints))
+          flexHeader
+          (CLet [] [] flexHeader CTrue (CAnd headerConstraints))
           finalConstraint
     else
       return $
@@ -81,11 +76,11 @@ constrainRecDefs defs finalConstraint = do
           CLet
             []
             []
-            flexHeaders
-            (CLet [] [] flexHeaders CTrue (CAnd headerConstraints))
+            flexHeader
+            (CLet [] [] flexHeader CTrue (CAnd headerConstraints))
             finalConstraint
  where
-  shouldGeneralize = all (I.isValue . snd) defs -- see concept: value restriction
+  shouldGeneralize = all (\(_, _, _, e) -> I.isValue e) defs -- see concept: value restriction
 
 
 -- | CONSTRAIN EXPRESSIONS

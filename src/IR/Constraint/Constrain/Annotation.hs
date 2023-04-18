@@ -8,7 +8,7 @@ import qualified Data.Map.Strict as Map
 import qualified IR.Constraint.Canonical as Can
 import IR.Constraint.Monad (
   TC,
-  freshVar,
+  freshAnnVar,
   getKind,
   throwError,
  )
@@ -29,7 +29,7 @@ withAnnotations :: [Can.Annotation] -> Type -> (Type -> TC Constraint) -> TC Con
 withAnnotations [] expected m = m expected
 withAnnotations (Can.AnnDCon _ _ : _) _ _ = error "We should remove this, AnnDCon was a bad idea"
 withAnnotations (ann : anns) expected m = do
-  dummyId <- Ident.fromId <$> freshVar
+  dummyId <- Ident.fromId <$> freshAnnVar
   (State rigidMap flexs, expected') <- add ann
   innerConstraint <- withAnnotations anns expected' m
   return $
