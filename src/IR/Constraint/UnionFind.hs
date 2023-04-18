@@ -1,16 +1,16 @@
-{-# OPTIONS_GHC -funbox-strict-fields #-}
 {-# LANGUAGE BangPatterns #-}
-module IR.Constraint.UnionFind
-  ( Point
-  , fresh
-  , union
-  , equivalent
-  , redundant
-  , get
-  , set
-  , modify
-  ) where
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 
+module IR.Constraint.UnionFind (
+  Point,
+  fresh,
+  union,
+  equivalent,
+  redundant,
+  get,
+  set,
+  modify,
+) where
 
 {- This is based on the following implementations:
 
@@ -26,27 +26,26 @@ Compared to the Haskell implementation, the major changes here include:
 
 -}
 
-
-import           Control.Monad                  ( when )
-import           Control.Monad.Trans            ( MonadIO
-                                                , liftIO
-                                                )
-import           Data.IORef                     ( IORef
-                                                , modifyIORef'
-                                                , newIORef
-                                                , readIORef
-                                                , writeIORef
-                                                )
-import           Data.Word                      ( Word32 )
-
+import Control.Monad (when)
+import Control.Monad.Trans (
+  MonadIO,
+  liftIO,
+ )
+import Data.IORef (
+  IORef,
+  modifyIORef',
+  newIORef,
+  readIORef,
+  writeIORef,
+ )
+import Data.Word (Word32)
 
 
 -- POINT
 
-
-newtype Point a =
-  Pt (IORef (PointInfo a))
-  deriving Eq
+newtype Point a
+  = Pt (IORef (PointInfo a))
+  deriving (Eq)
 
 
 data PointInfo a
@@ -54,15 +53,13 @@ data PointInfo a
   | Link {-# UNPACK #-} !(Point a)
 
 
-
 -- HELPERS
-
 
 fresh :: MonadIO m => a -> m (Point a)
 fresh value = do
   weight <- liftIO $ newIORef 1
-  desc   <- liftIO $ newIORef value
-  link   <- liftIO $ newIORef (Info weight desc)
+  desc <- liftIO $ newIORef value
+  link <- liftIO $ newIORef (Info weight desc)
   return (Pt link)
 
 
@@ -70,8 +67,7 @@ repr :: MonadIO m => Point a -> m (Point a)
 repr point@(Pt ref) = do
   pInfo <- liftIO $ readIORef ref
   case pInfo of
-    Info _ _              -> return point
-
+    Info _ _ -> return point
     Link point1@(Pt ref1) -> do
       point2 <- repr point1
       when (point2 /= point1) $ do
@@ -85,13 +81,11 @@ get point@(Pt ref) = do
   pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ descRef -> liftIO $ readIORef descRef
-
     Link (Pt ref1) -> do
       link' <- liftIO $ readIORef ref1
       case link' of
         Info _ descRef -> liftIO $ readIORef descRef
-
-        Link _         -> get =<< repr point
+        Link _ -> get =<< repr point
 
 
 set :: MonadIO m => Point a -> a -> m ()
@@ -99,13 +93,11 @@ set point@(Pt ref) newDesc = do
   pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ descRef -> liftIO $ writeIORef descRef newDesc
-
     Link (Pt ref1) -> do
       link' <- liftIO $ readIORef ref1
       case link' of
         Info _ descRef -> liftIO $ writeIORef descRef newDesc
-
-        Link _         -> do
+        Link _ -> do
           newPoint <- repr point
           set newPoint newDesc
 
@@ -115,24 +107,22 @@ modify point@(Pt ref) func = do
   pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ descRef -> liftIO $ modifyIORef' descRef func
-
     Link (Pt ref1) -> do
       link' <- liftIO $ readIORef ref1
       case link' of
         Info _ descRef -> liftIO $ modifyIORef' descRef func
-
-        Link _         -> do
+        Link _ -> do
           newPoint <- repr point
           modify newPoint func
 
 
 union :: (MonadIO m, MonadFail m) => Point a -> Point a -> a -> m ()
 union p1 p2 newDesc = do
-  point1@(Pt ref1)  <- repr p1
-  point2@(Pt ref2)  <- repr p2
+  point1@(Pt ref1) <- repr p1
+  point2@(Pt ref2) <- repr p2
 
-  Info    w1     d1 <- liftIO $ readIORef ref1
-  Info    w2     d2 <- liftIO $ readIORef ref2
+  Info w1 d1 <- liftIO $ readIORef ref1
+  Info w2 d2 <- liftIO $ readIORef ref2
 
   if point1 == point2
     then liftIO $ writeIORef d1 newDesc
@@ -165,5 +155,4 @@ redundant (Pt ref) = do
   pInfo <- liftIO $ readIORef ref
   case pInfo of
     Info _ _ -> return False
-
-    Link _   -> return True
+    Link _ -> return True

@@ -401,8 +401,8 @@ closure_apply f a act prio depth ret =
 
 
 -- | @ssm_closure_apply@, apply a closure to an argument, consuming the closure.
-closure_apply_final ::
-  C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
+closure_apply_final
+  :: C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
 closure_apply_final f a act prio depth ret =
   [cexp|ssm_closure_apply_final($exp:f, $exp:a, $exp:act, $exp:prio, $exp:depth, $exp:ret)|]
 

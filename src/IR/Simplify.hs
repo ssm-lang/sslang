@@ -71,16 +71,16 @@ data OccInfo
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
-  { -- | 'occInfo' maps an identifier to its occurence category
-    occInfo :: M.Map I.VarId OccInfo
-  , -- | 'subst' maps an identifier to its substitution
-    subst :: M.Map InVar SubstRng
-  , -- | 'runs' stores how many times the simplifier has run so far
-    runs :: Int
-  , -- | 'countLambda' how many lambdas the occurence analyzer is inside
-    countLambda :: Int
-  , -- | 'countLambda' how many matches the occurence analyzer is inside
-    countMatch :: Int
+  { occInfo :: M.Map I.VarId OccInfo
+  -- ^ 'occInfo' maps an identifier to its occurence category
+  , subst :: M.Map InVar SubstRng
+  -- ^ 'subst' maps an identifier to its substitution
+  , runs :: Int
+  -- ^ 'runs' stores how many times the simplifier has run so far
+  , countLambda :: Int
+  -- ^ 'countLambda' how many lambdas the occurence analyzer is inside
+  , countMatch :: Int
+  -- ^ 'countLambda' how many matches the occurence analyzer is inside
   }
   deriving (Show)
   deriving (Typeable)
@@ -215,7 +215,7 @@ simplifyProgram p = runSimplFn $ do
 
 
 -- | Simplify a top-level definition
-simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
+simplTop :: (I.Binder I.Type, I.Expr I.Type) -> SimplFn (I.Binder I.Type, I.Expr I.Type)
 simplTop (v, e) = do
   (,) v <$> simplExpr M.empty "inscopeset" e "context"
 
@@ -250,7 +250,7 @@ simplExpr sub ins (I.Prim prim args t) cont = do
   args' <- mapM (($ cont) . simplExpr sub ins) args
   pure (I.Prim prim args' t)
 
--- | Simplify Match Expression
+-- \| Simplify Match Expression
 simplExpr sub ins (I.Match scrutinee arms t) cont = do
   scrutinee' <- simplExpr sub ins scrutinee cont
   let (pats, rhss) = unzip arms
@@ -258,18 +258,18 @@ simplExpr sub ins (I.Match scrutinee arms t) cont = do
   let results = zip pats rhss'
   return (I.Match scrutinee' results t)
 
--- | Simplify Application Expression
+-- \| Simplify Application Expression
 simplExpr sub ins (I.App lhs rhs t) cont = do
   lhs' <- simplExpr sub ins lhs cont
   rhs' <- simplExpr sub ins rhs cont
   return (I.App lhs' rhs' t)
 
--- | Simplify Lambda Expression
+-- \| Simplify Lambda Expression
 simplExpr sub ins (I.Lambda binder body t) cont = do
   body' <- simplExpr sub ins body cont
   pure (I.Lambda binder body' t)
 
--- | Simplify Variable Expression
+-- \| Simplify Variable Expression
 simplExpr _ ins var@(I.Var v _) cont = do
   m <- gets subst
   case M.lookup v m of
@@ -277,7 +277,7 @@ simplExpr _ ins var@(I.Var v _) cont = do
     Just (SuspEx e s) -> simplExpr s ins e cont
     Just (DoneEx e) -> simplExpr M.empty ins e cont
 
--- | Simplify Let Expressions
+-- \| Simplify Let Expressions
 simplExpr sub ins (I.Let binders body t) cont = do
   simplified <- mapM simplBinder binders
   let (simplBinders, subs) = unzip simplified
@@ -286,13 +286,13 @@ simplExpr sub ins (I.Let binders body t) cont = do
   body' <- simplExpr subs' ins body cont
   if null binders' then pure body' else pure (I.Let binders' body' t)
  where
-  simplBinder ::
-    (I.Binder, I.Expr I.Type) ->
-    SimplFn (Maybe (I.Binder, I.Expr I.Type), Subst)
+  simplBinder
+    :: (I.Binder t, I.Expr I.Type)
+    -> SimplFn (Maybe (I.Binder t, I.Expr I.Type), Subst)
   simplBinder (binder, rhs) = do
     m <- gets occInfo
     case binder of
-      (Just v) -> case M.lookup v m of
+      (I.BindVar v _) -> case M.lookup v m of
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
           -- preinline test PASSES
@@ -318,7 +318,7 @@ simplExpr sub ins (I.Let binders body t) cont = do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards
 
--- | for all other expressions, don't do anything
+-- \| for all other expressions, don't do anything
 simplExpr _ _ e _ = pure e
 
 
@@ -328,17 +328,6 @@ Returns logging info as a string.
 -}
 runOccAnal :: I.Program I.Type -> SimplFn String
 runOccAnal I.Program{I.programDefs = defs} = do
-  -- a hacky way to see the occurence info for each top def
-  let getOccInfoForDef ::
-        (I.VarId, SimplFn (I.Expr I.Type, String)) -> SimplFn String
-      getOccInfoForDef (v, tpl) = do
-        (_, occinfo) <- tpl
-        pure $
-          "START topdef "
-            ++ show v
-            ++ " has OccInfo: "
-            ++ show occinfo
-            ++ " END"
   defs' <- mapM swallowArgs defs
   info <- mapM (getOccInfoForDef . second occAnalExpr) defs'
   return (show info)
@@ -348,16 +337,27 @@ runOccAnal I.Program{I.programDefs = defs} = do
   "Swallow" means to add the argument to our occurrence info state.
   It returns a top level function without curried arguments; just the body.
   -}
-  swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
-  swallowArgs (funcName, l@(I.Lambda _ _ _)) = do
-    addOccs (Just funcName) -- HACKY
+  swallowArgs :: (I.Binder t, I.Expr t) -> SimplFn (I.Binder t, I.Expr t)
+  swallowArgs (funcName, l@I.Lambda{}) = do
+    addOccs $ I.binderToVar funcName
     let (args, body) = unfoldLambda l
-    mapM_ addOccs args
+    mapM_ (addOccs . I.binderToVar) args
     pure (funcName, body)
    where
     addOccs (Just nm) = addOccVar nm
     addOccs Nothing = pure ()
   swallowArgs (name, e) = pure (name, e)
+
+  -- a hacky way to see the occurence info for each top def
+  getOccInfoForDef :: (I.Binder I.Type, SimplFn (I.Expr I.Type, String)) -> SimplFn String
+  getOccInfoForDef (v, tpl) = do
+    (_, occinfo) <- tpl
+    pure $
+      "START topdef "
+        ++ show v
+        ++ " has OccInfo: "
+        ++ show occinfo
+        ++ " END"
 
 
 {- | Run the Ocurrence Analyzer over an IR expression node
@@ -373,12 +373,14 @@ How do we handle each node?
 - Prim Primitive [Expr t] t             DONE
 -}
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
+
+
 -- | Occurrence Analysis over Let Expression
 occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     ( \(binder, rhs) -> do
         _ <- occAnalExpr rhs
-        case binder of
+        case I.binderToVar binder of
           (Just nm) -> addOccVar nm
           _ -> pure ()
     )
@@ -387,41 +389,41 @@ occAnalExpr l@(I.Let nameValPairs body _) = do
   m <- gets occInfo
   pure (l, show m)
 
--- | Occurrence Analysis over Variable Expression
+-- \| Occurrence Analysis over Variable Expression
 occAnalExpr var@(I.Var v _) = do
   updateOccVar v
   m <- gets occInfo
   return (var, show m)
 
--- | Occurrence Analysis over Lambda Expression
-occAnalExpr l@(I.Lambda Nothing b _) = do
+-- \| Occurrence Analysis over Lambda Expression
+occAnalExpr l@(I.Lambda (I.BindVar v _) b _) = do
   recordEnteringLambda
+  addOccVar v
   _ <- occAnalExpr b
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
-occAnalExpr l@(I.Lambda (Just binder) b _) = do
+occAnalExpr l@(I.Lambda _ b _) = do
   recordEnteringLambda
-  addOccVar binder
   _ <- occAnalExpr b
   recordExitingLambda
   m <- gets occInfo
   pure (l, show m)
 
--- | Occurrence Analysis over Application Expression
+-- \| Occurrence Analysis over Application Expression
 occAnalExpr a@(I.App lhs rhs _) = do
   _ <- occAnalExpr lhs
   _ <- occAnalExpr rhs
   m <- gets occInfo
   pure (a, show m)
 
--- | Occurrence Analysis over Primitve Expression
+-- \| Occurrence Analysis over Primitve Expression
 occAnalExpr p@(I.Prim _ args _) = do
   mapM_ occAnalExpr args
   m <- gets occInfo
   pure (p, show m)
 
--- | Occurrence Analysis over Match Expression
+-- \| Occurrence Analysis over Match Expression
 occAnalExpr p@(I.Match scrutinee arms _) = do
   recordEnteringMatch
   _ <- occAnalExpr scrutinee
@@ -432,21 +434,21 @@ occAnalExpr p@(I.Match scrutinee arms _) = do
   m <- gets occInfo
   pure (p, show m)
 
--- | for all other expressions, don't do anything
+-- \| for all other expressions, don't do anything
 occAnalExpr e = do
   m <- gets occInfo
   pure (e, show m)
 
 
 -- | Run Ocurrence Analyser Over a Match Arm
-occAnalAlt :: I.Alt -> SimplFn (I.Alt, String)
+occAnalAlt :: I.Alt t -> SimplFn (I.Alt t, String)
 occAnalAlt alt@(I.AltBinder binder) = do
-  case binder of
+  case I.binderToVar binder of
     (Just nm) -> addOccVar nm
     _ -> pure ()
   m <- gets occInfo
   pure (alt, show m)
-occAnalAlt alt@(I.AltData _ alts) = do
+occAnalAlt alt@(I.AltData _ alts _) = do
   mapM_ occAnalAlt alts
   m <- gets occInfo
   pure (alt, show m)

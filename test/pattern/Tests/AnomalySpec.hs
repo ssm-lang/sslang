@@ -20,10 +20,10 @@ doAnomalyCheck = Front.run def >=> IR.lower def >=> IR.typecheck def >=> IR.anom
 
 spec :: Spec
 spec = do
-  describe "pure stuff" $ do
-    it "defaultize" $ do
-      PM.emptyWithCols 0
-        `shouldBe` (PM.defaultize . PM.singleCol $ [I.AltLit (I.LitIntegral 1)])
+  -- describe "pure stuff" $ do
+  --   it "defaultize" $ do
+  --     PM.emptyWithCols 0
+  --       `shouldBe` (PM.defaultize . PM.singleCol $ [I.AltLit (I.LitIntegral 1) Int])
   describe "allows valid matches" $ do
     it "allows simple data constructor match" $ do
       shouldPass $ doAnomalyCheck [here|

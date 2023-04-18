@@ -7,13 +7,14 @@ import Common.Compiler
 import Common.Default (Default (..))
 import qualified Front.Ast as A
 import qualified IR.IR as I
+import qualified IR.Pretty ()
 
 import Control.Monad (
   when,
   (>=>),
  )
 import IR.ClassInstantiation (instProgram)
-import IR.Constraint.Typechecking (typecheckProgram)
+import IR.Constraint.Typechecking
 import IR.DConToFunc (dConToFunc)
 import IR.DesugarPattern (desugarPattern)
 import IR.ExternToCall (externToCall)
@@ -24,8 +25,7 @@ import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
 import IR.Simplify (simplifyProgram)
-import IR.Types.Type (fromAnnotations)
-
+import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
   ArgDescr (..),
   OptDescr (..),
