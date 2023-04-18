@@ -70,7 +70,7 @@ instance Pretty (Program Type) where
           [ cDefsChunk
           , map prettyTypDef typeDefs
           , map prettyExternDecl externDecls
-          , map prettyDataDef programDefs
+          , map prettyDef programDefs
           ]
    where
     cDefsChunk
@@ -82,11 +82,6 @@ instance Pretty (Program Type) where
     isLineBreak '\n' = True
     isLineBreak '\r' = True
     isLineBreak _ = False
-
-
-    -- Generates readable Doc representation of an IR Top Level Function
-    prettyDataDef :: (VarId, Expr Type) -> Doc ann
-    prettyDataDef (v, e) = prettyDef (BindVar v Hole, e)
 
     prettyExternDecl :: (Pretty t) => (VarId, t) -> Doc ann
     prettyExternDecl (v, t) = "extern" <+> pretty v <+> colon <+> pretty t
@@ -223,7 +218,6 @@ instance Pretty PrimOp where
 prettyBinderUntyped :: Show a => Binder a -> Doc ann
 prettyBinderUntyped (BindVar v _) = pretty v
 prettyBinderUntyped (BindAnon _) = "_"
-prettyBinderUntyped b = error $ "Non-exhaustive prettyBinder: " ++ show b
 
 
 {- | Pretty-print a binder.
@@ -237,7 +231,6 @@ prettyBinderTyped needsParen (BindVar v t)
 prettyBinderTyped needsParen (BindAnon t)
   | hasTypeInfo t = (if needsParen then parens else id) $ "_:" <+> pretty t
   | otherwise = "_"
-prettyBinderTyped _ b = error $ "Non-exhaustive prettyBinderTyped: " ++ show b
 
 
 -- | Whether a 'Type' has any information worth printing out.

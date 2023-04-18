@@ -205,10 +205,10 @@ dataToApp a = pure a
   which don't need top-level constructor functions.
 -}
 createFunc
-  :: I.TConId -> (I.DConId, I.TypeVariant) -> Maybe (I.VarId, I.Expr I.Type)
+  :: I.TConId -> (I.DConId, I.TypeVariant) -> Maybe (I.Binder I.Type, I.Expr I.Type)
   -- case of nullary dcon; guarantees params to be non-empty in the next pattern
 createFunc _    (_     , I.VariantNamed []    ) = Nothing
-createFunc tcon (dconid, I.VariantNamed params) = Just (func_name, lambda)
+createFunc tcon (dconid, I.VariantNamed params) = Just (I.BindVar func_name $ I.extract lambda, lambda)
  where
   func_name = nameFunc dconid -- distinguish func name from fully applied dcon in IR
   lambda    = I.foldLambda (uncurry I.BindVar <$> params) body

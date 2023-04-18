@@ -238,8 +238,7 @@ termToErrorType term = case term of
 
 
 binderToVarId :: I.Binder t -> TC Ident.VarId
-binderToVarId (I.BindVar var _) = return var
-binderToVarId _ = freshVar
+binderToVarId = maybe freshVar return . I.binderToVar
 
 
 uncarryAttachment :: (I.Carrier c) => c Attachment -> ([I.Annotation], Variable)

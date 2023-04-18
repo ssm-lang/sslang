@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {- | Translate SSM program to C compilation unit.
 
@@ -300,9 +301,9 @@ genProgram p = do
  where
   genTop ::
     TypegenInfo ->
-    (I.VarId, I.Expr I.Type) ->
+    (I.Binder I.Type, I.Expr I.Type) ->
     Compiler.Pass ([C.Definition], [C.Definition])
-  genTop tinfo (name, l@I.Lambda{}) =
+  genTop tinfo (I.BindVar name _, l@I.Lambda{}) =
     runGenFn (fromId name) argIds body tinfo tops $ do
       (stepDecl, stepDefn) <- genStep
       (enterDecl, enterDefn) <- genEnter
@@ -313,7 +314,9 @@ genProgram p = do
         , [enterDefn, closureDefn, stepDefn]
         )
    where
-    tops = map (second I.extract) $ I.programDefs p
+    tops = mapMaybe extractBindVar $ I.programDefs p
+    extractBindVar (I.binderToVar -> Just v, e) = Just (v, I.extract e)
+    extractBindVar _ = Nothing
     (argIds, body) = I.unfoldLambda l
   genTop _ (_, I.Lit _ _) = todo
   genTop _ (_, _) = nope

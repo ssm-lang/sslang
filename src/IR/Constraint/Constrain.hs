@@ -1,6 +1,6 @@
 module IR.Constraint.Constrain where
 
-import           Data.Bifunctor                 ( second )
+import           Data.Bifunctor                 ( bimap )
 import qualified IR.Constraint.Canonical       as Can
 import qualified IR.Constraint.Constrain.Program
                                                as Prog
@@ -22,8 +22,9 @@ sprinkleVariables prog = do
   return prog { I.programDefs = sprinkledDefs }
  where
   sprinkleDef (name, expr) = do
+    name' <- mapM sprinkle name
     expr' <- mapM sprinkle expr
-    return (name, expr')
+    return (name', expr')
   sprinkle ann = do
     v <- mkIRFlexVar
     return (ann, v)
@@ -31,6 +32,5 @@ sprinkleVariables prog = do
 discardAnnotations
   :: I.Program (Can.Annotations, Variable) -> I.Program Variable
 discardAnnotations sprinkledProg =
-  let discardedDefs =
-        map (second $ fmap snd) (I.programDefs sprinkledProg)
+  let discardedDefs = map (bimap (fmap snd) (fmap snd)) (I.programDefs sprinkledProg)
   in  sprinkledProg { I.programDefs = discardedDefs }

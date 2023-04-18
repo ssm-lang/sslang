@@ -70,7 +70,7 @@ runAnomalyFn (AnomalyFn m) = runReaderT m
 
 
 checkProgram :: Show t => I.Program t -> Pass ()
-checkProgram topdefs = runAnomalyFn (checkDefs ds) ctx
+checkProgram topdefs = mapM_ (checkExpr . snd) ds `runAnomalyFn` ctx
  where
   tds = I.typeDefs topdefs
   ds = I.programDefs topdefs

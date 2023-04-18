@@ -34,6 +34,7 @@ module IR.IR
   , altBinders
   , pattern BindVar
   , pattern BindAnon
+  , binderToVar
   , Carrier
   ) where
 import           Common.Identifiers             ( CSym(..)
@@ -66,7 +67,7 @@ data Program t = Program
   { programEntry :: VarId
   , cDefs        :: String
   , externDecls  :: [(VarId, Type)]
-  , programDefs  :: [(VarId, Expr t)]
+  , programDefs  :: [(Binder t, Expr t)]
   , typeDefs     :: [(TConId, TypeDef)]
   }
   deriving (Eq, Show, Typeable, Data, Functor)
@@ -108,6 +109,8 @@ pattern BindAnon t = Binder {_binderId = Nothing, _binderType = t}
 -- | A concrete, named binder.
 pattern BindVar :: VarId -> t -> Binder t
 pattern BindVar v t = Binder {_binderId = Just v, _binderType = t}
+
+{-# COMPLETE BindAnon, BindVar #-}
 
 {- | Literal values supported by the language.
 
@@ -353,6 +356,10 @@ altBinders :: Alt t -> [Binder t]
 altBinders (AltLit _ _) = []
 altBinders (AltBinder b) = [b]
 altBinders (AltData _ as _) = concatMap altBinders as
+
+binderToVar :: Binder a -> Maybe VarId
+binderToVar (BindVar v _) = Just v
+binderToVar _ = Nothing
 
 instance HasFreeVars (Expr t) VarId where
   freeVars (Var v _)                        = S.singleton v

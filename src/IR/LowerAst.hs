@@ -57,7 +57,7 @@ lowerProgram (A.Program ds) = do
   let (tds, cds, xds, dds) = A.getTops ds
   tds' <- mapM lowerTypeDef tds
   xds' <- mapM lowerExternDecl xds
-  dds' <- mapM lowerDataDef dds
+  dds' <- mapM lowerDef dds
   return $
     I.Program
       { I.programEntry = fromString "main" -- TODO: don't hardcode
@@ -67,11 +67,6 @@ lowerProgram (A.Program ds) = do
       , I.cDefs = concat cds
       }
  where
-  lowerDataDef :: A.Definition -> Compiler.Pass (I.VarId, I.Expr I.Annotations)
-  lowerDataDef d =
-    lowerDef d >>= \case
-      (I.BindVar b _, e) -> return (b, e)
-      (_, _) -> Compiler.todo "Top-level anonymous bindings are not yet supported"
   lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef)
   lowerTypeDef td = do
     tds <- mapM lowerTypeVariant $ A.typeVariants td

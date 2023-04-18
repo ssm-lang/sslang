@@ -9,5 +9,6 @@ run :: I.Program Variable -> TC (I.Program Can.Type)
 run pVar = do
   let (names, exprs) = unzip $ I.programDefs pVar
   exprs' <- mapM (mapM Type.toCanType) exprs
-  let pdefs' = zip names exprs'
-  return $ pVar { I.programDefs = pdefs' }
+  let reattachBinders (I.BindVar v _) expr = (I.BindVar v $ I.extract expr, expr)
+      reattachBinders (I.BindAnon _) expr = (I.BindAnon $ I.extract expr, expr)
+  return $ pVar { I.programDefs = zipWith reattachBinders names exprs'}

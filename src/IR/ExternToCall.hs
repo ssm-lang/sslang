@@ -58,14 +58,16 @@ dataToApp (I.Var n t) = do
   -- FIXME: this does not account for name shadowing
 dataToApp a = pure a
 
-makeExternFunc :: (I.VarId, I.Type) -> ExternFn (I.VarId, I.Expr I.Type)
+makeExternFunc :: (I.VarId, I.Type) -> ExternFn (I.Binder I.Type, I.Expr I.Type)
 makeExternFunc (x, t) = do
   let (ats, rt) = I.unfoldArrow t
       args      = zip (map argName [0 ..]) ats
       body      = I.Prim (I.FfiCall $ fromId x) (map (uncurry I.Var) args) rt
+      var       = liftExtern x
+      func      = I.foldLambda (map (uncurry I.BindVar) args) body
   if null ats
     then Compiler.typeError errMsg
-    else return (liftExtern x, I.foldLambda (map (uncurry I.BindVar) args) body)
+    else return (I.BindVar var $ I.extract func, func)
  where
   errMsg = "Extern symbol does not have function type: " ++ show x
   argName :: Int -> I.VarId

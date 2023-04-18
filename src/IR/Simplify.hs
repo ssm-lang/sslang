@@ -215,7 +215,7 @@ simplifyProgram p = runSimplFn $ do
 
 
 -- | Simplify a top-level definition
-simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)
+simplTop :: (I.Binder I.Type, I.Expr I.Type) -> SimplFn (I.Binder I.Type, I.Expr I.Type)
 simplTop (v, e) = do
   (,) v <$> simplExpr M.empty "inscopeset" e "context"
 
@@ -328,17 +328,6 @@ Returns logging info as a string.
 -}
 runOccAnal :: I.Program I.Type -> SimplFn String
 runOccAnal I.Program{I.programDefs = defs} = do
-  -- a hacky way to see the occurence info for each top def
-  let getOccInfoForDef ::
-        (I.VarId, SimplFn (I.Expr I.Type, String)) -> SimplFn String
-      getOccInfoForDef (v, tpl) = do
-        (_, occinfo) <- tpl
-        pure $
-          "START topdef "
-            ++ show v
-            ++ " has OccInfo: "
-            ++ show occinfo
-            ++ " END"
   defs' <- mapM swallowArgs defs
   info <- mapM (getOccInfoForDef . second occAnalExpr) defs'
   return (show info)
@@ -348,16 +337,27 @@ runOccAnal I.Program{I.programDefs = defs} = do
   "Swallow" means to add the argument to our occurrence info state.
   It returns a top level function without curried arguments; just the body.
   -}
-  swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
+  swallowArgs :: (I.Binder t, I.Expr t) -> SimplFn (I.Binder t, I.Expr t)
   swallowArgs (funcName, l@I.Lambda {}) = do
-    addOccs (Just funcName) -- HACKY
+    addOccs $ I.binderToVar funcName
     let (args, body) = unfoldLambda l
-    mapM_ (addOccs . binderToVarId) args
+    mapM_ (addOccs . I.binderToVar) args
     pure (funcName, body)
    where
     addOccs (Just nm) = addOccVar nm
     addOccs Nothing = pure ()
   swallowArgs (name, e) = pure (name, e)
+
+  -- a hacky way to see the occurence info for each top def
+  getOccInfoForDef :: (I.Binder I.Type, SimplFn (I.Expr I.Type, String)) -> SimplFn String
+  getOccInfoForDef (v, tpl) = do
+        (_, occinfo) <- tpl
+        pure $
+          "START topdef "
+            ++ show v
+            ++ " has OccInfo: "
+            ++ show occinfo
+            ++ " END"
 
 
 {- | Run the Ocurrence Analyzer over an IR expression node
@@ -378,7 +378,7 @@ occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     ( \(binder, rhs) -> do
         _ <- occAnalExpr rhs
-        case binderToVarId binder of
+        case I.binderToVar binder of
           (Just nm) -> addOccVar nm
           _ -> pure ()
     )
@@ -441,7 +441,7 @@ occAnalExpr e = do
 -- | Run Ocurrence Analyser Over a Match Arm
 occAnalAlt :: I.Alt t -> SimplFn (I.Alt t, String)
 occAnalAlt alt@(I.AltBinder binder) = do
-  case binderToVarId binder of
+  case I.binderToVar binder of
     (Just nm) -> addOccVar nm
     _ -> pure ()
   m <- gets occInfo
@@ -453,7 +453,3 @@ occAnalAlt alt@(I.AltData _ alts _) = do
 occAnalAlt lit = do
   m <- gets occInfo
   pure (lit, show m)
-
-binderToVarId :: I.Binder t -> Maybe I.VarId
-binderToVarId (I.BindVar var _) = Just var
-binderToVarId _ = Nothing

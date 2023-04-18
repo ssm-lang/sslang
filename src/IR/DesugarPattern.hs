@@ -28,6 +28,7 @@ import           Data.Foldable                  (foldrM)
 import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import Common.Pretty (Pretty(..))
+import Data.Functor ((<&>))
 
 type Equation = ([I.Alt I.Type], I.Expr I.Type)
 
@@ -81,11 +82,9 @@ unreachableExpr = I.Exception $ I.ExceptDefault $ I.LitIntegral 0
 desugarPattern :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 desugarPattern p@I.Program { I.programDefs = defs, I.typeDefs = tds } =
   (`runDesugarFn` buildCtx tds) $ do
-      defs' <- desugarExprsDefs defs
+      defs' <- mapM desugarExprsDefs defs
       return $ p { I.programDefs = defs' }
-
-desugarExprsDefs :: [(I.VarId, I.Expr I.Type)] -> DesugarFn [(I.VarId, I.Expr I.Type)]
-desugarExprsDefs (unzip -> (vs, es))= zip vs <$> mapM desugarExpr es
+  where desugarExprsDefs (vs, es)= desugarExpr es <&> (vs,)
 
 desugarExpr :: I.Expr I.Type -> DesugarFn (I.Expr I.Type)
 desugarExpr (I.App e1 e2 t) = I.App <$> desugarExpr e1 <*> desugarExpr e2 <*> pure t

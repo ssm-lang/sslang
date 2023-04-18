@@ -30,7 +30,7 @@ import Data.Bifunctor (Bifunctor (..))
 import Data.List (intersperse, tails)
 import Data.Map ((\\))
 import qualified Data.Map as M
-import Data.Maybe (maybeToList)
+import Data.Maybe (mapMaybe, maybeToList)
 
 
 binderVars :: [I.Binder I.Type] -> [(I.VarId, I.Type)]
@@ -57,7 +57,7 @@ data LiftCtx = LiftCtx
     currentFreeVars :: M.Map I.VarId I.Type
   , -- | 'lifted' is a list of lifted lambdas created while descending into a
     -- top-level definition.
-    lifted :: [(I.VarId, I.Expr I.Type)]
+    lifted :: [(I.Binder I.Type, I.Expr I.Type)]
   , -- | 'anonCount' is a monotonically increasing counter used for creating
     -- unique identifiers for lifted lambdas.
     freshCounter :: Int
@@ -75,18 +75,22 @@ newtype LiftFn a = LiftFn (StateT LiftCtx Compiler.Pass a)
 
 
 -- | Run a LiftFn computation.
-runLiftFn :: [(I.VarId, I.Type)] -> LiftFn a -> Compiler.Pass a
+runLiftFn :: [(I.Binder I.Type, I.Type)] -> LiftFn a -> Compiler.Pass a
 runLiftFn globals (LiftFn m) =
   evalStateT
     m
     LiftCtx
-      { globalScope = M.fromList globals
+      { globalScope = M.fromList globals'
       , currentScope = M.empty
       , currentFreeVars = M.empty
       , currentTrail = []
       , lifted = []
       , freshCounter = 0
       }
+ where
+  globals' = mapMaybe extractBindVar globals
+  extractBindVar (I.binderToVar -> Just v, t) = Just (v, t)
+  extractBindVar _ = Nothing
 
 
 -- | Create a string composed of the scope trail and a variable name.
@@ -151,11 +155,11 @@ withLiftedScope t (binderVars -> s) m = do
 -- | Store a new lifted lambda to later add to the program's top level definitions.
 tellLifted :: Identifier -> I.Expr I.Type -> LiftFn ()
 tellLifted name lam =
-  modify $ \st -> st{lifted = (fromId name, lam) : lifted st}
+  modify $ \st -> st{lifted = (I.BindVar (fromId name) (I.extract lam), lam) : lifted st}
 
 
 -- | Context management for liftifreshNameng top level lambda definitions.
-extractLifted :: LiftFn [(I.VarId, I.Expr I.Type)]
+extractLifted :: LiftFn [(I.Binder I.Type, I.Expr I.Type)]
 extractLifted = do
   lifted' <- gets lifted
   modify $ \st -> st{lifted = []}
@@ -174,7 +178,7 @@ liftProgramLambdas p@I.Program{I.programDefs = defs} = runLiftFn (map (second I.
  where
   liftTop (v, lam@I.Lambda{}) = do
     let (bs, body) = I.unfoldLambda lam
-    body' <- withEnclosingScope (Just $ fromId v) bs $ liftLambdas body
+    body' <- withEnclosingScope (fromId <$> I.binderToVar v) bs $ liftLambdas body
     liftedLambdas <- extractLifted
     return $ liftedLambdas ++ [(v, I.foldLambda bs body')]
   liftTop topDef = return [topDef]

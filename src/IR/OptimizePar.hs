@@ -74,7 +74,7 @@ optimizePar p = runLiftFn $ do
 
 
 -- | Given a top-level definition, detect + replace unnecessary par expressions
-optimizeParTop :: (I.VarId, I.Expr I.Type) -> OptParFn (I.VarId, I.Expr I.Type)
+optimizeParTop :: (I.Binder I.Type, I.Expr I.Type) -> OptParFn (I.Binder I.Type, I.Expr I.Type)
 optimizeParTop (nm, rhs) = do
   rhs' <- detectReplaceBadPar rhs
   (rhs'', _) <- countPars rhs' -- calling this so we don't get an "unused" warning

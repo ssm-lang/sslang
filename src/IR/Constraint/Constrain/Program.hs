@@ -1,7 +1,7 @@
+{-# LANGUAGE TupleSections #-}
 module IR.Constraint.Constrain.Program where
 
 import qualified Common.Identifiers as Ident
-import Control.Monad (forM)
 import Data.Foldable (foldrM)
 import qualified Data.Map.Strict as Map
 import qualified IR.Constraint.Canonical as Can
@@ -15,21 +15,7 @@ constrain :: I.Program (Can.Annotations, Variable) -> TC Constraint
 constrain prog = do
   constrainTypeDefs (I.typeDefs prog)
     =<< constrainExternDecls (I.externDecls prog)
-    -- since programDefs are not using Binders yet, using this workaround
-    -- after programDefs use binders, can simply be:
-    -- =<< Expr.constrainBinderDefs (I.programDefs prog) CTrue
-    =<< constrainDefs (I.programDefs prog) CTrue
- where
-  constrainDefs :: [(Ident.VarId, I.Expr Attachment)] -> Constraint -> TC Constraint
-  constrainDefs defs finalConstraint = do
-    binderDefs <- forM defs $ \(varId, e) -> do
-      binder <- toBinder varId
-      return (binder, e)
-    Expr.constrainBinderDefs binderDefs finalConstraint
-  toBinder :: Ident.VarId -> TC (I.Binder Attachment)
-  toBinder varId = do
-    flexVar <- mkIRFlexVar
-    return $ I.BindVar varId (Can.Annotations [], flexVar)
+    =<< Expr.constrainBinderDefs (I.programDefs prog) CTrue
 
 
 -- | EXTERN DECLS
@@ -79,7 +65,7 @@ constrainVariant ::
   TC Constraint
 constrainVariant tcon targs dcon (I.VariantUnnamed dargs) finalConstraint = do
   let typ = Can.foldArrow (dargs, Can.TCon tcon (map Can.TVar targs))
-      scheme = Can.Forall (Map.fromList (map (\targ -> (targ, ())) targs)) typ
+      scheme = Can.Forall (Map.fromList (map (,()) targs)) typ
   constrainDeclaration (Ident.fromId dcon) scheme finalConstraint
 constrainVariant _ _ _ (I.VariantNamed _) _ =
   error "No support for named variants yet"

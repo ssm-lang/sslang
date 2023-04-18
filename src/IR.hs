@@ -14,7 +14,6 @@ import Control.Monad (
   (>=>),
  )
 import IR.ClassInstantiation (instProgram)
-import IR.Constraint.Typechecking (typecheckProgram)
 import IR.DConToFunc (dConToFunc)
 import IR.DesugarPattern (desugarPattern)
 import IR.ExternToCall (externToCall)

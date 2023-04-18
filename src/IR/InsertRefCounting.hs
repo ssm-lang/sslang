@@ -69,8 +69,7 @@ import qualified IR.Types                      as I
 -- Applies `insertTop` to the program's definitions
 insertRefCounting :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 insertRefCounting program = (`evalStateT` 0) $ do
-  let programDefs = I.programDefs program
-  defs <- mapM insertTop programDefs
+  defs <- mapM insertTop $ I.programDefs program
   return $ program { I.programDefs  = defs
                    , I.programEntry = I.programEntry program
                    , I.typeDefs     = I.typeDefs program
@@ -115,7 +114,7 @@ makeDrop r e = I.Prim I.Drop [e, r] I.Unit
 -- | Insert referencing counting for top-level expressions
 --
 -- Applies `insertExpr` to a top-level delcaration
-insertTop :: (I.VarId, I.Expr I.Type) -> Fresh (I.VarId, I.Expr I.Type)
+insertTop :: (I.Binder I.Type, I.Expr I.Type) -> Fresh (I.Binder I.Type, I.Expr I.Type)
 insertTop (var, expr) = (var, ) <$> insertExpr expr
 
 {- | Insert reference counting into an expression
@@ -289,7 +288,6 @@ insertExpr (I.Let  bins expr typ) = do
   droppedBinder (I.BindVar v t, d) = do
     d' <- insertExpr d
     return (v, t, d')
-  droppedBinder _ = error "unreachable, fake non-exhaustive pattern"
 
 insertExpr lam@I.Lambda {} = do
   let (args, body) = I.unfoldLambda lam
@@ -298,7 +296,6 @@ insertExpr lam@I.Lambda {} = do
       v <- getFresh "_arg"
       return (v, t)
     I.BindVar v t -> return (v, t)
-    _ -> error "unreachable, fake non-exhaustive pattern"
   let argBinders = uncurry I.BindVar <$> args' -- zipWith (\(v, t) b -> (I.BindVar v t, b)) args' argTypes
       argVars = uncurry I.Var <$> args'
   body' <- insertExpr body
@@ -349,4 +346,3 @@ insertAlt (I.AltData dcon binds t, body) = do
     let varExpr = I.Var v t'
         dupExpr = makeDup varExpr
      in makeDrop varExpr (I.Let [(I.BindAnon $ I.extract dupExpr, dupExpr)] e (I.extract e))
-  dropDupLet _ _ = error "unreachable, fake non-exhaustive pattern"
