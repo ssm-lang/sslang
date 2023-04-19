@@ -64,7 +64,7 @@ lowerProgram (A.Program ds) = do
       , I.externDecls = xds'
       , I.typeDefs = tds'
       , I.cDefs = concat cds
-      , I.symTable = error "Symbol table not yet defined"
+      , I.symTable = I.uninitializedSymTable
       }
  where
   lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef)

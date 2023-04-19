@@ -8,6 +8,7 @@
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR (
   Program (..),
+  SymInfo(..),
   TypeDef (..),
   TypeVariant (..),
   Binder (..),
@@ -37,6 +38,7 @@ module IR.IR (
   pattern BindAnon,
   binderToVar,
   Carrier,
+  uninitializedSymTable,
 ) where
 
 import Common.Identifiers (
@@ -420,6 +422,10 @@ altBinders (AltData _ as _) = concatMap altBinders as
 binderToVar :: Binder a -> Maybe VarId
 binderToVar (BindVar v _) = Just v
 binderToVar _ = Nothing
+
+
+uninitializedSymTable :: M.Map VarId (SymInfo t)
+uninitializedSymTable = error "Symbol table not yet initialized"
 
 
 instance HasFreeVars (Expr t) VarId where

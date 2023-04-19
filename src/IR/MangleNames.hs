@@ -8,13 +8,15 @@ import qualified Common.Compiler as Compiler
 import Common.Identifiers (Identifiable (..), IsString (..))
 import qualified IR.IR as I
 
+import Control.Monad (forM)
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State (MonadState, StateT (..), evalStateT, gets, modify)
-import Data.Bifunctor (Bifunctor (..))
 import qualified Data.Map as M
-import Data.Maybe (catMaybes, fromJust)
-import qualified Data.Set as S
-import Control.Monad (zipWithM)
+import Data.Maybe (mapMaybe)
+
+
+type OriginId = I.VarId
+type MangledId = I.VarId
 
 
 normalize :: I.VarId -> I.VarId
@@ -24,27 +26,27 @@ normalize = fromString . map tr . ident
   tr a = a
 
 
-pickId :: M.Map I.VarId (I.SymInfo I.Type) -> I.VarId -> I.VarId
+pickId :: M.Map MangledId (I.SymInfo I.Type) -> OriginId -> MangledId
 pickId globals v =
   let v' = normalize v
    in if alreadyInUse v'
         then pick 1
         else v'
  where
-  pick :: Int -> I.VarId
+  pick :: Int -> MangledId
   pick i =
     let v' = normalize (v <> "___" <> fromString (show i))
      in if alreadyInUse v'
-           then pick $ i + 1
-           else v'
+          then pick $ i + 1
+          else v'
 
   alreadyInUse :: I.VarId -> Bool
   alreadyInUse v' = M.member v' globals
 
 
 data MangleCtx = MangleCtx
-  { localScope :: M.Map I.VarId (I.SymInfo I.Type)
-  , globalScope :: M.Map I.VarId (I.SymInfo I.Type)
+  { localScope :: M.Map OriginId MangledId
+  , globalScope :: M.Map MangledId (I.SymInfo I.Type)
   }
 
 
@@ -63,7 +65,7 @@ runMangle (Mangle m) =
   evalStateT m MangleCtx{localScope = M.empty, globalScope = M.empty}
 
 
-withLocals :: [(I.VarId, I.SymInfo I.Type)] -> Mangle a -> Mangle a
+withLocals :: [(OriginId, MangledId)] -> Mangle a -> Mangle a
 withLocals vs m = do
   locals <- gets localScope
   modify $ \st -> st{localScope = M.fromList vs `M.union` locals}
@@ -72,46 +74,43 @@ withLocals vs m = do
   return a
 
 
-tellGlobals :: [(I.VarId, I.SymInfo I.Type)] -> Mangle ()
-tellGlobals vs = do
-  modify $ \st -> st{globalScope = M.fromList vs `M.union` globalScope st}
+tellGlobal :: I.VarId -> I.SymInfo I.Type -> Mangle ()
+tellGlobal v i = do
+  modify $ \st -> st{globalScope = M.insert v i $ globalScope st}
 
 
-withMangled :: [I.Binder] -> Mangle a -> Mangle ([I.Binder], a)
+withMangled :: [I.Binder I.Type] -> Mangle a -> Mangle ([I.Binder I.Type], a)
 withMangled vs m = do
   vs' <- mapM pickBinder vs
-  tellGlobals $ catMaybes vs'
-  withLocals (catMaybes vs') $ do
+  withLocals (mapMaybe toLocal vs') $ do
     a <- m
-    return (map toBinder vs', a)
+    return (map fst vs', a)
  where
-  pickBinder :: I.Binder -> Mangle (Maybe (I.VarId, I.SymInfo I.Type))
-  pickBinder (Just v) = do
+  pickBinder :: I.Binder I.Type -> Mangle (I.Binder I.Type, Maybe (I.SymInfo I.Type))
+  pickBinder (I.BindVar v t) = do
     globals <- gets globalScope
     let v' = pickId globals v
-    puts { globalScope = M.insert undefined undefined globals }
-    -- return $ Just (v, I.SymInfo )
+        info = I.SymInfo{I.symOrigin = v, I.symType = t}
+    tellGlobal v' info
+    return (I.BindVar v' t, Just info)
+  pickBinder b = return (b, Nothing)
 
-  pickBinder Nothing = return Nothing
-
-  toBinder :: Maybe (I.VarId, I.VarId) -> I.Binder
-  toBinder (Just (_, v')) = Just v'
-  toBinder Nothing = Nothing
+  toLocal :: (I.Binder I.Type, Maybe (I.SymInfo I.Type)) -> Maybe (OriginId, MangledId)
+  toLocal (I.BindVar v _, Just info) = Just (I.symOrigin info, v)
+  toLocal _ = Nothing
 
 
 mangleProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 mangleProgram p = runMangle $ do
-  let eds = map (\(v, _) -> (v, v)) $ I.externDecls p
-  tellGlobals eds
+  eds <- forM (I.externDecls p) $ \(v, t) -> do
+    let info = I.SymInfo{I.symOrigin = v, I.symType = t}
+    tellGlobal v info
+    return (v, v)
   withLocals eds $ do
-    let (tvs, tes) = unzip $ map (first Just) $ I.programDefs p
+    let (tvs, tes) = unzip $ I.programDefs p
     (tvs', tes') <- withMangled tvs $ mapM mangleExpr tes
     names <- gets globalScope
-    return
-      p
-        { I.programDefs = zip (map fromJust tvs') tes'
-        , I.symTable = names
-        }
+    return p{I.programDefs = zip tvs' tes', I.symTable = names}
 
 
 mangleExpr :: I.Expr I.Type -> Mangle (I.Expr I.Type)
@@ -138,20 +137,22 @@ mangleExpr (I.Prim p es t) = I.Prim p <$> mapM mangleExpr es <*> pure t
 mangleExpr e@I.Exception{} = return e
 
 
-mangleArm :: (I.Alt, I.Expr I.Type) -> Mangle (I.Alt, I.Expr I.Type)
+mangleArm :: (I.Alt I.Type, I.Expr I.Type) -> Mangle (I.Alt I.Type, I.Expr I.Type)
 mangleArm (alt, ex) = do
   snd
     <$> withMangled
-      (map Just $ S.toList $ I.altBinders alt)
+      (I.altBinders alt)
       ((,) <$> mangleAlt alt <*> mangleExpr ex)
  where
-  mangleAlt (I.AltData d bs) = I.AltData d <$> mapM mangleAlt bs
-  mangleAlt a@(I.AltLit _) = return a
+  mangleAlt (I.AltData d bs t) = I.AltData d <$> mapM mangleAlt bs <*> pure t
+  mangleAlt a@(I.AltLit _ _) = return a
   mangleAlt (I.AltBinder b) = I.AltBinder <$> lookupBinder b
 
-  lookupBinder :: I.Binder -> Mangle I.Binder
-  lookupBinder Nothing = return Nothing
-  lookupBinder (Just i) =
-    gets localScope >>= maybe err (return . Just) . M.lookup i
+  lookupBinder :: I.Binder I.Type -> Mangle (I.Binder I.Type)
+  lookupBinder (I.BindVar i t) = do
+    mi' <- gets $ M.lookup i . localScope
+    i' <- maybe err return mi'
+    return $ I.BindVar i' t
    where
     err = Compiler.unexpected $ "mangleAlt: Could not find I.Var " <> show i
+  lookupBinder b = return b

@@ -20,7 +20,7 @@ sprinkleVariables
   :: I.Program Can.Annotations -> TC (I.Program (Can.Annotations, Variable))
 sprinkleVariables prog = do
   sprinkledDefs <- mapM sprinkleDef (I.programDefs prog)
-  return prog{I.programDefs = sprinkledDefs}
+  return prog{I.programDefs = sprinkledDefs, I.symTable = I.uninitializedSymTable}
  where
   sprinkleDef (name, expr) = do
     name' <- mapM sprinkle name
@@ -35,4 +35,4 @@ discardAnnotations
   :: I.Program (Can.Annotations, Variable) -> I.Program Variable
 discardAnnotations sprinkledProg =
   let discardedDefs = map (bimap (fmap snd) (fmap snd)) (I.programDefs sprinkledProg)
-   in sprinkledProg{I.programDefs = discardedDefs}
+   in sprinkledProg{I.programDefs = discardedDefs, I.symTable = I.uninitializedSymTable}
