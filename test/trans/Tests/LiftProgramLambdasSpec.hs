@@ -18,7 +18,7 @@ parseLift s =
     >>= IR.typecheck def
     >>= segmentLets
     >>= liftProgramLambdas
-    >>= \p -> return p { I.varNames = M.empty }
+    >>= \p -> return p { I.symTable = M.empty }
     -- we purge varNames before comparison because those don't matter here
 
 spec :: Spec
