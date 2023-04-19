@@ -425,7 +425,7 @@ binderToVar _ = Nothing
 
 
 uninitializedSymTable :: M.Map VarId (SymInfo t)
-uninitializedSymTable = error "Symbol table not yet initialized"
+uninitializedSymTable = M.empty
 
 
 instance HasFreeVars (Expr t) VarId where
