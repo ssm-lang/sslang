@@ -1,0 +1,196 @@
+type Maybe 
+  Just a
+  Nothing 
+
+
+type List 
+  Cons a (List a)
+  Nil 
+
+
+tl (l : (List a1)) -> (Maybe (List a1)) = 
+  match l
+    Cons __pat_anon6 __pat_anon7 = let ll = __pat_anon7
+                                   Just ll
+    Nil  = Nothing
+
+rev_append (l1 : (List a1)) (l2 : (List a1)) -> (List a1) = 
+  match l1
+    Cons __pat_anon10 __pat_anon11 = let l = __pat_anon11
+                                     let x = __pat_anon10
+                                     rev_append l (Cons x l2)
+    Nil  = l2
+
+reverse (l : (List a1)) -> (List a1) = 
+  rev_append l (Nil)
+
+putip_ (putc : (Int32 -> a1)) (x : Int32) -> a1 = 
+  match x < 10
+    0 = putip_ putc (x / 10)
+        putc (48 + x % 10)
+    _ = putc (x + 48)
+
+puti_ (putc : (Int32 -> a1)) (x : Int32) -> a1 = 
+  match x < 0
+    0 = putip_ putc x
+    _ = putc 45
+        putip_ putc (0 - x)
+
+printl_ (puti : (a2 -> a1)) (putc : (Int32 -> a3)) (l : (List a2)) -> a3 = 
+  match l
+    Cons __pat_anon0 __pat_anon1 = let ll = __pat_anon1
+                                   let v = __pat_anon0
+                                   puti v
+                                   putc 32
+                                   printl_ puti putc ll
+    Nil  = putc 10
+
+nth_aux (l : (List a1)) (n : Int32) -> (Maybe a1) = 
+  match l
+    Cons __pat_anon8 __pat_anon9 = let ll = __pat_anon9
+                                   let c = __pat_anon8
+                                   match n == 0
+                                     0 = nth_aux ll (n - 1)
+                                     _ = Just c
+    Nil  = Nothing
+
+nth (l : (List a1)) (n : Int32) -> (Maybe a1) = 
+  match n < 0
+    0 = nth_aux l n
+    _ = Nothing
+
+mapi_aux (i : Int32) (f : (Int32 -> (a1 -> a2))) (l : (List a1)) -> (List a2) = 
+  match l
+    Cons __pat_anon16 __pat_anon17 = let xx = __pat_anon17
+                                     let x = __pat_anon16
+                                     let r = f i x
+                                     Cons r (mapi_aux (i + 1) f xx)
+    Nil  = Nil
+
+mapi (f : (Int32 -> (a1 -> a2))) (l : (List a1)) -> (List a2) = 
+  mapi_aux 0 f l
+
+map (f : (a1 -> a2)) (l : (List a1)) -> (List a2) = 
+  match l
+    Cons __pat_anon14 __pat_anon15 = let xx = __pat_anon15
+                                     let x = __pat_anon14
+                                     let r = f x
+                                     Cons r (map f xx)
+    Nil  = Nil
+
+length_aux (len : Int32) (l : (List a1)) -> Int32 = 
+  match l
+    Cons __pat_anon2 __pat_anon3 = let ll = __pat_anon3
+                                   length_aux (len + 1) ll
+    Nil  = len
+
+length (l : (List a1)) -> Int32 = 
+  length_aux 0 l
+
+hd (l : (List a1)) -> (Maybe a1) = 
+  match l
+    Cons __pat_anon4 __pat_anon5 = let v = __pat_anon4
+                                   Just v
+    Nil  = Nothing
+
+append (l1 : (List a1)) (l2 : (List a1)) -> (List a1) = 
+  rev_append (reverse l1) l2
+
+concat (l : (List (List a1))) -> (List a1) = 
+  match l
+    Cons __pat_anon12 __pat_anon13 = let xx = __pat_anon13
+                                     let x = __pat_anon12
+                                     append x (concat xx)
+    Nil  = Nil
+
+main (cin : a1) (cout : (& Int32)) -> () = 
+  let putc = fun c after 1, cout <- c
+             wait cout
+  let putnl = fun  putc 10
+  let puti = puti_ putc
+  let printl = fun l printl_ puti putc l
+  let zero = Nil
+  let one = Cons 57 (Nil)
+  let two = Cons 21 one
+  let three = Cons 42 (Cons 17 (Cons 8 (Nil)))
+  putc 65
+  putc 10
+  printl one
+  printl two
+  printl three
+  puti (length zero)
+  putnl ()
+  puti (length one)
+  putnl ()
+  puti (length two)
+  putnl ()
+  puti (length three)
+  putnl ()
+  puti (let __pat_anon18 = hd three
+  match __pat_anon18
+    Just __pat_anon19 = let i = __pat_anon19
+                        i
+    Nothing  = 0)
+  putnl ()
+  let __pat_anon22 = tl three
+  match __pat_anon22
+    Just __pat_anon23 = let l = __pat_anon23
+                        let __pat_anon20 = hd l
+                        match __pat_anon20
+                          Just __pat_anon21 = let ll = __pat_anon21
+                                              puti ll
+                          Nothing  = putc 68
+    Nothing  = putc 66
+  putnl ()
+  printl (let __pat_anon24 = tl three
+  match __pat_anon24
+    Just __pat_anon25 = let l = __pat_anon25
+                        l
+    Nothing  = Nil)
+  let __pat_anon26 = nth three 0
+  match __pat_anon26
+    Just __pat_anon27 = let i = __pat_anon27
+                        puti i
+    Nothing  = putc 66
+  putnl ()
+  let __pat_anon28 = nth three 1
+  match __pat_anon28
+    Just __pat_anon29 = let i = __pat_anon29
+                        puti i
+    Nothing  = putc 66
+  putnl ()
+  let __pat_anon30 = nth three 2
+  match __pat_anon30
+    Just __pat_anon31 = let i = __pat_anon31
+                        puti i
+    Nothing  = putc 66
+  putnl ()
+  let __pat_anon32 = nth three 3
+  match __pat_anon32
+    Just __pat_anon33 = let i = __pat_anon33
+                        putc 33
+    Nothing  = putc 45
+  putnl ()
+  let __pat_anon34 = nth three 4
+  match __pat_anon34
+    Just __pat_anon35 = let i = __pat_anon35
+                        putc 33
+    Nothing  = putc 45
+  putnl ()
+  let __pat_anon36 = nth three (0 - 1)
+  match __pat_anon36
+    Just __pat_anon37 = let i = __pat_anon37
+                        putc 33
+    Nothing  = putc 45
+  putnl ()
+  printl (reverse zero)
+  printl (reverse one)
+  printl (reverse two)
+  printl (reverse three)
+  printl (rev_append three two)
+  printl (append zero three)
+  printl (append two three)
+  printl (concat (Cons (Nil) (Cons one (Cons three (Nil)))))
+  printl (concat (Cons three (Cons two (Cons three (Nil)))))
+  printl (map (fun x x + 1) three)
+  printl (mapi (fun i fun x x - i) three)

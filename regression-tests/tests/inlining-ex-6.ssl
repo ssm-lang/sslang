@@ -1,0 +1,72 @@
+fib n = n
+
+makeColor c = RGB c c c 
+
+type RGB2
+    RGB2 Int Int Int
+    Black2
+
+type RGB
+    RGB Int Int Int
+    Black
+
+main cin cout = 
+    let a = makeColor 4
+    let x = RGB (fib 45) 5 5
+    let v = 5
+
+    let z = match x
+              RGB r g b =  r 
+              _ = 5
+    let q = match a 
+              RGB r1 g1 b1 = r1 + r1
+              _ = 4
+    let w = match v
+              5 = 6
+              _ = 5
+    z
+    q
+    w
+    () 
+
+/* Expected Output:
+type RGB2 
+  RGB2 Int32 Int32 Int32
+  Black2 
+
+
+type RGB 
+  RGB Int32 Int32 Int32
+  Black 
+
+
+__RGB2 (__arg0 : Int32) (__arg1 : Int32) (__arg2 : Int32) -> RGB2 = 
+  RGB2 __arg0 __arg1 __arg2
+
+__RGB (__arg0 : Int32) (__arg1 : Int32) (__arg2 : Int32) -> RGB = 
+  RGB __arg0 __arg1 __arg2
+
+fib (n : _t86) -> _t86 = 
+  n
+
+makeColor (c : Int32) -> RGB = 
+  __RGB c c c
+
+main (cin : _t55) (cout : _t54) -> () = 
+  let a = makeColor 4
+  let x = __RGB (fib 45) 5 5
+  let v = 5
+  match x
+    Black  = 5
+    RGB __pat_anon0 __pat_anon1 __pat_anon2 = let r = __pat_anon0
+                                              r
+  match a
+    Black  = 4
+    RGB __pat_anon3 __pat_anon4 __pat_anon5 = let r1 = __pat_anon3
+                                              r1 + r1
+  match v
+    5 = 6
+    _ = 5
+  ()
+
+*/

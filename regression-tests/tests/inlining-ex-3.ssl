@@ -29,6 +29,8 @@ putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
 
+foo x = x
+
 main cin cout = 
   let n = 5
   match n

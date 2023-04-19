@@ -65,6 +65,7 @@ data OccInfo
   | MultiUnsafe
   | Never
   | ConstructorFunc
+  | Howdy
   deriving (Show)
   deriving (Typeable)
 
@@ -117,7 +118,7 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _ -> M.insert binder ConstructorFunc m
+        Just _ -> M.insert binder ConstructorFunc m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -137,12 +138,10 @@ updateOccVar binder = do
                 ++ "!"
             )
         Just Dead ->
-          -- we only handle OnceSafe currently
-          -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
           if insidel || insidem
             then M.insert binder Never m
             else M.insert binder OnceSafe m
-        _ -> M.insert binder Never m
+        Just _ -> M.insert binder Never m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -208,8 +207,8 @@ simplifyProgram :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 simplifyProgram p = runSimplFn $ do
   _ <- runOccAnal p -- run the occurrence analyzer
   -- fail and print out the results of the occurence analyzer
-  -- info <- runOccAnal p
-  -- _ <- Compiler.unexpected $ show info
+--  info <- runOccAnal p
+--  _ <- Compiler.unexpected $ show info
   simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
   return $ p{I.programDefs = simplifiedProgramDefs} -- this whole do expression returns a Compiler.Pass
 
@@ -293,6 +292,8 @@ simplExpr sub ins (I.Let binders body t) cont = do
     m <- gets occInfo
     case binder of
       (Just v) -> case M.lookup v m of
+        -- Just Never case causes some test cases to fail.
+--        (Just Never) -> pure (Just (binder, rhs), sub) -- never inline something marked never
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
           -- preinline test PASSES

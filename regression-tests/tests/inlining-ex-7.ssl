@@ -1,0 +1,8 @@
+main cin cout = 
+    let x = after 1, cout <- 97
+            wait cout
+    x // ()
+    x // ()
+    x // ()
+    () 
+// prints a once!!!!!

@@ -1,0 +1,225 @@
+type Bool 
+  True 
+  False 
+
+
+type Digit 
+  Zero 
+  One 
+  Two 
+  Three 
+  Four 
+  Five 
+  Six 
+  Seven 
+  Eight 
+  Nine 
+
+
+type Number 
+  Number List
+
+
+type List 
+  Cons Digit List
+  Nil 
+
+
+__Number (__arg0 : List) -> Number = 
+  Number __arg0
+
+__Cons (__arg0 : Digit) (__arg1 : List) -> List = 
+  Cons __arg0 __arg1
+
+print (cout : (& Int32)) (c : Int32) -> () = 
+  after 10, cout <- c
+  wait cout
+
+eqZero (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = True
+
+eqTwo (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = True
+    Zero  = False
+
+eqThree (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = True
+    Two  = False
+    Zero  = False
+
+eqSix (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = True
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqSeven (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = True
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqOne (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = True
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqNine (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = False
+    Nine  = True
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqFour (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = False
+    Four  = True
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqFive (n : Digit) -> Bool = 
+  match n
+    Eight  = False
+    Five  = True
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqEight (n : Digit) -> Bool = 
+  match n
+    Eight  = True
+    Five  = False
+    Four  = False
+    Nine  = False
+    One  = False
+    Seven  = False
+    Six  = False
+    Three  = False
+    Two  = False
+    Zero  = False
+
+eqDigit (n : Digit) (n2 : Digit) -> Bool = 
+  match n
+    Eight  = eqEight n2
+    Five  = eqFive n2
+    Four  = eqFour n2
+    Nine  = eqNine n2
+    One  = eqOne n2
+    Seven  = eqSeven n2
+    Six  = eqSix n2
+    Three  = eqThree n2
+    Two  = eqTwo n2
+    Zero  = eqZero n2
+
+eqNumber (n : Number) (n2 : Number) -> Bool = 
+  match n
+    Number __pat_anon9 = let lst = __pat_anon9
+                         match lst
+                           Cons __pat_anon7 __pat_anon8 = let tl = __pat_anon8
+                                                          let num = __pat_anon7
+                                                          match n2
+                                                            Number __pat_anon6 = let lst2 = __pat_anon6
+                                                                                 match lst2
+                                                                                   Cons __pat_anon4 __pat_anon5 = let tl2 = __pat_anon5
+                                                                                                                  let num2 = __pat_anon4
+                                                                                                                  let __pat_anon3 = eqDigit num num2
+                                                                                                                  match __pat_anon3
+                                                                                                                    False  = False
+                                                                                                                    True  = eqNumber (__Number tl) (__Number tl2)
+                                                                                   Nil  = False
+                           Nil  = match n2
+                                    Number __pat_anon2 = let lst2 = __pat_anon2
+                                                         match lst2
+                                                           Cons __pat_anon0 __pat_anon1 = False
+                                                           Nil  = True
+
+dtoc (n : Digit) -> Int32 = 
+  match n
+    Eight  = 56
+    Five  = 53
+    Four  = 52
+    Nine  = 57
+    One  = 49
+    Seven  = 55
+    Six  = 54
+    Three  = 51
+    Two  = 50
+    Zero  = 48
+
+btos (b : Bool) -> Int32 = 
+  match b
+    False  = 70
+    True  = 84
+
+main (cint : (& Int32)) (cout : (& Int32)) -> () = 
+  let x = __Number (__Cons (One) (__Cons (Two) (__Cons (Four) (Nil))))
+  let y = __Number (__Cons (Five) (__Cons (Five) (__Cons (Zero) (Nil))))
+  print cout (btos (eqNumber x x))
+  print cout (btos (eqNumber x y))

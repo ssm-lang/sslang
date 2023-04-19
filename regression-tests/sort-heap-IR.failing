@@ -1,0 +1,102 @@
+type List 
+  Cons Int32 List
+  Nil 
+
+
+type Tree 
+  Node Tree Int32 Tree
+  Leaf Int32
+
+
+__Cons (__arg0 : Int32) (__arg1 : List) -> List = 
+  Cons __arg0 __arg1
+
+__Node (__arg0 : Tree) (__arg1 : Int32) (__arg2 : Tree) -> Tree = 
+  Node __arg0 __arg1 __arg2
+
+__Leaf (__arg0 : Int32) -> Tree = 
+  Leaf __arg0
+
+concat (l : List) (ys : List) -> List = 
+  match l
+    Cons __pat_anon0 __pat_anon1 = __Cons __pat_anon0 (concat __pat_anon1 ys)
+    Nil  = ys
+
+atTop (t : Tree) -> Int32 = 
+  match t
+    Leaf __pat_anon2 = __pat_anon2
+    Node __pat_anon3 __pat_anon4 __pat_anon5 = __pat_anon4
+
+replaceTop (t : Tree) (a_ : Int32) -> Tree = 
+  match t
+    Leaf __pat_anon6 = __Leaf a_
+    Node __pat_anon7 __pat_anon8 __pat_anon9 = heapify (__Node __pat_anon7 a_ __pat_anon9)
+
+adjustLeft (t : Tree) -> Tree = 
+  match t
+    Leaf __pat_anon11 = __Leaf __pat_anon11
+    Node __pat_anon12 __pat_anon13 __pat_anon14 = let __pat_anon10 = atTop __pat_anon12 >= __pat_anon13
+                                                  match __pat_anon10
+                                                    1 = __Node __pat_anon12 __pat_anon13 __pat_anon14
+                                                    _ = __Node (replaceTop __pat_anon12 __pat_anon13) (atTop __pat_anon12) __pat_anon14
+
+adjustRight (t : Tree) -> Tree = 
+  match t
+    Leaf __pat_anon16 = __Leaf __pat_anon16
+    Node __pat_anon17 __pat_anon18 __pat_anon19 = let __pat_anon15 = atTop __pat_anon19 >= __pat_anon18
+                                                  match __pat_anon15
+                                                    1 = __Node __pat_anon17 __pat_anon18 __pat_anon19
+                                                    _ = __Node __pat_anon17 (atTop __pat_anon19) (replaceTop __pat_anon17 __pat_anon18)
+
+doTop (t : Tree) -> Tree = 
+  match t
+    Leaf __pat_anon21 = __Leaf __pat_anon21
+    Node __pat_anon22 __pat_anon23 __pat_anon24 = let __pat_anon20 = atTop __pat_anon22 < atTop __pat_anon24
+                                                  match __pat_anon20
+                                                    1 = adjustLeft (__Node __pat_anon22 __pat_anon23 __pat_anon24)
+                                                    _ = adjustRight (__Node __pat_anon22 __pat_anon23 __pat_anon24)
+
+heapify (t : Tree) -> Tree = 
+  match t
+    Leaf __pat_anon25 = __Leaf __pat_anon25
+    Node __pat_anon26 __pat_anon27 __pat_anon28 = doTop (__Node (heapify __pat_anon26) __pat_anon27 (heapify __pat_anon28))
+
+inOrder (t : Tree) -> List = 
+  match t
+    Leaf __pat_anon29 = __Cons __pat_anon29 (Nil)
+    Node __pat_anon30 __pat_anon31 __pat_anon32 = concat (concat (inOrder __pat_anon30) (__Cons __pat_anon31 (Nil))) (inOrder __pat_anon32)
+
+preOrder (t : Tree) -> List = 
+  match t
+    Leaf __pat_anon33 = __Cons __pat_anon33 (Nil)
+    Node __pat_anon34 __pat_anon35 __pat_anon36 = concat (__Cons __pat_anon35 (inOrder __pat_anon34)) (inOrder __pat_anon36)
+
+postOrder (t : Tree) -> List = 
+  match t
+    Leaf __pat_anon37 = __Cons __pat_anon37 (Nil)
+    Node __pat_anon38 __pat_anon39 __pat_anon40 = concat (concat (inOrder __pat_anon38) (inOrder __pat_anon40)) (__Cons __pat_anon39 (Nil))
+
+print_list2 (out : (& Int32)) (l : List) -> () = 
+  match __pat_anon26
+    Cons __pat_anon41 __pat_anon42 = after 1, out <- __pat_anon41
+                                     wait out
+                                     after 1, out <- 32
+                                     wait out
+                                     print_list2 out __pat_anon42
+    Nil  = ()
+
+print_list (out : (& Int32)) (l : List) -> () = 
+  after 1, out <- 91
+  wait out
+  after 1, out <- 32
+  wait out
+  print_list2 out __pat_anon26
+  after 1, out <- 93
+  wait out
+  after 1, out <- 10
+  wait out
+
+main (in : (& Int32)) (out : (& Int32)) -> () = 
+  let heap1 = __Node (__Node (__Leaf 97) 98 (__Leaf 99)) 100 (__Node (__Leaf 101) 102 (__Leaf 103))
+  print_list out (inOrder heap1)
+  print_list out (inOrder (heapify heap1))

@@ -1,0 +1,10 @@
+/* ANOTHER PROBLEM
+x gets inlined in this example but it shouldn't!!
+*/
+
+main (cin : &Int) ( cout : & Int ) -> () =
+  let x = 96
+  after 1, cout <- (x+1)
+  wait cout
+  after 1, cout <- (x+1)
+  wait cout
