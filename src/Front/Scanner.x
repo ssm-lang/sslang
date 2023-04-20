@@ -251,7 +251,7 @@ data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
   , lastCtxCode :: Int            -- ^ last seen scanning code before block
-  , lineMargin :: Int
+  , lastLineMargin :: Int
   }
 
 -- | Initial Alex monad state.
@@ -260,7 +260,7 @@ alexInitUserState = AlexUserState
   { usContext = [ImplicitBlock 1 TDBar]
   , commentLevel = 0
   , lastCtxCode = 0
-  , lineMargin = 0
+  , lastLineMargin = 0
   }
 
 -- | Enter a new context by pushing it onto stack.
@@ -373,7 +373,7 @@ updateMargin :: AlexInput -> Alex ()
 updateMargin i = do 
   let c = alexColumn $ alexPosition i
   st <- alexGetUserState
-  alexSetUserState $ st { lineMargin = c } 
+  alexSetUserState $ st { lastLineMargin = c } 
      
 
 -- | First token in a line.
@@ -397,7 +397,6 @@ lineFirstToken' i _ = do
   alexSetStartCode 0
 
   -- margin is the context margin
-  ctxMarg <- ctxMargin <$> alexPeekContext
   ctx <- alexPeekContext
   case ctx of
     ExplicitBlock _ _ -> alexMonadScan
@@ -449,7 +448,7 @@ lineFirstToken' i _ = do
          internalErr $ "Unreachable; boolean comparisons should have covered all cases"
 
   -- if pending block, check if currmarg is < prevline margin
-    PendingBlockNL ctxMarg sepToken
+    PendingBlockNL _ sepToken
       | currMarg < lineMargin ->
         lexErr i $ "cannot start block after a new line at lower indentation than before"
 
@@ -463,55 +462,6 @@ lineFirstToken' i _ = do
         return $ Token (emptySpan, TLbrace)
 
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
-
-
--- lineFirstToken' :: AlexAction Token
--- lineFirstToken' i _ = do
---   st <- alexGetUserState
---   let tCol = alexColumn $ alexPosition i
---       emptySpan = alexEmptySpan $ alexPosition i
---       (_, _, _, tokenStr) = i
---       lineMargin = extractMargin st
-
---   alexSetStartCode 0
-
---   ctx <- alexPeekContext
---   case ctx of
---     ExplicitBlock _ _ -> alexMonadScan
---       -- Newlines don't mean anything in explicit blocks.
-
---     ImplicitBlock margin sepToken
---       | tCol > margin -> do
---         -- Continued line; continue to scan as normal
---         alexMonadScan
-
---       | tCol == margin -> do
---         -- Next line started; insert 'sepToken' if needed
---         if needsSep tokenStr
---            then alexMonadScan
---            else return $ Token (emptySpan, sepToken)
-
---       | otherwise -> do
---         -- Block ended; pop context and insert 'TRbrace', but return to
---         -- 'lineStart' to check for anything else to do; if more blocks are
---         -- ending, those will need to be closed too
---         alexSetStartCode lineStart
---         alexPopContext
---         return $ Token (emptySpan, TRbrace)
-
---     PendingBlockNL margin sepToken
---       | tCol <= lineMargin ->
---         lexErr i $ "cannot start block after a new line layout keyword at lower indentation than before"
-
---       | otherwise -> do
---         -- We were about to start a block in a new line, and we encountered the
---         -- first token of that new line. Transition from 'PendingNL' to
---         -- 'ImplicitBlock', and emit the opening brace for the new block.
---         alexPopContext
---         alexPushContext $ ImplicitBlock tCol sepToken
---         return $ Token (emptySpan, TLbrace)
-
---     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
 -- | Whether a token needs a separator inserted if it starts a line.
 --
@@ -645,17 +595,17 @@ blockFirstToken i _ = do
 
   -- Check the top of the context stack to obtain saved separator token.
   ctx <- alexPeekContext
-  (margin, sepToken) <- case ctx of
-    PendingBlock m s -> alexPopContext >> return (m, s)
+  sepToken <- case ctx of
+    PendingBlock _ s -> alexPopContext >> return s
     _ -> internalErr $ "unexpected context in blockFirstToken: " ++ show ctx
 
   -- Assert that indentation of this token is greater than that of layout token.
-  let tCol = alexColumn $ alexPosition i
-  when (tCol <= lineMargin) $ do
+  let currMarg = alexColumn $ alexPosition i
+  when (currMarg <= lineMargin) $ do
     lexErr i $ "cannot start block at lower indentation than before"
 
   -- About to start a block; remember current indentation level and separator.
-  alexPushContext $ ImplicitBlock tCol sepToken
+  alexPushContext $ ImplicitBlock currMarg sepToken
 
   -- Emit TLbrace to start block.
   return $ Token (alexEmptySpan $ alexPosition i, TLbrace)
