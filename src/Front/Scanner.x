@@ -388,51 +388,130 @@ lineFirstToken i len
 -- | First token in a line that isn't the last line.
 lineFirstToken' :: AlexAction Token
 lineFirstToken' i _ = do
-  st <- alexGetUserState
-  let tCol = alexColumn $ alexPosition i
+  st <- alexGetUserState 
+  let currMarg = alexColumn $ alexPosition i
       emptySpan = alexEmptySpan $ alexPosition i
       (_, _, _, tokenStr) = i
       lineMargin = extractMargin st
 
   alexSetStartCode 0
 
+  -- margin is the context margin
+  ctxMarg <- ctxMargin <$> alexPeekContext
   ctx <- alexPeekContext
   case ctx of
     ExplicitBlock _ _ -> alexMonadScan
       -- Newlines don't mean anything in explicit blocks.
 
-    ImplicitBlock margin sepToken
-      | tCol > margin -> do
-        -- Continued line; continue to scan as normal
-        alexMonadScan
+    ImplicitBlock ctxMarg sepToken
+      | currMarg == ctxMarg -> do
+          if needsSep tokenStr
+             then return $ Token (emptySpan, sepToken)
+             else alexMonadScan
 
-      | tCol == margin -> do
-        -- Next line started; insert 'sepToken' if needed
-        if needsSep tokenStr
-           then alexMonadScan
-           else return $ Token (emptySpan, sepToken)
+      -- Examples of when the currMarg == ctxMarg:
+      -- loop f
+      --      g // curr > line margin && == ctx margin
+      --      h // curr == line margin && == ctx margin
+      --        x
+      --      f // curr < line margin && == ctx margin
+      
+      -- loop f
+      -- g // curr == line margin && == ctx margin
+      --
+      -- loop loop f
+      --      g // curr > line margin && == ctx margin
+      --
+      -- f
+      --   x
+      -- g // curr < line margin && == ctx margin
 
-      | otherwise -> do
-        -- Block ended; pop context and insert 'TRbrace', but return to
-        -- 'lineStart' to check for anything else to do; if more blocks are
-        -- ending, those will need to be closed too
+      | currMarg < ctxMarg -> do
         alexSetStartCode lineStart
         alexPopContext
         return $ Token (emptySpan, TRbrace)
+      -- If currMarg < ctxMarg, pop a context to compare currMarg with the previous ctxMarg
 
-    PendingBlockNL margin sepToken
-      | tCol <= margin ->
+    
+      | currMarg > ctxMarg && currMarg >= lineMargin -> do
+        -- Continued line; continue to scan as normal
+        alexMonadScan
+      -- Example of when the currMarg > ctxMarg with 2 diff cases of lineMarg
+      -- f
+      --   x // > line margin && > ctx margin
+      --   y // == line margin && > ctx margin
+
+      | currMarg > ctxMarg && currMarg < lineMargin -> do
+         error "user error, outdent better"
+
+      -- this means curr < prevline margin; we are outdenting
+      | otherwise -> do
+         error "Unreachable; boolean comparisons should have covered all cases"
+
+  -- if pending block, check if currmarg is < prevline margin
+    PendingBlockNL ctxMarg sepToken
+      | currMarg < lineMargin ->
         lexErr i $ "cannot start block after a new line layout keyword at lower indentation than before"
 
+      -- If currmarg >= prevline
       | otherwise -> do
         -- We were about to start a block in a new line, and we encountered the
         -- first token of that new line. Transition from 'PendingNL' to
         -- 'ImplicitBlock', and emit the opening brace for the new block.
         alexPopContext
-        alexPushContext $ ImplicitBlock tCol sepToken
+        alexPushContext $ ImplicitBlock currMarg sepToken
         return $ Token (emptySpan, TLbrace)
 
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
+
+
+-- lineFirstToken' :: AlexAction Token
+-- lineFirstToken' i _ = do
+--   st <- alexGetUserState
+--   let tCol = alexColumn $ alexPosition i
+--       emptySpan = alexEmptySpan $ alexPosition i
+--       (_, _, _, tokenStr) = i
+--       lineMargin = extractMargin st
+
+--   alexSetStartCode 0
+
+--   ctx <- alexPeekContext
+--   case ctx of
+--     ExplicitBlock _ _ -> alexMonadScan
+--       -- Newlines don't mean anything in explicit blocks.
+
+--     ImplicitBlock margin sepToken
+--       | tCol > margin -> do
+--         -- Continued line; continue to scan as normal
+--         alexMonadScan
+
+--       | tCol == margin -> do
+--         -- Next line started; insert 'sepToken' if needed
+--         if needsSep tokenStr
+--            then alexMonadScan
+--            else return $ Token (emptySpan, sepToken)
+
+--       | otherwise -> do
+--         -- Block ended; pop context and insert 'TRbrace', but return to
+--         -- 'lineStart' to check for anything else to do; if more blocks are
+--         -- ending, those will need to be closed too
+--         alexSetStartCode lineStart
+--         alexPopContext
+--         return $ Token (emptySpan, TRbrace)
+
+--     PendingBlockNL margin sepToken
+--       | tCol <= lineMargin ->
+--         lexErr i $ "cannot start block after a new line layout keyword at lower indentation than before"
+
+--       | otherwise -> do
+--         -- We were about to start a block in a new line, and we encountered the
+--         -- first token of that new line. Transition from 'PendingNL' to
+--         -- 'ImplicitBlock', and emit the opening brace for the new block.
+--         alexPopContext
+--         alexPushContext $ ImplicitBlock tCol sepToken
+--         return $ Token (emptySpan, TLbrace)
+
+--     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
 
 -- | Whether a token needs a separator inserted if it starts a line.
 --
@@ -452,7 +531,7 @@ lineFirstToken' i _ = do
 -- The correct scanner output should be @if cond { expr1 } else { expr2 }@, and
 -- not @if cond { expr1 } ; else { expr2 }@.
 needsSep :: String -> Bool
-needsSep = isPrefixOf "else"
+needsSep = not . isPrefixOf "else"
 
 -- | Left brace token.
 lBrace :: AlexAction Token
