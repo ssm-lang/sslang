@@ -115,7 +115,7 @@ data Expr
   | CQuote String
   | CCall Identifier [Expr]
   | Tuple [Expr]
-  | ListExpr [Expr]
+  | ImportId [Identifier]
   deriving (Eq, Show, Typeable, Data)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -216,7 +216,7 @@ instance Pretty TopDef where
   pretty (TopImport i) = pretty i
 
 instance Pretty Import where
-    pretty (Import {importFile = file, elementList = els} ) = 
+    pretty Import {importFile = file, elementList = els}  = 
         pretty "import" <+> pretty file <+> pretty "with" <+> pretty els
 
 instance Pretty ImportItem where
@@ -323,7 +323,7 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
-  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  -- pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
   pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where

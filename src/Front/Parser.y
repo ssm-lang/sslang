@@ -342,6 +342,12 @@ exprAtom
   | '(' ')'                             { Lit LitEvent }
   | '[' exprList ']'                    { ListExpr $2 }
   | '(' expr ',' exprTups ')'           { Tuple ($2 : $4)  }
+  | id '.' fullids                      { ImportId ($1 : $3) }
+
+-- fullIds
+fullids
+  : id                                    { [$1] }
+  | id '.' fullids                        { $1 : $3 }
 
 -- | List Expression.
 exprList
