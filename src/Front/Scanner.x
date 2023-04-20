@@ -442,16 +442,16 @@ lineFirstToken' i _ = do
       --   y // == line margin && > ctx margin
 
       | currMarg > ctxMarg && currMarg < lineMargin -> do
-         error "user error, outdent better"
+         lexErr i $ "user error, outdent better"
 
       -- this means curr < prevline margin; we are outdenting
       | otherwise -> do
-         error "Unreachable; boolean comparisons should have covered all cases"
+         internalErr $ "Unreachable; boolean comparisons should have covered all cases"
 
   -- if pending block, check if currmarg is < prevline margin
     PendingBlockNL ctxMarg sepToken
       | currMarg < lineMargin ->
-        lexErr i $ "cannot start block after a new line layout keyword at lower indentation than before"
+        lexErr i $ "cannot start block after a new line at lower indentation than before"
 
       -- If currmarg >= prevline
       | otherwise -> do
