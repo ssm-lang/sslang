@@ -59,14 +59,15 @@ spec = do
           loop
             wait clk
     |]
-
-  it "rejects starting blocks at the same indentation" $ do
-    shouldntScan [here|
+  
+  it "allows starting block to be at same indentation" $ do
+    -- This is bad style but should still parse
+    shouldParse [here|
       main (clk : &Int) =
       loop
         wait clk
     |]
-    shouldntScan [here|
+    shouldParse [here|
       main (clk : &Int) =
         loop
         wait clk
@@ -221,13 +222,9 @@ spec = do
     |]
 
   it "parses singleton let-blocks without needing extra indentation" $ do
-    pendingWith "refinement of scanner algorithm"
-    -- TODO: handle this test case:
-    --
-    --   let x =
-    --     1
-    --   2
-    --
-    -- Note that e has less indentation than x. This should be parsed as:
-    --
-    --   let { x = { 1 } } ; 2
+    shouldParse [here|
+      main (clk : &Int) =
+        let x =
+          1
+        x
+    |]
