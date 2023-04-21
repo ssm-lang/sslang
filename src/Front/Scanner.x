@@ -101,7 +101,6 @@ tokens :-
 
     -- If we're about to start a block, newlines don't matter.
     @newline            ;
-    -- @newline            { \_ _ -> alexSetStartCode blockLineStart >> alexMonadScan }
 
     -- Explicitly start a block at lBrace.
     \{                  { lBrace }
@@ -251,7 +250,7 @@ data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
   , lastCtxCode :: Int            -- ^ last seen scanning code before block
-  , lastLineMargin :: Int
+  , lastLineMargin :: Int         -- ^ previous line's margin
   }
 
 -- | Initial Alex monad state.
@@ -366,9 +365,11 @@ gotoStartLine _ _ = do
   alexSetStartCode lineStart
   alexMonadScan
 
+-- | Extracts the margin of the previous line from the AlexUserState 
 extractMargin :: AlexUserState -> Int
 extractMargin (AlexUserState _ _ _ m) = m
 
+-- | Update the previous line margin 
 updateMargin :: AlexInput -> Alex ()
 updateMargin i = do 
   let c = alexColumn $ alexPosition i
