@@ -42,10 +42,6 @@ jobs:
         os:  ${{ matrix.os }}
         resolver: ${{ matrix.resolver }}
 
-    - name: Build sslang compiler
-      run: |
-        stack build
-
-    - name: Run sslang test suite
+    - name: Build and run sslang test suite
       run: |
         stack test --stack-yaml stack.yaml
