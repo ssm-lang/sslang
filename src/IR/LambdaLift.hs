@@ -33,8 +33,6 @@ import Data.Map ((\\))
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe, maybeToList)
 import Data.Generics (mkT, everywhere)
-import Debug.Trace
-import Common.Pretty
 
 
 binderVars :: [I.Binder I.Type] -> [(I.VarId, I.Type)]
@@ -177,7 +175,6 @@ Program with the relative order of user definitions preserved.
 -}
 liftProgramLambdas :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 liftProgramLambdas p@I.Program{I.programDefs = defs} = runLiftFn (map (second I.extract) defs) $ do
-  traceM $ "before pretty: " ++ show (pretty p)
   liftedProgramDefs <- mapM liftTop defs
   return $ p{I.programDefs = concat liftedProgramDefs}
  where
@@ -221,7 +218,6 @@ liftLambdas (I.Let ds b t)
       dsls' <- forM ds $ \(x, d) -> do
         fn <- getFresh
         (d', x', lam) <- liftLambda d binders $ maybe fn fromId $ I._binderId x
-        -- TODO: handle recursive bindings
         return ((x, d'), (x, x'), (x', lam))
       let (ds', xx', ls') = unzip3 dsls'
           xxMap = M.fromList $ mapMaybe makeMapping xx'
@@ -236,12 +232,8 @@ liftLambdas (I.Let ds b t)
           mapRecBinds e = e
       
       forM_ ls' $ \(x', lam) -> do
-        traceM $ "Replacing " ++ show (pretty lam)
         -- replace every instance of Var x to Var x' in lam
         let lam' = everywhere (mkT mapRecBinds) lam
-        traceM $ "with " ++ show (pretty lam')
-        traceM $ "map " ++ show xxMap
-        traceM "----"
         tellLifted x' lam'
 
       b' <- withEnclosingScope Nothing binders $ liftLambdas b
