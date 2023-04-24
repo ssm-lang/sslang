@@ -14,9 +14,10 @@ module IR.LambdaLift (
 import qualified Common.Compiler as Compiler
 import Common.Identifiers
 import qualified IR.IR as I
+import qualified IR.Pretty ()
 import qualified IR.Types as I
 
-import Control.Monad (forM, unless)
+import Control.Monad (forM, forM_, unless)
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy (
   MonadState (..),
@@ -31,6 +32,9 @@ import Data.List (intersperse, tails)
 import Data.Map ((\\))
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe, maybeToList)
+import Data.Generics (mkT, everywhere)
+import Debug.Trace
+import Common.Pretty
 
 
 binderVars :: [I.Binder I.Type] -> [(I.VarId, I.Type)]
@@ -173,6 +177,7 @@ Program with the relative order of user definitions preserved.
 -}
 liftProgramLambdas :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 liftProgramLambdas p@I.Program{I.programDefs = defs} = runLiftFn (map (second I.extract) defs) $ do
+  traceM $ "before pretty: " ++ show (pretty p)
   liftedProgramDefs <- mapM liftTop defs
   return $ p{I.programDefs = concat liftedProgramDefs}
  where
@@ -202,7 +207,10 @@ liftLambdas n@(I.Var v t) = do
   return n
 liftLambdas (I.App e1 e2 t) = I.App <$> liftLambdas e1 <*> liftLambdas e2 <*> pure t
 liftLambdas (I.Prim p exprs t) = I.Prim p <$> mapM liftLambdas exprs <*> pure t
-liftLambdas lam@I.Lambda{} = getFresh >>= liftLambda lam []
+liftLambdas lam@I.Lambda{} = do
+  (lam', liftName, liftLam) <- getFresh >>= liftLambda lam []
+  tellLifted liftName liftLam
+  return lam'
 liftLambdas (I.Let ds b t)
   | all (isLambda . snd) ds = do
       -- e.g.,  let f x = ...
@@ -210,11 +218,32 @@ liftLambdas (I.Let ds b t)
       --        ...
       -- Bindings (e.g., f, g) might be recursive and apppear inside definitions.
       let binders = map fst ds
-      ds' <- forM ds $ \(x, d) -> do
+      dsls' <- forM ds $ \(x, d) -> do
         fn <- getFresh
-        d' <- liftLambda d binders $ maybe fn fromId $ I._binderId x
+        (d', x', lam) <- liftLambda d binders $ maybe fn fromId $ I._binderId x
         -- TODO: handle recursive bindings
-        return (x, d')
+        return ((x, d'), (x, x'), (x', lam))
+      let (ds', xx', ls') = unzip3 dsls'
+          xxMap = M.fromList $ mapMaybe makeMapping xx'
+          makeMapping :: (I.Binder I.Type, Identifier) -> Maybe (I.VarId, I.VarId)
+          makeMapping (I.BindVar x _, x') = Just (x, fromId x')
+          makeMapping _ = Nothing -- Should never be reachable, consider throwing error
+
+          mapRecBinds :: I.Expr I.Type -> I.Expr I.Type
+          mapRecBinds (I.Var x xt) = case M.lookup x xxMap of
+            Just x' -> I.Var x' xt
+            Nothing -> I.Var x xt
+          mapRecBinds e = e
+      
+      forM_ ls' $ \(x', lam) -> do
+        traceM $ "Replacing " ++ show (pretty lam)
+        -- replace every instance of Var x to Var x' in lam
+        let lam' = everywhere (mkT mapRecBinds) lam
+        traceM $ "with " ++ show (pretty lam')
+        traceM $ "map " ++ show xxMap
+        traceM "----"
+        tellLifted x' lam'
+
       b' <- withEnclosingScope Nothing binders $ liftLambdas b
       return $ I.Let ds' b' t
   | length ds == 1 = do
@@ -240,15 +269,12 @@ liftLambdas dat@I.Data{} = return dat
 liftLambdas e@I.Exception{} = return e
 
 
-liftLambda :: I.Expr I.Type -> [I.Binder I.Type] -> Identifier -> LiftFn (I.Expr I.Type)
+liftLambda :: I.Expr I.Type -> [I.Binder I.Type] -> Identifier -> LiftFn (I.Expr I.Type, Identifier, I.Expr I.Type)
 liftLambda lam letBinds letName = do
   let (bs, body) = I.unfoldLambda lam
-  fullName <- prependTrail letName
+  liftedName <- prependTrail letName
   (body', free) <- withLiftedScope (Just letName) (letBinds ++ bs) $ do
     liftLambdas body
-
-  -- Lift lambda body to the top-level
-  tellLifted fullName $ I.foldLambda (map (uncurry I.BindVar) free ++ bs) body'
 
   let
     -- Helper function to prepend arguments to a function type
@@ -260,5 +286,12 @@ liftLambda lam letBinds letName = do
     -- Construct arguments to be folded into the call site
     freeActuals = zipWith (\(v', t') ts -> (I.Var v' t', prependArrow ts (I.extract lam))) free intermediateTypes
 
-  -- Replace lambda with call to lifted top-level lambda applied to all free variables
-  return $ I.foldApp (I.Var (fromId fullName) $ prependArrow liftedLamType (I.extract lam)) freeActuals
+    -- Replace lambda with call to lifted top-level lambda applied to all free variables
+
+    replacement = I.foldApp (I.Var (fromId liftedName) $ prependArrow liftedLamType (I.extract lam)) freeActuals
+
+    liftedLambda = I.foldLambda (map (uncurry I.BindVar) free ++ bs) body'
+
+  return (replacement, liftedName, liftedLambda)
+
+
