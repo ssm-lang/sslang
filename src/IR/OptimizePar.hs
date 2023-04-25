@@ -1,6 +1,11 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+
+--make draft, add 2 test cases
+
+--to debug, look at the isBad
+
 {- | Remove unnecessary Par expressions from the IR
 
 This pass detects unnecessary par expressions and then replaces them with equivalent sequential expressions.
