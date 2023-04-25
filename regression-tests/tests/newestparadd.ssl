@@ -1,0 +1,5 @@
+add a b = a + b
+main cin cout = 
+    let q = par add 2 3
+                add 3 4
+    ()
