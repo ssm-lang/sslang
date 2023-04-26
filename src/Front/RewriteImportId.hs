@@ -20,3 +20,11 @@ extractImportList (A.Program defs) =
 -- | rewrite importids with the full ids based on the imported list
 rewriteImportList :: A.Program -> Compiler.Pass A.Program
 rewriteImportList = error ("unimplemented")
+
+
+
+-- | subst A.ImportId to a correct one
+substIdentifier :: A.Expr -> A.Expr
+substIdentifier (A.ImportId ids) = error ("unimplemented")
+substIdentifier e = e 
+
