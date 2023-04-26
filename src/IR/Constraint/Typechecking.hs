@@ -3,6 +3,7 @@ module IR.Constraint.Typechecking (
 ) where
 
 import qualified Common.Compiler as Compiler
+import Common.Pretty (hardline, pretty)
 import qualified IR.Constraint.Canonical as Can
 import qualified IR.Constraint.Constrain as Constrain
 import qualified IR.Constraint.Elaborate as Elaborate
@@ -13,7 +14,6 @@ import IR.Constraint.Monad (
 import qualified IR.Constraint.Solve as Solve
 import qualified IR.IR as I
 import IR.Pretty ()
-import Common.Pretty (hardline, pretty)
 
 import IR.Constraint.PrettyPrint (
   Doc,
@@ -21,9 +21,8 @@ import IR.Constraint.PrettyPrint (
  )
 
 import IR.Constraint.Type as Typ (
-  toCanType
+  toCanType,
  )
-
 
 
 typecheckProgram
@@ -39,13 +38,16 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
 
   -- Depends on being called before solve
-  doc <- if not prettyprint then return Nothing else do
-    -- Convert IORef Variables to printable "type variables" embedded in IR
-    pIR <- pretty <$> mapM toCanType pVar
-    pConstraint <- printConstraint constraint
-    let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline <> hardline
+  doc <-
+    if not prettyprint
+      then return Nothing
+      else do
+        -- Convert IORef Variables to printable "type variables" embedded in IR
+        pIR <- pretty <$> mapM toCanType pVar
+        pConstraint <- printConstraint constraint
+        let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline <> hardline
 
-    return $ Just $ pConstraint <> hrule <> pIR
+        return $ Just $ pConstraint <> hrule <> pIR
 
   Solve.run constraint
   program <- Elaborate.run pVar
