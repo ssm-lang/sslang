@@ -41,6 +41,7 @@ data Mode
   = Continue
   | DumpIR
   | DumpIRAnnotated
+  | DumpIRVars
   | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
@@ -123,8 +124,8 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  (p, constraints) <- typecheckProgram p (mode opt == DumpIRConstraints)
-  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraints
+  (p, constraintsDoc) <- typecheckProgram p (mode opt == DumpIRConstraints)
+  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraintsDoc
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p
