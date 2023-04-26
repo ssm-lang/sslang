@@ -115,6 +115,7 @@ data Expr
   | CQuote String
   | CCall Identifier [Expr]
   | Tuple [Expr]
+  | ListExpr [Expr]
   | ImportId [Identifier]
   deriving (Eq, Show, Typeable, Data)
 

@@ -168,6 +168,8 @@ lowerExpr (A.Tuple es) =
  where
   apply_recurse e []       = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
+lowerExpr (A.ImportId _) =
+  Compiler.unexpected "lowerExpr: Import Id Lowering"
 lowerExpr (A.ListExpr _) =
   Compiler.unexpected "lowerExpr: ListExprs should have already been desugared"
 

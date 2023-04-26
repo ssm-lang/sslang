@@ -12,9 +12,7 @@ import Foo.Bar.Baz with {
 }
 
 main cin cout =
-
   let x = Foo.bar
   let y = Baz.x
-
   after 1, cout <- 10
   wait cout
