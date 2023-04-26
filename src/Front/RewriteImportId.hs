@@ -8,6 +8,8 @@ import Data.List
 
 
 
+
+
 -- | Itereate the AST and first Import ASTs and generates a list of imported information
 extractImportList :: A.Program -> [A.Import]
 extractImportList (A.Program defs) =
@@ -19,8 +21,11 @@ extractImportList (A.Program defs) =
 
 -- | rewrite importids with the full ids based on the imported list
 rewriteImportList :: A.Program -> Compiler.Pass A.Program
-rewriteImportList = error ("unimplemented")
+rewriteImportList p = return $ desugarDef p 
 
+
+desugarDef :: (Data a) => a -> a
+desugarDef = (everywhere $ mkT $ substIdentifier)
 
 
 -- | subst A.ImportId to a correct one
