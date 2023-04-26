@@ -78,7 +78,7 @@ data Program t = Program
   , programDefs :: [(Binder t, Expr t)]
   , typeDefs :: [(TConId, TypeDef)]
   }
-  deriving (Eq, Show, Typeable, Data, Functor)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 
 {- | The type definition associated with a type constructor.
