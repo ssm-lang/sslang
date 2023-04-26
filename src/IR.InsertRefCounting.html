@@ -71,16 +71,16 @@ Our approach was inspired by Perceus
 -}</span><span>
 </span><span id="line-72"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertRefCounting"><span class="hs-identifier hs-type">insertRefCounting</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-73"></span><span id="insertRefCounting"><span class="annot"><span class="annottext">insertRefCounting :: Program Type -&gt; Pass (Program Type)
-</span><a href="IR.InsertRefCounting.html#insertRefCounting"><span class="hs-identifier hs-var hs-var">insertRefCounting</span></a></span></span><span> </span><span id="local-6989586621679504327"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679504327"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StateT Int Pass (Program Type) -&gt; Int -&gt; Pass (Program Type)
+</span><a href="IR.InsertRefCounting.html#insertRefCounting"><span class="hs-identifier hs-var hs-var">insertRefCounting</span></a></span></span><span> </span><span id="local-6989586621679506186"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679506186"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StateT Int Pass (Program Type) -&gt; Int -&gt; Pass (Program Type)
 forall (m :: * -&gt; *) s a. Monad m =&gt; StateT s m a -&gt; s -&gt; m a
 </span><span class="hs-operator hs-var">`evalStateT`</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(StateT Int Pass (Program Type) -&gt; Pass (Program Type))
 -&gt; StateT Int Pass (Program Type) -&gt; Pass (Program Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-74"></span><span>  </span><span id="local-6989586621679504326"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679504326"><span class="hs-identifier hs-var">defs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Binder Type, Expr Type)
+</span><span id="line-74"></span><span>  </span><span id="local-6989586621679506185"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679506185"><span class="hs-identifier hs-var">defs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Binder Type, Expr Type)
  -&gt; StateT Int Pass (Binder Type, Expr Type))
 -&gt; [(Binder Type, Expr Type)]
 -&gt; StateT Int Pass [(Binder Type, Expr Type)]
@@ -97,7 +97,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(Binder Type, Expr Type)]
 forall t. Program t -&gt; [(Binder t, Expr t)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679504327"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679506186"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-75"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; StateT Int Pass (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; StateT Int Pass (Program Type))
@@ -105,20 +105,20 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679504327"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679506186"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-77"></span><span>      </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">programDefs :: [(Binder Type, Expr Type)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679504326"><span class="hs-identifier hs-var">defs</span></a></span><span>
+</span><a href="#local-6989586621679506185"><span class="hs-identifier hs-var">defs</span></a></span><span>
 </span><span id="line-78"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">programEntry :: VarId
 </span><a href="IR.IR.html#programEntry"><span class="hs-identifier hs-var">I.programEntry</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; VarId
 forall t. Program t -&gt; VarId
 </span><a href="IR.IR.html#programEntry"><span class="hs-identifier hs-var hs-var">I.programEntry</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679504327"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679506186"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-79"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">typeDefs :: [(TConId, TypeDef)]
 </span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var">I.typeDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; [(TConId, TypeDef)]
 forall t. Program t -&gt; [(TConId, TypeDef)]
 </span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var hs-var">I.typeDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679504327"><span class="hs-identifier hs-var">program</span></a></span><span>
+</span><a href="#local-6989586621679506186"><span class="hs-identifier hs-var">program</span></a></span><span>
 </span><span id="line-80"></span><span>      </span><span class="hs-special">}</span><span>
 </span><span id="line-81"></span><span>
 </span><span id="line-82"></span><span>
@@ -139,10 +139,10 @@ forall t. Program t -&gt; [(TConId, TypeDef)]
 -}</span><span>
 </span><span id="line-98"></span><span class="annot"><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-type">getFresh</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.InsertRefCounting.html#Fresh"><span class="hs-identifier hs-type">Fresh</span></a></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span>
 </span><span id="line-99"></span><span id="getFresh"><span class="annot"><span class="annottext">getFresh :: String -&gt; Fresh VarId
-</span><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-var hs-var">getFresh</span></a></span></span><span> </span><span id="local-6989586621679504319"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679504319"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-100"></span><span>  </span><span id="local-6989586621679504318"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679504318"><span class="hs-identifier hs-var">curCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StateT Int Pass Int
+</span><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-var hs-var">getFresh</span></a></span></span><span> </span><span id="local-6989586621679506178"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679506178"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621679506177"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679506177"><span class="hs-identifier hs-var">curCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StateT Int Pass Int
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">get</span></span><span>
 </span><span id="line-101"></span><span>  </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; StateT Int Pass ()
@@ -165,10 +165,10 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679504318"><span class="hs-identifier hs-var">curCount</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="#local-6989586621679506177"><span class="hs-identifier hs-var">curCount</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679504319"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><a href="#local-6989586621679506178"><span class="hs-identifier hs-var">str</span></a></span><span>
 </span><span id="line-103"></span><span>
 </span><span id="line-104"></span><span>
 </span><span id="line-105"></span><span class="hs-comment">-- | Make a dup primitive that returns the type of its argument</span><span>
@@ -178,17 +178,17 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span id="line-109"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span>
 </span><span id="line-110"></span><span>  </span><span class="hs-comment">-- ^ The @dup@ call</span><span>
 </span><span id="line-111"></span><span id="makeDup"><span class="annot"><span class="annottext">makeDup :: Expr Type -&gt; Expr Type
-</span><a href="IR.InsertRefCounting.html#makeDup"><span class="hs-identifier hs-var hs-var">makeDup</span></a></span></span><span> </span><span id="local-6989586621679504313"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504313"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
+</span><a href="IR.InsertRefCounting.html#makeDup"><span class="hs-identifier hs-var hs-var">makeDup</span></a></span></span><span> </span><span id="local-6989586621679506172"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506172"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Dup"><span class="hs-identifier hs-var">I.Dup</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504313"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679506172"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504313"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621679506172"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-112"></span><span>
 </span><span id="line-113"></span><span>
 </span><span id="line-114"></span><span class="hs-comment">-- | Make a drop primitive with unit type</span><span>
@@ -200,14 +200,14 @@ forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><span id="line-120"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span>
 </span><span id="line-121"></span><span>  </span><span class="hs-comment">-- ^ The @drop@ call</span><span>
 </span><span id="line-122"></span><span id="makeDrop"><span class="annot"><span class="annottext">makeDrop :: Expr Type -&gt; Expr Type -&gt; Expr Type
-</span><a href="IR.InsertRefCounting.html#makeDrop"><span class="hs-identifier hs-var hs-var">makeDrop</span></a></span></span><span> </span><span id="local-6989586621679504308"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504308"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span id="local-6989586621679504307"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504307"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
+</span><a href="IR.InsertRefCounting.html#makeDrop"><span class="hs-identifier hs-var hs-var">makeDrop</span></a></span></span><span> </span><span id="local-6989586621679506167"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506167"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span id="local-6989586621679506166"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506166"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
 </span><a href="IR.IR.html#Drop"><span class="hs-identifier hs-var">I.Drop</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504307"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504308"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506166"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506167"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Type
 </span><a href="IR.Types.Type.html#Unit"><span class="hs-identifier hs-var">I.Unit</span></a></span><span>
 </span><span id="line-123"></span><span>
 </span><span id="line-124"></span><span>
@@ -220,16 +220,16 @@ forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><span id="line-131"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertTop"><span class="hs-identifier hs-type">insertTop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Binder"><span class="hs-identifier hs-type">I.Binder</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.InsertRefCounting.html#Fresh"><span class="hs-identifier hs-type">Fresh</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Binder"><span class="hs-identifier hs-type">I.Binder</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-132"></span><span id="insertTop"><span class="annot"><span class="annottext">insertTop :: (Binder Type, Expr Type)
 -&gt; StateT Int Pass (Binder Type, Expr Type)
-</span><a href="IR.InsertRefCounting.html#insertTop"><span class="hs-identifier hs-var hs-var">insertTop</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679504304"><span class="annot"><span class="annottext">Binder Type
-</span><a href="#local-6989586621679504304"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504303"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504303"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binder Type
-</span><a href="#local-6989586621679504304"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Binder Type, Expr Type))
+</span><a href="IR.InsertRefCounting.html#insertTop"><span class="hs-identifier hs-var hs-var">insertTop</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679506163"><span class="annot"><span class="annottext">Binder Type
+</span><a href="#local-6989586621679506163"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506162"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506162"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binder Type
+</span><a href="#local-6989586621679506163"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Binder Type, Expr Type))
 -&gt; StateT Int Pass (Expr Type)
 -&gt; StateT Int Pass (Binder Type, Expr Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504303"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679506162"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-133"></span><span>
 </span><span id="line-134"></span><span>
 </span><span id="line-135"></span><span class="hs-comment">{- | Insert reference counting into an expression
@@ -377,29 +377,29 @@ becomes
 </span><span id="line-277"></span><span class="hs-comment">--</span><span>
 </span><span id="line-278"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-type">insertExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.InsertRefCounting.html#Fresh"><span class="hs-identifier hs-type">Fresh</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-279"></span><span id="insertExpr"><span class="annot"><span class="annottext">insertExpr :: Expr Type -&gt; StateT Int Pass (Expr Type)
-</span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var hs-var">insertExpr</span></a></span></span><span> </span><span id="local-6989586621679504300"><span class="annot"><span class="annottext">dcon :: Expr Type
-</span><a href="#local-6989586621679504300"><span class="hs-identifier hs-var">dcon</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Data"><span class="hs-identifier hs-type">I.Data</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var hs-var">insertExpr</span></a></span></span><span> </span><span id="local-6989586621679506159"><span class="annot"><span class="annottext">dcon :: Expr Type
+</span><a href="#local-6989586621679506159"><span class="hs-identifier hs-var">dcon</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Data"><span class="hs-identifier hs-type">I.Data</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504300"><span class="hs-identifier hs-var">dcon</span></a></span><span>
-</span><span id="line-280"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679504298"><span class="annot"><span class="annottext">lit :: Expr Type
-</span><a href="#local-6989586621679504298"><span class="hs-identifier hs-var">lit</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Lit"><span class="hs-identifier hs-type">I.Lit</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506159"><span class="hs-identifier hs-var">dcon</span></a></span><span>
+</span><span id="line-280"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679506157"><span class="annot"><span class="annottext">lit :: Expr Type
+</span><a href="#local-6989586621679506157"><span class="hs-identifier hs-var">lit</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Lit"><span class="hs-identifier hs-type">I.Lit</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504298"><span class="hs-identifier hs-var">lit</span></a></span><span>
-</span><span id="line-281"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679504296"><span class="annot"><span class="annottext">var :: Expr Type
-</span><a href="#local-6989586621679504296"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506157"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-281"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679506155"><span class="annot"><span class="annottext">var :: Expr Type
+</span><a href="#local-6989586621679506155"><span class="hs-identifier hs-var">var</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; StateT Int Pass (Expr Type))
 -&gt; Expr Type -&gt; StateT Int Pass (Expr Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type
 </span><a href="IR.InsertRefCounting.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504296"><span class="hs-identifier hs-var">var</span></a></span><span>
-</span><span id="line-282"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#App"><span class="hs-identifier hs-type">I.App</span></a></span><span> </span><span id="local-6989586621679504293"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504293"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679504292"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504292"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679504291"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504291"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679506155"><span class="hs-identifier hs-var">var</span></a></span><span>
+</span><span id="line-282"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#App"><span class="hs-identifier hs-type">I.App</span></a></span><span> </span><span id="local-6989586621679506152"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506152"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679506151"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506151"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679506150"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506150"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type -&gt; Type -&gt; Expr Type
 forall t. Expr t -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#App"><span class="hs-identifier hs-var">I.App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; Expr Type -&gt; Type -&gt; Expr Type)
 -&gt; StateT Int Pass (Expr Type)
@@ -407,26 +407,26 @@ forall t. Expr t -&gt; Expr t -&gt; t -&gt; Expr t
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504293"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Expr Type -&gt; Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506152"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Expr Type -&gt; Type -&gt; Expr Type)
 -&gt; StateT Int Pass (Expr Type)
 -&gt; StateT Int Pass (Type -&gt; Expr Type)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504292"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506151"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Type -&gt; Expr Type)
 -&gt; StateT Int Pass Type -&gt; StateT Int Pass (Expr Type)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; StateT Int Pass Type
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504291"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-283"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Prim"><span class="hs-identifier hs-type">I.Prim</span></a></span><span> </span><span id="local-6989586621679504290"><span class="annot"><span class="annottext">Primitive
-</span><a href="#local-6989586621679504290"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679504289"><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679504289"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span id="local-6989586621679504288"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504288"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679506150"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-283"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Prim"><span class="hs-identifier hs-type">I.Prim</span></a></span><span> </span><span id="local-6989586621679506149"><span class="annot"><span class="annottext">Primitive
+</span><a href="#local-6989586621679506149"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679506148"><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679506148"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span id="local-6989586621679506147"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506147"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Primitive -&gt; [Expr Type] -&gt; Type -&gt; Expr Type
 forall t. Primitive -&gt; [Expr t] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Prim"><span class="hs-identifier hs-var">I.Prim</span></a></span><span> </span><span class="annot"><span class="annottext">Primitive
-</span><a href="#local-6989586621679504290"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr Type] -&gt; Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506149"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr Type] -&gt; Type -&gt; Expr Type)
 -&gt; StateT Int Pass [Expr Type]
 -&gt; StateT Int Pass (Type -&gt; Expr Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -437,19 +437,19 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679504289"><span class="hs-identifier hs-var">es</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506148"><span class="hs-identifier hs-var">es</span></a></span><span> </span><span class="annot"><span class="annottext">StateT Int Pass (Type -&gt; Expr Type)
 -&gt; StateT Int Pass Type -&gt; StateT Int Pass (Expr Type)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; StateT Int Pass Type
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504288"><span class="hs-identifier hs-var">typ</span></a></span><span>
-</span><span id="line-284"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Let"><span class="hs-identifier hs-type">I.Let</span></a></span><span> </span><span id="local-6989586621679504286"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679504286"><span class="hs-identifier hs-var">bins</span></a></span></span><span> </span><span id="local-6989586621679504285"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504285"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679504284"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504284"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-285"></span><span>  </span><span id="local-6989586621679504283"><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
-</span><a href="#local-6989586621679504283"><span class="hs-identifier hs-var">bins'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679506147"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><span id="line-284"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Let"><span class="hs-identifier hs-type">I.Let</span></a></span><span> </span><span id="local-6989586621679506145"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679506145"><span class="hs-identifier hs-var">bins</span></a></span></span><span> </span><span id="local-6989586621679506144"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506144"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679506143"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506143"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-285"></span><span>  </span><span id="local-6989586621679506142"><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
+</span><a href="#local-6989586621679506142"><span class="hs-identifier hs-var">bins'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
 -&gt; ((Binder Type, Expr Type)
     -&gt; StateT Int Pass (VarId, Type, Expr Type))
 -&gt; StateT Int Pass [(VarId, Type, Expr Type)]
@@ -457,15 +457,15 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679504286"><span class="hs-identifier hs-var">bins</span></a></span><span> </span><span class="annot"><span class="annottext">(Binder Type, Expr Type)
+</span><a href="#local-6989586621679506145"><span class="hs-identifier hs-var">bins</span></a></span><span> </span><span class="annot"><span class="annottext">(Binder Type, Expr Type)
 -&gt; StateT Int Pass (VarId, Type, Expr Type)
 forall b.
 (Binder b, Expr Type) -&gt; StateT Int Pass (VarId, b, Expr Type)
-</span><a href="#local-6989586621679504282"><span class="hs-identifier hs-var">droppedBinder</span></a></span><span>
-</span><span id="line-286"></span><span>  </span><span id="local-6989586621679504281"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504281"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506141"><span class="hs-identifier hs-var">droppedBinder</span></a></span><span>
+</span><span id="line-286"></span><span>  </span><span id="local-6989586621679506140"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506140"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504285"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679506144"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-287"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; StateT Int Pass (Expr Type))
@@ -478,8 +478,8 @@ forall t. [(Binder t, Expr t)] -&gt; Expr t -&gt; t -&gt; Expr t
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(VarId, Type, Expr Type) -&gt; (Binder Type, Expr Type)
 forall t b. (VarId, t, b) -&gt; (Binder t, b)
-</span><a href="#local-6989586621679504280"><span class="hs-identifier hs-var">defFromBind</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
-</span><a href="#local-6989586621679504283"><span class="hs-identifier hs-var">bins'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarId, Type, Expr Type) -&gt; Expr Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506139"><span class="hs-identifier hs-var">defFromBind</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
+</span><a href="#local-6989586621679506142"><span class="hs-identifier hs-var">bins'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarId, Type, Expr Type) -&gt; Expr Type -&gt; Expr Type)
 -&gt; Expr Type -&gt; [(VarId, Type, Expr Type)] -&gt; Expr Type
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
@@ -493,125 +493,125 @@ Foldable t =&gt;
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(VarId, Type, Expr Type) -&gt; Expr Type
 forall t c. (VarId, t, c) -&gt; Expr t
-</span><a href="#local-6989586621679504277"><span class="hs-identifier hs-var">varFromBind</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504281"><span class="hs-identifier hs-var">expr'</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
-</span><a href="#local-6989586621679504283"><span class="hs-identifier hs-var">bins'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504284"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><a href="#local-6989586621679506136"><span class="hs-identifier hs-var">varFromBind</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506140"><span class="hs-identifier hs-var">expr'</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type, Expr Type)]
+</span><a href="#local-6989586621679506142"><span class="hs-identifier hs-var">bins'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506143"><span class="hs-identifier hs-var">typ</span></a></span><span>
 </span><span id="line-288"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-289"></span><span>  </span><span id="local-6989586621679504277"><span class="annot"><span class="annottext">varFromBind :: (VarId, t, c) -&gt; Expr t
-</span><a href="#local-6989586621679504277"><span class="hs-identifier hs-var hs-var">varFromBind</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679504276"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504276"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504275"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679504275"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c
+</span><span id="line-289"></span><span>  </span><span id="local-6989586621679506136"><span class="annot"><span class="annottext">varFromBind :: (VarId, t, c) -&gt; Expr t
+</span><a href="#local-6989586621679506136"><span class="hs-identifier hs-var hs-var">varFromBind</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679506135"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506135"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506134"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679506134"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Expr t
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504276"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679504275"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-290"></span><span>  </span><span id="local-6989586621679504280"><span class="annot"><span class="annottext">defFromBind :: (VarId, t, b) -&gt; (Binder t, b)
-</span><a href="#local-6989586621679504280"><span class="hs-identifier hs-var hs-var">defFromBind</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679504274"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504274"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504273"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679504273"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504272"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504272"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Binder t
+</span><a href="#local-6989586621679506135"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679506134"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-290"></span><span>  </span><span id="local-6989586621679506139"><span class="annot"><span class="annottext">defFromBind :: (VarId, t, b) -&gt; (Binder t, b)
+</span><a href="#local-6989586621679506139"><span class="hs-identifier hs-var hs-var">defFromBind</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679506133"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506133"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506132"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679506132"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506131"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506131"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Binder t
 forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504274"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679504273"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504272"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679506133"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679506132"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506131"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-291"></span><span>
-</span><span id="line-292"></span><span>  </span><span id="local-6989586621679504282"><span class="annot"><span class="annottext">droppedBinder :: (Binder b, Expr Type) -&gt; StateT Int Pass (VarId, b, Expr Type)
-</span><a href="#local-6989586621679504282"><span class="hs-identifier hs-var hs-var">droppedBinder</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span id="local-6989586621679504269"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504269"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504268"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504268"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-293"></span><span>    </span><span id="local-6989586621679504267"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504267"><span class="hs-identifier hs-var">temp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
+</span><span id="line-292"></span><span>  </span><span id="local-6989586621679506141"><span class="annot"><span class="annottext">droppedBinder :: (Binder b, Expr Type) -&gt; StateT Int Pass (VarId, b, Expr Type)
+</span><a href="#local-6989586621679506141"><span class="hs-identifier hs-var hs-var">droppedBinder</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span id="local-6989586621679506128"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506128"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506127"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506127"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-293"></span><span>    </span><span id="local-6989586621679506126"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506126"><span class="hs-identifier hs-var">temp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
 </span><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_underscore&quot;</span></span><span>
-</span><span id="line-294"></span><span>    </span><span id="local-6989586621679504266"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504266"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><span id="line-294"></span><span>    </span><span id="local-6989586621679506125"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506125"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504268"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="#local-6989586621679506127"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-295"></span><span>    </span><span class="annot"><span class="annottext">(VarId, b, Expr Type) -&gt; StateT Int Pass (VarId, b, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504267"><span class="hs-identifier hs-var">temp</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504269"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504266"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-296"></span><span>  </span><span class="annot"><a href="#local-6989586621679504282"><span class="hs-identifier hs-var">droppedBinder</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679504265"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504265"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679504264"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504264"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504263"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504263"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-297"></span><span>    </span><span id="local-6989586621679504262"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504262"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506126"><span class="hs-identifier hs-var">temp</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506128"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506125"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-296"></span><span>  </span><span class="annot"><a href="#local-6989586621679506141"><span class="hs-identifier hs-var">droppedBinder</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679506124"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506124"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679506123"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506123"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506122"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506122"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-297"></span><span>    </span><span id="local-6989586621679506121"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506121"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504263"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="#local-6989586621679506122"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-298"></span><span>    </span><span class="annot"><span class="annottext">(VarId, b, Expr Type) -&gt; StateT Int Pass (VarId, b, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504265"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679504264"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504262"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-299"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679504261"><span class="annot"><span class="annottext">lam :: Expr Type
-</span><a href="#local-6989586621679504261"><span class="hs-identifier hs-var">lam</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Lambda"><span class="hs-identifier hs-type">I.Lambda</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-300"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679504259"><span class="annot"><span class="annottext">[Binder Type]
-</span><a href="#local-6989586621679504259"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504258"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504258"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ([Binder Type], Expr Type)
+</span><a href="#local-6989586621679506124"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679506123"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506121"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-299"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679506120"><span class="annot"><span class="annottext">lam :: Expr Type
+</span><a href="#local-6989586621679506120"><span class="hs-identifier hs-var">lam</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Lambda"><span class="hs-identifier hs-type">I.Lambda</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-300"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679506118"><span class="annot"><span class="annottext">[Binder Type]
+</span><a href="#local-6989586621679506118"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506117"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506117"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ([Binder Type], Expr Type)
 forall t. Expr t -&gt; ([Binder t], Expr t)
 </span><a href="IR.IR.html#unfoldLambda"><span class="hs-identifier hs-var">I.unfoldLambda</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504261"><span class="hs-identifier hs-var">lam</span></a></span><span>
-</span><span id="line-301"></span><span>  </span><span id="local-6989586621679504256"><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679504256"><span class="hs-identifier hs-var">args'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binder Type]
+</span><a href="#local-6989586621679506120"><span class="hs-identifier hs-var">lam</span></a></span><span>
+</span><span id="line-301"></span><span>  </span><span id="local-6989586621679506115"><span class="annot"><span class="annottext">[(VarId, Type)]
+</span><a href="#local-6989586621679506115"><span class="hs-identifier hs-var">args'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binder Type]
 -&gt; (Binder Type -&gt; StateT Int Pass (VarId, Type))
 -&gt; StateT Int Pass [(VarId, Type)]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[Binder Type]
-</span><a href="#local-6989586621679504259"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">((Binder Type -&gt; StateT Int Pass (VarId, Type))
+</span><a href="#local-6989586621679506118"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">((Binder Type -&gt; StateT Int Pass (VarId, Type))
  -&gt; StateT Int Pass [(VarId, Type)])
 -&gt; (Binder Type -&gt; StateT Int Pass (VarId, Type))
 -&gt; StateT Int Pass [(VarId, Type)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-302"></span><span>    </span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span id="local-6989586621679504255"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504255"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-303"></span><span>      </span><span id="local-6989586621679504254"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504254"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
+</span><span id="line-302"></span><span>    </span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span id="local-6989586621679506114"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506114"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-303"></span><span>      </span><span id="local-6989586621679506113"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506113"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
 </span><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_arg&quot;</span></span><span>
 </span><span id="line-304"></span><span>      </span><span class="annot"><span class="annottext">(VarId, Type) -&gt; StateT Int Pass (VarId, Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504254"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504255"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-305"></span><span>    </span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679504253"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504253"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679504252"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504252"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(VarId, Type) -&gt; StateT Int Pass (VarId, Type)
+</span><a href="#local-6989586621679506113"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506114"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-305"></span><span>    </span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679506112"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506112"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679506111"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506111"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(VarId, Type) -&gt; StateT Int Pass (VarId, Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504253"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504252"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-306"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679504251"><span class="annot"><span class="annottext">argBinders :: [Binder Type]
-</span><a href="#local-6989586621679504251"><span class="hs-identifier hs-var hs-var">argBinders</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Binder Type) -&gt; (VarId, Type) -&gt; Binder Type
+</span><a href="#local-6989586621679506112"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506111"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-306"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679506110"><span class="annot"><span class="annottext">argBinders :: [Binder Type]
+</span><a href="#local-6989586621679506110"><span class="hs-identifier hs-var hs-var">argBinders</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Binder Type) -&gt; (VarId, Type) -&gt; Binder Type
 forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Binder Type
 forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">((VarId, Type) -&gt; Binder Type) -&gt; [(VarId, Type)] -&gt; [Binder Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679504256"><span class="hs-identifier hs-var">args'</span></a></span><span> </span><span class="hs-comment">-- zipWith (\(v, t) b -&gt; (I.BindVar v t, b)) args' argTypes</span><span>
-</span><span id="line-307"></span><span>      </span><span id="local-6989586621679504249"><span class="annot"><span class="annottext">argVars :: [Expr Type]
-</span><a href="#local-6989586621679504249"><span class="hs-identifier hs-var hs-var">argVars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Expr Type) -&gt; (VarId, Type) -&gt; Expr Type
+</span><a href="#local-6989586621679506115"><span class="hs-identifier hs-var">args'</span></a></span><span> </span><span class="hs-comment">-- zipWith (\(v, t) b -&gt; (I.BindVar v t, b)) args' argTypes</span><span>
+</span><span id="line-307"></span><span>      </span><span id="local-6989586621679506108"><span class="annot"><span class="annottext">argVars :: [Expr Type]
+</span><a href="#local-6989586621679506108"><span class="hs-identifier hs-var hs-var">argVars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Expr Type) -&gt; (VarId, Type) -&gt; Expr Type
 forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">((VarId, Type) -&gt; Expr Type) -&gt; [(VarId, Type)] -&gt; [Expr Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679504256"><span class="hs-identifier hs-var">args'</span></a></span><span>
-</span><span id="line-308"></span><span>  </span><span id="local-6989586621679504248"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504248"><span class="hs-identifier hs-var">body'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506115"><span class="hs-identifier hs-var">args'</span></a></span><span>
+</span><span id="line-308"></span><span>  </span><span id="local-6989586621679506107"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506107"><span class="hs-identifier hs-var">body'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504258"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><a href="#local-6989586621679506117"><span class="hs-identifier hs-var">body</span></a></span><span>
 </span><span id="line-309"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; StateT Int Pass (Expr Type))
@@ -619,7 +619,7 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Binder Type] -&gt; Expr Type -&gt; Expr Type
 </span><a href="IR.IR.html#foldLambda"><span class="hs-identifier hs-var">I.foldLambda</span></a></span><span> </span><span class="annot"><span class="annottext">[Binder Type]
-</span><a href="#local-6989586621679504251"><span class="hs-identifier hs-var">argBinders</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; Expr Type) -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679506110"><span class="hs-identifier hs-var">argBinders</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; Expr Type) -&gt; Expr Type -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; Expr Type -&gt; Expr Type)
 -&gt; Expr Type -&gt; [Expr Type] -&gt; Expr Type
@@ -628,21 +628,21 @@ Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type -&gt; Expr Type
 </span><a href="IR.InsertRefCounting.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504248"><span class="hs-identifier hs-var">body'</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679504249"><span class="hs-identifier hs-var">argVars</span></a></span><span>
-</span><span id="line-310"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679504245"><span class="annot"><span class="annottext">v :: Expr Type
-</span><a href="#local-6989586621679504245"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span id="local-6989586621679504244"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504244"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679504243"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504243"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-311"></span><span>  </span><span id="local-6989586621679504242"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504242"><span class="hs-identifier hs-var">alts'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506107"><span class="hs-identifier hs-var">body'</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679506108"><span class="hs-identifier hs-var">argVars</span></a></span><span>
+</span><span id="line-310"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679506104"><span class="annot"><span class="annottext">v :: Expr Type
+</span><a href="#local-6989586621679506104"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Var"><span class="hs-identifier hs-type">I.Var</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span id="local-6989586621679506103"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506103"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679506102"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506102"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-311"></span><span>  </span><span id="local-6989586621679506101"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506101"><span class="hs-identifier hs-var">alts'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
 -&gt; ((Alt Type, Expr Type) -&gt; StateT Int Pass (Alt Type, Expr Type))
 -&gt; StateT Int Pass [(Alt Type, Expr Type)]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504244"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">(Alt Type, Expr Type) -&gt; StateT Int Pass (Alt Type, Expr Type)
+</span><a href="#local-6989586621679506103"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">(Alt Type, Expr Type) -&gt; StateT Int Pass (Alt Type, Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var">insertAlt</span></a></span><span>
 </span><span id="line-312"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -652,15 +652,15 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; [(Alt Type, Expr Type)] -&gt; Type -&gt; Expr Type
 forall t. Expr t -&gt; [(Alt t, Expr t)] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Match"><span class="hs-identifier hs-var">I.Match</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504245"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504242"><span class="hs-identifier hs-var">alts'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504243"><span class="hs-identifier hs-var">typ</span></a></span><span>
-</span><span id="line-313"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679504240"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504240"><span class="hs-identifier hs-var">scrutExpr</span></a></span></span><span> </span><span id="local-6989586621679504239"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504239"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679504238"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504238"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-314"></span><span>  </span><span id="local-6989586621679504237"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504237"><span class="hs-identifier hs-var">scrutVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
+</span><a href="#local-6989586621679506104"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506101"><span class="hs-identifier hs-var">alts'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506102"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><span id="line-313"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Match"><span class="hs-identifier hs-type">I.Match</span></a></span><span> </span><span id="local-6989586621679506099"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506099"><span class="hs-identifier hs-var">scrutExpr</span></a></span></span><span> </span><span id="local-6989586621679506098"><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506098"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span id="local-6989586621679506097"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506097"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-314"></span><span>  </span><span id="local-6989586621679506096"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506096"><span class="hs-identifier hs-var">scrutVar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Fresh VarId
 </span><a href="IR.InsertRefCounting.html#getFresh"><span class="hs-identifier hs-var">getFresh</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;_scrutinee&quot;</span></span><span>
 </span><span id="line-315"></span><span>  </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
@@ -674,35 +674,35 @@ forall t. [(Binder t, Expr t)] -&gt; Expr t -&gt; t -&gt; Expr t
 </span><span id="line-317"></span><span>      </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Binder Type
 forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504237"><span class="hs-identifier hs-var">scrutVar</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Binder Type) -&gt; Type -&gt; Binder Type
+</span><a href="#local-6989586621679506096"><span class="hs-identifier hs-var">scrutVar</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Binder Type) -&gt; Type -&gt; Binder Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504240"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504240"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679506099"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506099"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
 </span><span id="line-318"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; [(Alt Type, Expr Type)] -&gt; Type -&gt; Expr Type
 forall t. Expr t -&gt; [(Alt t, Expr t)] -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Match"><span class="hs-identifier hs-var">I.Match</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504237"><span class="hs-identifier hs-var">scrutVar</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679506096"><span class="hs-identifier hs-var">scrutVar</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr Type) -&gt; Type -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504240"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
-</span><a href="#local-6989586621679504239"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504238"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679506099"><span class="hs-identifier hs-var">scrutExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Alt Type, Expr Type)]
+</span><a href="#local-6989586621679506098"><span class="hs-identifier hs-var">alts</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506097"><span class="hs-identifier hs-var">typ</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-319"></span><span>      </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504238"><span class="hs-identifier hs-var">typ</span></a></span><span>
-</span><span id="line-320"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679504236"><span class="annot"><span class="annottext">e :: Expr Type
-</span><a href="#local-6989586621679504236"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Exception"><span class="hs-identifier hs-type">I.Exception</span></a></span><span> </span><span class="annot"><span class="annottext">ExceptType
+</span><a href="#local-6989586621679506097"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><span id="line-320"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span id="local-6989586621679506095"><span class="annot"><span class="annottext">e :: Expr Type
+</span><a href="#local-6989586621679506095"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Exception"><span class="hs-identifier hs-type">I.Exception</span></a></span><span> </span><span class="annot"><span class="annottext">ExceptType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504236"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621679506095"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-321"></span><span>
 </span><span id="line-322"></span><span>
 </span><span id="line-323"></span><span class="hs-comment">{- | Insert dups and drops into pattern match arms
@@ -728,87 +728,87 @@ match v
 -}</span><span>
 </span><span id="line-344"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-type">insertAlt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Alt"><span class="hs-identifier hs-type">I.Alt</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.InsertRefCounting.html#Fresh"><span class="hs-identifier hs-type">Fresh</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Alt"><span class="hs-identifier hs-type">I.Alt</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-345"></span><span id="insertAlt"><span class="annot"><span class="annottext">insertAlt :: (Alt Type, Expr Type) -&gt; StateT Int Pass (Alt Type, Expr Type)
-</span><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var hs-var">insertAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltBinder"><span class="hs-identifier hs-type">I.AltBinder</span></a></span><span> </span><span id="local-6989586621679504233"><span class="annot"><span class="annottext">Binder Type
-</span><a href="#local-6989586621679504233"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504232"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504232"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binder Type -&gt; Alt Type
+</span><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var hs-var">insertAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltBinder"><span class="hs-identifier hs-type">I.AltBinder</span></a></span><span> </span><span id="local-6989586621679506092"><span class="annot"><span class="annottext">Binder Type
+</span><a href="#local-6989586621679506092"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506091"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506091"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binder Type -&gt; Alt Type
 forall t. Binder t -&gt; Alt t
 </span><a href="IR.IR.html#AltBinder"><span class="hs-identifier hs-var">I.AltBinder</span></a></span><span> </span><span class="annot"><span class="annottext">Binder Type
-</span><a href="#local-6989586621679504233"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Alt Type, Expr Type))
+</span><a href="#local-6989586621679506092"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Alt Type, Expr Type))
 -&gt; StateT Int Pass (Expr Type)
 -&gt; StateT Int Pass (Alt Type, Expr Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504232"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-346"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var">insertAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-type">I.AltLit</span></a></span><span> </span><span id="local-6989586621679504230"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679504230"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679504229"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504229"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504228"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504228"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Type -&gt; Alt Type
+</span><a href="#local-6989586621679506091"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-346"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var">insertAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-type">I.AltLit</span></a></span><span> </span><span id="local-6989586621679506089"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679506089"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679506088"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506088"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506087"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506087"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Type -&gt; Alt Type
 forall t. Literal -&gt; t -&gt; Alt t
 </span><a href="IR.IR.html#AltLit"><span class="hs-identifier hs-var">I.AltLit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621679504230"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504229"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Alt Type, Expr Type))
+</span><a href="#local-6989586621679506089"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506088"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expr Type -&gt; (Alt Type, Expr Type))
 -&gt; StateT Int Pass (Expr Type)
 -&gt; StateT Int Pass (Alt Type, Expr Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504228"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-347"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var">insertAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltData"><span class="hs-identifier hs-type">I.AltData</span></a></span><span> </span><span id="local-6989586621679504226"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679504226"><span class="hs-identifier hs-var">dcon</span></a></span></span><span> </span><span id="local-6989586621679504225"><span class="annot"><span class="annottext">[Alt Type]
-</span><a href="#local-6989586621679504225"><span class="hs-identifier hs-var">binds</span></a></span></span><span> </span><span id="local-6989586621679504224"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504224"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679504223"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504223"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-348"></span><span>  </span><span id="local-6989586621679504222"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504222"><span class="hs-identifier hs-var">body'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
+</span><a href="#local-6989586621679506087"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-347"></span><span class="annot"><a href="IR.InsertRefCounting.html#insertAlt"><span class="hs-identifier hs-var">insertAlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#AltData"><span class="hs-identifier hs-type">I.AltData</span></a></span><span> </span><span id="local-6989586621679506085"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679506085"><span class="hs-identifier hs-var">dcon</span></a></span></span><span> </span><span id="local-6989586621679506084"><span class="annot"><span class="annottext">[Alt Type]
+</span><a href="#local-6989586621679506084"><span class="hs-identifier hs-var">binds</span></a></span></span><span> </span><span id="local-6989586621679506083"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506083"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679506082"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506082"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-348"></span><span>  </span><span id="local-6989586621679506081"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506081"><span class="hs-identifier hs-var">body'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; StateT Int Pass (Expr Type)
 </span><a href="IR.InsertRefCounting.html#insertExpr"><span class="hs-identifier hs-var">insertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504223"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><a href="#local-6989586621679506082"><span class="hs-identifier hs-var">body</span></a></span><span>
 </span><span id="line-349"></span><span>  </span><span class="hs-comment">-- NOTE: we don't recurse here because we assume alts are already desguared i.e., flat</span><span>
 </span><span id="line-350"></span><span>  </span><span class="annot"><span class="annottext">(Alt Type, Expr Type) -&gt; StateT Int Pass (Alt Type, Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId -&gt; [Alt Type] -&gt; Type -&gt; Alt Type
 forall t. DConId -&gt; [Alt t] -&gt; t -&gt; Alt t
 </span><a href="IR.IR.html#AltData"><span class="hs-identifier hs-var">I.AltData</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679504226"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[Alt Type]
-</span><a href="#local-6989586621679504225"><span class="hs-identifier hs-var">binds</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504224"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Binder Type -&gt; Expr Type -&gt; Expr Type)
+</span><a href="#local-6989586621679506085"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[Alt Type]
+</span><a href="#local-6989586621679506084"><span class="hs-identifier hs-var">binds</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506083"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Binder Type -&gt; Expr Type -&gt; Expr Type)
 -&gt; Expr Type -&gt; [Binder Type] -&gt; Expr Type
 forall (t :: * -&gt; *) a b.
 Foldable t =&gt;
 (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">Binder Type -&gt; Expr Type -&gt; Expr Type
-</span><a href="#local-6989586621679504221"><span class="hs-identifier hs-var">dropDupLet</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504222"><span class="hs-identifier hs-var">body'</span></a></span><span> </span><span class="annot"><span class="annottext">([Binder Type] -&gt; Expr Type) -&gt; [Binder Type] -&gt; Expr Type
+</span><a href="#local-6989586621679506080"><span class="hs-identifier hs-var">dropDupLet</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506081"><span class="hs-identifier hs-var">body'</span></a></span><span> </span><span class="annot"><span class="annottext">([Binder Type] -&gt; Expr Type) -&gt; [Binder Type] -&gt; Expr Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Alt Type -&gt; [Binder Type]) -&gt; [Alt Type] -&gt; [Binder Type]
 forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
 </span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="annot"><span class="annottext">Alt Type -&gt; [Binder Type]
 forall t. Alt t -&gt; [Binder t]
 </span><a href="IR.IR.html#altBinders"><span class="hs-identifier hs-var">I.altBinders</span></a></span><span> </span><span class="annot"><span class="annottext">[Alt Type]
-</span><a href="#local-6989586621679504225"><span class="hs-identifier hs-var">binds</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679506084"><span class="hs-identifier hs-var">binds</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-351"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-352"></span><span>  </span><span id="local-6989586621679504221"><span class="annot"><span class="annottext">dropDupLet :: Binder Type -&gt; Expr Type -&gt; Expr Type
-</span><a href="#local-6989586621679504221"><span class="hs-identifier hs-var hs-var">dropDupLet</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679504218"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504218"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504218"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-353"></span><span>  </span><span class="annot"><a href="#local-6989586621679504221"><span class="hs-identifier hs-var">dropDupLet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679504217"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504217"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679504216"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504216"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679504215"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504215"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-354"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679504214"><span class="annot"><span class="annottext">varExpr :: Expr Type
-</span><a href="#local-6989586621679504214"><span class="hs-identifier hs-var hs-var">varExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
+</span><span id="line-352"></span><span>  </span><span id="local-6989586621679506080"><span class="annot"><span class="annottext">dropDupLet :: Binder Type -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679506080"><span class="hs-identifier hs-var hs-var">dropDupLet</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679506077"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506077"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506077"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-353"></span><span>  </span><span class="annot"><a href="#local-6989586621679506080"><span class="hs-identifier hs-var">dropDupLet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679506076"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679506076"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679506075"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506075"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679506074"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506074"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-354"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679506073"><span class="annot"><span class="annottext">varExpr :: Expr Type
+</span><a href="#local-6989586621679506073"><span class="hs-identifier hs-var hs-var">varExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Expr Type
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679504217"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679504216"><span class="hs-identifier hs-var">t'</span></a></span><span>
-</span><span id="line-355"></span><span>        </span><span id="local-6989586621679504213"><span class="annot"><span class="annottext">dupExpr :: Expr Type
-</span><a href="#local-6989586621679504213"><span class="hs-identifier hs-var hs-var">dupExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679506076"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679506075"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><span id="line-355"></span><span>        </span><span id="local-6989586621679506072"><span class="annot"><span class="annottext">dupExpr :: Expr Type
+</span><a href="#local-6989586621679506072"><span class="hs-identifier hs-var hs-var">dupExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type
 </span><a href="IR.InsertRefCounting.html#makeDup"><span class="hs-identifier hs-var">makeDup</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504214"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
+</span><a href="#local-6989586621679506073"><span class="hs-identifier hs-var">varExpr</span></a></span><span>
 </span><span id="line-356"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Expr Type -&gt; Expr Type
 </span><a href="IR.InsertRefCounting.html#makeDrop"><span class="hs-identifier hs-var">makeDrop</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504214"><span class="hs-identifier hs-var">varExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)] -&gt; Expr Type -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679506073"><span class="hs-identifier hs-var">varExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)] -&gt; Expr Type -&gt; Type -&gt; Expr Type
 forall t. [(Binder t, Expr t)] -&gt; Expr t -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Let"><span class="hs-identifier hs-var">I.Let</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Binder Type
 forall t. t -&gt; Binder t
@@ -817,10 +817,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504213"><span class="hs-identifier hs-var">dupExpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504213"><span class="hs-identifier hs-var">dupExpr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504215"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; Type
+</span><a href="#local-6989586621679506072"><span class="hs-identifier hs-var">dupExpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506072"><span class="hs-identifier hs-var">dupExpr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679506074"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679504215"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679506074"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-357"></span></pre></body></html>

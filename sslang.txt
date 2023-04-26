@@ -1955,6 +1955,8 @@ instance GHC.Base.Functor IR.IR.Expr
 instance Data.Data.Data t => Data.Data.Data (IR.IR.Expr t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.IR.Expr t)
 instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.IR.Expr t)
+instance Data.Traversable.Traversable IR.IR.Program
+instance Data.Foldable.Foldable IR.IR.Program
 instance GHC.Base.Functor IR.IR.Program
 instance Data.Data.Data t => Data.Data.Data (IR.IR.Program t)
 instance GHC.Show.Show t => GHC.Show.Show (IR.IR.Program t)
