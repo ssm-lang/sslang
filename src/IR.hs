@@ -41,7 +41,6 @@ data Mode
   = Continue
   | DumpIR
   | DumpIRAnnotated
-  | DumpIRVars
   | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
