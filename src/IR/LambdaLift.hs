@@ -218,26 +218,28 @@ liftLambdas (I.Let ds b t)
       dsls' <- forM ds $ \(x, d) -> do
         fn <- getFresh
         (d', x', lam) <- liftLambda d binders $ maybe fn fromId $ I._binderId x
-        return ((x, d'), (x, x'), (x', lam))
-      let (ds', xx', ls') = unzip3 dsls'
-          xxMap = M.fromList $ mapMaybe makeMapping xx'
-          makeMapping :: (I.Binder I.Type, Identifier) -> Maybe (I.VarId, I.VarId)
-          makeMapping (I.BindVar x _, x') = Just (x, fromId x')
+        return ((x, d'), (x', lam))
+      let (xd, xl) = unzip dsls'
+          xdMap = M.fromList $ mapMaybe makeMapping xd
+  
+          makeMapping :: (I.Binder I.Type, I.Expr I.Type) -> Maybe (I.VarId, I.Expr I.Type)
+          makeMapping (I.BindVar x _, d') = Just (x, d')
           makeMapping _ = Nothing -- Should never be reachable, consider throwing error
 
           mapRecBinds :: I.Expr I.Type -> I.Expr I.Type
-          mapRecBinds (I.Var x xt) = case M.lookup x xxMap of
-            Just x' -> I.Var x' xt
-            Nothing -> I.Var x xt
+          mapRecBinds (I.App (I.Var x xt) args at) = case M.lookup x xdMap of
+            Just d' -> I.App d' args at
+            Nothing -> I.App (I.Var x xt) args at
           mapRecBinds e = e
       
-      forM_ ls' $ \(x', lam) -> do
+      forM_ xl $ \(x', lam) -> do
         -- replace every instance of Var x to Var x' in lam
         let lam' = everywhere (mkT mapRecBinds) lam
         tellLifted x' lam'
 
       b' <- withEnclosingScope Nothing binders $ liftLambdas b
-      return $ I.Let ds' b' t
+      return $ I.Let xd b' t
+
   | length ds == 1 = do
       -- e.g.,  let x = ...
       --        ...
@@ -246,6 +248,7 @@ liftLambdas (I.Let ds b t)
       d' <- liftLambdas d
       e' <- withEnclosingScope Nothing [x] $ liftLambdas b
       return $ I.Let [(x, d')] e' t
+
   | otherwise = error $ "Let expressions should only bind a list of values, or a single non-value " ++ show ds
  where
   isLambda I.Lambda{} = True
@@ -285,5 +288,3 @@ liftLambda lam letBinds letName = do
     liftedLambda = I.foldLambda (map (uncurry I.BindVar) free ++ bs) body'
 
   return (replacement, liftedName, liftedLambda)
-
-
