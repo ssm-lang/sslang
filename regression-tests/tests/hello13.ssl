@@ -10,13 +10,15 @@ type String
   Cons Int String
   Nil
 
+/*
 puts_ putc s =
   match s
     Cons c ss = putc c
                 puts_ putc ss
     Nil = ()
+*/
 
-/*
+
 puts_ putc s =
   let puts__ ss =
         match ss
@@ -27,14 +29,14 @@ puts_ putc s =
 
 // TypeError (ErrorMsg "Unbound variable: Var (VarId puts__) (Type [])")
 
-*/
+
 
 main cin cout =
   let putc = putc_ cout
   let puts = puts_ putc
   let eof = eof_ cout
   let hello = Cons 72 (Cons 101 (Cons 108 (Cons 108
-                (Cons 111 (Cons 49 (Cons 51 (Cons 10 Nil)))))))
+               (Cons 111 (Cons 49 (Cons 51 (Cons 10 Nil)))))))
   puts hello
   eof ()
   
