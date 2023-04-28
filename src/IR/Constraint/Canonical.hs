@@ -43,7 +43,7 @@ import IR.Types.Type (
   Type (..),
   builtinKinds,
   foldArrow,
-  tupleId,
+  tempTupleId,
   unAnnotations,
   unfoldArrow,
  )
@@ -141,7 +141,7 @@ pattern U8 = TCon "UInt8" []
 
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
-tuple ts = TCon (tupleId $ length ts) ts
+tuple ts = TCon (tempTupleId $ length ts) ts
 
 
 -- | ANNOTATION

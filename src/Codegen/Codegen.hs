@@ -38,7 +38,9 @@ import qualified Language.C.Syntax as C
 import qualified Common.Compiler as Compiler
 import Common.Identifiers (fromId, fromString)
 
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM, unless, when)
+
+-- import Control.Monad (foldM, unless)
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy (
   MonadState,
@@ -80,26 +82,26 @@ should be computed first, before this information is used to generate the act
 struct and enter definitions.
 -}
 data GenFnState = GenFnState
-  { fnName :: I.VarId
-  -- ^ Function name
-  , fnParams :: [I.Binder I.Type]
-  -- ^ Function parameters
-  , fnRetTy :: I.Type
-  -- ^ Function return type
-  , fnBody :: I.Expr I.Type
-  -- ^ Function body
-  , fnLocals :: M.Map I.VarId I.Type
-  -- ^ Function local variables
-  , fnVars :: M.Map I.VarId C.Exp
-  -- ^ How to resolve variables
-  , fnMaxWaits :: Int
-  -- ^ Number of triggers needed
-  , fnCases :: Int
-  -- ^ Yield point counter
-  , fnFresh :: Int
-  -- ^ Temporary variable name counter
-  , fnTypeInfo :: TypegenInfo
-  -- ^ (User-defined) type information
+  { -- | Function name
+    fnName :: I.VarId
+  , -- | Function parameters
+    fnParams :: [I.Binder I.Type]
+  , -- | Function return type
+    fnRetTy :: I.Type
+  , -- | Function body
+    fnBody :: I.Expr I.Type
+  , -- | Function local variables
+    fnLocals :: M.Map I.VarId I.Type
+  , -- | How to resolve variables
+    fnVars :: M.Map I.VarId C.Exp
+  , -- | Number of triggers needed
+    fnMaxWaits :: Int
+  , -- | Yield point counter
+    fnCases :: Int
+  , -- | Temporary variable name counter
+    fnFresh :: Int
+  , -- | (User-defined) type information
+    fnTypeInfo :: TypegenInfo
   }
 
 
@@ -119,21 +121,21 @@ newtype GenFn a = GenFn (StateT GenFnState Compiler.Pass a)
 
 
 -- | Run a 'GenFn' computation on a procedure.
-runGenFn
-  :: I.VarId
-  -- ^ Name of procedure
-  -> [I.Binder I.Type]
-  -- ^ Names and types of parameters to procedure
-  -> I.Expr I.Type
-  -- ^ Body of procedure
-  -> TypegenInfo
-  -- ^ Type information
-  -> [(I.VarId, I.Type)]
-  -- ^ Other global identifiers
-  -> GenFn a
-  -- ^ Translation monad to run
-  -> Compiler.Pass a
-  -- ^ Pass on errors to caller
+runGenFn ::
+  -- | Name of procedure
+  I.VarId ->
+  -- | Names and types of parameters to procedure
+  [I.Binder I.Type] ->
+  -- | Body of procedure
+  I.Expr I.Type ->
+  -- | Type information
+  TypegenInfo ->
+  -- | Other global identifiers
+  [(I.VarId, I.Type)] ->
+  -- | Translation monad to run
+  GenFn a ->
+  -- | Pass on errors to caller
+  Compiler.Pass a
 runGenFn name params body typeInfo globals (GenFn tra) =
   evalStateT tra $
     GenFnState
@@ -299,10 +301,10 @@ genProgram p = do
       ++ cdefns
       ++ genInitProgram (I.programEntry p)
  where
-  genTop
-    :: TypegenInfo
-    -> (I.Binder I.Type, I.Expr I.Type)
-    -> Compiler.Pass ([C.Definition], [C.Definition])
+  genTop ::
+    TypegenInfo ->
+    (I.Binder I.Type, I.Expr I.Type) ->
+    Compiler.Pass ([C.Definition], [C.Definition])
   genTop tinfo (I.BindVar name _, l@I.Lambda{}) =
     runGenFn (fromId name) argIds body tinfo tops $ do
       (stepDecl, stepDefn) <- genStep
@@ -696,11 +698,11 @@ genExpr (I.Match s as t) = do
       mkBlk :: CIdent -> [C.BlockItem] -> [C.BlockItem]
       mkBlk label blk =
         [citems|$id:label:;|] ++ blk ++ [citems|goto $id:joinLabel;|]
-      withAltScope
-        :: CIdent
-        -> I.Alt I.Type
-        -> GenFn [C.BlockItem]
-        -> GenFn (C.BlockItem, [C.BlockItem])
+      withAltScope ::
+        CIdent ->
+        I.Alt I.Type ->
+        GenFn [C.BlockItem] ->
+        GenFn (C.BlockItem, [C.BlockItem])
       withAltScope label a@(I.AltData dcon _ _) m = do
         destruct <- getsDCon dconDestruct dcon
         cas <- getsDCon dconCase dcon
@@ -728,8 +730,8 @@ genExpr (I.Exception _ t) = do
 
 
 -- | Generate code for SSM primitive; see 'genExpr' for extended discussion.
-genPrim
-  :: I.Primitive -> [I.Expr I.Type] -> I.Type -> GenFn (C.Exp, [C.BlockItem])
+genPrim ::
+  I.Primitive -> [I.Expr I.Type] -> I.Type -> GenFn (C.Exp, [C.BlockItem])
 genPrim I.New [e] refType = do
   (val, stms) <- genExpr e
   tmp <- genTmp refType
@@ -762,13 +764,13 @@ genPrim I.After [time, lhs, rhs] _ = do
   (timeVal, timeStms) <- genExpr time
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
-  let when = [cexp|$exp:now() + $exp:(unmarshal timeVal)|]
+  let when' = [cexp|$exp:now() + $exp:(unmarshal timeVal)|]
       laterBlock =
         [citems|
           $items:timeStms
           $items:lhsStms
           $items:rhsStms
-          $exp:(later lhsVal when rhsVal);
+          $exp:(later lhsVal when' rhsVal);
           $exp:(drop timeVal);
           $exp:(drop rhsVal);
           $exp:(drop lhsVal);
@@ -792,9 +794,9 @@ genPrim I.Par procs _ = do
       -- implemented just yet.
       -- So, this is currently broken in that side effects inside the arguments
       -- of function calls will be evaluated sequentially, which is wrong.
-      apply
-        :: (I.Expr I.Type, (C.Exp, C.Exp))
-        -> GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
+      apply ::
+        (I.Expr I.Type, (C.Exp, C.Exp)) ->
+        GenFn (C.Exp, [C.BlockItem], [C.BlockItem])
       apply (I.App fn arg ty, (prio, depth)) = do
         (fnExp, fnStms) <- genExpr fn
         (argExp, argStms) <- genExpr arg
@@ -809,12 +811,31 @@ genPrim I.Par procs _ = do
         return (ret, fnStms ++ argStms, appStms)
       apply (e, _) = do
         fail $ "Cannot compile par with non-application expression: " ++ show e
+      -- given a list of par return vals and their types, wrap the return vals in a tuple
+      genParRetVal :: [C.Exp] -> [I.Type] -> GenFn (C.Exp, [C.BlockItem])
+      genParRetVal [] _ = fail "par should have 2 or more return values"
+      genParRetVal [_] _ = fail "par should have 2 or more return values"
+      genParRetVal rets@(ret0 : ret1 : _) retTys = do
+        -- TODO: given n ret vals, return an n-ary tuple
+        when (length rets /= length retTys) $ do fail "lists of return vals and types must be same length"
+        let dcon = I.tempTupleId (length rets)
+        let dty = I.tempTuple retTys
+        onHeap <- getsDCon dconOnHeap dcon
+        unless onHeap $ do
+          fail $ "Cannot handle packed fields yet, for: " ++ show dcon
+        construct <- getsDCon dconConstruct dcon
+        destruct <- getsDCon dconDestruct dcon
+        tmp <- genTmp dty
+        let alloc = [[citem|$exp:tmp = $exp:construct;|]]
+            initField y i = [citem|$exp:(destruct i tmp) = $exp:y;|]
+            initFields = zipWith initField [ret0, ret1] [0 ..] -- puts first two return vals in a 2-tuple for now
+        return (tmp, alloc ++ initFields)
 
   (_rets, befores, activates) <- unzip3 <$> mapM apply (zip procs parArgs)
   yield <- genYield
-  let parRetVal = unit -- TODO: return tuple of values
+  (parRetVal, tupleStms) <- genParRetVal _rets (I.extract <$> procs)
   return
-    (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield)
+    (parRetVal, checkNewDepth ++ concat befores ++ concat activates ++ yield ++ tupleStms)
 genPrim I.Wait vars _ = do
   (varVals, varStms) <- unzip <$> mapM genExpr vars
   maxWait $ length varVals
@@ -866,8 +887,8 @@ genLiteralRaw I.LitEvent = [cexp|1|]
 
 
 -- | Generate C expression for SSM primitive operation.
-genPrimOp
-  :: I.PrimOp -> [I.Expr I.Type] -> I.Type -> GenFn (C.Exp, [C.BlockItem])
+genPrimOp ::
+  I.PrimOp -> [I.Expr I.Type] -> I.Type -> GenFn (C.Exp, [C.BlockItem])
 genPrimOp I.PrimAdd [lhs, rhs] _ = do
   ((lhsVal, rhsVal), stms) <-
     first (bimap unmarshal unmarshal) <$> genBinop lhs rhs
@@ -946,8 +967,8 @@ genPrimOp _ _ _ = fail "Unsupported PrimOp or wrong number of arguments"
 
 
 -- | Helper for sequencing across binary operations.
-genBinop
-  :: I.Expr I.Type -> I.Expr I.Type -> GenFn ((C.Exp, C.Exp), [C.BlockItem])
+genBinop ::
+  I.Expr I.Type -> I.Expr I.Type -> GenFn ((C.Exp, C.Exp), [C.BlockItem])
 genBinop lhs rhs = do
   (lhsVal, lhsStms) <- genExpr lhs
   (rhsVal, rhsStms) <- genExpr rhs
