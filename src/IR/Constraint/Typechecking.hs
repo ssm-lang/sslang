@@ -24,6 +24,10 @@ import IR.Constraint.Type as Typ (
   toCanType,
  )
 
+import Prettyprinter ( 
+   surround,
+   vsep,
+  )
 
 typecheckProgram
   :: I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type, Maybe (Doc ann))
@@ -37,7 +41,14 @@ unsafeTypecheckProgram
 unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
 
+  -- Get IORefs in the program IR
+  let refs = foldr (:) [] pVar
+
+  let vars = mapM toCanType refs
+
   -- Depends on being called before solve
+  namesDoc <- map pretty <$> vars 
+  
   doc <-
     if not prettyprint
       then return Nothing
@@ -45,10 +56,21 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
         -- Convert IORef Variables to printable "type variables" embedded in IR
         pIR <- pretty <$> mapM toCanType pVar
         pConstraint <- printConstraint constraint
-        let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline <> hardline
-
+        
         return $ Just $ pConstraint <> hrule <> pIR
 
+  -- Runs constraint solver
   Solve.run constraint
+
+  -- Depends on being called after solve
+  resolutionDoc <- map pretty <$> vars 
+
+  -- Document containing the mapping from flex vars to types
+  let mappingDoc = vsep $ zipWith (surround (pretty " = ")) namesDoc resolutionDoc
+
+  let finalDoc = (<> hrule <> mappingDoc) <$> doc
+
   program <- Elaborate.run pVar
-  return (program, doc)
+  return (program, finalDoc)
+
+  where hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline <> hardline
