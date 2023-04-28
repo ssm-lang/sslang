@@ -100,12 +100,12 @@ instance Pretty (Program Type) where
 prettyDef :: (Binder Type, Expr Type) -> Doc ann
 prettyDef (v, unfoldLambda -> ([], b)) = prettyBinderTyped False v <+> "=" <> hardBlock (pretty b)
 prettyDef (v, unfoldLambda -> (as, b)) =
-  let args = sep $ map (prettyBinderTyped True) as
+  let args = layoutBlock' $ vsep $ map (prettyBinderTyped True) as
       t = extract v
       typeInfo
         | hasTypeInfo t = ":" <+> pretty t
         | otherwise = ""
-   in prettyBinderUntyped v <+> args <> typeInfo <+> "=" <> hardBlock (pretty b)
+   in prettyBinderUntyped v <> args <> typeInfo <+> "=" <> hardBlock (pretty b)
 
 
 instance Pretty (Expr Type) where
