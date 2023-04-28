@@ -30,7 +30,7 @@ layoutBlock' :: Doc ann -> Doc ann
 layoutBlock' d = group $ flatAlt indented oneLiner
  where
   oneLiner = " " <> d
-  indented = line <> indents d
+  indented = line <> indents (indents d)
 
 
 layoutBlock :: Doc ann -> Doc ann
