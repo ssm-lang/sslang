@@ -146,8 +146,9 @@ transform opt p = do
   p <- externToCall p
   p <- optimizePar p
   p <- liftProgramLambdas p
+  p <- segmentLets p
   when (mode opt == DumpIRLifted) $ dump p
-  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  -- p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
