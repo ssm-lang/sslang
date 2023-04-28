@@ -343,6 +343,8 @@ spec = do
   describe "larger, full-program test cases" $ do
     it "typechecks an unannotated, monomorphic program" $ do
       [here|
+            type Pair2 a b
+                Pair2 a b
             toggle(led : &Int) -> () =
               (led: &Int) <- (1 - deref (led: &Int): Int)
             slow(led : &Int) -> () =
@@ -357,10 +359,12 @@ spec = do
                 ((toggle: &Int -> ()) (led: &Int): ())
                 after 20 , (e2: &()) <- ()
                 wait (e2: &())
-            main(led : &Int) -> ((), ()) =
+            main(led : &Int) -> (Pair2 () ()) =
               par ((slow: &Int -> ()) (led: &Int): ())
                   ((fast: &Int -> ()) (led: &Int): ())
         |] `typeChecksAs` [here|
+            type Pair2 a b
+                Pair2 a b
             toggle(led) =
               led <- 1 - deref led
             slow(led) =
