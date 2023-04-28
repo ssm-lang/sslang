@@ -24,7 +24,6 @@ import IR.LowerAst (lowerProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
-import IR.Simplify (simplifyProgram)
 import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
   ArgDescr (..),
@@ -147,7 +146,6 @@ transform opt p = do
   p <- optimizePar p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
-  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
