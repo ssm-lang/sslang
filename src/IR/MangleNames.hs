@@ -2,7 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module IR.MangleNames (mangleProgram) where
+{- | Mangle all variable names in a program to ensure global uniqueness.
+
+Also populate symbol table with information about those (now unique) names.
+
+This module also exports 'pickId', which other passes can use to create fresh
+variable names given some symbol table.
+-}
+module IR.MangleNames (mangleProgram, normalizeId, pickId) where
 
 import qualified Common.Compiler as Compiler
 import Common.Identifiers (Identifiable (..), IsString (..))
@@ -19,34 +26,33 @@ type OriginId = I.VarId
 type MangledId = I.VarId
 
 
-normalize :: I.VarId -> I.VarId
-normalize = fromString . map tr . ident
+-- | Normalize an identifier (remove things like backticks etc.)
+normalizeId :: Identifiable i => i -> i
+normalizeId = fromString . map tr . ident
  where
   tr '\'' = '_'
   tr a = a
 
 
-pickId :: M.Map MangledId (I.SymInfo I.Type) -> OriginId -> MangledId
-pickId globals v =
-  let v' = normalize v
-   in if alreadyInUse v'
-        then pick 1
-        else v'
+-- | Given a symbol table and a name, pick a new name that is globally unique.
+pickId :: M.Map MangledId t -> OriginId -> MangledId
+pickId globals v = if alreadyInUse v' then pick 1 else v'
  where
+  v' :: MangledId
+  v' = normalizeId v
+
   pick :: Int -> MangledId
   pick i =
-    let v' = normalize (v <> "___" <> fromString (show i))
-     in if alreadyInUse v'
-          then pick $ i + 1
-          else v'
+    let v'' = normalizeId (v <> "__" <> fromString (show i))
+     in if alreadyInUse v'' then pick $ i + 1 else v''
 
   alreadyInUse :: I.VarId -> Bool
-  alreadyInUse v' = M.member v' globals
+  alreadyInUse = (`M.member` globals)
 
 
 data MangleCtx = MangleCtx
   { localScope :: M.Map OriginId MangledId
-  , globalScope :: M.Map MangledId (I.SymInfo I.Type)
+  , globalScope :: I.SymTable I.Type
   }
 
 

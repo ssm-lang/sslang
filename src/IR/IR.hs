@@ -8,7 +8,7 @@
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR (
   Program (..),
-  SymInfo(..),
+  SymInfo (..),
   TypeDef (..),
   TypeVariant (..),
   Binder (..),
@@ -39,6 +39,7 @@ module IR.IR (
   binderToVar,
   Carrier,
   uninitializedSymTable,
+  SymTable,
 ) where
 
 import Common.Identifiers (
@@ -70,11 +71,7 @@ import IR.Types.Type (
  )
 
 
-{- | Top-level compilation unit, parameterized by the type system.
-
-After name-mangling, all variable names should be globally unique, and will be
-kept track of in @symInfo@.
--}
+-- | Top-level compilation unit, parameterized by the type system.
 data Program t = Program
   { programEntry :: VarId
   , cDefs :: String
@@ -84,6 +81,13 @@ data Program t = Program
   , symTable :: M.Map VarId (SymInfo t)
   }
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
+
+
+{- | Contains information about all (globally unique) variable names.
+
+Populated by name mangling pass.
+-}
+type SymTable t = M.Map VarId (SymInfo t)
 
 
 -- | Information stored in global symbol table.
