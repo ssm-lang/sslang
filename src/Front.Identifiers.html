@@ -17,7 +17,7 @@
 </span><span id="line-17"></span><span>    </span><span id="Builtin"><span class="annot"><a href="Front.Identifiers.html#Builtin"><span class="hs-identifier hs-var">Builtin</span></a></span></span><span>
 </span><span id="line-18"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Unused, but user should not be able to define.</span><span>
 </span><span id="line-19"></span><span>    </span><span id="Reserved"><span class="annot"><a href="Front.Identifiers.html#Reserved"><span class="hs-identifier hs-var">Reserved</span></a></span></span><span>
-</span><span id="line-20"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679482893"><span id="local-6989586621679482895"><span id="local-6989586621679482897"><span class="annot"><span class="annottext">Int -&gt; IdKind -&gt; ShowS
+</span><span id="line-20"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679490968"><span id="local-6989586621679490970"><span id="local-6989586621679490972"><span class="annot"><span class="annottext">Int -&gt; IdKind -&gt; ShowS
 [IdKind] -&gt; ShowS
 IdKind -&gt; String
 (Int -&gt; IdKind -&gt; ShowS)
@@ -30,7 +30,7 @@ show :: IdKind -&gt; String
 $cshow :: IdKind -&gt; String
 showsPrec :: Int -&gt; IdKind -&gt; ShowS
 $cshowsPrec :: Int -&gt; IdKind -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679482888"><span id="local-6989586621679482890"><span class="annot"><span class="annottext">IdKind -&gt; IdKind -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679490963"><span id="local-6989586621679490965"><span class="annot"><span class="annottext">IdKind -&gt; IdKind -&gt; Bool
 (IdKind -&gt; IdKind -&gt; Bool)
 -&gt; (IdKind -&gt; IdKind -&gt; Bool) -&gt; Eq IdKind
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -52,7 +52,7 @@ $c== :: IdKind -&gt; IdKind -&gt; Bool
 </span><span id="line-29"></span><span>
 </span><span id="line-30"></span><span>
 </span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Default.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Front.Identifiers.html#DataInfo"><span class="hs-identifier hs-type">DataInfo</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-32"></span><span>  </span><span id="local-6989586621679482880"><span class="annot"><span class="annottext">def :: DataInfo
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679490955"><span class="annot"><span class="annottext">def :: DataInfo
 </span><a href="Common.Default.html#def"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DataInfo :: IdKind -&gt; DataInfo
 </span><a href="Front.Identifiers.html#DataInfo"><span class="hs-identifier hs-type">DataInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">dataKind :: IdKind
 </span><a href="Front.Identifiers.html#dataKind"><span class="hs-identifier hs-var">dataKind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IdKind
@@ -60,8 +60,8 @@ $c== :: IdKind -&gt; IdKind -&gt; Bool
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Default.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Front.Identifiers.html#TypInfo"><span class="hs-identifier hs-type">TypInfo</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>  </span><span id="local-6989586621679482877"><span class="annot"><span class="annottext">def :: TypInfo
-</span><a href="#local-6989586621679482877"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypInfo :: IdKind -&gt; TypInfo
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621679490952"><span class="annot"><span class="annottext">def :: TypInfo
+</span><a href="#local-6989586621679490952"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypInfo :: IdKind -&gt; TypInfo
 </span><a href="Front.Identifiers.html#TypInfo"><span class="hs-identifier hs-type">TypInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">typKind :: IdKind
 </span><a href="Front.Identifiers.html#typKind"><span class="hs-identifier hs-var">typKind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IdKind
 </span><a href="Front.Identifiers.html#User"><span class="hs-identifier hs-var">User</span></a></span><span class="hs-special">}</span><span>
@@ -80,16 +80,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; (Identifier, TypInfo)
 forall a. a -&gt; (a, TypInfo)
-</span><a href="#local-6989586621679482874"><span class="hs-identifier hs-var">mkBuiltin</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679490949"><span class="hs-identifier hs-var">mkBuiltin</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;Int&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;[]&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;&amp;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;()&quot;</span></span><span class="hs-special">]</span><span>
 </span><span id="line-42"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-43"></span><span>  </span><span id="local-6989586621679482874"><span class="annot"><span class="annottext">mkBuiltin :: a -&gt; (a, TypInfo)
-</span><a href="#local-6989586621679482874"><span class="hs-identifier hs-var hs-var">mkBuiltin</span></a></span></span><span> </span><span id="local-6989586621679482873"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679482873"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679482873"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypInfo :: IdKind -&gt; TypInfo
+</span><span id="line-43"></span><span>  </span><span id="local-6989586621679490949"><span class="annot"><span class="annottext">mkBuiltin :: a -&gt; (a, TypInfo)
+</span><a href="#local-6989586621679490949"><span class="hs-identifier hs-var hs-var">mkBuiltin</span></a></span></span><span> </span><span id="local-6989586621679490948"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679490948"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679490948"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypInfo :: IdKind -&gt; TypInfo
 </span><a href="Front.Identifiers.html#TypInfo"><span class="hs-identifier hs-type">TypInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">typKind :: IdKind
 </span><a href="Front.Identifiers.html#typKind"><span class="hs-identifier hs-var">typKind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IdKind
 </span><a href="Front.Identifiers.html#Builtin"><span class="hs-identifier hs-var">Builtin</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
@@ -111,7 +111,7 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span>
 </span><span id="line-51"></span><span>      </span><span class="annot"><span class="annottext">Identifier -&gt; (Identifier, DataInfo)
 forall a. a -&gt; (a, DataInfo)
-</span><a href="#local-6989586621679482871"><span class="hs-identifier hs-var">mkBuiltin</span></a></span><span>
+</span><a href="#local-6989586621679490946"><span class="hs-identifier hs-var">mkBuiltin</span></a></span><span>
 </span><span id="line-52"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Identifier
 </span><span class="hs-string">&quot;-&quot;</span></span><span>
 </span><span id="line-53"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Identifier
@@ -142,10 +142,10 @@ forall a. a -&gt; (a, DataInfo)
 </span><span class="hs-string">&quot;now&quot;</span></span><span>
 </span><span id="line-66"></span><span>      </span><span class="hs-special">]</span><span>
 </span><span id="line-67"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-68"></span><span>  </span><span id="local-6989586621679482871"><span class="annot"><span class="annottext">mkBuiltin :: a -&gt; (a, DataInfo)
-</span><a href="#local-6989586621679482871"><span class="hs-identifier hs-var hs-var">mkBuiltin</span></a></span></span><span> </span><span id="local-6989586621679482870"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679482870"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679482870"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">DataInfo :: IdKind -&gt; DataInfo
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621679490946"><span class="annot"><span class="annottext">mkBuiltin :: a -&gt; (a, DataInfo)
+</span><a href="#local-6989586621679490946"><span class="hs-identifier hs-var hs-var">mkBuiltin</span></a></span></span><span> </span><span id="local-6989586621679490945"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679490945"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679490945"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">DataInfo :: IdKind -&gt; DataInfo
 </span><a href="Front.Identifiers.html#DataInfo"><span class="hs-identifier hs-type">DataInfo</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">dataKind :: IdKind
 </span><a href="Front.Identifiers.html#dataKind"><span class="hs-identifier hs-var">dataKind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IdKind
 </span><a href="Front.Identifiers.html#Builtin"><span class="hs-identifier hs-var">Builtin</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>

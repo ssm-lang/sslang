@@ -1594,16 +1594,25 @@ module IR.Types
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR
 
--- | Top-level compilation unit.
---   
---   <tt>t</tt> is the type system in use, e.g., <a>IR.Types.Flat</a>
+-- | Top-level compilation unit, parameterized by the type system.
 data Program t
-Program :: VarId -> String -> [(VarId, Type)] -> [(Binder t, Expr t)] -> [(TConId, TypeDef)] -> Program t
+Program :: VarId -> String -> [(VarId, Type)] -> [(Binder t, Expr t)] -> [(TConId, TypeDef)] -> Map VarId (SymInfo t) -> Program t
 [programEntry] :: Program t -> VarId
 [cDefs] :: Program t -> String
 [externDecls] :: Program t -> [(VarId, Type)]
 [programDefs] :: Program t -> [(Binder t, Expr t)]
 [typeDefs] :: Program t -> [(TConId, TypeDef)]
+[symTable] :: Program t -> Map VarId (SymInfo t)
+
+-- | Information stored in global symbol table.
+data SymInfo t
+SymInfo :: VarId -> t -> SymInfo t
+
+-- | Original name of symbol
+[symOrigin] :: SymInfo t -> VarId
+
+-- | Type information of symbol
+[symType] :: SymInfo t -> t
 
 -- | The type definition associated with a type constructor. A definition
 --   for `data MyList a = Cons a (MyList a) | Nil` looks like: <tt> TypeDef
@@ -1919,6 +1928,18 @@ binderToVar :: Binder a -> Maybe VarId
 -- | Many data types carry other kinds of data, e.g., <a>Expr</a> carries a
 --   type.
 class Carrier c
+uninitializedSymTable :: Map VarId (SymInfo t)
+
+-- | Contains information about all (globally unique) variable names.
+--   
+--   Populated by name mangling pass.
+type SymTable t = Map VarId (SymInfo t)
+instance Data.Traversable.Traversable IR.IR.SymInfo
+instance Data.Foldable.Foldable IR.IR.SymInfo
+instance GHC.Base.Functor IR.IR.SymInfo
+instance Data.Data.Data t => Data.Data.Data (IR.IR.SymInfo t)
+instance GHC.Show.Show t => GHC.Show.Show (IR.IR.SymInfo t)
+instance GHC.Classes.Eq t => GHC.Classes.Eq (IR.IR.SymInfo t)
 instance Data.Data.Data IR.IR.TypeVariant
 instance GHC.Classes.Eq IR.IR.TypeVariant
 instance GHC.Show.Show IR.IR.TypeVariant
@@ -2132,6 +2153,30 @@ instance GHC.Base.Applicative IR.OptimizePar.OptParFn
 instance GHC.Base.Functor IR.OptimizePar.OptParFn
 
 
+-- | Mangle all variable names in a program to ensure global uniqueness.
+--   
+--   Also populate symbol table with information about those (now unique)
+--   names.
+--   
+--   This module also exports <a>pickId</a>, which other passes can use to
+--   create fresh variable names given some symbol table.
+module IR.MangleNames
+mangleProgram :: Program Type -> Pass (Program Type)
+
+-- | Normalize an identifier (remove things like backticks etc.)
+normalizeId :: Identifiable i => i -> i
+
+-- | Given a symbol table and a name, pick a new name that is globally
+--   unique.
+pickId :: Map MangledId t -> OriginId -> MangledId
+instance Control.Monad.State.Class.MonadState IR.MangleNames.MangleCtx IR.MangleNames.Mangle
+instance Control.Monad.Error.Class.MonadError Common.Compiler.Error IR.MangleNames.Mangle
+instance Control.Monad.Fail.MonadFail IR.MangleNames.Mangle
+instance GHC.Base.Monad IR.MangleNames.Mangle
+instance GHC.Base.Applicative IR.MangleNames.Mangle
+instance GHC.Base.Functor IR.MangleNames.Mangle
+
+
 -- | Lower the representation of a sslang Ast into sslang IR.
 --   
 --   This pass expects prior desugaring passes to ensure that:
@@ -2216,238 +2261,6 @@ module IR.InsertRefCounting
 --   
 --   Applies <a>insertTop</a> to the program's definitions
 insertRefCounting :: Program Type -> Pass (Program Type)
-
--- | Monad for creating fresh variables: add an Int to the pass
-type Fresh = StateT Int Pass
-
--- | Create a fresh variable name with the given suffix
---   
---   Creates a new variable ID of the form "anon1," "anon2," etc. followed
---   by the supplied suffix
-getFresh :: String -> Fresh VarId
-
--- | Make a dup primitive that returns the type of its argument
-makeDup :: Expr Type -> Expr Type
-
--- | Make a drop primitive with unit type
-makeDrop :: Expr Type -> Expr Type -> Expr Type
-
--- | Insert referencing counting for top-level expressions
---   
---   Applies <a>insertExpr</a> to a top-level delcaration
-insertTop :: (Binder Type, Expr Type) -> Fresh (Binder Type, Expr Type)
-
--- | Insert reference counting into an expression
---   
---   This is the main workhorse of this module.
---   
---   <ul>
---   <li><b>Literals</b> are unchanged, e.g.,</li>
---   </ul>
---   
---   <pre>
---   42
---   </pre>
---   
---   remains
---   
---   <pre>
---   42
---   </pre>
---   
---   <ul>
---   <li><b>Data constructors</b> are unchanged, e.g.,</li>
---   </ul>
---   
---   <pre>
---   True
---   </pre>
---   
---   remains
---   
---   <pre>
---   True
---   </pre>
---   
---   because they are functions whose results are returned with an existing
---   reference
---   
---   <ul>
---   <li>A <b>variable reference</b> becomes a call to dup because it
---   introduces another reference to the named object, e.g.,</li>
---   </ul>
---   
---   <pre>
---   v
---   </pre>
---   
---   becomes
---   
---   <pre>
---   dup v
---   </pre>
---   
---   <ul>
---   <li><b>Application</b> recurses (inserts dups and drops) on both the
---   function being applied and its argument e.g.,</li>
---   </ul>
---   
---   <pre>
---   add x y
---   </pre>
---   
---   becomes
---   
---   <pre>
---   (dup add) (dup x) (dup y)
---   </pre>
---   
---   <ul>
---   <li><b>Primitive</b> function application inserts dups and drops on
---   its arguments, e.g.,</li>
---   </ul>
---   
---   <pre>
---   (+) x y
---   </pre>
---   
---   becomes
---   
---   <pre>
---   (+) (dup x) (dup y)
---   </pre>
---   
---   <ul>
---   <li><b>Let</b> introduces new names whose values are dropped after the
---   body is evaluated; <tt>let _ =</tt> are given names so they can be
---   dropped.</li>
---   </ul>
---   
---   <pre>
---   let a = Foo 42
---       _ = a
---   17
---   </pre>
---   
---   becomes
---   
---   <pre>
---   let a = Foo 42
---   drop
---     (let anon1_underscore = dup a
---      drop
---        17
---        anon1_underscore)
---     a
---   </pre>
---   
---   <ul>
---   <li>Nested <b>Lambda</b> expressions are handled by collecting them
---   into a single expression with multiple arguments, adding dups and
---   drops to the body, and adding drops around the body for each argument
---   (which the caller should have duped)</li>
---   </ul>
---   
---   <pre>
---   add a b = a + b
---   </pre>
---   
---   desugars to
---   
---   <pre>
---   add = fun a (fun b (a + b))
---   </pre>
---   
---   and becomes
---   
---   <pre>
---   add = fun a (
---           fun b (
---              drop (
---                 drop (
---                   (dup a) + (dup b)
---                 ) b
---              ) a
---   </pre>
---   
---   <ul>
---   <li><b>Matches</b> that operate on a variable are modified by
---   inserting dups and drops into the arms (but not the scrutinee)</li>
---   </ul>
---   
---   <pre>
---   match v
---     Foo x = x + 1
---     Bar = 42
---   </pre>
---   
---   desugars to
---   
---   <pre>
---   match v
---     Foo pat_anon0 = let x = pat_anon0
---                       x + 1
---     Bar = 42
---   </pre>
---   
---   then becomes
---   
---   <pre>
---   match v
---     Foo pat_anon0 = drop
---                       dup pat_anon0
---                       let x = dup pat_anon0
---                       drop (
---                          dup x + 1
---                       ) x
---                     ) pat_anon0
---     Bar = 42
---   </pre>
---   
---   <ul>
---   <li><b>Matches</b> that scrutinize an expression lift the scrutinee
---   into a <tt>let</tt> then insert dups and drops on the whole thing</li>
---   </ul>
---   
---   <pre>
---   match add x y
---     10 = 5
---     _ = 3
---   </pre>
---   
---   becomes
---   
---   <pre>
---   let anon0_scrutinee = (dup add) (dup x) (dup y)
---   drop (
---     match anon0_scrutinee
---       10 = 5
---       _ = 3
---   ) anon0_scruitinee
---   </pre>
-insertExpr :: Expr Type -> Fresh (Expr Type)
-
--- | Insert dups and drops into pattern match arms
---   
---   The body of default and literal patterns is simply recursed upon.
---   
---   Every named variable in a pattern is duped and dropped, e.g.,
---   
---   <pre>
---   match v
---     Foo x = expr
---   </pre>
---   
---   becomes
---   
---   <pre>
---   match v
---     Foo _anon1 = drop
---                    (let x = dup _anon1
---                     expr
---                  ) x
---   </pre>
-insertAlt :: (Alt Type, Expr Type) -> Fresh (Alt Type, Expr Type)
 
 
 -- | Turns non-nullary data constructors into calls to constructor
@@ -3334,6 +3147,7 @@ DumpIRAnnotated :: Mode
 DumpIRConstraints :: Mode
 DumpIRTyped :: Mode
 DumpIRTypedUgly :: Mode
+DumpIRMangled :: Mode
 DumpIRInlined :: Mode
 DumpIRTypedShow :: Mode
 DumpIRLifted :: Mode
