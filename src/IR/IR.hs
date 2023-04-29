@@ -83,7 +83,7 @@ data Program t = Program
   , typeDefs :: [(TConId, TypeDef)]
   , symTable :: M.Map VarId (SymInfo t)
   }
-  deriving (Eq, Show, Typeable, Data, Functor)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 
 -- | Information stored in global symbol table.
@@ -93,7 +93,7 @@ data SymInfo t = SymInfo
   , -- | Type information of symbol
     symType :: t
   }
-  deriving (Eq, Show, Typeable, Data, Functor)
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
 
 {- | The type definition associated with a type constructor.

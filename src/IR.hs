@@ -130,8 +130,8 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  (p, constraints) <- typecheckProgram p (mode opt == DumpIRConstraints)
-  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraints
+  (p, constraintsDoc) <- typecheckProgram p (mode opt == DumpIRConstraints)
+  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraintsDoc
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p
@@ -155,8 +155,9 @@ transform opt p = do
   p <- externToCall p
   p <- optimizePar p
   p <- liftProgramLambdas p
+  p <- segmentLets p
   when (mode opt == DumpIRLifted) $ dump p
-  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  -- p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
