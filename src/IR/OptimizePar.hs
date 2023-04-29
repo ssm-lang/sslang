@@ -26,7 +26,10 @@ import Control.Monad.State.Lazy (
 import IR.IR (Literal (LitIntegral))
 import qualified IR.IR as I
 import Data.Bifunctor
-
+import Common.Identifiers(Identifier (Identifier), TVarId (..))
+import IR.Types.Type
+import           Data.Generics.Aliases          ( mkM )
+import           Data.Generics.Schemes          ( everywhereM )
 
 -- | Optimization Environment
 data OptParCtx = OptParCtx
@@ -38,7 +41,7 @@ data OptParCtx = OptParCtx
 
 
 -- | OptPar Monad
-newtype OptParFn a = LiftFn (StateT OptParCtx Compiler.Pass a)
+newtype OptParFn a = OptParFn (StateT OptParCtx Compiler.Pass a)
   deriving (Functor) via (StateT OptParCtx Compiler.Pass)
   deriving (Applicative) via (StateT OptParCtx Compiler.Pass)
   deriving (Monad) via (StateT OptParCtx Compiler.Pass)
@@ -58,9 +61,9 @@ updateNumberOfPars num = do
   modify $ \st -> st{numPars = num}
 
 
--- | Run a LiftFn computation.
-runLiftFn :: OptParFn a -> Compiler.Pass a
-runLiftFn (LiftFn m) =
+-- | Run a OptParFn computation.
+runOptParFn :: OptParFn a -> Compiler.Pass a
+runOptParFn (OptParFn m) =
   evalStateT
     m
     OptParCtx
@@ -68,16 +71,30 @@ runLiftFn (LiftFn m) =
       , numBadPars = 0
       }
 
-
 {- | Entry-point to Par Optimization.
 
 Maps over top level definitions, removing unnecessary pars.
 -}
 optimizePar :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-optimizePar p = runLiftFn $ do
-  optimizedDefs <- mapM optimizeParTop $ I.programDefs p
-  fail ("Number of Bad Par Exprs in " ++ show (map fst (map tupleMatch1 optimizedDefs)) ++ ": " ++ (show (map tupleMatch optimizedDefs)))
-  return $ p{I.programDefs = map tupleMatch1 optimizedDefs}
+optimizePar p = runOptParFn $ do
+  defs' <- everywhereM (mkM findFixBadPar) $ I.programDefs p
+ -- optimizedDefs <- mapM optimizeParTop $ I.programDefs p
+ -- fail ("Number of Bad Par Exprs in " ++ show (map fst (map tupleMatch1 optimizedDefs)) ++ ": " ++ (show (map tupleMatch optimizedDefs)))
+ -- return $ p{I.programDefs = map tupleMatch1 optimizedDefs}
+  return $ p{I.programDefs = defs'}
+
+{- | Given an Expr as input, if it turns out to be a bad Par expr, rewrite it.
+
+Otherwise, leave the expression alone.
+-}
+findFixBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
+findFixBadPar e@__ = if isBad e then rewrite e else pure e 
+ where rewrite :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
+       rewrite p@(I.Prim I.Par exprlist _) = pure dummy --TODO: rewrite the bad par as good one
+       rewrite _ = fail "rewrite should only be called on a Par IR node!"
+       dummy = I.Var (I.VarId (Identifier "PINEAPPLE")) (TVar $ TVarId (Identifier "dummy"))
+
+
 
 --helper to pattern match on optimizedDefs tuple
 
@@ -257,6 +274,7 @@ isBad :: I.Expr I.Type -> Bool
 --isBad theExpr = False -- currently a stub
 isBad (I.Prim I.Par exprlist _) = do
   (and (map isNotWait exprlist)) || (and (map isNotFunction exprlist))
+isBad _ = False
 
 
 
