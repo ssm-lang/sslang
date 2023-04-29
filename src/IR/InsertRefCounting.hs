@@ -45,19 +45,20 @@ Try running @sslc --dump-ir-final@ on an example to see the inserted
 Our approach was inspired by Perceus
 <https://www.microsoft.com/en-us/research/publication/perceus-garbage-free-reference-counting-with-reuse/>
 -}
-module IR.InsertRefCounting where
+module IR.InsertRefCounting (insertRefCounting) where
 
 import qualified Common.Compiler as Compiler
 import Common.Identifiers
 import Control.Monad.State.Lazy (
   MonadState (..),
   StateT (..),
-  evalStateT,
   forM,
   modify,
  )
+import qualified IR.MangleNames as I
 import qualified IR.IR as I
 import qualified IR.Types as I
+import qualified Data.Map as M
 
 
 -- * The external interface
@@ -70,15 +71,9 @@ import qualified IR.Types as I
  Applies `insertTop` to the program's definitions
 -}
 insertRefCounting :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-insertRefCounting program = (`evalStateT` 0) $ do
-  defs <- mapM insertTop $ I.programDefs program
-  return $
-    program
-      { I.programDefs = defs
-      , I.programEntry = I.programEntry program
-      , I.typeDefs = I.typeDefs program
-      }
-
+insertRefCounting p@I.Program{I.symTable = symTable, I.programDefs = defs} = do
+  (defs', symTable') <- runStateT (mapM insertTop defs) symTable
+  return $ p{ I.symTable = symTable', I.programDefs = defs' }
 
 -- * Module internals, not intended for use outside this module
 
@@ -87,19 +82,20 @@ insertRefCounting program = (`evalStateT` 0) $ do
 -- \$internal
 
 -- | Monad for creating fresh variables: add an Int to the pass
-type Fresh = StateT Int Compiler.Pass
+type Fresh = StateT (I.SymTable I.Type) Compiler.Pass
 
 
-{- | Create a fresh variable name with the given suffix
+{- | Create a fresh variable name with the given name seed.
 
- Creates a new variable ID of the form "anon1," "anon2,"
- etc. followed by the supplied suffix
+Uses the symbol table to determine name uniqueness, and keeps it up to date.
 -}
-getFresh :: String -> Fresh I.VarId
-getFresh str = do
-  curCount <- get
-  modify (+ 1)
-  return $ fromString $ ("anon" <> show curCount) ++ str
+getFresh :: String -> I.Type -> Fresh I.VarId
+getFresh seed t = do
+  symTable <- get
+  let str = fromString $ "__dupdrop_anon_" <> seed
+      i = I.pickId symTable str
+  modify $ M.insert i $ I.SymInfo{ I.symOrigin = str, I.symType = t }
+  return i
 
 
 -- | Make a dup primitive that returns the type of its argument
@@ -290,7 +286,7 @@ insertExpr (I.Let bins expr typ) = do
   defFromBind (v, t, d) = (I.BindVar v t, d)
 
   droppedBinder (I.BindAnon t, d) = do
-    temp <- getFresh "_underscore"
+    temp <- getFresh "underscore" t
     d' <- insertExpr d
     return (temp, t, d')
   droppedBinder (I.BindVar v t, d) = do
@@ -300,7 +296,7 @@ insertExpr lam@I.Lambda{} = do
   let (args, body) = I.unfoldLambda lam
   args' <- forM args $ \case
     I.BindAnon t -> do
-      v <- getFresh "_arg"
+      v <- getFresh "arg" t
       return (v, t)
     I.BindVar v t -> return (v, t)
   let argBinders = uncurry I.BindVar <$> args' -- zipWith (\(v, t) b -> (I.BindVar v t, b)) args' argTypes
@@ -311,11 +307,12 @@ insertExpr (I.Match v@I.Var{} alts typ) = do
   alts' <- forM alts insertAlt
   return $ I.Match v alts' typ
 insertExpr (I.Match scrutExpr alts typ) = do
-  scrutVar <- getFresh "_scrutinee"
+  let scrutType = I.extract scrutExpr
+  scrutVar <- getFresh "scrutinee" scrutType
   insertExpr $
     I.Let
-      [(I.BindVar scrutVar $ I.extract scrutExpr, scrutExpr)]
-      (I.Match (I.Var scrutVar $ I.extract scrutExpr) alts typ)
+      [(I.BindVar scrutVar scrutType, scrutExpr)]
+      (I.Match (I.Var scrutVar scrutType) alts typ)
       typ
 insertExpr e@(I.Exception _ _) = return e
 

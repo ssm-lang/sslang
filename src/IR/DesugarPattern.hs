@@ -13,21 +13,19 @@ import Common.Compiler as Compiler (
   Pass,
   fromString,
  )
-import Common.Identifiers (Identifier (..))
 import qualified IR.IR as I
+import qualified IR.MangleNames as I
 
 import Common.Pretty (Pretty (..))
-import Control.Monad (forM, replicateM)
+import Control.Monad (forM)
 import Control.Monad.State.Lazy (
   MonadState,
   StateT (..),
-  evalStateT,
   gets,
   modify,
  )
 import Data.Bifunctor (Bifunctor (..))
 import Data.Foldable (foldrM)
-import Data.Functor ((<&>))
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -39,7 +37,6 @@ data CInfo = CInfo
   { cName :: I.DConId
   , cType :: I.TConId
   , argsType :: [I.Type]
-  , cArity :: Int
   }
   deriving (Eq, Show)
 
@@ -54,7 +51,7 @@ data TInfo = TInfo
 data DesugarCtx = DesugarCtx
   { typeMap :: M.Map I.TConId TInfo
   , consMap :: M.Map I.DConId CInfo
-  , anonCount :: Int
+  , symTable :: I.SymTable I.Type
   }
 
 
@@ -67,24 +64,18 @@ newtype DesugarFn a = DesugarFn (StateT DesugarCtx Compiler.Pass a)
   deriving (MonadState DesugarCtx) via (StateT DesugarCtx Compiler.Pass)
 
 
-runDesugarFn :: DesugarFn a -> DesugarCtx -> Compiler.Pass a
-runDesugarFn (DesugarFn m) = evalStateT m
+unDesugarFn :: DesugarFn a -> StateT DesugarCtx Compiler.Pass a
+unDesugarFn (DesugarFn a) = a
 
 
-freshVar :: DesugarFn Identifier
-freshVar = do
-  currCount <- gets anonCount
-  modify $ \ctx -> ctx{anonCount = anonCount ctx + 1}
-  return $ fromString ("__pat_anon" ++ show currCount)
-
-
-buildCtx :: [(I.TConId, I.TypeDef)] -> DesugarCtx
-buildCtx tds =
-  DesugarCtx
-    { anonCount = 0
-    , typeMap = buildTypeMap tds
-    , consMap = buildConsMap tds
-    }
+freshVar :: I.Type -> DesugarFn I.VarId
+freshVar t = do
+  syms <- gets symTable
+  let origin = "__anonymous_pattern"
+      name = I.pickId syms origin
+      syms' = M.insert name I.SymInfo{I.symOrigin = origin, I.symType = t} syms
+  modify $ \ctx -> ctx{symTable = syms'}
+  return name
 
 
 -- TODO: this should be a pattern synonym
@@ -93,12 +84,12 @@ unreachableExpr = I.Exception $ I.ExceptDefault $ I.LitIntegral 0
 
 
 desugarPattern :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
-desugarPattern p@I.Program{I.programDefs = defs, I.typeDefs = tds} =
-  (`runDesugarFn` buildCtx tds) $ do
-    defs' <- mapM desugarExprsDefs defs
-    return $ p{I.programDefs = defs'}
+desugarPattern p@I.Program{I.programDefs = defs, I.typeDefs = tds, I.symTable = syms} = do
+  (defs', symTable -> syms') <- runStateT (unDesugarFn $ mapM desugarExprsDefs defs) initCtx
+  return $ p{I.programDefs = defs', I.symTable = syms'}
  where
-  desugarExprsDefs (vs, es) = desugarExpr es <&> (vs,)
+  desugarExprsDefs (vs, es) = (vs,) <$> desugarExpr es
+  initCtx = DesugarCtx{typeMap = buildTypeMap tds, consMap = buildConsMap tds, symTable = syms}
 
 
 desugarExpr :: I.Expr I.Type -> DesugarFn (I.Expr I.Type)
@@ -116,19 +107,19 @@ desugarExpr (I.Match e arms t) = do
     I.Var _ _ -> desugarMatch [e] eqns (unreachableExpr t) -- TODO: add let alias
     _ -> do
       -- Bind scrutinee to a variable before threading it through desugarMatch
-      var <- I.VarId <$> freshVar
       let et = I.extract e
+      var <- freshVar et
       I.Let [(I.BindVar var et, e)]
         <$> desugarMatch [I.Var var et] eqns (unreachableExpr t)
         <*> pure et
 desugarExpr e = return e
 
 
-desugarMatch
-  :: [I.Expr I.Type]
-  -> [Equation]
-  -> I.Expr I.Type -- Default expression the 'I.Match' should return
-  -> DesugarFn (I.Expr I.Type)
+desugarMatch ::
+  [I.Expr I.Type] ->
+  [Equation] ->
+  I.Expr I.Type -> -- Default expression the 'I.Match' should return
+  DesugarFn (I.Expr I.Type)
 desugarMatch [] [] def = return def
 desugarMatch [] (([], e) : _) _ = return e
 desugarMatch [] _ _ = error "can't happen 1"
@@ -190,27 +181,28 @@ desugarMatchCons (u : us) qs@(q : _) def = do
   getCon ((I.AltData dcon _ _) : _, _) = dcon
   getCon _ = error "can't happen 5"
   getTyp ((I.AltData _ _ t) : _, _) = t
-  getTyp _ = error "no no no -- Simon Peyton Jones"
-  makeBinder vid t = I.AltBinder $ I.BindVar vid t
+  getTyp _ = error "no no no 555"
 
   sameConsAs c = filter ((== c) . getCon) qs
 
   desugarArm :: I.DConId -> I.Type -> [Equation] -> DesugarFn (I.Alt I.Type, I.Expr I.Type)
   desugarArm dcon dconTyp qs' = do
-    k <- getArity dcon
-    newIds <- replicateM k freshVar
-    cinfo <- getCInfo dcon
-    let newVars = I.VarId <$> newIds
-        argsTyps = argsType cinfo
-        bs' = zipWith makeBinder newVars argsTyps
-        us' = zipWith I.Var newVars argsTyps
-        qs'' = [(as' ++ as, e) | ((I.AltData _ as' _) : as, e) <- qs']
+    argsTyps <- argsType <$> getCInfo dcon
+
+    (unzip -> (bs', us')) <- forM argsTyps $ \argTyp -> do
+      name <- freshVar argTyp
+      return (I.AltBinder $ I.BindVar name argTyp, I.Var name argTyp)
+
     body <-
       if null qs'
-        then -- We're done desugaring this equation, just use default body
+        then do
+          -- We're done desugaring this equation, just use default body
           return def
-        else -- Recursively generate body from remaining equations
+        else do
+          -- Recursively generate body from remaining equations
+          let qs'' = [(as' ++ as, e) | ((I.AltData _ as' _) : as, e) <- qs']
           desugarMatch (us' ++ us) qs'' def
+
     return (I.AltData dcon bs' dconTyp, body)
 desugarMatchCons _ _ _ = error "can't happen 7"
 
@@ -230,12 +222,6 @@ getConstructors dcon = do
   c <- getCInfo dcon
   t <- getTInfo (cType c)
   return $ tCSet t
-
-
-getArity :: I.DConId -> DesugarFn Int
-getArity dcon = do
-  c <- getCInfo dcon
-  return $ cArity c
 
 
 getCInfo :: I.DConId -> DesugarFn CInfo
@@ -269,5 +255,4 @@ buildConsMap = foldr (build . second I.variants) M.empty
         { cName = dcon
         , cType = tcon
         , argsType = variantTypes typs
-        , cArity = length $ variantTypes typs
         }

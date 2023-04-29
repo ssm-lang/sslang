@@ -9,6 +9,8 @@ import qualified IR.IR                         as I
 import           IR.LambdaLift                  ( liftProgramLambdas )
 import           IR.SegmentLets                 ( segmentLets )
 
+import qualified Data.Map                      as M
+
 parseLift :: String -> Pass (I.Program I.Type)
 parseLift s =
   Front.run def s
@@ -16,6 +18,8 @@ parseLift s =
     >>= IR.typecheck def
     >>= segmentLets
     >>= liftProgramLambdas
+    >>= \p -> return p { I.symTable = M.empty }
+    -- we purge varNames before comparison because those don't matter here
 
 spec :: Spec
 spec = do

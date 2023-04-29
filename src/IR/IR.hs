@@ -8,6 +8,7 @@
 -- | Sslang's intermediate representation and its associated helpers.
 module IR.IR (
   Program (..),
+  SymInfo (..),
   TypeDef (..),
   TypeVariant (..),
   Binder (..),
@@ -37,6 +38,8 @@ module IR.IR (
   pattern BindAnon,
   binderToVar,
   Carrier,
+  uninitializedSymTable,
+  SymTable,
 ) where
 
 import Common.Identifiers (
@@ -52,6 +55,7 @@ import Data.Data (
   Typeable,
  )
 
+import qualified Data.Map as M
 import Data.Maybe (
   catMaybes,
   mapMaybe,
@@ -67,16 +71,31 @@ import IR.Types.Type (
  )
 
 
-{- | Top-level compilation unit.
-
-@t@ is the type system in use, e.g., "IR.Types.Flat"
--}
+-- | Top-level compilation unit, parameterized by the type system.
 data Program t = Program
   { programEntry :: VarId
   , cDefs :: String
   , externDecls :: [(VarId, Type)]
   , programDefs :: [(Binder t, Expr t)]
   , typeDefs :: [(TConId, TypeDef)]
+  , symTable :: M.Map VarId (SymInfo t)
+  }
+  deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
+
+
+{- | Contains information about all (globally unique) variable names.
+
+Populated by name mangling pass.
+-}
+type SymTable t = M.Map VarId (SymInfo t)
+
+
+-- | Information stored in global symbol table.
+data SymInfo t = SymInfo
+  { -- | Original name of symbol
+    symOrigin :: VarId
+  , -- | Type information of symbol
+    symType :: t
   }
   deriving (Eq, Show, Typeable, Data, Functor, Foldable, Traversable)
 
@@ -407,6 +426,10 @@ altBinders (AltData _ as _) = concatMap altBinders as
 binderToVar :: Binder a -> Maybe VarId
 binderToVar (BindVar v _) = Just v
 binderToVar _ = Nothing
+
+
+uninitializedSymTable :: M.Map VarId (SymInfo t)
+uninitializedSymTable = M.empty
 
 
 instance HasFreeVars (Expr t) VarId where

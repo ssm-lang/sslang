@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -65,6 +64,7 @@ lowerProgram (A.Program ds) = do
       , I.externDecls = xds'
       , I.typeDefs = tds'
       , I.cDefs = concat cds
+      , I.symTable = I.uninitializedSymTable
       }
  where
   lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef)
