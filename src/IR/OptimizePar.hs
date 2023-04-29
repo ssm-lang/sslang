@@ -77,10 +77,14 @@ Maps over top level definitions, removing unnecessary pars.
 -}
 optimizePar :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 optimizePar p = runOptParFn $ do
+
   defs' <- everywhereM (mkM findFixBadPar) $ I.programDefs p
  -- optimizedDefs <- mapM optimizeParTop $ I.programDefs p
  -- fail ("Number of Bad Par Exprs in " ++ show (map fst (map tupleMatch1 optimizedDefs)) ++ ": " ++ (show (map tupleMatch optimizedDefs)))
  -- return $ p{I.programDefs = map tupleMatch1 optimizedDefs}
+  
+  --return $ p{I.programDefs = p}
+  --return $ p{I.programDefs = I.programDefs p}
   return $ p{I.programDefs = defs'}
 
 {- | Given an Expr as input, if it turns out to be a bad Par expr, rewrite it.
@@ -90,7 +94,11 @@ Otherwise, leave the expression alone.
 findFixBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
 findFixBadPar e@__ = if isBad e then rewrite e else pure e 
  where rewrite :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
-       rewrite p@(I.Prim I.Par exprlist _) = pure dummy --TODO: rewrite the bad par as good one
+       -- structure of IR
+       rewrite p@(I.Prim I.Par exprlist _) = let
+         
+         pure dummy --TODO: rewrite the bad par as good one
+
        rewrite _ = fail "rewrite should only be called on a Par IR node!"
        dummy = I.Var (I.VarId (Identifier "PINEAPPLE")) (TVar $ TVarId (Identifier "dummy"))
 
@@ -227,6 +235,8 @@ countPars (I.Prim I.Par exprlist t) = do
   listPars <- mapM countPars exprlist
   let unzipped = (unzip listPars)
   let sumPars = bimap sum sum unzipped
+
+  -- potential change
   let finalGoodCount =  fst sumPars
   let finalBadCount = snd sumPars + fromEnum (isBad (I.Prim I.Par exprlist t))
   return (finalGoodCount, finalBadCount)
@@ -259,7 +269,6 @@ Useful for exercise 2.
 --outside with a let, and blocking call remain with the par
 -- if par has just 0 or 1 blocking call, no need for par 
 -- take our non blocking, append to tuple in correct position
-
 
 isNotWait :: I.Expr I.Type -> Bool
 isNotWait (I.Prim I.Wait _ _) = False
