@@ -71,6 +71,12 @@ runOptParFn (OptParFn m) =
       , numBadPars = 0
       }
 
+
+--traversing the ir replaced with everywhere
+
+--isbad par 
+
+--rewrite of case1, transorm into tuple
 {- | Entry-point to Par Optimization.
 
 Maps over top level definitions, removing unnecessary pars.
@@ -91,19 +97,117 @@ optimizePar p = runOptParFn $ do
 
 Otherwise, leave the expression alone.
 -}
+
+--import foldApp from IR.IR
+-- import tempTupleId from IR.Types.Type
 findFixBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
 findFixBadPar e@__ = if isBad e then rewrite e else pure e 
  where rewrite :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
        -- structure of IR
-       rewrite p@(I.Prim I.Par exprlist _) = let
-         
-         pure dummy --TODO: rewrite the bad par as good one
+       rewrite p@(I.Prim I.Par exprlist _) = pure x
+        where dataConstructorName = "Pair2"
+              t = (TVar $ TVarId (Identifier "dummy"))
+              --construct type that is tuple of arguments
+              x = (I.foldApp dConNode argsToTuple)
+              dConNode = I.Data (I.DConId (Identifier dataConstructorName)) t
+              argsToTuple = (zip exprlist (repeat t))
+        
+      -- pure dummy --TODO: rewrite the bad par as good one
 
        rewrite _ = fail "rewrite should only be called on a Par IR node!"
        dummy = I.Var (I.VarId (Identifier "PINEAPPLE")) (TVar $ TVarId (Identifier "dummy"))
+{-
+case 1:
+par 5 + 1
+    3 + 2
+^ we agree this par expr is bad 
+^ this par returns the value (5+1,3+2)
+
+We want to rewrite case 1 into 
+(5+1,3+2)
+which really desugars into 
+(Pair2 5+1 3+2)
+which as an IR node is 
+(I.App (I.App (I.DCon DConId "Pair2") (I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)])) (I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]))
+
+What does par 5 + 1 look like as an IR node?
+              3 + 2
+Prim I.Par [I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)], I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]] t
+
+let arg1 = I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)]
+let arg2 =  I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
+foldApp (I.Dcon I.DConId "Pair2") [arg1, arg2]
+^foldApp returns a nested application such that "Pair2" is applied to a list of arguments
+
+(I.Prim I.Par exprlist _) 
+  |
+  |
+  v
+let tupleDataConstructorName = tempTupleId (length exprlist) // returns "Pair2" or "Pair3", or whatever you need
+foldApp tupleDataConstructorName exprlist
 
 
 
+
+--Case on type of Prime, whether has a Wait or a PrimOp
+what is 5+1 as an IR node?
+I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)]
+^ do you agree with this?
+
+what is 3+2 as an IR node?
+I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
+
+
+What is (Pair2 5+1 3+2) as an IR node?
+We know for reference: add 5 1 as an IR node is (I.App (I.App (I.Var VarId "add") (I.Lit 5)) (I.Lit 1))
+so we know that pair2 applied to its two arguments will look like in the IR as
+(I.App (I.App (I.DCon DConId "Pair2") (I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)])) (I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]))
+
+We have a library function called foldApp that takes a function name and a list of arguments,
+and wraps them up in application.
+
+{- | Apply a function to zero or more arguments.
+
+'foldApp' is the inverse of 'unfoldApp'.
+-}
+foldApp :: Expr t -> [(Expr t, t)] -> Expr t
+foldApp = foldr $ \(a, t) f -> App f a t
+
+let arg1 = I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)]
+let arg2 =  I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
+foldApp (I.Dcon I.DConId "Pair2") [arg1, arg2]
+
+ Prim Primitive [Expr t] t
+
+(I.Lit 5) (I.PrimOp PrimAdd) [(I.Lit 1)]
+
+
+(I.App I.DconId I.Literal I.PrimOp I.Literal I.Literal I.PrimOp I.Literal )
+
+
+//we will give tempTupleId the number of arguments par has, and if it has too many, it will throw an error
+
+case 2: we agree this par expr is bad, but only because of its second argument 
+par add 5 1 // (I.App (I.App (I.Var VarId "add") (I.Lit 5)) (I.Lit 1))
+    3 + 2   // I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
+
+We can't have a par with one argument, right? So this is really a case 1.
+
+case 3: we agree this par expr is bad, because has two instaneous arguments
+par add 5 1
+    add 6 7
+    4 + 3
+// here the par evaluates and then returns (add 5 1, add 6 7, 4+3)
+
+We want to rewrite case 3 to be
+let x = 4 + 3
+let (a b) = par add 5 1
+                add 6 7
+(a,b,x)
+
+For reference, let in the IR looks like: Let [(Binder, Expr t)] (Expr t) t
+
+-}
 --helper to pattern match on optimizedDefs tuple
 
 tupleMatch :: (I.VarId, I.Expr I.Type, (Int,Int)) -> (Int, Int)
