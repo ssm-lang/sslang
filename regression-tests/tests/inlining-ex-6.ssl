@@ -1,3 +1,20 @@
+// weird things are happening
+
+/*
+main (cin : _t58) (cout : (& Int32)) -> () = 
+  let a = makeColor 4
+  let x = __RGB (fib 45) 5 5
+  match x
+    Black  = 5
+    RGB __pat_anon0 __pat_anon1 __pat_anon2 = __pat_anon0
+  match a
+    Black  = 4
+    RGB __pat_anon3 __pat_anon4 __pat_anon5 = __pat_anon3 + __pat_anon3
+  after 1, cout <- match 5
+    5 = 65
+    _ = 5
+  ()
+*/
 fib n = n
 
 makeColor c = RGB c c c 
@@ -22,11 +39,11 @@ main cin cout =
               RGB r1 g1 b1 = r1 + r1
               _ = 4
     let w = match v
-              5 = 6
+              5 = 65
               _ = 5
     z
     q
-    w
+    after 1, cout <- w
     () 
 
 /* Expected Output:

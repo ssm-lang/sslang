@@ -65,7 +65,6 @@ data OccInfo
   | MultiUnsafe
   | Never
   | ConstructorFunc
-  | Howdy
   deriving (Show)
   deriving (Typeable)
 
@@ -141,7 +140,7 @@ updateOccVar binder = do
           if insidel || insidem
             then M.insert binder Never m
             else M.insert binder OnceSafe m
-        Just _ -> M.insert binder Never m
+        Just _ -> M.insert binder ConstructorFunc m 
   modify $ \st -> st{occInfo = m'}
 
 
@@ -293,7 +292,9 @@ simplExpr sub ins (I.Let binders body t) cont = do
     case binder of
       (Just v) -> case M.lookup v m of
         -- Just Never case causes some test cases to fail.
---        (Just Never) -> pure (Just (binder, rhs), sub) -- never inline something marked never
+        (Just Never) -> do
+          e' <- simplExpr sub ins rhs cont
+          pure (Just (binder, e'), sub) -- never inline something marked never
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
           -- preinline test PASSES
