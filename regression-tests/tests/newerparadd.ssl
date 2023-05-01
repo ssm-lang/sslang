@@ -3,10 +3,6 @@ add a b = a + b
 main cin cout = 
     let q = par 2+3
             	3+4
-    let q = par 2+3
-        		3+4
-    let q = par 2+3
-                3+4
     ()
 
 

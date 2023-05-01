@@ -74,9 +74,12 @@ runOptParFn (OptParFn m) =
 
 --traversing the ir replaced with everywhere
 
---isbad par 
+--rewrite of case1, transorm into tuple is operational
 
---rewrite of case1, transorm into tuple
+--isbad par testing on 
+
+--case 
+
 {- | Entry-point to Par Optimization.
 
 Maps over top level definitions, removing unnecessary pars.
@@ -386,7 +389,7 @@ isNotFunction ( _ ) = True
 isBad :: I.Expr I.Type -> Bool
 --isBad theExpr = False -- currently a stub
 isBad (I.Prim I.Par exprlist _) = do
-  (and (map isNotWait exprlist)) || (and (map isNotFunction exprlist))
+  (and (map isNotWait exprlist)) && (and (map isNotFunction exprlist))
 isBad _ = False
 
 
