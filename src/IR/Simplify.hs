@@ -293,10 +293,10 @@ simplExpr sub ins (I.Let binders body t) cont = do
       (Just v) -> case M.lookup v m of
         (Just Never) -> do
           e' <- simplExpr sub ins rhs cont
-          pure (Just (binder, e'), sub) -- never inline something marked never
+          pure (Just (binder, e'), sub) -- never inline something marked never, but still possible to simplify RHS
         (Just ConstructorFuncArg) -> do
           e' <- simplExpr sub ins rhs cont
-          pure (Just (binder, e'), sub) -- never inline something marked ConstructorFuncArg
+          pure (Just (binder, e'), sub) -- never inline something marked ConstructorFuncArg, but still possible to simplify RHS
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
           -- preinline test PASSES
@@ -318,9 +318,9 @@ simplExpr sub ins (I.Let binders body t) cont = do
             _ -> do
               rhs' <- simplExpr sub ins rhs cont -- we won't inline x, but still possible to simplify e (RHS)
               pure (Just (binder, rhs'), sub) -- FAILS postinline; someday callsite inline
-      _ -> do
+      Nothing -> do
         e' <- simplExpr sub ins rhs cont
-        pure (Just (binder, e'), sub) -- can't inline wildcards
+        pure (Just (binder, e'), sub) -- can't inline wildcards, but still possible to simplify e (RHS)
 
 -- | for all other expressions, don't do anything
 simplExpr _ _ e _ = pure e
