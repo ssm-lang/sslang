@@ -1,5 +1,5 @@
-/* ANOTHER PROBLEM
-x gets inlined in this example but it shouldn't!!
+/* 
+x gets should not get inlined because is is multiunsafe.
 */
 
 main (cin : &Int) ( cout : & Int ) -> () =
