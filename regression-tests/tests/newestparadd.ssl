@@ -1,3 +1,6 @@
+type Pair2 a b
+    Pair2 a b
+
 add a b = a + b
 main cin cout = 
     let q = par add 2 3

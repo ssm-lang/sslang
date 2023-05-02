@@ -1,7 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
-
-
 --make draft, add 2 test cases
 
 --to debug, look at the isBad
@@ -76,9 +74,17 @@ runOptParFn (OptParFn m) =
 
 --rewrite of case1, transorm into tuple is operational
 
---isbad par testing on 
+--isbad is working
 
---case 
+-- run on all regression testss 
+
+--check the types 
+
+--can only take ut the instantenous expression if they occur before 
+
+  
+
+-- prepare for case 2 and casse 3
 
 {- | Entry-point to Par Optimization.
 
@@ -99,6 +105,12 @@ optimizePar p = runOptParFn $ do
 {- | Given an Expr as input, if it turns out to be a bad Par expr, rewrite it.
 
 Otherwise, leave the expression alone.
+
+checks for case1: 
+
+case 1:
+par 5 + 1
+    3 + 2
 -}
 
 --import foldApp from IR.IR
@@ -109,7 +121,7 @@ findFixBadPar e@__ = if isBad e then rewrite e else pure e
        -- structure of IR
        rewrite p@(I.Prim I.Par exprlist _) = pure x
         where dataConstructorName = "Pair2"
-              t = (TVar $ TVarId (Identifier "dummy"))
+              t = (TVar $ TVarId (Identifier "PINEAPPLE"))
               --construct type that is tuple of arguments
               x = (I.foldApp dConNode argsToTuple)
               dConNode = I.Data (I.DConId (Identifier dataConstructorName)) t
@@ -168,191 +180,7 @@ so we know that pair2 applied to its two arguments will look like in the IR as
 
 We have a library function called foldApp that takes a function name and a list of arguments,
 and wraps them up in application.
-
-{- | Apply a function to zero or more arguments.
-
-'foldApp' is the inverse of 'unfoldApp'.
 -}
-foldApp :: Expr t -> [(Expr t, t)] -> Expr t
-foldApp = foldr $ \(a, t) f -> App f a t
-
-let arg1 = I.Prim (I.PrimOp PrimAdd) [(I.Lit 5), (I.Lit 1)]
-let arg2 =  I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
-foldApp (I.Dcon I.DConId "Pair2") [arg1, arg2]
-
- Prim Primitive [Expr t] t
-
-(I.Lit 5) (I.PrimOp PrimAdd) [(I.Lit 1)]
-
-
-(I.App I.DconId I.Literal I.PrimOp I.Literal I.Literal I.PrimOp I.Literal )
-
-
-//we will give tempTupleId the number of arguments par has, and if it has too many, it will throw an error
-
-case 2: we agree this par expr is bad, but only because of its second argument 
-par add 5 1 // (I.App (I.App (I.Var VarId "add") (I.Lit 5)) (I.Lit 1))
-    3 + 2   // I.Prim (I.PrimOp PrimAdd) [(I.Lit 3), (I.Lit 1)]
-
-We can't have a par with one argument, right? So this is really a case 1.
-
-case 3: we agree this par expr is bad, because has two instaneous arguments
-par add 5 1
-    add 6 7
-    4 + 3
-// here the par evaluates and then returns (add 5 1, add 6 7, 4+3)
-
-We want to rewrite case 3 to be
-let x = 4 + 3
-let (a b) = par add 5 1
-                add 6 7
-(a,b,x)
-
-For reference, let in the IR looks like: Let [(Binder, Expr t)] (Expr t) t
-
--}
---helper to pattern match on optimizedDefs tuple
-
-tupleMatch :: (I.VarId, I.Expr I.Type, (Int,Int)) -> (Int, Int)
-tupleMatch (_, _, theInt) = theInt
-
---another helper to pattern match on optimizedDefs tuple 
-
-tupleMatch1 :: (I.VarId, I.Expr I.Type, (Int,Int)) -> (I.VarId, I.Expr I.Type)
-tupleMatch1 (nm,rhs, _) = (nm,rhs)
-
--- TO DO make sure works correctly
-
--- | Given a top-level definition, detect + replace unnecessary par expressions
-optimizeParTop :: (I.VarId, I.Expr I.Type) -> OptParFn (I.VarId, I.Expr I.Type, (Int, Int))
-optimizeParTop (nm, rhs) = do
-  
- -- rhs' <- detectReplaceBadPar rhs
-  (badParCount) <- countPars rhs -- calling this so we don't get an "unused" warning
-  --(rhs''', _) <- countBadPars rhs' -- calling this so we don't get an "unused" warning
-  -- uncomment the line below to test countPars
-  -- (_, result) <- countPars rhs
-  --_ <- fail (show nm ++ ": Number of Par Exprs: " ++ show theint)
-  -- uncomment the two lines below to test countBadPars
-  -- (_, result') <- countBadPars rhs
-  -- _ <- fail (show nm ++ ": Number of Bad Par Exprs: " ++ show result')
-  
-  -- if bad par 
-  return (nm, rhs, badParCount)
- -- return (nm, rhs', snd theint)
-
-
--- | Detect Unnecessary Par Expressions + Replace With Equivalent Sequential Expression
-
--- call is bad par on itself, if yess, change the par expression into a sequence of let expressions
-  --in par node, call detect and replace bad par, call is bad par, if am bad, return let 
-    --return tuple of arguments of par 
---list of stuff on par node is the arguments to the par expression, sos add x 0 and add y 0, both of those are expr nodes
---  let q = par add x 0
---                add y 0
---    let q =(add x 0, add y 0)
---    let r = (x,y)
-
---detectReplaceBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
---detectReplaceBadPar (rhs) = do
-  --pure e -- for now, just return the same thing (don't do anyting)
---  if isBad rhs == 0 then do
-  --  rhs' <- rhs
-   -- return rhs'
-  --else do
-   -- replaceBadPar rhs
-
-
---replaceBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
---replaceBadPar (rhs) = do
-  --rhs' <- rhs
-  --return rhs'
-
-{- | 1) Count Par Nodes
-
-Practice Exercise to Delete Later!
-
-Traverse the IR representation of the body of a top level defintion,
-and count the number of par expressions present.
-Return the body unchanged, as well as the count numPars.
--}
-countPars :: I.Expr I.Type -> OptParFn (Int, Int)
---countPars e = do 
---countPars var ( I.Var _ _) = pure (var, 0)
---countPars e = pure(e,87)
-countPars ( I.Var thevar t) = pure(0,0) 
-countPars ( I.Data thedata t) = pure(0,0) 
-countPars ( I.Lit theliteral t) = pure(0,0) 
-countPars (I.Exception exceptype t) = pure(0,0) 
-
---To Do finish case for app and match 
-
-countPars (I.App theExpr theExpr2 t) = do
-    counterFirst <- countPars theExpr
-    counterSecond <- countPars theExpr2 
-    let left = fst counterFirst + fst counterSecond
-    let right = snd counterFirst + snd counterSecond
-    return (left,right)
-
-countPars (I.Lambda _ exprbody t) = countPars exprbody
-
-
-
-{-
-let x = 5
-    y  = 6 
-    x+y
-I.Let [("x", 5),("y",6)] (I.Prim PrimOp [x,y])
-Let [(Binder, Expr t)] (Expr t) t
--}
---recurse on the exprlist and the exprbody and add them together
---in the right hand side, examine all of the contents of exprlist, recurse countPars on contents and recurse on Expr body and sum counts
-
-countPars( I.Let exprlist exprbody t) = do 
-  (numGoodParsInBody,numBadParsInBody) <- countPars exprbody 
---call countPars on all the 2nd index of the nodes in the exprList 
---TO DO: make moore readable
-  listPars <- mapM countPars (map snd (exprlist))
-  let unzipped = (unzip listPars)
-  let sumPars = bimap sum sum unzipped
- -- (numGoodParsInBinders,numBadParsInBinders) <- bimap  sum (unzip listPars)
-     
-  let finalGoodCount =  numGoodParsInBody + fst sumPars
-  let finalBadCount = numBadParsInBody + snd sumPars
-  -- return (finalCount,counterBadPars + counterBadPars1)
-  return (finalGoodCount, finalBadCount)
--- tedius, check return types are tuples
- -- change the names and types for below 
-
---countPars (I.Prim )
---pattern match for primitive, then do a case for the nickname of primitive if it is par, then increment 
---look at IR.hs for Prim, might have to recurse on something in prim, determine if prim is a par, or something else, and increment
-
-
---countPars (I.Prim I.Par exprlist t) = do 
-  --(numGoodParsInList,numBadParsInList) <- mapM countPars exprlist
-  --numBadParsInList <- numBadParsInList + fromEnum (isBad (I.Prim I.Par exprlist t))
-  --let numGoodParsInList = numGoodParsInList + 1 
-  --return (numGoodParsInList, numBadParsInList)
---countPars (I.Prim thePrimitive exprlist t) = do 
-  -- (numGoodParsInList,numBadParsInList) <- mapM countPars exprlist
-   --return (numGoodParsInList,numBadParsInList)
-
-countPars (I.Prim I.Par exprlist t) = do 
-  listPars <- mapM countPars exprlist
-  let unzipped = (unzip listPars)
-  let sumPars = bimap sum sum unzipped
-
-  -- potential change
-  let finalGoodCount =  fst sumPars
-  let finalBadCount = snd sumPars + fromEnum (isBad (I.Prim I.Par exprlist t))
-  return (finalGoodCount, finalBadCount)
-countPars (I.Prim thePrimitive exprlist t) = do 
-  listPars <- mapM countPars (exprlist)
-  let unzipped = (unzip listPars)
-  let sumPars = bimap sum sum unzipped
-  return sumPars
-countPars(_) = pure (0,0)
 
 {- | 1.5) Implement IsBad Predicate
 
