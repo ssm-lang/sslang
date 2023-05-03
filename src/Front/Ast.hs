@@ -24,16 +24,12 @@ data TopDef
   | TopImport Import   -- ^ Top Level import statement
   deriving (Eq, Show, Typeable, Data)
 
-data Import = Import
-  { importFile :: ImportItem
-  , elementList :: [ImportElement]
-  }
+data Import =
+     ImportSym [Identifier]
+   | ImportAs [Identifier] Identifier
+   | ImportWith [Identifier] [ImportElement]
   deriving (Eq, Show, Typeable, Data)
 
-data ImportItem
-  = ImportAs [Identifier] Identifier
-  | ImportSymbol [Identifier]
- deriving (Eq, Show, Typeable, Data)
 
 data ImportElement
   = ElementAs Identifier Identifier
@@ -217,12 +213,10 @@ instance Pretty TopDef where
   pretty (TopImport i) = pretty i
 
 instance Pretty Import where
-    pretty Import {importFile = file, elementList = els}  = 
-        pretty "import" <+> pretty file <+> pretty "with" <+> pretty els
+	pretty (ImportSym is) = hsep (map pretty is)
+	pretty (ImportAs is i) = hsep (map pretty is) <+> pretty "as" <+> pretty i
+	pretty (ImportWith is iel) = hsep (map pretty is) <+> pretty "with" <+> pretty iel
 
-instance Pretty ImportItem where
-    pretty (ImportAs is i) = hsep (map pretty is) <+> pretty "as" <+> pretty i
-    pretty (ImportSymbol is) = hsep (map pretty is)
 
 instance Pretty ImportElement where
     pretty (ElementAs s a) = pretty s <+> pretty "as" <+> pretty a
