@@ -58,9 +58,6 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   let refs = foldr (:) [] pVar
       vars = mapM toCanType refs
 
-  -- Depends on being called before solve
-  namesDoc <- map pretty <$> vars
-
   -- Pretty-printing separator
   let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline
 
@@ -72,10 +69,15 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
 
     tell $ pConstraint <> hrule <> pIR
 
+  -- Depends on being called before solve
+  -- Gets the prettified version of the type variable names
+  namesDoc <- map pretty <$> vars
+
   -- Runs constraint solver
   Solve.run constraint
 
   -- Depends on being called after solve
+  -- Gets the prettified version of the unification results
   resolutionDoc <- map pretty <$> vars
 
   -- Document containing the mapping from flex vars to types
