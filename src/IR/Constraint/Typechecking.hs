@@ -44,12 +44,13 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
 
   -- Get IORefs in the program IR
   let refs = foldr (:) [] pVar
-
-  let vars = mapM toCanType refs
+      vars = mapM toCanType refs
 
   -- Depends on being called before solve
   namesDoc <- map pretty <$> vars
 
+  -- Get the pretty-printed constraints and program
+  let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline  
   doc <-
     if not prettyprint
       then return Nothing
@@ -68,10 +69,10 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
 
   -- Document containing the mapping from flex vars to types
   let mappingDoc = vsep $ zipWith (surround (pretty " = ")) namesDoc resolutionDoc
-
-  let finalDoc = (<> hrule <> mappingDoc) <$> doc
+      finalDoc = (<> hrule <> mappingDoc) <$> doc
+      
 
   program <- Elaborate.run pVar
+  
   return (program, finalDoc)
- where
-  hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline <> hardline
+  
