@@ -69,7 +69,7 @@ printConstraint (CLocal i t) = do
   return $ pretty "local" <+> (align . hsep) [(pretty . show) i, pretty "<:", p]
 printConstraint (CForeign (Can.Forall vars ct) t) = do
   pct <- printCanType ct
-  let scheme = pretty "forall" <+> (pretty . show) vars <+> dot <+> pct
+  let scheme = pretty "forall" <+> (pretty . show . toList) vars <+> dot <+> pct
 
   p <- printType t
   return $ pretty "foreign" <+> (align . hsep) [scheme, pretty "<:", p]
