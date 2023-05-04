@@ -84,8 +84,8 @@ body = fun arg0 { fun arg1 { App L R t } : Int -&gt; Shape } : Int -&gt; Int -&g
 </span><span id="line-84"></span><span>
 </span><span id="line-85"></span><span>
 </span><span id="line-86"></span><span class="hs-comment">-- | Arity Reader Monad</span><span>
-</span><span id="line-87"></span><span class="hs-keyword">newtype</span><span> </span><span id="ArityFn"><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-var">ArityFn</span></a></span></span><span> </span><span id="local-6989586621679515892"><span class="annot"><a href="#local-6989586621679515892"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ArityFn"><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-var">ArityFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515892"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-88"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515887"><span id="local-6989586621679515889"><span class="annot"><span class="annottext">a -&gt; ArityFn b -&gt; ArityFn a
+</span><span id="line-87"></span><span class="hs-keyword">newtype</span><span> </span><span id="ArityFn"><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-var">ArityFn</span></a></span></span><span> </span><span id="local-6989586621679516002"><span class="annot"><a href="#local-6989586621679516002"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ArityFn"><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-var">ArityFn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679516002"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515997"><span id="local-6989586621679515999"><span class="annot"><span class="annottext">a -&gt; ArityFn b -&gt; ArityFn a
 (a -&gt; b) -&gt; ArityFn a -&gt; ArityFn b
 (forall a b. (a -&gt; b) -&gt; ArityFn a -&gt; ArityFn b)
 -&gt; (forall a b. a -&gt; ArityFn b -&gt; ArityFn a) -&gt; Functor ArityFn
@@ -99,7 +99,7 @@ $c&lt;$ :: forall a b. a -&gt; ArityFn b -&gt; ArityFn a
 fmap :: (a -&gt; b) -&gt; ArityFn a -&gt; ArityFn b
 $cfmap :: forall a b. (a -&gt; b) -&gt; ArityFn a -&gt; ArityFn b
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-89"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515875"><span id="local-6989586621679515877"><span id="local-6989586621679515879"><span id="local-6989586621679515881"><span id="local-6989586621679515883"><span class="annot"><span class="annottext">Functor ArityFn
+</span><span id="line-89"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515985"><span id="local-6989586621679515987"><span id="local-6989586621679515989"><span id="local-6989586621679515991"><span id="local-6989586621679515993"><span class="annot"><span class="annottext">Functor ArityFn
 a -&gt; ArityFn a
 Functor ArityFn
 -&gt; (forall a. a -&gt; ArityFn a)
@@ -138,7 +138,7 @@ pure :: a -&gt; ArityFn a
 $cpure :: forall a. a -&gt; ArityFn a
 $cp1Applicative :: Functor ArityFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-90"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515867"><span id="local-6989586621679515869"><span id="local-6989586621679515871"><span class="annot"><span class="annottext">Applicative ArityFn
+</span><span id="line-90"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515977"><span id="local-6989586621679515979"><span id="local-6989586621679515981"><span class="annot"><span class="annottext">Applicative ArityFn
 a -&gt; ArityFn a
 Applicative ArityFn
 -&gt; (forall a b. ArityFn a -&gt; (a -&gt; ArityFn b) -&gt; ArityFn b)
@@ -164,7 +164,7 @@ $c&gt;&gt; :: forall a b. ArityFn a -&gt; ArityFn b -&gt; ArityFn b
 $c&gt;&gt;= :: forall a b. ArityFn a -&gt; (a -&gt; ArityFn b) -&gt; ArityFn b
 $cp1Monad :: Applicative ArityFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-91"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515863"><span class="annot"><span class="annottext">Monad ArityFn
+</span><span id="line-91"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515973"><span class="annot"><span class="annottext">Monad ArityFn
 Monad ArityFn
 -&gt; (forall a. String -&gt; ArityFn a) -&gt; MonadFail ArityFn
 String -&gt; ArityFn a
@@ -175,27 +175,27 @@ fail :: String -&gt; ArityFn a
 $cfail :: forall a. String -&gt; ArityFn a
 $cp1MonadFail :: Monad ArityFn
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadFail</span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-92"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515857"><span id="local-6989586621679515859"><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515849"><span id="local-6989586621679515851"><span id="local-6989586621679515853"><span class="annot"><span class="hs-identifier hs-type">MonadReader</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515967"><span id="local-6989586621679515969"><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515959"><span id="local-6989586621679515961"><span id="local-6989586621679515963"><span class="annot"><span class="hs-identifier hs-type">MonadReader</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityEnv"><span class="hs-identifier hs-type">ArityEnv</span></a></span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-94"></span><span>
 </span><span id="line-95"></span><span>
 </span><span id="line-96"></span><span class="hs-comment">-- | Run a computation within an arity environment</span><span>
-</span><span id="line-97"></span><span id="local-6989586621679515951"><span class="annot"><a href="IR.DConToFunc.html#runArityFn"><span class="hs-identifier hs-type">runArityFn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">I.TConId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#TypeDef"><span class="hs-identifier hs-type">I.TypeDef</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-type">ArityFn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515951"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515951"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-97"></span><span id="local-6989586621679516061"><span class="annot"><a href="IR.DConToFunc.html#runArityFn"><span class="hs-identifier hs-type">runArityFn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">I.TConId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#TypeDef"><span class="hs-identifier hs-type">I.TypeDef</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-type">ArityFn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679516061"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679516061"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-98"></span><span id="runArityFn"><span class="annot"><span class="annottext">runArityFn :: [(TConId, TypeDef)] -&gt; ArityFn a -&gt; Pass a
-</span><a href="IR.DConToFunc.html#runArityFn"><span class="hs-identifier hs-var hs-var">runArityFn</span></a></span></span><span> </span><span id="local-6989586621679515846"><span class="annot"><span class="annottext">[(TConId, TypeDef)]
-</span><a href="#local-6989586621679515846"><span class="hs-identifier hs-var">tds</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-type">ArityFn</span></a></span><span> </span><span id="local-6989586621679515845"><span class="annot"><span class="annottext">ReaderT ArityEnv Pass a
-</span><a href="#local-6989586621679515845"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReaderT ArityEnv Pass a -&gt; ArityEnv -&gt; Pass a
+</span><a href="IR.DConToFunc.html#runArityFn"><span class="hs-identifier hs-var hs-var">runArityFn</span></a></span></span><span> </span><span id="local-6989586621679515956"><span class="annot"><span class="annottext">[(TConId, TypeDef)]
+</span><a href="#local-6989586621679515956"><span class="hs-identifier hs-var">tds</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-type">ArityFn</span></a></span><span> </span><span id="local-6989586621679515955"><span class="annot"><span class="annottext">ReaderT ArityEnv Pass a
+</span><a href="#local-6989586621679515955"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReaderT ArityEnv Pass a -&gt; ArityEnv -&gt; Pass a
 forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
 </span><span class="hs-identifier hs-var hs-var">runReaderT</span></span><span> </span><span class="annot"><span class="annottext">ReaderT ArityEnv Pass a
-</span><a href="#local-6989586621679515845"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">(ArityEnv -&gt; Pass a) -&gt; ArityEnv -&gt; Pass a
+</span><a href="#local-6989586621679515955"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">(ArityEnv -&gt; Pass a) -&gt; ArityEnv -&gt; Pass a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[(DConId, Int)] -&gt; ArityEnv
 forall k a. Ord k =&gt; [(k, a)] -&gt; Map k a
 </span><span class="hs-identifier hs-var">M.fromList</span></span><span> </span><span class="annot"><span class="annottext">[(DConId, Int)]
-</span><a href="#local-6989586621679515842"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><a href="#local-6989586621679515952"><span class="hs-identifier hs-var">env</span></a></span><span>
 </span><span id="line-99"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-100"></span><span>  </span><span id="local-6989586621679515842"><span class="annot"><span class="annottext">env :: [(DConId, Int)]
-</span><a href="#local-6989586621679515842"><span class="hs-identifier hs-var hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((TConId, TypeDef) -&gt; [(DConId, Int)])
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621679515952"><span class="annot"><span class="annottext">env :: [(DConId, Int)]
+</span><a href="#local-6989586621679515952"><span class="hs-identifier hs-var hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((TConId, TypeDef) -&gt; [(DConId, Int)])
 -&gt; [(TConId, TypeDef)] -&gt; [(DConId, Int)]
 forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
 </span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((DConId, TypeVariant) -&gt; (DConId, Int))
@@ -220,7 +220,7 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(TConId, TypeDef) -&gt; TypeDef
 forall a b. (a, b) -&gt; b
 </span><span class="hs-identifier hs-var">snd</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(TConId, TypeDef)]
-</span><a href="#local-6989586621679515846"><span class="hs-identifier hs-var">tds</span></a></span><span>
+</span><a href="#local-6989586621679515956"><span class="hs-identifier hs-var">tds</span></a></span><span>
 </span><span id="line-101"></span><span>
 </span><span id="line-102"></span><span>
 </span><span id="line-103"></span><span class="hs-comment">{- | 'dConToFunc' modifies programDefs and traverses the IR to accomplish two tasks:
@@ -230,45 +230,45 @@ forall a b. (a, b) -&gt; b
 -}</span><span>
 </span><span id="line-108"></span><span class="annot"><a href="IR.DConToFunc.html#dConToFunc"><span class="hs-identifier hs-type">dConToFunc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-109"></span><span id="dConToFunc"><span class="annot"><span class="annottext">dConToFunc :: Program Type -&gt; Pass (Program Type)
-</span><a href="IR.DConToFunc.html#dConToFunc"><span class="hs-identifier hs-var hs-var">dConToFunc</span></a></span></span><span> </span><span id="local-6989586621679515836"><span class="annot"><span class="annottext">p :: Program Type
-</span><a href="#local-6989586621679515836"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: forall t. Program t -&gt; [(Binder t, Expr t)]
-</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515833"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515833"><span class="hs-identifier hs-var">defs</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">typeDefs :: forall t. Program t -&gt; [(TConId, TypeDef)]
-</span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var">I.typeDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515831"><span class="annot"><span class="annottext">[(TConId, TypeDef)]
-</span><a href="#local-6989586621679515831"><span class="hs-identifier hs-var">tDefs</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="IR.DConToFunc.html#dConToFunc"><span class="hs-identifier hs-var hs-var">dConToFunc</span></a></span></span><span> </span><span id="local-6989586621679515946"><span class="annot"><span class="annottext">p :: Program Type
+</span><a href="#local-6989586621679515946"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: forall t. Program t -&gt; [(Binder t, Expr t)]
+</span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515943"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515943"><span class="hs-identifier hs-var">defs</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">typeDefs :: forall t. Program t -&gt; [(TConId, TypeDef)]
+</span><a href="IR.IR.html#typeDefs"><span class="hs-identifier hs-var">I.typeDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515941"><span class="annot"><span class="annottext">[(TConId, TypeDef)]
+</span><a href="#local-6989586621679515941"><span class="hs-identifier hs-var">tDefs</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-110"></span><span>  </span><span class="annot"><span class="annottext">[(TConId, TypeDef)]
 -&gt; ArityFn (Program Type) -&gt; Pass (Program Type)
 forall a. [(TConId, TypeDef)] -&gt; ArityFn a -&gt; Pass a
 </span><a href="IR.DConToFunc.html#runArityFn"><span class="hs-identifier hs-var">runArityFn</span></a></span><span> </span><span class="annot"><span class="annottext">[(TConId, TypeDef)]
-</span><a href="#local-6989586621679515831"><span class="hs-identifier hs-var">tDefs</span></a></span><span> </span><span class="annot"><span class="annottext">(ArityFn (Program Type) -&gt; Pass (Program Type))
+</span><a href="#local-6989586621679515941"><span class="hs-identifier hs-var">tDefs</span></a></span><span> </span><span class="annot"><span class="annottext">(ArityFn (Program Type) -&gt; Pass (Program Type))
 -&gt; ArityFn (Program Type) -&gt; Pass (Program Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-111"></span><span>    </span><span id="local-6989586621679515830"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515830"><span class="hs-identifier hs-var">defs''</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ArityFn [(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515829"><span class="hs-identifier hs-var">defs'</span></a></span><span> </span><span class="hs-comment">-- user defined functions</span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621679515940"><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515940"><span class="hs-identifier hs-var">defs''</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ArityFn [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515939"><span class="hs-identifier hs-var">defs'</span></a></span><span> </span><span class="hs-comment">-- user defined functions</span><span>
 </span><span id="line-112"></span><span>    </span><span class="annot"><span class="annottext">Program Type -&gt; ArityFn (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679515836"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515946"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: [(Binder Type, Expr Type)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515828"><span class="hs-identifier hs-var">tDefs'</span></a></span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515938"><span class="hs-identifier hs-var">tDefs'</span></a></span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
 -&gt; [(Binder Type, Expr Type)] -&gt; [(Binder Type, Expr Type)]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515830"><span class="hs-identifier hs-var">defs''</span></a></span><span class="hs-special">}</span><span> </span><span class="hs-comment">-- constructor funcs ++ user funcs</span><span>
+</span><a href="#local-6989586621679515940"><span class="hs-identifier hs-var">defs''</span></a></span><span class="hs-special">}</span><span> </span><span class="hs-comment">-- constructor funcs ++ user funcs</span><span>
 </span><span id="line-113"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-114"></span><span>  </span><span id="local-6989586621679515828"><span class="annot"><span class="annottext">tDefs' :: [(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515828"><span class="hs-identifier hs-var hs-var">tDefs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[(Binder Type, Expr Type)]] -&gt; [(Binder Type, Expr Type)]
+</span><span id="line-114"></span><span>  </span><span id="local-6989586621679515938"><span class="annot"><span class="annottext">tDefs' :: [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515938"><span class="hs-identifier hs-var hs-var">tDefs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[(Binder Type, Expr Type)]] -&gt; [(Binder Type, Expr Type)]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">concat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(TConId, TypeDef) -&gt; [(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515826"><span class="hs-identifier hs-var">createFuncs</span></a></span><span> </span><span class="annot"><span class="annottext">((TConId, TypeDef) -&gt; [(Binder Type, Expr Type)])
+</span><a href="#local-6989586621679515936"><span class="hs-identifier hs-var">createFuncs</span></a></span><span> </span><span class="annot"><span class="annottext">((TConId, TypeDef) -&gt; [(Binder Type, Expr Type)])
 -&gt; [(TConId, TypeDef)] -&gt; [[(Binder Type, Expr Type)]]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(TConId, TypeDef)]
-</span><a href="#local-6989586621679515831"><span class="hs-identifier hs-var">tDefs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- top-level constructor functions</span><span>
-</span><span id="line-115"></span><span>  </span><span id="local-6989586621679515829"><span class="annot"><span class="annottext">defs' :: ArityFn [(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515829"><span class="hs-identifier hs-var hs-var">defs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679515941"><span class="hs-identifier hs-var">tDefs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- top-level constructor functions</span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621679515939"><span class="annot"><span class="annottext">defs' :: ArityFn [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515939"><span class="hs-identifier hs-var hs-var">defs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-116"></span><span>    </span><span class="annot"><span class="annottext">((Binder Type, Expr Type) -&gt; Bool)
 -&gt; [(Binder Type, Expr Type)] -&gt; [(Binder Type, Expr Type)]
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
@@ -280,7 +280,7 @@ forall a b. (a, b) -&gt; a
 -&gt; [(Binder Type, Expr Type)] -&gt; [Binder Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515828"><span class="hs-identifier hs-var">tDefs'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Binder Type -&gt; Bool)
+</span><a href="#local-6989586621679515938"><span class="hs-identifier hs-var">tDefs'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Binder Type -&gt; Bool)
 -&gt; ((Binder Type, Expr Type) -&gt; Binder Type)
 -&gt; (Binder Type, Expr Type)
 -&gt; Bool
@@ -301,7 +301,7 @@ forall (m :: * -&gt; *) a b.
 (b -&gt; m b) -&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">mkM</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ArityFn (Expr Type)
 </span><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-var">dataToApp</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515833"><span class="hs-identifier hs-var">defs</span></a></span><span>
+</span><a href="#local-6989586621679515943"><span class="hs-identifier hs-var">defs</span></a></span><span>
 </span><span id="line-118"></span><span>  </span><span class="hs-comment">-- We need to filter defs to account for name collisions</span><span>
 </span><span id="line-119"></span><span>  </span><span class="hs-comment">-- between user defined funcs and newly created and inserted constructor funcs</span><span>
 </span><span id="line-120"></span><span>  </span><span class="hs-comment">{- Example of name collision case and correction
@@ -377,18 +377,18 @@ forall (m :: * -&gt; *) a b.
   @
   Now this is okay.
     -}</span><span>
-</span><span id="line-193"></span><span>  </span><span id="local-6989586621679515826"><span class="annot"><span class="annottext">createFuncs :: (TConId, TypeDef) -&gt; [(Binder Type, Expr Type)]
-</span><a href="#local-6989586621679515826"><span class="hs-identifier hs-var hs-var">createFuncs</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515822"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515822"><span class="hs-identifier hs-var">tconid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#TypeDef"><span class="hs-identifier hs-type">I.TypeDef</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">variants :: TypeDef -&gt; [(DConId, TypeVariant)]
-</span><a href="IR.IR.html#variants"><span class="hs-identifier hs-var">I.variants</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515820"><span class="annot"><span class="annottext">[(DConId, TypeVariant)]
-</span><a href="#local-6989586621679515820"><span class="hs-identifier hs-var">vars</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-193"></span><span>  </span><span id="local-6989586621679515936"><span class="annot"><span class="annottext">createFuncs :: (TConId, TypeDef) -&gt; [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679515936"><span class="hs-identifier hs-var hs-var">createFuncs</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515932"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679515932"><span class="hs-identifier hs-var">tconid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#TypeDef"><span class="hs-identifier hs-type">I.TypeDef</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">variants :: TypeDef -&gt; [(DConId, TypeVariant)]
+</span><a href="IR.IR.html#variants"><span class="hs-identifier hs-var">I.variants</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679515930"><span class="annot"><span class="annottext">[(DConId, TypeVariant)]
+</span><a href="#local-6989586621679515930"><span class="hs-identifier hs-var">vars</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-194"></span><span>    </span><span class="annot"><span class="annottext">TConId -&gt; (DConId, TypeVariant) -&gt; Maybe (Binder Type, Expr Type)
 </span><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515822"><span class="hs-identifier hs-var">tconid</span></a></span><span> </span><span class="annot"><span class="annottext">((DConId, TypeVariant) -&gt; Maybe (Binder Type, Expr Type))
+</span><a href="#local-6989586621679515932"><span class="hs-identifier hs-var">tconid</span></a></span><span> </span><span class="annot"><span class="annottext">((DConId, TypeVariant) -&gt; Maybe (Binder Type, Expr Type))
 -&gt; [(DConId, TypeVariant)] -&gt; [(Binder Type, Expr Type)]
 forall a b. (a -&gt; Maybe b) -&gt; [a] -&gt; [b]
 </span><span class="hs-operator hs-var">`mapMaybe`</span></span><span> </span><span class="annot"><span class="annottext">[(DConId, TypeVariant)]
-</span><a href="#local-6989586621679515820"><span class="hs-identifier hs-var">vars</span></a></span><span>
+</span><a href="#local-6989586621679515930"><span class="hs-identifier hs-var">vars</span></a></span><span>
 </span><span id="line-195"></span><span>
 </span><span id="line-196"></span><span>
 </span><span id="line-197"></span><span class="hs-comment">{- | Replace data constructor application with function application
@@ -397,24 +397,24 @@ forall a b. (a -&gt; Maybe b) -&gt; [a] -&gt; [b]
 -}</span><span>
 </span><span id="line-201"></span><span class="annot"><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-type">dataToApp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.DConToFunc.html#ArityFn"><span class="hs-identifier hs-type">ArityFn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Expr"><span class="hs-identifier hs-type">I.Expr</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-202"></span><span id="dataToApp"><span class="annot"><span class="annottext">dataToApp :: Expr Type -&gt; ArityFn (Expr Type)
-</span><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-var hs-var">dataToApp</span></a></span></span><span> </span><span id="local-6989586621679515818"><span class="annot"><span class="annottext">a :: Expr Type
-</span><a href="#local-6989586621679515818"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Data"><span class="hs-identifier hs-type">I.Data</span></a></span><span> </span><span id="local-6989586621679515816"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515816"><span class="hs-identifier hs-var">dconid</span></a></span></span><span> </span><span id="local-6989586621679515815"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515815"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-203"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679515814"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515814"><span class="hs-identifier hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(ArityEnv -&gt; Maybe Int) -&gt; ArityFn (Maybe Int)
+</span><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-var hs-var">dataToApp</span></a></span></span><span> </span><span id="local-6989586621679515928"><span class="annot"><span class="annottext">a :: Expr Type
+</span><a href="#local-6989586621679515928"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Data"><span class="hs-identifier hs-type">I.Data</span></a></span><span> </span><span id="local-6989586621679515926"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679515926"><span class="hs-identifier hs-var">dconid</span></a></span></span><span> </span><span id="local-6989586621679515925"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515925"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-203"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679515924"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515924"><span class="hs-identifier hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(ArityEnv -&gt; Maybe Int) -&gt; ArityFn (Maybe Int)
 forall r (m :: * -&gt; *) a. MonadReader r m =&gt; (r -&gt; a) -&gt; m a
 </span><span class="hs-identifier hs-var">asks</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId -&gt; ArityEnv -&gt; Maybe Int
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">M.lookup</span></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515816"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515926"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-204"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515814"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679515924"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-205"></span><span>    </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ArityFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515818"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-comment">-- leave nullary data constructors alone</span><span>
+</span><a href="#local-6989586621679515928"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-comment">-- leave nullary data constructors alone</span><span>
 </span><span id="line-206"></span><span>    </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ArityFn (Expr Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -425,13 +425,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId -&gt; VarId
 </span><a href="IR.DConToFunc.html#nameFunc"><span class="hs-identifier hs-var">nameFunc</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515816"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515815"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-207"></span><span class="annot"><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-var">dataToApp</span></a></span><span> </span><span id="local-6989586621679515810"><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515810"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ArityFn (Expr Type)
+</span><a href="#local-6989586621679515926"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515925"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-207"></span><span class="annot"><a href="IR.DConToFunc.html#dataToApp"><span class="hs-identifier hs-var">dataToApp</span></a></span><span> </span><span id="local-6989586621679515920"><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679515920"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; ArityFn (Expr Type)
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515810"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621679515920"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-208"></span><span>
 </span><span id="line-209"></span><span>
 </span><span id="line-210"></span><span class="hs-comment">{- | Create a top level function for each data constructor
@@ -448,28 +448,28 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-type">I.VariantNamed</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Binder Type, Expr Type)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-219"></span><span class="annot"><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span> </span><span id="local-6989586621679515808"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515808"><span class="hs-identifier hs-var">tcon</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515807"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515807"><span class="hs-identifier hs-var">dconid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-type">I.VariantNamed</span></a></span><span> </span><span id="local-6989586621679515806"><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679515806"><span class="hs-identifier hs-var">params</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binder Type, Expr Type) -&gt; Maybe (Binder Type, Expr Type)
+</span><span id="line-219"></span><span class="annot"><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span> </span><span id="local-6989586621679515918"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679515918"><span class="hs-identifier hs-var">tcon</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515917"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679515917"><span class="hs-identifier hs-var">dconid</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-type">I.VariantNamed</span></a></span><span> </span><span id="local-6989586621679515916"><span class="annot"><span class="annottext">[(VarId, Type)]
+</span><a href="#local-6989586621679515916"><span class="hs-identifier hs-var">params</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binder Type, Expr Type) -&gt; Maybe (Binder Type, Expr Type)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Binder Type
 forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679515804"><span class="hs-identifier hs-var">func_name</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Binder Type) -&gt; Type -&gt; Binder Type
+</span><a href="#local-6989586621679515914"><span class="hs-identifier hs-var">func_name</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Binder Type) -&gt; Type -&gt; Binder Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; Type
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515802"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515802"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515912"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679515912"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-220"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-221"></span><span>  </span><span id="local-6989586621679515804"><span class="annot"><span class="annottext">func_name :: VarId
-</span><a href="#local-6989586621679515804"><span class="hs-identifier hs-var hs-var">func_name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DConId -&gt; VarId
+</span><span id="line-221"></span><span>  </span><span id="local-6989586621679515914"><span class="annot"><span class="annottext">func_name :: VarId
+</span><a href="#local-6989586621679515914"><span class="hs-identifier hs-var hs-var">func_name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DConId -&gt; VarId
 </span><a href="IR.DConToFunc.html#nameFunc"><span class="hs-identifier hs-var">nameFunc</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515807"><span class="hs-identifier hs-var">dconid</span></a></span><span> </span><span class="hs-comment">-- distinguish func name from fully applied dcon in IR</span><span>
-</span><span id="line-222"></span><span>  </span><span id="local-6989586621679515802"><span class="annot"><span class="annottext">lambda :: Expr Type
-</span><a href="#local-6989586621679515802"><span class="hs-identifier hs-var hs-var">lambda</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binder Type] -&gt; Expr Type -&gt; Expr Type
+</span><a href="#local-6989586621679515917"><span class="hs-identifier hs-var">dconid</span></a></span><span> </span><span class="hs-comment">-- distinguish func name from fully applied dcon in IR</span><span>
+</span><span id="line-222"></span><span>  </span><span id="local-6989586621679515912"><span class="annot"><span class="annottext">lambda :: Expr Type
+</span><a href="#local-6989586621679515912"><span class="hs-identifier hs-var hs-var">lambda</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binder Type] -&gt; Expr Type -&gt; Expr Type
 </span><a href="IR.IR.html#foldLambda"><span class="hs-identifier hs-var">I.foldLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Binder Type) -&gt; (VarId, Type) -&gt; Binder Type
 forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">VarId -&gt; Type -&gt; Binder Type
@@ -477,24 +477,24 @@ forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">((VarId, Type) -&gt; Binder Type) -&gt; [(VarId, Type)] -&gt; [Binder Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679515806"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515799"><span class="hs-identifier hs-var">body</span></a></span><span>
-</span><span id="line-223"></span><span>  </span><span id="local-6989586621679515799"><span class="annot"><span class="annottext">body :: Expr Type
-</span><a href="#local-6989586621679515799"><span class="hs-identifier hs-var hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; [(Expr Type, Type)] -&gt; Expr Type
+</span><a href="#local-6989586621679515916"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Type
+</span><a href="#local-6989586621679515909"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-223"></span><span>  </span><span id="local-6989586621679515909"><span class="annot"><span class="annottext">body :: Expr Type
+</span><a href="#local-6989586621679515909"><span class="hs-identifier hs-var hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr Type -&gt; [(Expr Type, Type)] -&gt; Expr Type
 forall t. Expr t -&gt; [(Expr t, t)] -&gt; Expr t
 </span><a href="IR.IR.html#foldApp"><span class="hs-identifier hs-var">I.foldApp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Type
-</span><a href="#local-6989586621679515797"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr Type, Type)]
-</span><a href="#local-6989586621679515796"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-224"></span><span>  </span><span id="local-6989586621679515797"><span class="annot"><span class="annottext">dcon :: Expr Type
-</span><a href="#local-6989586621679515797"><span class="hs-identifier hs-var hs-var">dcon</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DConId -&gt; Type -&gt; Expr Type
+</span><a href="#local-6989586621679515907"><span class="hs-identifier hs-var">dcon</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr Type, Type)]
+</span><a href="#local-6989586621679515906"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-224"></span><span>  </span><span id="local-6989586621679515907"><span class="annot"><span class="annottext">dcon :: Expr Type
+</span><a href="#local-6989586621679515907"><span class="hs-identifier hs-var hs-var">dcon</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DConId -&gt; Type -&gt; Expr Type
 forall t. DConId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Data"><span class="hs-identifier hs-var">I.Data</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId -&gt; DConId
 forall a b. (Identifiable a, Identifiable b) =&gt; a -&gt; b
 </span><a href="Common.Identifiers.html#fromId"><span class="hs-identifier hs-var">fromId</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515807"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515795"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-225"></span><span>  </span><span id="local-6989586621679515796"><span class="annot"><span class="annottext">args :: [(Expr Type, Type)]
-</span><a href="#local-6989586621679515796"><span class="hs-identifier hs-var hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr Type] -&gt; [Type] -&gt; [(Expr Type, Type)]
+</span><a href="#local-6989586621679515917"><span class="hs-identifier hs-var">dconid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515905"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-225"></span><span>  </span><span id="local-6989586621679515906"><span class="annot"><span class="annottext">args :: [(Expr Type, Type)]
+</span><a href="#local-6989586621679515906"><span class="hs-identifier hs-var hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr Type] -&gt; [Type] -&gt; [(Expr Type, Type)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarId -&gt; Type -&gt; Expr Type) -&gt; (VarId, Type) -&gt; Expr Type
 forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
@@ -503,15 +503,15 @@ forall t. VarId -&gt; t -&gt; Expr t
 </span><a href="IR.IR.html#Var"><span class="hs-identifier hs-var">I.Var</span></a></span><span> </span><span class="annot"><span class="annottext">((VarId, Type) -&gt; Expr Type) -&gt; [(VarId, Type)] -&gt; [Expr Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679515806"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515794"><span class="hs-identifier hs-var">ts</span></a></span><span>
-</span><span id="line-226"></span><span>  </span><span id="local-6989586621679515793"><span class="annot"><span class="annottext">tconTyp :: Type
-</span><a href="#local-6989586621679515793"><span class="hs-identifier hs-var hs-var">tconTyp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="#local-6989586621679515916"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679515904"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><span id="line-226"></span><span>  </span><span id="local-6989586621679515903"><span class="annot"><span class="annottext">tconTyp :: Type
+</span><a href="#local-6989586621679515903"><span class="hs-identifier hs-var hs-var">tconTyp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Types.Type.html#TCon"><span class="hs-identifier hs-var">I.TCon</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515808"><span class="hs-identifier hs-var">tcon</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-227"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679515795"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515795"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679515794"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515794"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679515918"><span class="hs-identifier hs-var">tcon</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-227"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679515905"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515905"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679515904"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679515904"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-228"></span><span>    </span><span class="annot"><span class="annottext">[Type] -&gt; [Type]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; [Type]) -&gt; [Type] -&gt; [Type]
@@ -541,48 +541,48 @@ forall a b. (a, b) -&gt; b
 </span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">((VarId, Type) -&gt; Type) -&gt; [(VarId, Type)] -&gt; [Type]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679515806"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Type] -&gt; [Type]
+</span><a href="#local-6989586621679515916"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Type] -&gt; [Type]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515793"><span class="hs-identifier hs-var">tconTyp</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515903"><span class="hs-identifier hs-var">tconTyp</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-232"></span><span class="hs-comment">{- Turns a list of types into arrow types representing nested lambdas
    @[Int, Int, Shape]@ becomes
    @[Int -&gt; Int -&gt; Shape, Int -&gt; Shape, Shape]@
    @(t:ts)@ is permitted because params is always non-empty
    @tail@ is permitted because inits on a non-empty list always returns a list of at least two elements.
 -}</span><span>
-</span><span id="line-238"></span><span class="annot"><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span> </span><span id="local-6989586621679515787"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515787"><span class="hs-identifier hs-var">tcon</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515786"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515786"><span class="hs-identifier hs-var">dcon</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#VariantUnnamed"><span class="hs-identifier hs-type">I.VariantUnnamed</span></a></span><span> </span><span id="local-6989586621679515784"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515784"><span class="hs-identifier hs-var">params</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-238"></span><span class="annot"><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span> </span><span id="local-6989586621679515897"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679515897"><span class="hs-identifier hs-var">tcon</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515896"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679515896"><span class="hs-identifier hs-var">dcon</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.IR.html#VariantUnnamed"><span class="hs-identifier hs-type">I.VariantUnnamed</span></a></span><span> </span><span id="local-6989586621679515894"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679515894"><span class="hs-identifier hs-var">params</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-239"></span><span>  </span><span class="annot"><span class="annottext">TConId -&gt; (DConId, TypeVariant) -&gt; Maybe (Binder Type, Expr Type)
 </span><a href="IR.DConToFunc.html#createFunc"><span class="hs-identifier hs-var">createFunc</span></a></span><span>
 </span><span id="line-240"></span><span>    </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515787"><span class="hs-identifier hs-var">tcon</span></a></span><span>
+</span><a href="#local-6989586621679515897"><span class="hs-identifier hs-var">tcon</span></a></span><span>
 </span><span id="line-241"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515786"><span class="hs-identifier hs-var">dcon</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)] -&gt; TypeVariant
+</span><a href="#local-6989586621679515896"><span class="hs-identifier hs-var">dcon</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)] -&gt; TypeVariant
 </span><a href="IR.IR.html#VariantNamed"><span class="hs-identifier hs-var">I.VariantNamed</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarId, Type)]
-</span><a href="#local-6989586621679515783"><span class="hs-identifier hs-var">argNames</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515893"><span class="hs-identifier hs-var">argNames</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-242"></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-243"></span><span>  </span><span id="local-6989586621679515783"><span class="annot"><span class="annottext">argNames :: [(VarId, Type)]
-</span><a href="#local-6989586621679515783"><span class="hs-identifier hs-var hs-var">argNames</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Int -&gt; (VarId, Type))
+</span><span id="line-243"></span><span>  </span><span id="local-6989586621679515893"><span class="annot"><span class="annottext">argNames :: [(VarId, Type)]
+</span><a href="#local-6989586621679515893"><span class="hs-identifier hs-var hs-var">argNames</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Int -&gt; (VarId, Type))
 -&gt; [Type] -&gt; [Int] -&gt; [(VarId, Type)]
 forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
-</span><span class="hs-identifier hs-var">zipWith</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515781"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515781"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679515780"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515780"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; VarId
+</span><span class="hs-identifier hs-var">zipWith</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515891"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515891"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679515890"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515890"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; VarId
 </span><a href="IR.DConToFunc.html#nameArg"><span class="hs-identifier hs-var">nameArg</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515780"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515781"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515784"><span class="hs-identifier hs-var">params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515890"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515891"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679515894"><span class="hs-identifier hs-var">params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span>
 </span><span id="line-244"></span><span>
 </span><span id="line-245"></span><span>
 </span><span id="line-246"></span><span class="hs-comment">-- | Create a name for the constructor function</span><span>
 </span><span id="line-247"></span><span class="annot"><a href="IR.DConToFunc.html#nameFunc"><span class="hs-identifier hs-type">nameFunc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Common.Identifiers.html#DConId"><span class="hs-identifier hs-type">I.DConId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span>
 </span><span id="line-248"></span><span id="nameFunc"><span class="annot"><span class="annottext">nameFunc :: DConId -&gt; VarId
-</span><a href="IR.DConToFunc.html#nameFunc"><span class="hs-identifier hs-var hs-var">nameFunc</span></a></span></span><span> </span><span id="local-6989586621679515778"><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515778"><span class="hs-identifier hs-var">dconid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; VarId
+</span><a href="IR.DConToFunc.html#nameFunc"><span class="hs-identifier hs-var hs-var">nameFunc</span></a></span></span><span> </span><span id="local-6989586621679515888"><span class="annot"><span class="annottext">DConId
+</span><a href="#local-6989586621679515888"><span class="hs-identifier hs-var">dconid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; VarId
 forall a. IsString a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">fromString</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; VarId) -&gt; String -&gt; VarId
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -592,14 +592,14 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">DConId -&gt; String
 forall i. Identifiable i =&gt; i -&gt; String
 </span><a href="Common.Identifiers.html#ident"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">DConId
-</span><a href="#local-6989586621679515778"><span class="hs-identifier hs-var">dconid</span></a></span><span>
+</span><a href="#local-6989586621679515888"><span class="hs-identifier hs-var">dconid</span></a></span><span>
 </span><span id="line-249"></span><span>
 </span><span id="line-250"></span><span>
 </span><span id="line-251"></span><span class="hs-comment">-- | Create a name for a constructor function argument</span><span>
 </span><span id="line-252"></span><span class="annot"><a href="IR.DConToFunc.html#nameArg"><span class="hs-identifier hs-type">nameArg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">I.VarId</span></a></span><span>
 </span><span id="line-253"></span><span id="nameArg"><span class="annot"><span class="annottext">nameArg :: Int -&gt; VarId
-</span><a href="IR.DConToFunc.html#nameArg"><span class="hs-identifier hs-var hs-var">nameArg</span></a></span></span><span> </span><span id="local-6989586621679515777"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515777"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; VarId
+</span><a href="IR.DConToFunc.html#nameArg"><span class="hs-identifier hs-var hs-var">nameArg</span></a></span></span><span> </span><span id="local-6989586621679515887"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515887"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; VarId
 forall a. IsString a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">fromString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;__arg&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
@@ -607,5 +607,5 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515777"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515887"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-254"></span></pre></body></html>

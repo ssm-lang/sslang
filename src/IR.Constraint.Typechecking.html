@@ -24,94 +24,97 @@
 </span><span id="line-24"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier">toCanType</span></a></span><span class="hs-special">,</span><span>
 </span><span id="line-25"></span><span> </span><span class="hs-special">)</span><span>
 </span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span>
-</span><span id="line-28"></span><span id="local-6989586621679519535"><span class="annot"><a href="IR.Constraint.Typechecking.html#typecheckProgram"><span class="hs-identifier hs-type">typecheckProgram</span></a></span><span>
-</span><span id="line-29"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679519535"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
-</span><span id="line-30"></span><span id="typecheckProgram"><span class="annot"><span class="annottext">typecheckProgram :: Program Annotations -&gt; Bool -&gt; Pass (Program Type, Maybe (Doc ann))
-</span><a href="IR.Constraint.Typechecking.html#typecheckProgram"><span class="hs-identifier hs-var hs-var">typecheckProgram</span></a></span></span><span> </span><span id="local-6989586621679519534"><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679519534"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span id="local-6989586621679519533"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679519533"><span class="hs-identifier hs-var">prettyprint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Program Annotations
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prettyprinter</span></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><span class="hs-identifier">surround</span></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><span class="hs-identifier">vsep</span></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span id="local-6989586621679519654"><span class="annot"><a href="IR.Constraint.Typechecking.html#typecheckProgram"><span class="hs-identifier hs-type">typecheckProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679519654"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-35"></span><span id="typecheckProgram"><span class="annot"><span class="annottext">typecheckProgram :: Program Annotations -&gt; Bool -&gt; Pass (Program Type, Maybe (Doc ann))
+</span><a href="IR.Constraint.Typechecking.html#typecheckProgram"><span class="hs-identifier hs-var hs-var">typecheckProgram</span></a></span></span><span> </span><span id="local-6989586621679519653"><span class="annot"><span class="annottext">Program Annotations
+</span><a href="#local-6989586621679519653"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span id="local-6989586621679519652"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519652"><span class="hs-identifier hs-var">prettyprint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Program Annotations
 -&gt; Bool -&gt; Either Error (Program Type, Maybe (Doc ann))
 forall ann.
 Program Annotations
 -&gt; Bool -&gt; Either Error (Program Type, Maybe (Doc ann))
 </span><a href="IR.Constraint.Typechecking.html#unsafeTypecheckProgram"><span class="hs-identifier hs-var">unsafeTypecheckProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679519534"><span class="hs-identifier hs-var">pAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679519533"><span class="hs-identifier hs-var">prettyprint</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-31"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679519531"><span class="annot"><span class="annottext">Error
-</span><a href="#local-6989586621679519531"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Error -&gt; Pass (Program Type, Maybe (Doc ann))
+</span><a href="#local-6989586621679519653"><span class="hs-identifier hs-var">pAnn</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519652"><span class="hs-identifier hs-var">prettyprint</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679519650"><span class="annot"><span class="annottext">Error
+</span><a href="#local-6989586621679519650"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Error -&gt; Pass (Program Type, Maybe (Doc ann))
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">Compiler.throwError</span></span><span> </span><span class="annot"><span class="annottext">Error
-</span><a href="#local-6989586621679519531"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-32"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679519529"><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
-</span><a href="#local-6989586621679519529"><span class="hs-identifier hs-var">pType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
+</span><a href="#local-6989586621679519650"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679519648"><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
+</span><a href="#local-6989586621679519648"><span class="hs-identifier hs-var">pType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
 -&gt; Pass (Program Type, Maybe (Doc ann))
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
-</span><a href="#local-6989586621679519529"><span class="hs-identifier hs-var">pType</span></a></span><span>
-</span><span id="line-33"></span><span>
-</span><span id="line-34"></span><span>
-</span><span id="line-35"></span><span id="local-6989586621679519576"><span class="annot"><a href="IR.Constraint.Typechecking.html#unsafeTypecheckProgram"><span class="hs-identifier hs-type">unsafeTypecheckProgram</span></a></span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679519576"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
-</span><span id="line-37"></span><span id="unsafeTypecheckProgram"><span class="annot"><span class="annottext">unsafeTypecheckProgram :: Program Annotations
+</span><a href="#local-6989586621679519648"><span class="hs-identifier hs-var">pType</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span id="local-6989586621679519707"><span class="annot"><a href="IR.Constraint.Typechecking.html#unsafeTypecheckProgram"><span class="hs-identifier hs-type">unsafeTypecheckProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Annotations"><span class="hs-identifier hs-type">Can.Annotations</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Common.Compiler.html#Error"><span class="hs-identifier hs-type">Compiler.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621679519707"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-42"></span><span id="unsafeTypecheckProgram"><span class="annot"><span class="annottext">unsafeTypecheckProgram :: Program Annotations
 -&gt; Bool -&gt; Either Error (Program Type, Maybe (Doc ann))
-</span><a href="IR.Constraint.Typechecking.html#unsafeTypecheckProgram"><span class="hs-identifier hs-var hs-var">unsafeTypecheckProgram</span></a></span></span><span> </span><span id="local-6989586621679519528"><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679519528"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span id="local-6989586621679519527"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679519527"><span class="hs-identifier hs-var">prettyprint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TCState
+</span><a href="IR.Constraint.Typechecking.html#unsafeTypecheckProgram"><span class="hs-identifier hs-var hs-var">unsafeTypecheckProgram</span></a></span></span><span> </span><span id="local-6989586621679519647"><span class="annot"><span class="annottext">Program Annotations
+</span><a href="#local-6989586621679519647"><span class="hs-identifier hs-var">pAnn</span></a></span></span><span> </span><span id="local-6989586621679519646"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519646"><span class="hs-identifier hs-var">prettyprint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TCState
 -&gt; TC (Program Type, Maybe (Doc ann))
 -&gt; Either Error (Program Type, Maybe (Doc ann))
 forall a. TCState -&gt; TC a -&gt; Either Error a
 </span><a href="IR.Constraint.Monad.html#runTC"><span class="hs-identifier hs-var">runTC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program Annotations -&gt; TCState
 </span><a href="IR.Constraint.Monad.html#mkTCState"><span class="hs-identifier hs-var">mkTCState</span></a></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679519528"><span class="hs-identifier hs-var">pAnn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TC (Program Type, Maybe (Doc ann))
+</span><a href="#local-6989586621679519647"><span class="hs-identifier hs-var">pAnn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TC (Program Type, Maybe (Doc ann))
  -&gt; Either Error (Program Type, Maybe (Doc ann)))
 -&gt; TC (Program Type, Maybe (Doc ann))
 -&gt; Either Error (Program Type, Maybe (Doc ann))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-38"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679519526"><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679519526"><span class="hs-identifier hs-var">constraint</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679519525"><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519525"><span class="hs-identifier hs-var">pVar</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Annotations -&gt; TC (Constraint, Program Variable)
+</span><span id="line-43"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679519645"><span class="annot"><span class="annottext">Constraint
+</span><a href="#local-6989586621679519645"><span class="hs-identifier hs-var">constraint</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679519644"><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679519644"><span class="hs-identifier hs-var">pVar</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Annotations -&gt; TC (Constraint, Program Variable)
 </span><a href="IR.Constraint.Constrain.html#run"><span class="hs-identifier hs-var">Constrain.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program Annotations
-</span><a href="#local-6989586621679519528"><span class="hs-identifier hs-var">pAnn</span></a></span><span>
-</span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-comment">-- Depends on being called before solve</span><span>
-</span><span id="line-41"></span><span>  </span><span id="local-6989586621679519523"><span class="annot"><span class="annottext">Maybe (Doc ann)
-</span><a href="#local-6989586621679519523"><span class="hs-identifier hs-var">doc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
-</span><span id="line-42"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
-</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679519527"><span class="hs-identifier hs-var">prettyprint</span></a></span><span>
-</span><span id="line-43"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
--&gt; StateT TCState (ExceptT Error IO) (Maybe (Doc ann))
-forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
-</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
-forall a. Maybe a
-</span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-44"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-45"></span><span>        </span><span class="hs-comment">-- Convert IORef Variables to printable &quot;type variables&quot; embedded in IR</span><span>
-</span><span id="line-46"></span><span>        </span><span id="local-6989586621679519521"><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679519521"><span class="hs-identifier hs-var">pIR</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Doc ann
-forall a ann. Pretty a =&gt; a -&gt; Doc ann
-</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; Doc ann)
--&gt; StateT TCState (ExceptT Error IO) (Program Type)
--&gt; StateT TCState (ExceptT Error IO) (Doc ann)
-forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; StateT TCState (ExceptT Error IO) Type)
--&gt; Program Variable
--&gt; StateT TCState (ExceptT Error IO) (Program Type)
+</span><a href="#local-6989586621679519647"><span class="hs-identifier hs-var">pAnn</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-comment">-- Get IORefs in the program IR</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519642"><span class="annot"><span class="annottext">refs :: [Variable]
+</span><a href="#local-6989586621679519642"><span class="hs-identifier hs-var hs-var">refs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; [Variable] -&gt; [Variable])
+-&gt; [Variable] -&gt; Program Variable -&gt; [Variable]
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">:</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679519644"><span class="hs-identifier hs-var">pVar</span></a></span><span>
+</span><span id="line-47"></span><span>      </span><span id="local-6989586621679519640"><span class="annot"><span class="annottext">vars :: StateT TCState (ExceptT Error IO) [Type]
+</span><a href="#local-6989586621679519640"><span class="hs-identifier hs-var hs-var">vars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; StateT TCState (ExceptT Error IO) Type)
+-&gt; [Variable] -&gt; StateT TCState (ExceptT Error IO) [Type]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; StateT TCState (ExceptT Error IO) Type
-</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">toCanType</span></a></span><span> </span><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519525"><span class="hs-identifier hs-var">pVar</span></a></span><span>
-</span><span id="line-47"></span><span>        </span><span id="local-6989586621679519518"><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679519518"><span class="hs-identifier hs-var">pConstraint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Constraint -&gt; StateT TCState (ExceptT Error IO) (Doc ann)
-forall ann. Constraint -&gt; TC (Doc ann)
-</span><a href="IR.Constraint.PrettyPrint.html#printConstraint"><span class="hs-identifier hs-var">printConstraint</span></a></span><span> </span><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679519526"><span class="hs-identifier hs-var">constraint</span></a></span><span>
-</span><span id="line-48"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519517"><span class="annot"><span class="annottext">hrule :: Doc ann
-</span><a href="#local-6989586621679519517"><span class="hs-identifier hs-var hs-var">hrule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">toCanType</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519642"><span class="hs-identifier hs-var">refs</span></a></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-comment">-- Depends on being called before solve</span><span>
+</span><span id="line-50"></span><span>  </span><span id="local-6989586621679519638"><span class="annot"><span class="annottext">[Doc ann]
+</span><a href="#local-6989586621679519638"><span class="hs-identifier hs-var">namesDoc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Doc ann) -&gt; [Type] -&gt; [Doc ann]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; [Doc ann])
+-&gt; StateT TCState (ExceptT Error IO) [Type]
+-&gt; StateT TCState (ExceptT Error IO) [Doc ann]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">StateT TCState (ExceptT Error IO) [Type]
+</span><a href="#local-6989586621679519640"><span class="hs-identifier hs-var">vars</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-comment">-- Get the pretty-printed constraints and program</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519636"><span class="annot"><span class="annottext">hrule :: Doc ann
+</span><a href="#local-6989586621679519636"><span class="hs-identifier hs-var hs-var">hrule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 forall ann. Doc ann
 </span><span class="hs-identifier hs-var">hardline</span></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
@@ -133,13 +136,43 @@ forall ann. Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
 forall ann. Doc ann
-</span><span class="hs-identifier hs-var">hardline</span></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
-forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
-forall ann. Doc ann
-</span><span class="hs-identifier hs-var">hardline</span></span><span>
-</span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Doc ann)
+</span><span class="hs-identifier hs-var">hardline</span></span><span>  </span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679519634"><span class="annot"><span class="annottext">Maybe (Doc ann)
+</span><a href="#local-6989586621679519634"><span class="hs-identifier hs-var">doc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519646"><span class="hs-identifier hs-var">prettyprint</span></a></span><span>
+</span><span id="line-56"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
+-&gt; StateT TCState (ExceptT Error IO) (Maybe (Doc ann))
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-57"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-58"></span><span>        </span><span class="hs-comment">-- Convert IORef Variables to printable &quot;type variables&quot; embedded in IR</span><span>
+</span><span id="line-59"></span><span>        </span><span id="local-6989586621679519632"><span class="annot"><span class="annottext">Doc ann
+</span><a href="#local-6989586621679519632"><span class="hs-identifier hs-var">pIR</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; Doc ann)
+-&gt; StateT TCState (ExceptT Error IO) (Program Type)
+-&gt; StateT TCState (ExceptT Error IO) (Doc ann)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; StateT TCState (ExceptT Error IO) Type)
+-&gt; Program Variable
+-&gt; StateT TCState (ExceptT Error IO) (Program Type)
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; StateT TCState (ExceptT Error IO) Type
+</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">toCanType</span></a></span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679519644"><span class="hs-identifier hs-var">pVar</span></a></span><span>
+</span><span id="line-60"></span><span>        </span><span id="local-6989586621679519631"><span class="annot"><span class="annottext">Doc ann
+</span><a href="#local-6989586621679519631"><span class="hs-identifier hs-var">pConstraint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Constraint -&gt; StateT TCState (ExceptT Error IO) (Doc ann)
+forall ann. Constraint -&gt; TC (Doc ann)
+</span><a href="IR.Constraint.PrettyPrint.html#printConstraint"><span class="hs-identifier hs-var">printConstraint</span></a></span><span> </span><span class="annot"><span class="annottext">Constraint
+</span><a href="#local-6989586621679519645"><span class="hs-identifier hs-var">constraint</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Doc ann)
 -&gt; StateT TCState (ExceptT Error IO) (Maybe (Doc ann))
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Doc ann)
@@ -152,27 +185,75 @@ forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Maybe (Doc ann)) -&gt; Doc ann -&gt; Maybe (Doc ann)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679519518"><span class="hs-identifier hs-var">pConstraint</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679519631"><span class="hs-identifier hs-var">pConstraint</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
 forall ann. Doc ann
-</span><a href="#local-6989586621679519517"><span class="hs-identifier hs-var">hrule</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><a href="#local-6989586621679519636"><span class="hs-identifier hs-var">hrule</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
-</span><a href="#local-6989586621679519521"><span class="hs-identifier hs-var">pIR</span></a></span><span>
-</span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">Constraint -&gt; TC ()
+</span><a href="#local-6989586621679519632"><span class="hs-identifier hs-var">pIR</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-comment">-- Runs constraint solver</span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><span class="annottext">Constraint -&gt; TC ()
 </span><a href="IR.Constraint.Solve.html#run"><span class="hs-identifier hs-var">Solve.run</span></a></span><span> </span><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679519526"><span class="hs-identifier hs-var">constraint</span></a></span><span>
-</span><span id="line-53"></span><span>  </span><span id="local-6989586621679519514"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679519514"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679519645"><span class="hs-identifier hs-var">constraint</span></a></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-comment">-- Depends on being called after solve</span><span>
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621679519629"><span class="annot"><span class="annottext">[Doc ann]
+</span><a href="#local-6989586621679519629"><span class="hs-identifier hs-var">resolutionDoc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Doc ann) -&gt; [Type] -&gt; [Doc ann]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; [Doc ann])
+-&gt; StateT TCState (ExceptT Error IO) [Type]
+-&gt; StateT TCState (ExceptT Error IO) [Doc ann]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">StateT TCState (ExceptT Error IO) [Type]
+</span><a href="#local-6989586621679519640"><span class="hs-identifier hs-var">vars</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-comment">-- Document containing the mapping from flex vars to types</span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519628"><span class="annot"><span class="annottext">mappingDoc :: Doc ann
+</span><a href="#local-6989586621679519628"><span class="hs-identifier hs-var hs-var">mappingDoc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Doc ann] -&gt; Doc ann
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">vsep</span></span><span> </span><span class="annot"><span class="annottext">([Doc ann] -&gt; Doc ann) -&gt; [Doc ann] -&gt; Doc ann
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann -&gt; Doc ann)
+-&gt; [Doc ann] -&gt; [Doc ann] -&gt; [Doc ann]
+forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
+</span><span class="hs-identifier hs-var">zipWith</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann -&gt; Doc ann
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">surround</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; Doc ann
+forall a ann. Pretty a =&gt; a -&gt; Doc ann
+</span><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot; = &quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Doc ann]
+</span><a href="#local-6989586621679519638"><span class="hs-identifier hs-var">namesDoc</span></a></span><span> </span><span class="annot"><span class="annottext">[Doc ann]
+</span><a href="#local-6989586621679519629"><span class="hs-identifier hs-var">resolutionDoc</span></a></span><span>
+</span><span id="line-72"></span><span>      </span><span id="local-6989586621679519626"><span class="annot"><span class="annottext">finalDoc :: Maybe (Doc ann)
+</span><a href="#local-6989586621679519626"><span class="hs-identifier hs-var hs-var">finalDoc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
+forall ann. Doc ann
+</span><a href="#local-6989586621679519636"><span class="hs-identifier hs-var">hrule</span></a></span><span> </span><span class="annot"><span class="annottext">Doc ann -&gt; Doc ann -&gt; Doc ann
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><a href="#local-6989586621679519628"><span class="hs-identifier hs-var">mappingDoc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Doc ann -&gt; Doc ann) -&gt; Maybe (Doc ann) -&gt; Maybe (Doc ann)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
+</span><a href="#local-6989586621679519634"><span class="hs-identifier hs-var">doc</span></a></span><span>
+</span><span id="line-73"></span><span>      </span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621679519625"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679519625"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Variable
 -&gt; StateT TCState (ExceptT Error IO) (Program Type)
 </span><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-var">Elaborate.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519525"><span class="hs-identifier hs-var">pVar</span></a></span><span>
-</span><span id="line-54"></span><span>  </span><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
+</span><a href="#local-6989586621679519644"><span class="hs-identifier hs-var">pVar</span></a></span><span>
+</span><span id="line-76"></span><span>  </span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><span class="annottext">(Program Type, Maybe (Doc ann))
 -&gt; TC (Program Type, Maybe (Doc ann))
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679519514"><span class="hs-identifier hs-var">program</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
-</span><a href="#local-6989586621679519523"><span class="hs-identifier hs-var">doc</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-55"></span></pre></body></html>
+</span><a href="#local-6989586621679519625"><span class="hs-identifier hs-var">program</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc ann)
+</span><a href="#local-6989586621679519626"><span class="hs-identifier hs-var">finalDoc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>  </span><span>
+</span><span id="line-79"></span></pre></body></html>
