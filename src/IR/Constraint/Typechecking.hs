@@ -32,7 +32,8 @@ import Prettyprinter (
 import Control.Monad.Writer (
   tell,
   when,
- ) 
+ )
+
 
 typecheckProgram ::
   I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type)
@@ -41,12 +42,12 @@ typecheckProgram pAnn False = do
   case result of
     Left e -> Compiler.throwError e
     Right pType -> return pType
-
 typecheckProgram pAnn True = do
   let (result, pp) = unsafeTypecheckProgram pAnn True
   case result of
-    Left e  -> Compiler.dump $ show pp ++ "\n\n" ++ show e
+    Left e -> Compiler.dump $ show pp ++ "\n\n" ++ show e
     Right _ -> Compiler.dump $ show pp
+
 
 unsafeTypecheckProgram ::
   I.Program Can.Annotations -> Bool -> (Either Compiler.Error (I.Program Can.Type), Doc String)
@@ -59,18 +60,17 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
 
   -- Depends on being called before solve
   namesDoc <- map pretty <$> vars
-  
+
   -- Pretty-printing separator
   let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline
 
   -- Log the pretty-printed constraints and program
   when prettyprint $ do
-      -- Convert IORef Variables to printable "type variables" embedded in IR
-      pIR <- pretty <$> mapM toCanType pVar
-      pConstraint <- printConstraint constraint
+    -- Convert IORef Variables to printable "type variables" embedded in IR
+    pIR <- pretty <$> mapM toCanType pVar
+    pConstraint <- printConstraint constraint
 
-
-      tell $ pConstraint <> hrule <> pIR
+    tell $ pConstraint <> hrule <> pIR
 
   -- Runs constraint solver
   Solve.run constraint
@@ -81,11 +81,10 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   -- Document containing the mapping from flex vars to types
   let mappingDoc = vsep $ zipWith (surround (pretty " = ")) namesDoc resolutionDoc
       finalDoc = hrule <> mappingDoc
-      
+
   -- Log the unification results
   when prettyprint $ tell finalDoc
 
   program <- Elaborate.run pVar
-  
+
   return program
-  

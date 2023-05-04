@@ -19,9 +19,9 @@ import GHC.IO.Unsafe (unsafePerformIO)
 import qualified IR.Constraint.Canonical as Can
 import qualified IR.IR as I
 
-import Prettyprinter (Doc)
 import Control.Monad.Writer (WriterT)
 import qualified Control.Monad.Writer as Writer
+import Prettyprinter (Doc)
 
 
 type TC a = StateT TCState (ExceptT Compiler.Error (WriterT (Doc String) IO)) a
