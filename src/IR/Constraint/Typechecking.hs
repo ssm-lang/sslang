@@ -69,6 +69,7 @@ unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
       pIR <- pretty <$> mapM toCanType pVar
       pConstraint <- printConstraint constraint
 
+
       tell $ pConstraint <> hrule <> pIR
 
   -- Runs constraint solver

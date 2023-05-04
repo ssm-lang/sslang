@@ -12,4 +12,4 @@ run pVar = do
   exprs' <- mapM (mapM Type.toCanType) exprs
   let reattachBinders (I.BindVar v _) expr = (I.BindVar v $ I.extract expr, expr)
       reattachBinders (I.BindAnon _) expr = (I.BindAnon $ I.extract expr, expr)
-  return $ pVar{I.programDefs = zipWith reattachBinders names exprs'}
+  return $ pVar{I.programDefs = zipWith reattachBinders names exprs', I.symTable = I.uninitializedSymTable }

@@ -21,6 +21,7 @@ import IR.ExternToCall (externToCall)
 import IR.InsertRefCounting (insertRefCounting)
 import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
+import IR.MangleNames (mangleProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
@@ -44,6 +45,7 @@ data Mode
   | DumpIRConstraints
   | DumpIRTyped
   | DumpIRTypedUgly
+  | DumpIRMangled
   | DumpIRInlined
   | DumpIRTypedShow
   | DumpIRLifted
@@ -88,6 +90,11 @@ options =
       ["dump-ir-typed-ugly"]
       (NoArg $ setMode DumpIRTypedShow)
       "Ugly-Print the fully-typed IR after type inference"
+  , Option
+      ""
+      ["dump-ir-mangled"]
+      (NoArg $ setMode DumpIRMangled)
+      "Print the IR after mangling"
   , Option
       ""
       ["dump-ir-lifted"]
@@ -138,6 +145,8 @@ anomalycheck p = do
 -- | IR transformations to prepare for codegen.
 transform :: Options -> I.Program I.Type -> Pass (I.Program I.Type)
 transform opt p = do
+  p <- mangleProgram p
+  when (mode opt == DumpIRMangled) $ dump p
   p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
@@ -145,8 +154,9 @@ transform opt p = do
   p <- externToCall p
   p <- optimizePar p
   p <- liftProgramLambdas p
+  p <- segmentLets p
   when (mode opt == DumpIRLifted) $ dump p
-  p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
+  -- p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   when (mode opt == DumpIRInlined) $ dump p
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
