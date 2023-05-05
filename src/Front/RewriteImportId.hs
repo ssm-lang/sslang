@@ -51,18 +51,18 @@ substIdentifier e = e
 
 -- first get top import list, 
 
-importInTopLevel :: [Identifier] -> A.Program -> ()
-importInTopLevel impIds program =
-  -- Check if imported expression is exactly one element longer and matches on of the top imports
-  if any (\topLevelIds -> length impIds == length topLevelIds + 1 && zip impIds topLevelIds == topLevelIds) topLevelImportIds
-    then ()
-    else error "Import not found in top-level imports"
-  where
-    topLevelImports = extractImportList program
-    topLevelImportIds = map importToList topLevelImports
+-- importInTopLevel :: [Identifier] -> A.Program -> ()
+-- importInTopLevel impIds program =
+--   -- Check if imported expression is exactly one element longer and matches on of the top imports
+--   if any (\topLevelIds -> length impIds == length topLevelIds + 1 && zip impIds topLevelIds == topLevelIds) topLevelImportIds
+--     then ()
+--     else error "Import not found in top-level imports"
+--   where
+--     topLevelImports = extractImportList program
+--     topLevelImportIds = map importToList topLevelImports
 
-importToList :: A.Import -> [Identifier]
-importToList (A.ImportSym ids) = ids
-importToList (A.ImportAs ids _) = ids
-importToList (A.ImportWith ids _) = ids
+-- importToList :: A.Import -> [Identifier]
+-- importToList (A.ImportSym ids) = ids
+-- importToList (A.ImportAs ids _) = ids
+-- importToList (A.ImportWith ids _) = ids
 
