@@ -19,8 +19,12 @@ import GHC.IO.Unsafe (unsafePerformIO)
 import qualified IR.Constraint.Canonical as Can
 import qualified IR.IR as I
 
+import Control.Monad.Writer (WriterT)
+import qualified Control.Monad.Writer as Writer
+import Prettyprinter (Doc)
 
-type TC a = StateT TCState (ExceptT Compiler.Error IO) a
+
+type TC a = StateT TCState (ExceptT Compiler.Error (WriterT (Doc String) IO)) a
 
 
 type DConInfo = (DConId, TConId, [TVarId], [Can.Type])
@@ -37,8 +41,8 @@ data TCState = TCState
   }
 
 
-runTC :: TCState -> TC a -> Either Compiler.Error a
-runTC state m = unsafePerformIO $ Except.runExceptT $ State.evalStateT m state
+runTC :: TCState -> TC a -> (Either Compiler.Error a, Doc String)
+runTC state m = unsafePerformIO $ Writer.runWriterT $ Except.runExceptT $ State.evalStateT m state
 
 
 mkTCState :: I.Program Can.Annotations -> TCState

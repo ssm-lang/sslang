@@ -25,7 +25,7 @@ import IR.MangleNames (mangleProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
-import IR.Simplify (simplifyProgram)
+-- import IR.Simplify (simplifyProgram)
 import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
   ArgDescr (..),
@@ -130,8 +130,7 @@ lower opt p = do
 typecheck :: Options -> I.Program I.Annotations -> Pass (I.Program I.Type)
 typecheck opt p = do
   when (mode opt == DumpIRAnnotated) $ dump $ fmap fromAnnotations p
-  (p, constraintsDoc) <- typecheckProgram p (mode opt == DumpIRConstraints)
-  when (mode opt == DumpIRConstraints) $ dump $ maybe "" show constraintsDoc
+  p <- typecheckProgram p (mode opt == DumpIRConstraints)
   when (mode opt == DumpIRTyped) $ dump p
   when (mode opt == DumpIRTypedShow) $ (throwError . Dump . ppShow) p
   return p

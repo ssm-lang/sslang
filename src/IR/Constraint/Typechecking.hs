@@ -29,50 +29,66 @@ import Prettyprinter (
   vsep,
  )
 
+import Control.Monad.Writer (
+  tell,
+  when,
+ )
+
 
 typecheckProgram ::
-  I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type, Maybe (Doc ann))
-typecheckProgram pAnn prettyprint = case unsafeTypecheckProgram pAnn prettyprint of
-  Left e -> Compiler.throwError e
-  Right pType -> return pType
+  I.Program Can.Annotations -> Bool -> Compiler.Pass (I.Program Can.Type)
+typecheckProgram pAnn False = do
+  let (result, _) = unsafeTypecheckProgram pAnn False
+  case result of
+    Left e -> Compiler.throwError e
+    Right pType -> return pType
+typecheckProgram pAnn True = do
+  let (result, pp) = unsafeTypecheckProgram pAnn True
+  case result of
+    Left e -> do
+      -- Note: Provisionally misusing exception/error by showing it and appending it to dump, open to revision.
+      Compiler.dump $ show pp ++ "\n\n" ++ show e 
+    Right _ -> Compiler.dump $ show pp
 
 
 unsafeTypecheckProgram ::
-  I.Program Can.Annotations -> Bool -> Either Compiler.Error (I.Program Can.Type, Maybe (Doc ann))
+  I.Program Can.Annotations -> Bool -> (Either Compiler.Error (I.Program Can.Type), Doc String)
 unsafeTypecheckProgram pAnn prettyprint = runTC (mkTCState pAnn) $ do
   (constraint, pVar) <- Constrain.run pAnn
 
-  -- Get IORefs in the program IR
+  -- Get IORefs in the program IR, then type variable names
   let refs = foldr (:) [] pVar
       vars = mapM toCanType refs
 
+  -- Pretty-printing separator
+  let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline
+
+  -- Log the pretty-printed constraints and program
+  when prettyprint $ do
+    -- Convert IORef Variables to printable "type variables" embedded in IR
+    pIR <- pretty <$> mapM toCanType pVar
+    pConstraint <- printConstraint constraint
+
+    tell $ pConstraint <> hrule <> pIR
+
   -- Depends on being called before solve
+  -- Gets the prettified version of the type variable names
   namesDoc <- map pretty <$> vars
-
-  -- Get the pretty-printed constraints and program
-  let hrule = hardline <> hardline <> pretty (replicate 20 '-') <> hardline <> hardline  
-  doc <-
-    if not prettyprint
-      then return Nothing
-      else do
-        -- Convert IORef Variables to printable "type variables" embedded in IR
-        pIR <- pretty <$> mapM toCanType pVar
-        pConstraint <- printConstraint constraint
-
-        return $ Just $ pConstraint <> hrule <> pIR
 
   -- Runs constraint solver
   Solve.run constraint
 
   -- Depends on being called after solve
+  -- Gets the prettified version of the unification results
   resolutionDoc <- map pretty <$> vars
 
   -- Document containing the mapping from flex vars to types
   let mappingDoc = vsep $ zipWith (surround (pretty " = ")) namesDoc resolutionDoc
-      finalDoc = (<> hrule <> mappingDoc) <$> doc
-      
+      finalDoc = hrule <> mappingDoc
+
+  -- Log the unification results
+  when prettyprint $ tell finalDoc
 
   program <- Elaborate.run pVar
-  
-  return (program, finalDoc)
-  
+
+  return program
