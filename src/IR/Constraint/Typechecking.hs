@@ -45,7 +45,9 @@ typecheckProgram pAnn False = do
 typecheckProgram pAnn True = do
   let (result, pp) = unsafeTypecheckProgram pAnn True
   case result of
-    Left e -> Compiler.dump $ show pp ++ "\n\n" ++ show e
+    Left e -> do
+      -- Note: Provisionally misusing exception/error by showing it and appending it to dump, open to revision.
+      Compiler.dump $ show pp ++ "\n\n" ++ show e 
     Right _ -> Compiler.dump $ show pp
 
 
