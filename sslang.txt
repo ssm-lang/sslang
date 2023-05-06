@@ -2837,7 +2837,7 @@ annToType :: Annotation -> Type
 builtinKinds :: Map TConId Kind
 
 module IR.Constraint.Monad
-type TC a = StateT TCState (ExceptT Error IO) a
+type TC a = StateT TCState (ExceptT Error (WriterT (Doc String) IO)) a
 type DConInfo = (DConId, TConId, [TVarId], [Type])
 type DConMap = Map DConId DConInfo
 data TCState
@@ -2846,7 +2846,7 @@ TCState :: Int -> DConMap -> Map TConId Kind -> Map VarId Type -> TCState
 [_dconMap] :: TCState -> DConMap
 [_kindMap] :: TCState -> Map TConId Kind
 [_externMap] :: TCState -> Map VarId Type
-runTC :: TCState -> TC a -> Either Error a
+runTC :: TCState -> TC a -> (Either Error a, Doc String)
 mkTCState :: Program Annotations -> TCState
 mkDConMap :: Program Annotations -> DConMap
 
@@ -3131,7 +3131,7 @@ sprinkleVariables :: Program Annotations -> TC (Program (Annotations, Variable))
 discardAnnotations :: Program (Annotations, Variable) -> Program Variable
 
 module IR.Constraint.Typechecking
-typecheckProgram :: Program Annotations -> Bool -> Pass (Program Type, Maybe (Doc ann))
+typecheckProgram :: Program Annotations -> Bool -> Pass (Program Type)
 
 
 -- | Intermediate representation (IR) stages of the compiler pipeline.
