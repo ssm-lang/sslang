@@ -24,6 +24,62 @@ main =
   
 */
 
+
+/*
+1. we need to allow inlining of match scrutinees
+2. implement case elimination without nested patterns
+
+if scrutinee is just a literal:
+find the case and replace
+
+if scrutinee is data constructor app
+First check if an arm's data constructor matches the scrutinee's data constructor
+Then for each argument to a data constructor in an arm, 
+if the argument is a primitive or a variable, we consider whether it matches the scrutinee's argument
+otherwise, the argument does not match the scrutinee's argument
+If we have a match, keep that arm and get rid of the rest, rewriting the arm as a let expression
+
+| Match (Expr t) [(Alt, Expr t)] t
+  {- ^ @Match s alts t@ pattern-matches on scrutinee @s@ against alternatives
+  @alts@, each producing a value of type @t@.
+
+  = AltData DConId [Alt]
+  -- ^ @AltData d vs@ matches data constructor @d@, and recursive patterns @alts@.
+  | AltLit Literal
+  -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
+  | AltBinder Binder
+  -- ^ @AltBinder v@ matches anything, and bound to name @v@.
+
+scrutinee expression = RGB a 3 
+
+for each arm: 
+
+create a function that takes 2 expressions as input, and compare
+*/
+
+/* another example of case elimination
+main = 
+  let a = 3
+  let b = RGB a 3
+  match b
+    RGB z c = 
+      putd cout (c+d)
+    RGB 4 _ = 
+      putd cout 4
+    _ = 
+      putd cout 5
+
+Expected Output (with case elimination):
+
+main = 
+  let a = 3
+      c = 2
+  putd cout (c+d)
+
+*/
+
+// testing match arm elimination on literal scruts and arms with lits
+
 // print single digit number; account for ascii offset
 putd cout_ c =
   after 1, cout_ <- (c + 48)

@@ -18,11 +18,11 @@ import Control.Monad.State.Lazy (
   gets,
   modify,
  )
-import Data.Bifunctor (second)
-import Data.Generics (Typeable)
+import Data.Bifunctor (second, bimap)
+import Data.Generics (Typeable, everywhereM, mkM, everywhere, mkT)
 import qualified Data.Map as M
 import qualified Data.Maybe as Ma
-import IR.IR (unfoldLambda)
+import IR.IR (unfoldLambda, extract)
 import qualified IR.IR as I
 
 
@@ -137,7 +137,7 @@ updateOccVar binder = do
                 ++ "!"
             )
         Just Dead ->
-          if insidel || insidem
+          if insidel
             then M.insert binder Never m
             else M.insert binder OnceSafe m
         Just _ -> M.insert binder ConstructorFuncArg m 
@@ -209,8 +209,69 @@ simplifyProgram p = runSimplFn $ do
   -- info <- runOccAnal p
   -- _ <- Compiler.unexpected $ show info
   simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
-  return $ p{I.programDefs = simplifiedProgramDefs} -- this whole do expression returns a Compiler.Pass
+  let fewerArms = everywhere (mkT elimMatchArms) simplifiedProgramDefs
+  return $ p{I.programDefs = fewerArms} -- this whole do expression returns a Compiler.Pass
 
+--everywhereM (mkM dataToApp) defs
+-- Match (Expr t) [(Alt, Expr t)] t
+-- Lit Literal t_
+-- unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
+-- unfoldApp (App lhs rhs t) =
+--   let (fn, args) = unfoldApp lhs in (fn, args ++ [(rhs, t)])
+-- unfoldApp e = (e, [])
+
+--  App (Expr t) (Expr t) t
+-- | An alternative in a pattern-match.
+-- data Alt
+--   = AltData DConId [Alt]
+--   -- ^ @AltData d vs@ matches data constructor @d@, and recursive patterns @alts@.
+--   | AltLit Literal
+--   -- ^ @AltLit l@ matches against literal @l@, producing expression @e@.
+--   | AltBinder Binder
+--   -- ^ @AltBinder v@ matches anything, and bound to name @v@.
+--   deriving (Eq, Show, Typeable, Data)
+-- type Binder = Maybe VarId
+-- check for numbers, then check for vars (Just VarId), then if still checking, we know it's the catch-all.
+-- check for catchall . check for var. check for number
+{-
+match 5 
+  5 = 45
+  _ = 
+
+match 5 
+  4 = 900
+  8 = 45
+  x = x + 2
+  _ = 
+-}
+
+checkForLitMatch :: I.Expr I.Type -> (I.Alt, I.Expr I.Type) -> Bool
+checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
+  case arm of
+    (I.AltLit (I.LitIntegral d)) -> d == v
+    (I.AltBinder (Just _)) -> True
+    _ -> True
+checkForLitMatch _ _ = False -- we should never hit this case
+
+elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
+elimMatchArms e@(I.Match scrut@(I.App e1 e2 _) arms _) = e
+elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
+  let x = head $ filter (checkForLitMatch scrut) arms in
+  case x of
+    -- if variable, then turn into let
+    (I.AltBinder b@(Just _), rhs) -> I.Let [(b,scrut)] rhs (extract rhs)
+    -- if literal or catchall, just return expr
+    (_, rhs) -> rhs
+
+ {-
+ match 5 =
+  x = x + 2 --> (AltBinder (Just x), x + 2)
+
+ let x = 5 in x + 2 --> I.Let [(x, 5)] x + 2
+ -} 
+  -- if literal or catchall, just return expr
+  
+elimMatchArms e = e
 
 -- | Simplify a top-level definition
 simplTop :: (I.VarId, I.Expr I.Type) -> SimplFn (I.VarId, I.Expr I.Type)

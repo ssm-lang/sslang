@@ -1,0 +1,12 @@
+// testing match arm elimination on literal scruts and arms with vars
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  let n = 5
+  match n
+    x = 
+      putd cout x

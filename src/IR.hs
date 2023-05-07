@@ -143,7 +143,6 @@ transform opt p = do
   p <- optimizePar p
   p <- liftProgramLambdas p
   when (mode opt == DumpIRLifted) $ dump p
-  -- p <- simplifyProgram p -- TODO: inline BEFORE lambda lifting!!
   p <- insertRefCounting p
   when (mode opt == DumpIRFinal) $ dump p
   return p
