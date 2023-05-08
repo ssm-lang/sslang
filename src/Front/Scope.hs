@@ -353,6 +353,7 @@ scopeExpr (A.Seq e e') = mapM_ scopeExpr [e, e']
 scopeExpr (A.Lit _) = return ()
 scopeExpr (A.ListExpr l) = mapM_ scopeExpr l
 scopeExpr A.Break = return ()
+scopeExpr (A.ImportId _) = return ()
 scopeExpr (A.Tuple es) = mapM_ scopeExpr es
 scopeExpr (A.OpRegion e o) =
   throwError $

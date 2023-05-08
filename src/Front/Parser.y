@@ -41,6 +41,9 @@ import Data.Bifunctor (first)
   'fun'     { Token (_, TFun) }
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
+  'import'  { Token (_, TImport) }
+  'with'    { Token (_, TWith) }
+  'as'      { Token (_, TAs)  }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
   '->'      { Token (_, TRarrow) }
@@ -50,6 +53,7 @@ import Data.Bifunctor (first)
   ':'       { Token (_, TColon) }
   ';'       { Token (_, TSemicolon) }
   ','       { Token (_, TComma) }
+  '.'       { Token (_, TDot) }
   '_'       { Token (_, TUnderscore) }
   '@'       { Token (_, TAt) }
   '&'       { Token (_, TAmpersand) }
@@ -92,6 +96,25 @@ topDef                                --> TopDef
   | defType                             { TopType $1 }
   | defCBlock                           { TopCDefs $1 }
   | defExtern                           { TopExtern $1 }
+  | defImport                           { TopImport $1 }
+
+-- | Import Definition
+defImport
+: 'import' '{' importPath '}'               { ImportSym $3 }
+  | 'import' '{' importPath 'as' id '}'      { ImportAs $3 $5 }
+  | 'import' '{' importPath 'with' '{' elementItems '}' '}' { ImportWith $3 $6}
+
+importPath
+:   id                             { [$1] }
+  | id '.' importPath                      { $1 : $3 }
+
+elementItem
+:   id                             { ElementSymbol $1 }
+  | id 'as' id                     { ElementAs $1 $3 }
+
+elementItems
+: elementItem              { [$1] }
+  | elementItem ',' elementItems                   { $1 : $3 }
 
 -- | Algebraic data type definition.
 defType                               --> TypeDef
@@ -316,6 +339,12 @@ exprAtom
   | '(' ')'                             { Lit LitEvent }
   | '[' exprList ']'                    { ListExpr $2 }
   | '(' expr ',' exprTups ')'           { Tuple ($2 : $4)  }
+  | id '.' fullids                      { ImportId ($1 : $3) }
+
+-- fullIds
+fullids
+  : id                                    { [$1] }
+  | id '.' fullids                        { $1 : $3 }
 
 -- | List Expression.
 exprList

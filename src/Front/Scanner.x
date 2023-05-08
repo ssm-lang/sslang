@@ -43,7 +43,7 @@ $blank   = [\ \t]
 @newline = [\n] | [\r][\n] | [\r]
 @identifier = [a-zA-Z_] [a-zA-Z0-9_']*
 
-$symbolBase         = [\!\#\%\&\+\-\.\<\=\>\?\@\\\^\|\~]
+$symbolBase         = [\!\#\%\&\+\-\<\=\>\?\@\\\^\|\~]
 $symbolLeading      = [$symbolBase\*]
 $symbolAfterSlash   = [$symbolBase\_\:\"\']
 $symbolAny          = [$symbolBase\_\:\"\'\*]
@@ -147,6 +147,7 @@ tokens :-
     let                 { layout    TLet    TDBar }
     match               { layoutNL  TMatch  TBar }
     loop                { layout    TLoop   TSemicolon }
+    import              { layout  TImport TSemicolon }
     \=                  { layout    TEq     TSemicolon }
     \<\-                { layout    TLarrow TSemicolon }
     \=\>                { layout    TDRarrow TSemicolon}
@@ -154,6 +155,7 @@ tokens :-
     wait                { layout    TWait   TDBar }
     fun                 { layoutNL  TFun    TSemicolon }
     type                { layoutNL  TType   TBar }
+    with                { layout TWith TSemicolon }
 
     -- Keywords that just do as they be.
     extern              { keyword TExtern }
@@ -165,9 +167,12 @@ tokens :-
     \;                  { keyword TSemicolon }
     \:                  { keyword TColon }
     \,                  { keyword TComma }
+    \.                  { keyword TDot }
     \_                  { keyword TUnderscore }
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
+    as                  { keyword TAs }
+   
 
     -- Reserved keywords.
     do                  { reserved TDo }

@@ -21,7 +21,20 @@ data TopDef
   | TopType TypeDef       -- ^ Define an algebraic data type
   | TopCDefs String       -- ^ Inlined block of C definitions
   | TopExtern ExternDecl  -- ^ Declare external symbol for FFI
+  | TopImport Import   -- ^ Top Level import statement
   deriving (Eq, Show, Typeable, Data)
+
+data Import =
+     ImportSym [Identifier]
+   | ImportAs [Identifier] Identifier
+   | ImportWith [Identifier] [ImportElement]
+  deriving (Eq, Show, Typeable, Data)
+
+
+data ImportElement
+  = ElementAs Identifier Identifier
+  | ElementSymbol Identifier
+ deriving (Eq, Show, Typeable, Data)
 
 -- | Associate a type with a symbol
 data ExternDecl = ExternDecl Identifier Typ
@@ -99,6 +112,7 @@ data Expr
   | CCall Identifier [Expr]
   | Tuple [Expr]
   | ListExpr [Expr]
+  | ImportId [Identifier]
   deriving (Eq, Show, Typeable, Data)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -196,6 +210,17 @@ instance Pretty TopDef where
   pretty (TopType   t ) = pretty t
   pretty (TopCDefs  ds) = pretty "$$" <> pretty ds <> pretty "$$"
   pretty (TopExtern x ) = pretty x
+  pretty (TopImport i) = pretty i
+
+instance Pretty Import where
+	pretty (ImportSym is) = hsep (map pretty is)
+	pretty (ImportAs is i) = hsep (map pretty is) <+> pretty "as" <+> pretty i
+	pretty (ImportWith is iel) = hsep (map pretty is) <+> pretty "with" <+> pretty iel
+
+
+instance Pretty ImportElement where
+    pretty (ElementAs s a) = pretty s <+> pretty "as" <+> pretty a
+    pretty (ElementSymbol s) = pretty s
 
 instance Pretty ExternDecl where
   pretty (ExternDecl i t) = pretty "extern" <+> pretty i <+> colon <+> pretty t
@@ -293,7 +318,7 @@ instance Pretty Expr where
     (hsep $ punctuate bar $ map prettyPatExprTup as)
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
-  pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  -- pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
   pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where

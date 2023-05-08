@@ -1,0 +1,14 @@
+import Foo
+import Example.Module as Baz
+import Another.Example with { 
+                    x,
+                    y as z
+}
+
+main cin cout =
+  let one = Foo.Bar
+  let two = Baz.a
+  let three = Another.Example.z
+
+  after 1, cout <- 10
+  wait cout

@@ -1,0 +1,16 @@
+import Foo
+
+import Foo.Bar
+
+import Foo.Bar.Baz as Baz
+
+import Foo.Bar.Baz with doo, bar
+
+import Foo.Bar.Baz with { 
+                    foo,
+                    bar as baz
+}
+
+main cin cout =
+  after 1, cout <- 10
+  wait cout
