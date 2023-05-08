@@ -256,6 +256,14 @@ isNum :: Type -> Bool
 isNum t = isInt t || isUInt t
 
 
+{- | Construct a builtin tuple type out of a list of at least 2 types
+
+Uses tempTupleId instead of tupleId
+-}
+tempTuple :: [Type] -> Type
+tempTuple ts = TCon (tempTupleId $ length ts) ts
+
+
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
 tuple ts
@@ -276,6 +284,10 @@ tupleId i
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
 
 
+{- | Construct the type constructor of a builtin tuple of given arity (>= 2).
+
+Instead of using parentheses, use temporary data constructor name
+-}
 tempTupleId :: (Integral i, Identifiable v) => i -> v
 tempTupleId i
   | i >= 2 = fromString $ "Pair" ++ show (toInteger i)

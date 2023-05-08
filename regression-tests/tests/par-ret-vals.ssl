@@ -1,0 +1,21 @@
+// check that par return values work
+// only currently support 2-tuple return values
+add a b = a + b
+
+type Pair2 a b
+    Pair2 a b
+
+printCharTuple2 putc1 p1 =
+  match p1
+   Pair2 x1 y1 = putc1 x1
+                 putc1 32
+                 putc1 y1
+
+main cin cout =
+    let putc c = after 1, cout <- c
+                 wait cout
+    let putnl _ = putc 10
+    let z = par add 60 7 // intialize a par expression
+                add 60 8
+    printCharTuple2 putc z
+    putnl 4
