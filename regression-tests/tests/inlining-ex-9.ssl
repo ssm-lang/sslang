@@ -1,6 +1,7 @@
 // match arm elimination test
 type Color
   RGB Int Int
+  Red
   Black
 
 putd cout_ c =
@@ -9,7 +10,7 @@ putd cout_ c =
 
 main cin cout = 
   let a = 70
-  let b = RGB a 67
+  let b = RGB a 67 // (App (App RGB a) 67) -- unfold app --> RGB, [a, 67]
   match b
     RGB 65 _ = 
       putd cout 65

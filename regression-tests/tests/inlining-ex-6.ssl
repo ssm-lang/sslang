@@ -15,6 +15,7 @@ main (cin : _t58) (cout : (& Int32)) -> () =
     _ = 5
   ()
 */
+
 fib n = n
 
 makeColor c = RGB c c c 
@@ -32,12 +33,15 @@ main cin cout =
     let x = RGB (fib 45) 5 5
     let v = 5
 
+  
     let z = match x
               RGB r g b =  r 
               _ = 5
+    
     let q = match a 
               RGB r1 g1 b1 = r1 + r1
               _ = 4
+              
     let w = match v
               5 = 65
               _ = 5

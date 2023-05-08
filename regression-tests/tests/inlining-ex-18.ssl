@@ -1,0 +1,26 @@
+// testing that match arm is eliminated
+
+
+type List
+  Cons Int List
+  Nil
+
+type Color
+  RGB Int Int
+  Red
+  Black
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout =
+  let x = 3
+  match RGB 4 x
+    RGB 4 5 = putd cout (4 + x)
+    RGB x g = putd cout 7
+    _ = putd cout 9
+
+  // should reduce to putd cout 7
+

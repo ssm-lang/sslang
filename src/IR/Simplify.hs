@@ -22,8 +22,9 @@ import Data.Bifunctor (second, bimap)
 import Data.Generics (Typeable, everywhereM, mkM, everywhere, mkT)
 import qualified Data.Map as M
 import qualified Data.Maybe as Ma
-import IR.IR (unfoldLambda, extract)
+import IR.IR (unfoldLambda, extract, unfoldApp, foldLet)
 import qualified IR.IR as I
+import Data.Maybe(mapMaybe, catMaybes)
 
 
 type InVar = I.VarId
@@ -140,7 +141,7 @@ updateOccVar binder = do
           if insidel
             then M.insert binder Never m
             else M.insert binder OnceSafe m
-        Just _ -> M.insert binder ConstructorFuncArg m 
+        Just _ -> M.insert binder ConstructorFuncArg m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -245,16 +246,105 @@ match 5
   _ = 
 -}
 
+-- check if literal scrut matches given arm
 checkForLitMatch :: I.Expr I.Type -> (I.Alt, I.Expr I.Type) -> Bool
 checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
   case arm of
     (I.AltLit (I.LitIntegral d)) -> d == v
-    (I.AltBinder (Just _)) -> True
-    _ -> True
+    (I.AltBinder _) -> True
+    _ -> False
 checkForLitMatch _ _ = False -- we should never hit this case
 
+-- (App (App RGB 4) 5)
+-- (App (App RGB 4) 5) :: Color
+-- (App RGB 4) :: int -> Color
+-- (RGB) :: int -> int -> Color
+-- (RGB, int->int->Color) [(4 int, int-> Color), (5 int, Color)]
+-- check if dcon scrut matches given arm
+checkForDConMatch :: (I.Expr I.Type, [(I.Expr I.Type, I.Type)]) -> I.Alt -> Bool
+checkForDConMatch (I.Data dcon _, args) arm =
+  case arm of
+    (I.AltData dconPat argPats) -> dcon == dconPat && compareArm argPats (fst <$> args)
+    (I.AltBinder _) -> True
+    _ -> False
+  where compareArm [] [] = True
+        compareArm (pat@(I.AltData _ _):t) (app@I.App {}:t2) =
+          checkForDConMatch (unfoldApp app) pat && compareArm t t2
+        compareArm ((I.AltLit v ):t) (I.Lit v2 _:t2) = v == v2 && compareArm t t2
+        compareArm ((I.AltBinder _):t) (_: t2)= compareArm t t2
+        compareArm _ _ = False
+checkForDConMatch _ _ = False
+
+{-
+match RGB 4 x
+  RGB 4 5 = 4
+  RGB 4 g = 7
+  _ = 9
+
+reduces to 7
+
+match Cons 4 Nil 
+  Cons 4 Nil = 4 
+  Cons 4 g = 7
+  _ = 9
+
+reduces to 7
+
+match Cons 4 Nil 
+  Cons 4 (Con 2 Nil) = 4 
+  Cons 4 g = 7
+  _ = 9
+
+reduces to 7
+
+-}
+
 elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
-elimMatchArms e@(I.Match scrut@(I.App e1 e2 _) arms _) = e
+elimMatchArms e@(I.Match scrut@(I.App e1 e2 _) arms _) =
+  let unfoldedScrut = unfoldApp scrut -- the second argument of y is args
+      filtered = filter (checkForDConMatch unfoldedScrut . fst) arms
+  in
+    if null filtered then e -- we hit this case when scrut is a function application
+    else
+  case head filtered of
+    -- Let [(Binder, Expr t)] (Expr t) t
+    -- traverse list of constructor stuff and get out binders that we need to turn into lets
+    -- so basically, we'll write a helper function that takes an alt and if it is a binder, return True
+    -- throw that into filter
+    -- list of binders 
+    -- zip up pats and args such that
+    -- (pat, arg) if pat is a binder, we Just (pat, arg) == Just (binder, expr)
+    -- i not, return Nothing
+    -- catMaybes :: [Maybe a] -> [a]
+    -- mapMaybe :: (a -> Maybe b) -> [a] -> [b]
+    (I.AltData _ patargs, rhs) ->
+      let result =
+            if null letBinders
+              then rhs
+              else foldLet letBinders rhs 
+          letBinders = mapMaybe isMaybeLetBinder zippedUp
+          dconargs = fst <$> snd unfoldedScrut
+          zippedUp = zip patargs dconargs
+          isMaybeLetBinder :: (I.Alt, I.Expr I.Type) -> Maybe (I.Binder, I.Expr I.Type)
+          isMaybeLetBinder (I.AltBinder b@(Just _), rhs') = Just (b,rhs')
+          isMaybeLetBinder _ = Nothing
+      in result
+
+      -- need to convert bindings in arm to let
+      -- z = mapMaybe isMaybeLetBinder $ zip (snd x) (snd y)
+      -- a@(I.AltData dconPat argPats) = head $ filter (checkForDConMatch y . fst) arms
+      {-
+        match RGB 1 2
+           RGB 1 x = x
+           _ = 5
+        We have the arm: RGB 1 x = x
+        zip up args and pat args
+        patArgs = [I.AltLit 1, I.AltBinder x]
+        [(I.AltLit 1,1), (I.AltBinder x, 2)]
+      -}
+      -- map isMaybeLetBinder (zip up stuff)
+
+    (_, rhs) -> rhs
 elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
   let x = head $ filter (checkForLitMatch scrut) arms in
   case x of
@@ -262,15 +352,37 @@ elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
     (I.AltBinder b@(Just _), rhs) -> I.Let [(b,scrut)] rhs (extract rhs)
     -- if literal or catchall, just return expr
     (_, rhs) -> rhs
+--unfoldApp :: Expr t -> (Expr t, [(Expr t, t)])
+ {-
+ a = 65 //ex 1 (a not getting inlined)
+ a = some mutable thing //ex 2
+ match RGB a 67 =
+  RGB 65 _ = rhs1
+  _ = rhs2
+
+rhs2 // ex1
+rhs2 // ex2
+
+
+ match RGB 65 67 =
+  RGB 65 x = using RGB x whatever
+  RGB f _ = rhs2
+  _ = rhs3
+
+  let x = 67 in using RGB x whatever
+
+  if we match on arm and it has variables, turn into let
+  if wildcard or literals, just rhs
+ -}
 
  {-
  match 5 =
   x = x + 2 --> (AltBinder (Just x), x + 2)
 
  let x = 5 in x + 2 --> I.Let [(x, 5)] x + 2
- -} 
+ -}
   -- if literal or catchall, just return expr
-  
+
 elimMatchArms e = e
 
 -- | Simplify a top-level definition

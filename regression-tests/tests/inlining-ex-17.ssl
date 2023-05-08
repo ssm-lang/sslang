@@ -1,0 +1,24 @@
+// testing that match arm is eliminated
+
+type List
+  Cons Int List
+  Nil
+
+type Color
+  RGB Int Int
+  Red
+  Black
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+   let test = Cons 4 (Cons 3 (Cons 9 Nil))
+   match test
+       Cons 4 (Cons 3 (Cons x y)) = putd cout 4 
+       Cons _ g = putd cout 7
+       _ = putd cout 6
+
+// should reduce to putd cout 4 

@@ -30,6 +30,7 @@ module IR.IR
   , inject
   , foldApp
   , unfoldApp
+  , foldLet
   , isValue
   , getAltDefault
   ) where
@@ -309,6 +310,13 @@ unfoldLambda e = ([], e)
 foldLambda :: [(Binder, Type)] -> Expr Type -> Expr Type
 foldLambda args body = foldr chain body args
   where chain (v, t) b = Lambda v b $ t `Arrow` extract b
+
+-- | Create a let chain given a list of argument-type pairs and a body.
+foldLet :: [(Binder, Expr Type)] -> Expr Type -> Expr Type
+foldLet (h:t) body = x 
+  where x = Let [h] (foldLet t body) (extract body)
+foldLet [] body = body
+
 
 -- | Whether an expression is a value.
 isValue :: Expr t -> Bool

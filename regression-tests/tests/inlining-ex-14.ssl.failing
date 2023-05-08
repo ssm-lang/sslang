@@ -1,0 +1,22 @@
+// testing that match arm is eliminated??
+// we assume partial application of data constructors cannot be scrutinees to matches!
+
+type Color
+  RGB Int Int
+  Red
+  Black
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  let n = RGB 4
+  match n
+    RGB 6 = 
+      putd cout 3
+    RGB _ = 
+      putd cout 5
+    _ = 
+      putd cout 6

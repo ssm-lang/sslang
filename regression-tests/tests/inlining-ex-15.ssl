@@ -1,0 +1,66 @@
+// testing that match arm is eliminated
+// checking nested patterns in arms
+
+type List
+  Cons Int List
+  Nil
+
+type Color
+  RGB Int Int
+  Red
+  Black
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+main cin cout = 
+  match (Cons 4 Nil)
+   Cons 4 Nil = putd cout 4 
+   Cons _ g = putd cout 7
+   _ = putd cout 6
+
+// should reduce to putd cout 4
+
+/*
+type List 
+  Cons Int32 List
+  Nil 
+
+
+type Color 
+  RGB Int32 Int32
+  Red 
+  Black 
+
+
+putd (cout_ : (& Int32)) (c : Int32) -> () = 
+  after 1, cout_ <- c + 48
+  wait cout_
+
+main (cin : _t37) (cout : (& Int32)) -> () = 
+  let __pat_anon0 = Cons 4 (Nil)
+  match __pat_anon0
+    Cons __pat_anon1 __pat_anon2 = match __pat_anon1
+                                     4 = match __pat_anon2
+                                           Cons __pat_anon3 __pat_anon4 = let g = __pat_anon2
+                                                                          putd cout 7
+                                           Nil  = putd cout 4
+                                     _ = let g = __pat_anon2
+                                         putd cout 7
+    Nil  = putd cout 6
+*/
+
+/*
+main (cin : _t37) (cout : (& Int32)) -> () = 
+  let __pat_anon1 = 4
+  __pat_anon2 = Nil
+  match __pat_anon1
+    4 = match __pat_anon2
+          Cons __pat_anon3 __pat_anon4 = let g = __pat_anon2
+                                         putd cout 7
+          Nil  = putd cout 4
+    _ = let g = __pat_anon2
+        putd cout 7
+*/
