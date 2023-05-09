@@ -12,11 +12,11 @@ module IR.Simplify (
 import qualified Common.Compiler as Compiler
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy (
-  MonadState,
+  MonadState (put),
   StateT (..),
   evalStateT,
   gets,
-  modify,
+  modify, State, execState,
  )
 import Data.Bifunctor (second, bimap)
 import Data.Generics (Typeable, everywhereM, mkM, everywhere, mkT)
@@ -298,6 +298,50 @@ match Cons 4 Nil
 reduces to 7
 
 -}
+type IsPure = Bool
+type CheckPure = State IsPure
+
+checkPure :: I.Expr I.Type -> IsPure
+checkPure e = runComp $ do
+  everywhereM (mkM isPure) e
+ where runComp :: CheckPure a -> IsPure
+       runComp a = execState a True
+
+-- isPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
+-- isPure e = do setNotPure
+--               return e
+
+-- resetToPure :: CheckPure ()
+-- resetToPure = do put True
+
+setNotPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
+setNotPure e = do {put False; return e}
+
+
+isPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
+-- let x = (\ x -> x + 1) 3  // pure
+-- let x = f 3               // not necessarily pure
+-- let x = RGB 5 4 3         // pure
+isPure e@I.App {} = 
+  case unfoldApp e of
+    (I.Data _ _ , _) -> pure e
+    (I.Lambda _ _ _, _) -> pure e
+    _ -> setNotPure e -- functions
+isPure e@(I.Prim I.New _ _)= setNotPure e
+isPure e@(I.Prim I.Dup _ _)= setNotPure e
+isPure e@(I.Prim I.Drop _ _)= setNotPure e
+isPure e@(I.Prim I.Deref _ _)= setNotPure e
+isPure e@(I.Prim I.Assign _ _)= setNotPure e
+isPure e@(I.Prim I.After _ _)= setNotPure e
+isPure e@(I.Prim I.Par _ _)= setNotPure e
+isPure e@(I.Prim I.Wait _ _)= setNotPure e
+isPure e@(I.Prim I.Loop _ _)= setNotPure e
+isPure e@(I.Prim I.Break _ _)= setNotPure e
+isPure e@(I.Prim I.Now _ _)= setNotPure e
+isPure e@(I.Prim (I.CQuote _) _ _)= setNotPure e
+isPure e@(I.Prim (I.CCall _) _ _)= setNotPure e
+isPure e@(I.Prim (I.FfiCall _) _ _)= setNotPure e
+isPure e = pure e
 
 elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
 elimMatchArms e@(I.Match scrut@(I.App e1 e2 _) arms _) =
@@ -472,11 +516,17 @@ simplExpr sub ins (I.Let binders body t) cont = do
           pure (Just (binder, e'), sub) -- never inline something marked ConstructorFuncArg, but still possible to simplify RHS
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
+          -- if (everywhere (mkT isPure) rhs )
+          -- then do
           -- preinline test PASSES
           -- bind x to E singleton :: k -> a -> Map k a
-          insertSubst v $ SuspEx rhs M.empty
-          let sub' = M.singleton v (SuspEx rhs sub)
-          pure (Nothing, sub')
+          if checkPure rhs then do
+            insertSubst v $ SuspEx rhs M.empty
+            let sub' = M.singleton v (SuspEx rhs sub)
+            pure (Nothing, sub')
+          else do
+            e' <- simplExpr sub ins rhs cont
+            pure (Just (binder, e'), sub) 
         _ -> do
           -- preinline test FAILS, so do post inline unconditionally
           e' <- simplExpr sub ins rhs cont -- process the RHS

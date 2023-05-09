@@ -1,0 +1,20 @@
+// checking that lambdas with pure args DO get inlined
+// checking that lambdas without pure args do NOT get inlined
+
+
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+
+// (fun a b { a + b }) 1 2
+
+main cin cout = 
+    let x = new 0 
+    let z = (fun a b { a + deref b }) 1 x
+    let q = (fun a b { a + b }) 1 2
+    putd cout z
+    putd cout q
+/*
+  let putc = fun c after 1, cout <- c
+             wait cout
+  putc 49*/

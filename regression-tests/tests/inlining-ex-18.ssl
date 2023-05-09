@@ -23,4 +23,3 @@ main cin cout =
     _ = putd cout 9
 
   // should reduce to putd cout 7
-
