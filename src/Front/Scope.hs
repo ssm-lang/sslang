@@ -363,8 +363,7 @@ scopeExpr (A.OpRegion e o) =
         <> fromString (show o)
 scopeExpr (A.CQuote _) = return ()
 scopeExpr (A.CCall _ es) = mapM_ scopeExpr es
-scopeExpr A.NoExpr =
-  throwError $ UnexpectedError "NoExpr should not be reachable"
+scopeExpr A.NoExpr = return ()
 
 
 {- | Check 'A.Pat' and retrieve variable identifiers defined therein.
