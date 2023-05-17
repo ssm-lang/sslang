@@ -60,7 +60,7 @@ import Common.Compiler (
   warn,
  )
 import Common.Default (Default (..))
-import Common.Identifiers (Identifiable (..), Identifier (..), isCons, isVar)
+import Common.Identifiers (Identifiable (..), Identifier (..), isCons, isReserved, isVar)
 
 import qualified Front.Ast as A
 import Front.Identifiers (
@@ -168,28 +168,32 @@ ensureUnique ids = do
     i : _ -> throwError $ ScopeError $ "Defined more than once: " <> showId i
 
 
+-- | Ensure that an identifier will not clash with compiler-generated ones
+ensureNotReserved :: Identifier -> ScopeFn ()
+ensureNotReserved i = do
+  when (isReserved i) $ throwError nameErr
+ where
+  nameErr = NameError $ showId i <> " may clash with internal sslang-generated identifiers"
+
+
 -- | Check that a constructor 'Identifier' has the right naming convention.
 ensureCons :: Identifier -> ScopeFn ()
 ensureCons i = do
   ensureNonempty i
+  ensureNotReserved i
   unless (isCons i) $ throwError nameErr
  where
-  nameErr =
-    NameError $
-      showId i
-        <> " should begin with upper case or begin and end with ':'"
+  nameErr = NameError $ showId i <> " should begin with upper case or begin and end with ':'"
 
 
 -- | Check that a variable 'Identifier' has the right naming convention.
 ensureVar :: Identifier -> ScopeFn ()
 ensureVar i = do
   ensureNonempty i
+  ensureNotReserved i
   unless (isVar i) $ throwError nameErr
  where
-  nameErr =
-    NameError $
-      showId i
-        <> " should begin with upper case or begin and end with ':'"
+  nameErr = NameError $ showId i <> " should begin with upper case or begin and end with ':'"
 
 
 {- | Validate a declaration of a data 'Identifier'.

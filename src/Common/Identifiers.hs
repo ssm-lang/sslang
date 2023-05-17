@@ -57,11 +57,11 @@ module Common.Identifiers (
   isVar,
   mangle,
   mangleVars,
+  isReserved,
+  reserved,
   isGenerated,
   genId,
   ungenId,
-  tuple,
-  tempTuple,
   cons,
   nil,
 ) where
@@ -87,6 +87,7 @@ import Data.String (IsString (..))
 
 import Language.C (Id (..))
 import Language.C.Quote (ToIdent (..))
+import Data.List (isPrefixOf)
 
 
 -- | A type that may be used as a Sslang identifier.
@@ -264,6 +265,16 @@ isVar :: Identifiable a => a -> Bool
 isVar = not . isCons
 
 
+-- | Create a reserved identifier (that can be code-generated as long as a can)
+reserved :: Identifiable a => a -> a
+reserved a = fromString $ "__sslang_builtin__" <> ident a
+
+
+-- | Whether an identifier is reserved.
+isReserved :: Identifiable a => a -> Bool
+isReserved i = "__sslang_builtin__" `isPrefixOf` s
+  where s = ident i
+
 -- | Whether an identifier is an compiler-generated variable name.
 isGenerated :: Identifiable a => a -> Bool
 isGenerated i
@@ -319,16 +330,6 @@ mangle p d = everywhereM (mkM $ mang p) d `evalState` (0, M.empty)
 -- | Mangle all type and data variable identifiers.
 mangleVars :: (Data a) => a -> a
 mangleVars = mangle (Proxy :: Proxy VarId) . mangle (Proxy :: Proxy TVarId)
-
-
--- | the tuple identifier
-tuple :: Identifier
-tuple = Identifier "(,)"
-
-
--- | we'll use this temp tuple name for now due to the naming issue
-tempTuple :: Identifier
-tempTuple = Identifier "Pair"
 
 
 -- | Cons identifier for Lists
