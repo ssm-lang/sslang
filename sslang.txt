@@ -204,6 +204,13 @@ mangle :: (Identifiable i, Data i, Data a) => Proxy i -> a -> a
 -- | Mangle all type and data variable identifiers.
 mangleVars :: Data a => a -> a
 
+-- | Whether an identifier is reserved.
+isReserved :: Identifiable a => a -> Bool
+
+-- | Create a reserved identifier (that can be code-generated as long as a
+--   can)
+reserved :: Identifiable a => a -> a
+
 -- | Whether an identifier is an compiler-generated variable name.
 isGenerated :: Identifiable a => a -> Bool
 
@@ -212,12 +219,6 @@ genId :: Identifiable a => a -> a
 
 -- | Filter out generated identifiers.
 ungenId :: Identifiable a => a -> Maybe a
-
--- | the tuple identifier
-tuple :: Identifier
-
--- | we'll use this temp tuple name for now due to the naming issue
-tempTuple :: Identifier
 
 -- | Cons identifier for Lists
 cons :: Identifier
@@ -1507,43 +1508,9 @@ isNum :: Type -> Bool
 -- | Construct a builtin tuple type out of a list of at least 2 types.
 tuple :: [Type] -> Type
 
--- | Test whether a <a>Type</a> is a tuple of some arity.
-isTuple :: Type -> Bool
-
 -- | Construct the type constructor of a builtin tuple of given arity
 --   (&gt;= 2).
-tupleId :: (Integral i, Identifiable v) => i -> v
-tempTupleId :: (Integral i, Identifiable v) => i -> v
-
--- | More convenient representation of tuple types, for pattern-matching.
-data TupleView
-
--- | 2-tuples
-Tup2 :: (Type, Type) -> TupleView
-
--- | 3-tuples
-Tup3 :: (Type, Type, Type) -> TupleView
-
--- | 4-tuples
-Tup4 :: (Type, Type, Type, Type) -> TupleView
-
--- | n-ary tuples
-TupN :: [Type] -> TupleView
-
--- | not a tuple
-NotATuple :: TupleView
-
--- | Convert a <a>Type</a> to a <a>TupleView</a>; convenient for
---   ViewPatterns.
---   
---   For example, to match on just 2-tuples;
---   
---   <pre>
---   foo :: Type -&gt; String
---   foo (tupleOf -&gt; Tup2 (a, b)) = "2-tuple of " ++ show a ++ " and " ++ show b
---   foo t                        = "Some other kind of type: " ++ show t
---   </pre>
-tupleOf :: Type -> TupleView
+tupleId :: Identifiable v => Int -> v
 
 -- | Kinds are just the arity of type constructors.
 type Kind = Int
