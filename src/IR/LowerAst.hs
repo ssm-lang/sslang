@@ -30,9 +30,10 @@ import qualified IR.Types as I
 
 import Control.Monad (unless)
 import Data.Bifunctor (Bifunctor (..))
+import Data.Generics (everything, mkQ)
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import IR.Types.Type (tempTupleId)
+import IR.Types.Type (tupleId)
 
 
 -- | Unannotated terms appear as an empty stack.
@@ -52,9 +53,9 @@ annType = ann . I.AnnType
 
 -- | Lower an AST 'Program' into IR.
 lowerProgram :: A.Program -> Compiler.Pass (I.Program I.Annotations)
-lowerProgram (A.Program ds) = do
+lowerProgram p@(A.Program ds) = do
   let (tds, cds, xds, dds) = A.getTops ds
-  tds' <- mapM lowerTypeDef tds
+  tds' <- (++) <$> lowerTupleDefs p <*> mapM lowerTypeDef tds
   xds' <- mapM lowerExternDecl xds
   dds' <- mapM lowerDef dds
   return $
@@ -66,21 +67,58 @@ lowerProgram (A.Program ds) = do
       , I.cDefs = concat cds
       , I.symTable = I.uninitializedSymTable
       }
+
+
+lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef)
+lowerTypeDef td = do
+  tds <- mapM lowerTypeVariant $ A.typeVariants td
+  return
+    ( fromId $ A.typeName td
+    , I.TypeDef{I.targs = map TVarId $ A.typeParams td, I.variants = tds}
+    )
  where
-  lowerTypeDef :: A.TypeDef -> Compiler.Pass (I.TConId, I.TypeDef)
-  lowerTypeDef td = do
-    tds <- mapM lowerTypeVariant $ A.typeVariants td
-    return
-      ( fromId $ A.typeName td
-      , I.TypeDef{I.targs = map TVarId $ A.typeParams td, I.variants = tds}
-      )
-   where
-    lowerTypeVariant
-      :: A.TypeVariant -> Compiler.Pass (I.DConId, I.TypeVariant)
-    lowerTypeVariant (A.VariantUnnamed vn ts) =
-      (fromId vn,) . I.VariantUnnamed <$> mapM lowerType ts
-  lowerExternDecl :: A.ExternDecl -> Compiler.Pass (I.VarId, I.Type)
-  lowerExternDecl (A.ExternDecl i t) = (fromId i,) <$> lowerType t
+  lowerTypeVariant ::
+    A.TypeVariant -> Compiler.Pass (I.DConId, I.TypeVariant)
+  lowerTypeVariant (A.VariantUnnamed vn ts) =
+    (fromId vn,) . I.VariantUnnamed <$> mapM lowerType ts
+
+
+lowerTupleDefs :: A.Program -> Compiler.Pass [(I.TConId, I.TypeDef)]
+lowerTupleDefs dds = return $ map lowerTupleDef $ S.toList tupleSizes
+ where
+  tupleSizes :: S.Set Int
+  tupleSizes =
+    -- This is so hilariously inefficient but I tell myself it's ok
+    everything S.union (mkQ S.empty dconTupleLen) dds
+      `S.union` everything S.union (mkQ S.empty patTupleLen) dds
+      `S.union` everything S.union (mkQ S.empty typeTupleLen) dds
+
+  dconTupleLen :: A.Expr -> S.Set Int
+  dconTupleLen (A.Tuple es) = S.singleton $ length es
+  dconTupleLen (A.Par es) = S.singleton $ length es
+  dconTupleLen _ = S.empty
+
+  patTupleLen :: A.Pat -> S.Set Int
+  patTupleLen (A.PatTup es) = S.singleton $ length es
+  patTupleLen _ = S.empty
+
+  typeTupleLen :: A.Typ -> S.Set Int
+  typeTupleLen (A.TTuple tys) = S.singleton $ length tys
+  typeTupleLen _ = S.empty
+
+  lowerTupleDef :: Int -> (I.TConId, I.TypeDef)
+  lowerTupleDef i =
+    let targs = map (TVarId . fromString . (("tup" ++ show i ++ "arg") ++) . show) [1 .. i]
+     in ( tupleId i
+        , I.TypeDef
+            { I.targs = targs
+            , I.variants = [(tupleId i, I.VariantUnnamed $ map I.TVar targs)]
+            }
+        )
+
+
+lowerExternDecl :: A.ExternDecl -> Compiler.Pass (I.VarId, I.Type)
+lowerExternDecl (A.ExternDecl i t) = (fromId i,) <$> lowerType t
 
 
 -- | Lower an 'A.Definition' into a name and bound expression.
@@ -207,7 +245,7 @@ lowerExpr (A.Match s ps) =
  where
   lowerArm (a, e) = (,) <$> lowerPatAlt a <*> lowerExpr e
 lowerExpr (A.Tuple es) =
-  apply_recurse (I.Data (I.DConId (tempTupleId $ length es)) untyped) <$> mapM lowerExpr es
+  apply_recurse (I.Data (I.DConId (tupleId $ length es)) untyped) <$> mapM lowerExpr es
  where
   apply_recurse e [] = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
@@ -223,7 +261,7 @@ lowerPatAlt (A.PatId i)
   | otherwise = return $ I.AltData (I.DConId i) [] untyped
 lowerPatAlt (A.PatLit l) = I.AltLit <$> lowerLit l <*> pure untyped
 lowerPatAlt (A.PatTup ps) =
-  I.AltData (I.tempTupleId $ length ps) <$> mapM lowerPatAlt ps <*> pure untyped
+  I.AltData (I.tupleId $ length ps) <$> mapM lowerPatAlt ps <*> pure untyped
 lowerPatAlt p@(A.PatApp _) = case A.collectPApp p of
   (A.PatId i, ps) | isCons i -> I.AltData (fromId i) <$> mapM lowerPatAlt ps <*> pure untyped
   _ -> Compiler.unexpected "lowerPatAlt: app head should be a data constructor"

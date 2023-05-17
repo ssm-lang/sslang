@@ -19,6 +19,7 @@ import Common.Identifiers (
   TVarId (..),
   fromId,
   fromString,
+  reserved,
  )
 import Common.Pretty (
   Dumpy (..),
@@ -263,53 +264,11 @@ tuple ts
   | otherwise = error $ "Cannot create tuple of arity: " ++ show (length ts)
 
 
--- | Test whether a 'Type' is a tuple of some arity.
-isTuple :: Type -> Bool
-isTuple (TCon n ts) | length ts >= 2 = n == tupleId (length ts)
-isTuple _ = False
-
-
 -- | Construct the type constructor of a builtin tuple of given arity (>= 2).
-tupleId :: (Integral i, Identifiable v) => i -> v
+tupleId :: Identifiable v => Int -> v
 tupleId i
-  | i >= 2 = fromString $ "(" ++ replicate (fromIntegral i - 1) ',' ++ ")"
-  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
-
-
-tempTupleId :: (Integral i, Identifiable v) => i -> v
-tempTupleId i
-  | i >= 2 = fromString $ "Pair" ++ show (toInteger i)
-  | otherwise = error $ "Cannot create tuple of arity: " ++ show (toInteger i)
-
-
--- | More convenient representation of tuple types, for pattern-matching.
-data TupleView
-  = -- | 2-tuples
-    Tup2 (Type, Type)
-  | -- | 3-tuples
-    Tup3 (Type, Type, Type)
-  | -- | 4-tuples
-    Tup4 (Type, Type, Type, Type)
-  | -- | n-ary tuples
-    TupN [Type]
-  | -- | not a tuple
-    NotATuple
-
-
-{- | Convert a 'Type' to a 'TupleView'; convenient for ViewPatterns.
-
-For example, to match on just 2-tuples;
-
-> foo :: Type -> String
-> foo (tupleOf -> Tup2 (a, b)) = "2-tuple of " ++ show a ++ " and " ++ show b
-> foo t                        = "Some other kind of type: " ++ show t
--}
-tupleOf :: Type -> TupleView
-tupleOf (TCon "(,)" [a, b]) = Tup2 (a, b)
-tupleOf (TCon "(,,)" [a, b, c]) = Tup3 (a, b, c)
-tupleOf (TCon "(,,,)" [a, b, c, d]) = Tup4 (a, b, c, d)
-tupleOf t@(TCon _ ts) | isTuple t = TupN ts
-tupleOf _ = NotATuple
+  | i >= 2 = reserved $ fromString ("tuple" ++ show i)
+  | otherwise = error $ "Cannot create tuple of arity: " ++ show i
 
 
 -- | Kinds are just the arity of type constructors.
