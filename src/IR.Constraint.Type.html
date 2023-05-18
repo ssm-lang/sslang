@@ -42,19 +42,19 @@
 </span><span id="line-37"></span><span>
 </span><span id="line-38"></span><span class="annot"><a href="IR.Constraint.Type.html#exists"><span class="hs-identifier hs-type">exists</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Constraint"><span class="hs-identifier hs-type">Constraint</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Constraint"><span class="hs-identifier hs-type">Constraint</span></a></span><span>
 </span><span id="line-39"></span><span id="exists"><span class="annot"><span class="annottext">exists :: [Variable] -&gt; Constraint -&gt; Constraint
-</span><a href="IR.Constraint.Type.html#exists"><span class="hs-identifier hs-var hs-var">exists</span></a></span></span><span> </span><span id="local-6989586621679515723"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515723"><span class="hs-identifier hs-var">flexVars</span></a></span></span><span> </span><span id="local-6989586621679515722"><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679515722"><span class="hs-identifier hs-var">constraint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="IR.Constraint.Type.html#exists"><span class="hs-identifier hs-var hs-var">exists</span></a></span></span><span> </span><span id="local-6989586621679515717"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679515717"><span class="hs-identifier hs-var">flexVars</span></a></span></span><span> </span><span id="local-6989586621679515716"><span class="annot"><span class="annottext">Constraint
+</span><a href="#local-6989586621679515716"><span class="hs-identifier hs-var">constraint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Variable]
 -&gt; [Variable]
 -&gt; Map Identifier Type
 -&gt; Constraint
 -&gt; Constraint
 -&gt; Constraint
 </span><a href="IR.Constraint.Type.html#CLet"><span class="hs-identifier hs-var">CLet</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515723"><span class="hs-identifier hs-var">flexVars</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier Type
+</span><a href="#local-6989586621679515717"><span class="hs-identifier hs-var">flexVars</span></a></span><span> </span><span class="annot"><span class="annottext">Map Identifier Type
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="annot"><span class="annottext">Constraint
-</span><a href="#local-6989586621679515722"><span class="hs-identifier hs-var">constraint</span></a></span><span> </span><span class="annot"><span class="annottext">Constraint
+</span><a href="#local-6989586621679515716"><span class="hs-identifier hs-var">constraint</span></a></span><span> </span><span class="annot"><span class="annottext">Constraint
 </span><a href="IR.Constraint.Type.html#CTrue"><span class="hs-identifier hs-var">CTrue</span></a></span><span>
 </span><span id="line-40"></span><span>
 </span><span id="line-41"></span><span>
@@ -71,7 +71,7 @@ forall k a. Map k a
 </span><span id="line-52"></span><span class="hs-keyword">data</span><span> </span><span id="Type"><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span>
 </span><span id="line-53"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TConN"><span class="annot"><a href="IR.Constraint.Type.html#TConN"><span class="hs-identifier hs-var">TConN</span></a></span></span><span> </span><span class="annot"><a href="Common.Identifiers.html#TConId"><span class="hs-identifier hs-type">Ident.TConId</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-54"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TVarN"><span class="annot"><a href="IR.Constraint.Type.html#TVarN"><span class="hs-identifier hs-var">TVarN</span></a></span></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span>
-</span><span id="line-55"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515714"><span id="local-6989586621679515716"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+</span><span id="line-55"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515708"><span id="local-6989586621679515710"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
 (Type -&gt; Type -&gt; Bool) -&gt; (Type -&gt; Type -&gt; Bool) -&gt; Eq Type
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Type -&gt; Type -&gt; Bool
@@ -103,10 +103,10 @@ $c== :: Type -&gt; Type -&gt; Bool
 </span><span id="line-73"></span><span>
 </span><span id="line-74"></span><span class="annot"><a href="IR.Constraint.Type.html#mkDescriptor"><span class="hs-identifier hs-type">mkDescriptor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span>
 </span><span id="line-75"></span><span id="mkDescriptor"><span class="annot"><span class="annottext">mkDescriptor :: Content -&gt; Descriptor
-</span><a href="IR.Constraint.Type.html#mkDescriptor"><span class="hs-identifier hs-var hs-var">mkDescriptor</span></a></span></span><span> </span><span id="local-6989586621679515702"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515702"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Content -&gt; Int -&gt; Mark -&gt; Maybe Variable -&gt; Descriptor
+</span><a href="IR.Constraint.Type.html#mkDescriptor"><span class="hs-identifier hs-var hs-var">mkDescriptor</span></a></span></span><span> </span><span id="local-6989586621679515696"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679515696"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Content -&gt; Int -&gt; Mark -&gt; Maybe Variable -&gt; Descriptor
 </span><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-var">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515702"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515696"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="IR.Constraint.Type.html#noRank"><span class="hs-identifier hs-var">noRank</span></a></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><a href="IR.Constraint.Type.html#noMark"><span class="hs-identifier hs-var">noMark</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 forall a. Maybe a
@@ -131,14 +131,14 @@ forall a. Maybe a
 </span><span id="line-89"></span><span>
 </span><span id="line-90"></span><span class="hs-comment">-- | MARKS</span><span>
 </span><span id="line-91"></span><span class="hs-keyword">newtype</span><span> </span><span id="Mark"><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-var">Mark</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Mark"><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-var">Mark</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-92"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515694"><span id="local-6989586621679515696"><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Bool
+</span><span id="line-92"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515688"><span id="local-6989586621679515690"><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Bool
 (Mark -&gt; Mark -&gt; Bool) -&gt; (Mark -&gt; Mark -&gt; Bool) -&gt; Eq Mark
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Mark -&gt; Mark -&gt; Bool
 $c/= :: Mark -&gt; Mark -&gt; Bool
 == :: Mark -&gt; Mark -&gt; Bool
 $c== :: Mark -&gt; Mark -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515679"><span id="local-6989586621679515681"><span id="local-6989586621679515683"><span id="local-6989586621679515685"><span id="local-6989586621679515687"><span id="local-6989586621679515689"><span id="local-6989586621679515691"><span class="annot"><span class="annottext">Eq Mark
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515673"><span id="local-6989586621679515675"><span id="local-6989586621679515677"><span id="local-6989586621679515679"><span id="local-6989586621679515681"><span id="local-6989586621679515683"><span id="local-6989586621679515685"><span class="annot"><span class="annottext">Eq Mark
 Eq Mark
 -&gt; (Mark -&gt; Mark -&gt; Ordering)
 -&gt; (Mark -&gt; Mark -&gt; Bool)
@@ -209,10 +209,10 @@ $cp1Ord :: Eq Mark
 </span><span id="line-113"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#nextMark"><span class="hs-pragma hs-type">nextMark</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
 </span><span id="line-114"></span><span class="annot"><a href="IR.Constraint.Type.html#nextMark"><span class="hs-identifier hs-type">nextMark</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span>
 </span><span id="line-115"></span><span id="nextMark"><span class="annot"><span class="annottext">nextMark :: Mark -&gt; Mark
-</span><a href="IR.Constraint.Type.html#nextMark"><span class="hs-identifier hs-var hs-var">nextMark</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span> </span><span id="local-6989586621679515674"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515674"><span class="hs-identifier hs-var">mark</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Mark
+</span><a href="IR.Constraint.Type.html#nextMark"><span class="hs-identifier hs-var hs-var">nextMark</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span> </span><span id="local-6989586621679515668"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679515668"><span class="hs-identifier hs-var">mark</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Mark
 </span><a href="IR.Constraint.Type.html#Mark"><span class="hs-identifier hs-var">Mark</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679515674"><span class="hs-identifier hs-var">mark</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679515668"><span class="hs-identifier hs-var">mark</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
@@ -223,30 +223,30 @@ forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span id="line-120"></span><span class="hs-comment">-- | Fold a list of argument types and a return type into an 'Arrow' 'Type'.</span><span>
 </span><span id="line-121"></span><span class="annot"><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-type">foldArrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-122"></span><span id="foldArrow"><span class="annot"><span class="annottext">foldArrow :: ([Type], Type) -&gt; Type
-</span><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-var hs-var">foldArrow</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515671"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515671"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679515670"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515670"><span class="hs-keyword hs-var">as</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515669"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515669"><span class="hs-identifier hs-var">rt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515671"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
+</span><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-var hs-var">foldArrow</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679515665"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515665"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679515664"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679515664"><span class="hs-keyword hs-var">as</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515663"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515663"><span class="hs-identifier hs-var">rt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515665"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
 </span><a href="IR.Constraint.Type.html#%3D%3D%3E"><span class="hs-operator hs-var">==&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">([Type], Type) -&gt; Type
 </span><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-var">foldArrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679515670"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515669"><span class="hs-identifier hs-var">rt</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-123"></span><span class="annot"><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-var">foldArrow</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515667"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515667"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515667"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621679515664"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515663"><span class="hs-identifier hs-var">rt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-123"></span><span class="annot"><a href="IR.Constraint.Type.html#foldArrow"><span class="hs-identifier hs-var">foldArrow</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679515661"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515661"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515661"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-124"></span><span>
 </span><span id="line-125"></span><span>
 </span><span id="line-126"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">0</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#%3D%3D%3E"><span class="hs-operator hs-type">==&gt;</span></a></span><span>
 </span><span id="line-127"></span><span class="annot"><a href="IR.Constraint.Type.html#%3D%3D%3E"><span class="hs-operator hs-type">(==&gt;)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-128"></span><span id="%3D%3D%3E"><span class="annot"><span class="annottext">==&gt; :: Type -&gt; Type -&gt; Type
-</span><a href="IR.Constraint.Type.html#%3D%3D%3E"><span class="hs-operator hs-var hs-var">(==&gt;)</span></a></span></span><span> </span><span id="local-6989586621679515666"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515666"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621679515665"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515665"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="IR.Constraint.Type.html#%3D%3D%3E"><span class="hs-operator hs-var hs-var">(==&gt;)</span></a></span></span><span> </span><span id="local-6989586621679515660"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515660"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621679515659"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515659"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Constraint.Type.html#TConN"><span class="hs-identifier hs-var">TConN</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
 </span><span class="hs-string">&quot;-&gt;&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515666"><span class="hs-identifier hs-var">t1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515665"><span class="hs-identifier hs-var">t2</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679515660"><span class="hs-identifier hs-var">t1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515659"><span class="hs-identifier hs-var">t2</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-129"></span><span>
 </span><span id="line-130"></span><span>
 </span><span id="line-131"></span><span class="annot"><a href="IR.Constraint.Type.html#unit"><span class="hs-keyword hs-type">unit</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
@@ -258,20 +258,20 @@ forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span id="line-134"></span><span>
 </span><span id="line-135"></span><span class="annot"><a href="IR.Constraint.Type.html#ref"><span class="hs-identifier hs-type">ref</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-136"></span><span id="ref"><span class="annot"><span class="annottext">ref :: Type -&gt; Type
-</span><a href="IR.Constraint.Type.html#ref"><span class="hs-identifier hs-var hs-var">ref</span></a></span></span><span> </span><span id="local-6989586621679515662"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515662"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="IR.Constraint.Type.html#ref"><span class="hs-identifier hs-var hs-var">ref</span></a></span></span><span> </span><span id="local-6989586621679515656"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515656"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Constraint.Type.html#TConN"><span class="hs-identifier hs-var">TConN</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
 </span><span class="hs-string">&quot;&amp;&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515662"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679515656"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-137"></span><span>
 </span><span id="line-138"></span><span>
 </span><span id="line-139"></span><span class="annot"><a href="IR.Constraint.Type.html#list"><span class="hs-identifier hs-type">list</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-140"></span><span id="list"><span class="annot"><span class="annottext">list :: Type -&gt; Type
-</span><a href="IR.Constraint.Type.html#list"><span class="hs-identifier hs-var hs-var">list</span></a></span></span><span> </span><span id="local-6989586621679515660"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515660"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="IR.Constraint.Type.html#list"><span class="hs-identifier hs-var hs-var">list</span></a></span></span><span> </span><span id="local-6989586621679515654"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515654"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Constraint.Type.html#TConN"><span class="hs-identifier hs-var">TConN</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
 </span><span class="hs-string">&quot;[]&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515660"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679515654"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-141"></span><span>
 </span><span id="line-142"></span><span>
 </span><span id="line-143"></span><span class="annot"><a href="IR.Constraint.Type.html#time"><span class="hs-identifier hs-type">time</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
@@ -341,8 +341,8 @@ forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span id="line-180"></span><span class="annot"><a href="IR.Constraint.Type.html#mkFlexVar"><span class="hs-identifier hs-type">mkFlexVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span>
 </span><span id="line-181"></span><span id="mkFlexVar"><span class="annot"><span class="annottext">mkFlexVar :: TC Variable
 </span><a href="IR.Constraint.Type.html#mkFlexVar"><span class="hs-identifier hs-var hs-var">mkFlexVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-182"></span><span>  </span><span id="local-6989586621679515649"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515649"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
+</span><span id="line-182"></span><span>  </span><span id="local-6989586621679515643"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515643"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
 </span><a href="IR.Constraint.Monad.html#freshName"><span class="hs-identifier hs-var">freshName</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;'t&quot;</span></span><span>
 </span><span id="line-183"></span><span>  </span><span class="annot"><span class="annottext">Descriptor -&gt; TC Variable
@@ -354,14 +354,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Content
 </span><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-var">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515649"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><a href="#local-6989586621679515643"><span class="hs-identifier hs-var">name</span></a></span><span>
 </span><span id="line-184"></span><span>
 </span><span id="line-185"></span><span>
 </span><span id="line-186"></span><span class="annot"><a href="IR.Constraint.Type.html#mkIRFlexVar"><span class="hs-identifier hs-type">mkIRFlexVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span>
 </span><span id="line-187"></span><span id="mkIRFlexVar"><span class="annot"><span class="annottext">mkIRFlexVar :: TC Variable
 </span><a href="IR.Constraint.Type.html#mkIRFlexVar"><span class="hs-identifier hs-var hs-var">mkIRFlexVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-188"></span><span>  </span><span id="local-6989586621679515646"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515646"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
+</span><span id="line-188"></span><span>  </span><span id="local-6989586621679515640"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515640"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
 </span><a href="IR.Constraint.Monad.html#freshName"><span class="hs-identifier hs-var">freshName</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;'ir_t&quot;</span></span><span>
 </span><span id="line-189"></span><span>  </span><span class="annot"><span class="annottext">Descriptor -&gt; TC Variable
@@ -373,14 +373,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Content
 </span><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-var">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515646"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><a href="#local-6989586621679515640"><span class="hs-identifier hs-var">name</span></a></span><span>
 </span><span id="line-190"></span><span>
 </span><span id="line-191"></span><span>
 </span><span id="line-192"></span><span class="annot"><a href="IR.Constraint.Type.html#mkRigidVar"><span class="hs-identifier hs-type">mkRigidVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span>
 </span><span id="line-193"></span><span id="mkRigidVar"><span class="annot"><span class="annottext">mkRigidVar :: TC Variable
 </span><a href="IR.Constraint.Type.html#mkRigidVar"><span class="hs-identifier hs-var hs-var">mkRigidVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-194"></span><span>  </span><span id="local-6989586621679515644"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515644"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
+</span><span id="line-194"></span><span>  </span><span id="local-6989586621679515638"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515638"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC TVarId
 </span><a href="IR.Constraint.Monad.html#freshName"><span class="hs-identifier hs-var">freshName</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;~t&quot;</span></span><span>
 </span><span id="line-195"></span><span>  </span><span class="annot"><span class="annottext">Descriptor -&gt; TC Variable
@@ -392,16 +392,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TVarId -&gt; Content
 </span><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-var">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515644"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><a href="#local-6989586621679515638"><span class="hs-identifier hs-var">name</span></a></span><span>
 </span><span id="line-196"></span><span>
 </span><span id="line-197"></span><span>
 </span><span id="line-198"></span><span class="hs-comment">-- | TO CANONICAL TYPE</span><span>
 </span><span id="line-199"></span><span class="annot"><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-type">toCanType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span>
 </span><span id="line-200"></span><span id="toCanType"><span class="annot"><span class="annottext">toCanType :: Variable -&gt; TC Type
-</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var hs-var">toCanType</span></a></span></span><span> </span><span id="local-6989586621679515642"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515642"><span class="hs-identifier hs-var">variable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-201"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679515641"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515641"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var hs-var">toCanType</span></a></span></span><span> </span><span id="local-6989586621679515636"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679515636"><span class="hs-identifier hs-var">variable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-201"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679515635"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679515635"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Descriptor
@@ -418,25 +418,25 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; IO Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m a
 </span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var">UF.get</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515642"><span class="hs-identifier hs-var">variable</span></a></span><span>
+</span><a href="#local-6989586621679515636"><span class="hs-identifier hs-var">variable</span></a></span><span>
 </span><span id="line-202"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515641"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-203"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679515639"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515639"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FlatType -&gt; TC Type
+</span><a href="#local-6989586621679515635"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679515633"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515633"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FlatType -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#termToCanType"><span class="hs-identifier hs-var">termToCanType</span></a></span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515639"><span class="hs-identifier hs-var">term</span></a></span><span>
-</span><span id="line-204"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span id="local-6989586621679515637"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515637"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
+</span><a href="#local-6989586621679515633"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-204"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span id="local-6989586621679515631"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515631"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TVarId -&gt; Type
 </span><a href="IR.Types.Type.html#TVar"><span class="hs-identifier hs-var">Can.TVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515637"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-205"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span id="local-6989586621679515635"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515635"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
+</span><a href="#local-6989586621679515631"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-205"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span id="local-6989586621679515629"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515629"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TVarId -&gt; Type
 </span><a href="IR.Types.Type.html#TVar"><span class="hs-identifier hs-var">Can.TVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515635"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515629"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-206"></span><span>    </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; TC Type
 forall a. HasCallStack =&gt; String -&gt; a
@@ -446,14 +446,14 @@ forall a. HasCallStack =&gt; String -&gt; a
 </span><span id="line-208"></span><span>
 </span><span id="line-209"></span><span class="annot"><a href="IR.Constraint.Type.html#termToCanType"><span class="hs-identifier hs-type">termToCanType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#FlatType"><span class="hs-identifier hs-type">FlatType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span>
 </span><span id="line-210"></span><span id="termToCanType"><span class="annot"><span class="annottext">termToCanType :: FlatType -&gt; TC Type
-</span><a href="IR.Constraint.Type.html#termToCanType"><span class="hs-identifier hs-var hs-var">termToCanType</span></a></span></span><span> </span><span id="local-6989586621679515633"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515633"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515633"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-211"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679515632"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515632"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679515631"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515631"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="IR.Constraint.Type.html#termToCanType"><span class="hs-identifier hs-var hs-var">termToCanType</span></a></span></span><span> </span><span id="local-6989586621679515627"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515627"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515627"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-211"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679515626"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679515625"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679515625"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Types.Type.html#TCon"><span class="hs-identifier hs-var">Can.TCon</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515632"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; Type)
+</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; Type)
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) [Type]
 -&gt; TC Type
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -465,16 +465,16 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (a -&gt; f b) -&gt; t a -&gt; f (t b)
 </span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">toCanType</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515631"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><a href="#local-6989586621679515625"><span class="hs-identifier hs-var">args</span></a></span><span>
 </span><span id="line-212"></span><span>
 </span><span id="line-213"></span><span>
 </span><span id="line-214"></span><span class="hs-comment">-- | TO ERROR TYPE</span><span>
 </span><span id="line-215"></span><span class="annot"><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-type">toErrorType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Error.html#Type"><span class="hs-identifier hs-type">ET.Type</span></a></span><span>
 </span><span id="line-216"></span><span id="toErrorType"><span class="annot"><span class="annottext">toErrorType :: Variable -&gt; TC Type
-</span><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-var hs-var">toErrorType</span></a></span></span><span> </span><span id="local-6989586621679515626"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">variable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-217"></span><span>  </span><span id="local-6989586621679515625"><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515625"><span class="hs-identifier hs-var">descriptor</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Descriptor
+</span><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-var hs-var">toErrorType</span></a></span></span><span> </span><span id="local-6989586621679515620"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">variable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-217"></span><span>  </span><span id="local-6989586621679515619"><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679515619"><span class="hs-identifier hs-var">descriptor</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Descriptor
 -&gt; StateT
      TCState (ExceptT Error (WriterT (Doc String) IO)) Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -488,13 +488,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; IO Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m a
 </span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var">UF.get</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">variable</span></a></span><span>
-</span><span id="line-218"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679515624"><span class="annot"><span class="annottext">mark :: Mark
-</span><a href="#local-6989586621679515624"><span class="hs-identifier hs-var hs-var">mark</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Descriptor -&gt; Mark
+</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">variable</span></a></span><span>
+</span><span id="line-218"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679515618"><span class="annot"><span class="annottext">mark :: Mark
+</span><a href="#local-6989586621679515618"><span class="hs-identifier hs-var hs-var">mark</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Descriptor -&gt; Mark
 </span><a href="IR.Constraint.Type.html#_mark"><span class="hs-identifier hs-var hs-var">_mark</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515625"><span class="hs-identifier hs-var">descriptor</span></a></span><span>
+</span><a href="#local-6989586621679515619"><span class="hs-identifier hs-var">descriptor</span></a></span><span>
 </span><span id="line-219"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Mark
-</span><a href="#local-6989586621679515624"><span class="hs-identifier hs-var">mark</span></a></span><span> </span><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Bool
+</span><a href="#local-6989586621679515618"><span class="hs-identifier hs-var">mark</span></a></span><span> </span><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><a href="IR.Constraint.Type.html#occursMark"><span class="hs-identifier hs-var">occursMark</span></a></span><span>
@@ -514,17 +514,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; (Descriptor -&gt; Descriptor) -&gt; IO ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; (a -&gt; a) -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-var">UF.modify</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515621"><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515621"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515621"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_mark :: Mark
+</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515615"><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679515615"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679515615"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_mark :: Mark
 </span><a href="IR.Constraint.Type.html#_mark"><span class="hs-identifier hs-var">_mark</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark
 </span><a href="IR.Constraint.Type.html#occursMark"><span class="hs-identifier hs-var">occursMark</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
-</span><span id="line-223"></span><span>      </span><span id="local-6989586621679515620"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">errType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Content -&gt; TC Type
+</span><span id="line-223"></span><span>      </span><span id="local-6989586621679515614"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679515614"><span class="hs-identifier hs-var">errType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Content -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#contentToErrorType"><span class="hs-identifier hs-var">contentToErrorType</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Descriptor -&gt; Content
+</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Descriptor -&gt; Content
 </span><a href="IR.Constraint.Type.html#_content"><span class="hs-identifier hs-var hs-var">_content</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515625"><span class="hs-identifier hs-var">descriptor</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515619"><span class="hs-identifier hs-var">descriptor</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-224"></span><span>      </span><span class="annot"><span class="annottext">IO ()
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
@@ -536,39 +536,39 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; (Descriptor -&gt; Descriptor) -&gt; IO ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; (a -&gt; a) -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#modify"><span class="hs-identifier hs-var">UF.modify</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679515626"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515618"><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515618"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679515618"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_mark :: Mark
+</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">variable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679515612"><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679515612"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679515612"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_mark :: Mark
 </span><a href="IR.Constraint.Type.html#_mark"><span class="hs-identifier hs-var">_mark</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark
-</span><a href="#local-6989586621679515624"><span class="hs-identifier hs-var">mark</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515618"><span class="hs-identifier hs-var">mark</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
 </span><span id="line-225"></span><span>      </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679515620"><span class="hs-identifier hs-var">errType</span></a></span><span>
+</span><a href="#local-6989586621679515614"><span class="hs-identifier hs-var">errType</span></a></span><span>
 </span><span id="line-226"></span><span>
 </span><span id="line-227"></span><span>
 </span><span id="line-228"></span><span class="annot"><a href="IR.Constraint.Type.html#contentToErrorType"><span class="hs-identifier hs-type">contentToErrorType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Error.html#Type"><span class="hs-identifier hs-type">ET.Type</span></a></span><span>
 </span><span id="line-229"></span><span id="contentToErrorType"><span class="annot"><span class="annottext">contentToErrorType :: Variable -&gt; Content -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#contentToErrorType"><span class="hs-identifier hs-var hs-var">contentToErrorType</span></a></span></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679515617"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515617"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679515617"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-230"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679515616"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515616"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FlatType -&gt; TC Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679515611"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679515611"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679515611"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-230"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679515610"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515610"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FlatType -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#termToErrorType"><span class="hs-identifier hs-var">termToErrorType</span></a></span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515616"><span class="hs-identifier hs-var">term</span></a></span><span>
-</span><span id="line-231"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span id="local-6989586621679515614"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515614"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
+</span><a href="#local-6989586621679515610"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-231"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span id="local-6989586621679515608"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515608"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TVarId -&gt; Type
 </span><a href="IR.Constraint.Error.html#FlexVar"><span class="hs-identifier hs-var">ET.FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515614"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-232"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span id="local-6989586621679515612"><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515612"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
+</span><a href="#local-6989586621679515608"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-232"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span id="local-6989586621679515606"><span class="annot"><span class="annottext">TVarId
+</span><a href="#local-6989586621679515606"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TVarId -&gt; Type
 </span><a href="IR.Constraint.Error.html#RigidVar"><span class="hs-identifier hs-var">ET.RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
-</span><a href="#local-6989586621679515612"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679515606"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-233"></span><span>  </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; TC Type
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -578,14 +578,14 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span id="line-235"></span><span>
 </span><span id="line-236"></span><span class="annot"><a href="IR.Constraint.Type.html#termToErrorType"><span class="hs-identifier hs-type">termToErrorType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#FlatType"><span class="hs-identifier hs-type">FlatType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Error.html#Type"><span class="hs-identifier hs-type">ET.Type</span></a></span><span>
 </span><span id="line-237"></span><span id="termToErrorType"><span class="annot"><span class="annottext">termToErrorType :: FlatType -&gt; TC Type
-</span><a href="IR.Constraint.Type.html#termToErrorType"><span class="hs-identifier hs-var hs-var">termToErrorType</span></a></span></span><span> </span><span id="local-6989586621679515609"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515609"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679515609"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-238"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679515608"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515608"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679515607"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515607"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
+</span><a href="IR.Constraint.Type.html#termToErrorType"><span class="hs-identifier hs-var hs-var">termToErrorType</span></a></span></span><span> </span><span id="local-6989586621679515603"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515603"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679515603"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-238"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679515602"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679515602"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679515601"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679515601"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TConId -&gt; [Type] -&gt; Type
 </span><a href="IR.Constraint.Error.html#Type"><span class="hs-identifier hs-var">ET.Type</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679515608"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; Type)
+</span><a href="#local-6989586621679515602"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">([Type] -&gt; Type)
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) [Type]
 -&gt; TC Type
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -597,10 +597,10 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (a -&gt; f b) -&gt; t a -&gt; f (t b)
 </span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-var">toErrorType</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679515607"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><a href="#local-6989586621679515601"><span class="hs-identifier hs-var">args</span></a></span><span>
 </span><span id="line-239"></span><span>
 </span><span id="line-240"></span><span>
-</span><span id="line-241"></span><span id="local-6989586621679515605"><span class="annot"><a href="IR.Constraint.Type.html#binderToVarId"><span class="hs-identifier hs-type">binderToVarId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Binder"><span class="hs-identifier hs-type">I.Binder</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515605"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">Ident.VarId</span></a></span></span><span>
+</span><span id="line-241"></span><span id="local-6989586621679515599"><span class="annot"><a href="IR.Constraint.Type.html#binderToVarId"><span class="hs-identifier hs-type">binderToVarId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Binder"><span class="hs-identifier hs-type">I.Binder</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515599"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="Common.Identifiers.html#VarId"><span class="hs-identifier hs-type">Ident.VarId</span></a></span></span><span>
 </span><span id="line-242"></span><span id="binderToVarId"><span class="annot"><span class="annottext">binderToVarId :: Binder t -&gt; TC VarId
 </span><a href="IR.Constraint.Type.html#binderToVarId"><span class="hs-identifier hs-var hs-var">binderToVarId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TC VarId -&gt; (VarId -&gt; TC VarId) -&gt; Maybe VarId -&gt; TC VarId
 forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
@@ -615,10 +615,10 @@ forall a. Binder a -&gt; Maybe VarId
 </span><a href="IR.IR.html#binderToVar"><span class="hs-identifier hs-var">I.binderToVar</span></a></span><span>
 </span><span id="line-243"></span><span>
 </span><span id="line-244"></span><span>
-</span><span id="line-245"></span><span id="local-6989586621679515600"><span class="annot"><a href="IR.Constraint.Type.html#uncarryAttachment"><span class="hs-identifier hs-type">uncarryAttachment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Carrier"><span class="hs-identifier hs-type">I.Carrier</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515600"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679515600"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Attachment"><span class="hs-identifier hs-type">Attachment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Type.html#Annotation"><span class="hs-identifier hs-type">I.Annotation</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-245"></span><span id="local-6989586621679515594"><span class="annot"><a href="IR.Constraint.Type.html#uncarryAttachment"><span class="hs-identifier hs-type">uncarryAttachment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Carrier"><span class="hs-identifier hs-type">I.Carrier</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679515594"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679515594"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Attachment"><span class="hs-identifier hs-type">Attachment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="IR.Types.Type.html#Annotation"><span class="hs-identifier hs-type">I.Annotation</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-246"></span><span id="uncarryAttachment"><span class="annot"><span class="annottext">uncarryAttachment :: c Attachment -&gt; ([Annotation], Variable)
-</span><a href="IR.Constraint.Type.html#uncarryAttachment"><span class="hs-identifier hs-var hs-var">uncarryAttachment</span></a></span></span><span> </span><span id="local-6989586621679515598"><span class="annot"><span class="annottext">c Attachment
-</span><a href="#local-6989586621679515598"><span class="hs-identifier hs-var">carrier</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Annotations -&gt; [Annotation])
+</span><a href="IR.Constraint.Type.html#uncarryAttachment"><span class="hs-identifier hs-var hs-var">uncarryAttachment</span></a></span></span><span> </span><span id="local-6989586621679515592"><span class="annot"><span class="annottext">c Attachment
+</span><a href="#local-6989586621679515592"><span class="hs-identifier hs-var">carrier</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Annotations -&gt; [Annotation])
 -&gt; Attachment -&gt; ([Annotation], Variable)
 forall (p :: * -&gt; * -&gt; *) a b c.
 Bifunctor p =&gt;
@@ -630,5 +630,5 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">c Attachment -&gt; Attachment
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">c Attachment
-</span><a href="#local-6989586621679515598"><span class="hs-identifier hs-var">carrier</span></a></span><span>
+</span><a href="#local-6989586621679515592"><span class="hs-identifier hs-var">carrier</span></a></span><span>
 </span><span id="line-247"></span></pre></body></html>
