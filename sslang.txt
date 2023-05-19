@@ -1142,6 +1142,7 @@ TLoop :: TokenType
 TLet :: TokenType
 TNow :: TokenType
 TAtAt :: TokenType
+TBreak :: TokenType
 TMatch :: TokenType
 TAfter :: TokenType
 TWait :: TokenType
@@ -1232,6 +1233,7 @@ TLoop :: TokenType
 TLet :: TokenType
 TNow :: TokenType
 TAtAt :: TokenType
+TBreak :: TokenType
 TMatch :: TokenType
 TAfter :: TokenType
 TWait :: TokenType
