@@ -410,6 +410,10 @@ new_time :: Exp -> Exp
 -- | <tt>ssm_time_read</tt>, read the time in a <a>time_obj_t</a>.
 read_time :: Exp -> Exp
 
+-- | Read the <tt>last_updated</tt> field of an <tt>ssm_value_t</tt>
+--   pointing to a scheduled variable.
+sv_last_updated :: Exp -> Exp
+
 -- | <tt>ssm_priority_t</tt>, thread priority.
 priority_t :: Type
 
@@ -881,6 +885,8 @@ CQuote :: String -> Expr
 CCall :: Identifier -> [Expr] -> Expr
 Tuple :: [Expr] -> Expr
 ListExpr :: [Expr] -> Expr
+Last :: Expr -> Expr
+Now :: Expr
 
 -- | An operator region: a flat list of alternating expressions and
 --   operators that is initially parsed flat but will be restructured into
@@ -1134,6 +1140,8 @@ TDo :: TokenType
 TPar :: TokenType
 TLoop :: TokenType
 TLet :: TokenType
+TNow :: TokenType
+TAtAt :: TokenType
 TMatch :: TokenType
 TAfter :: TokenType
 TWait :: TokenType
@@ -1222,6 +1230,8 @@ TDo :: TokenType
 TPar :: TokenType
 TLoop :: TokenType
 TLet :: TokenType
+TNow :: TokenType
+TAtAt :: TokenType
 TMatch :: TokenType
 TAfter :: TokenType
 TWait :: TokenType
@@ -1723,6 +1733,9 @@ Break :: Primitive
 
 -- | <tt>Now</tt> obtains the value of the current instant
 Now :: Primitive
+
+-- | <tt>Last</tt> obtains the time a value was last assigned
+Last :: Primitive
 
 -- | Inlined C expression code.
 PrimOp :: PrimOp -> Primitive
