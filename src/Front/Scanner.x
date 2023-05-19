@@ -158,8 +158,6 @@ tokens :-
     -- Keywords that just do as they be.
     extern              { keyword TExtern }
     after               { keyword TAfter }
-    now                 { keyword TNow }
-    break               { keyword TBreak }
     \:                  { keyword TColon }
     \|\|                { keyword TDBar }
     \-\>                { keyword TRarrow }
@@ -168,12 +166,14 @@ tokens :-
     \:                  { keyword TColon }
     \,                  { keyword TComma }
     \_                  { keyword TUnderscore }
-    \@\@                { keyword TAtAt }
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
 
     -- Reserved keywords.
     do                  { reserved TDo }
+    break               { reserved TBreak }
+    now                 { reserved TNow }
+    \@\@                { reserved TAtAt }
 
     -- Other stringy tokens.
     @operator           { strTok (return . TOp . fromString) }
