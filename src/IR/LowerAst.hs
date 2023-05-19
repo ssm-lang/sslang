@@ -306,6 +306,7 @@ lowerPrim (A.Id ">=") = Just $ I.PrimOp I.PrimGe
 lowerPrim (A.Id "<=") = Just $ I.PrimOp I.PrimLe
 lowerPrim (A.Id ">") = Just $ I.PrimOp I.PrimGt
 lowerPrim (A.Id "<") = Just $ I.PrimOp I.PrimLt
+lowerPrim (A.Id "!") = Just $ I.PrimOp I.PrimNot
 lowerPrim _ = Nothing
 
 

@@ -60,6 +60,7 @@ builtinData =
       , ">="
       , "<"
       , ">"
+      , "!"
       , "deref"
       , "new"
       ]

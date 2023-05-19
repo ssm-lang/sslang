@@ -17,7 +17,7 @@ import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
 import Common.Compiler (Pass, Error(..), liftEither)
-import Common.Identifiers (fromString)
+import Common.Identifiers (fromString, Identifier(..))
 import Data.Bifunctor (first)
 }
 
@@ -62,6 +62,7 @@ import Data.Bifunctor (first)
   '}'       { Token (_, TRbrace) }
   '['       { Token (_, TLbracket) }
   ']'       { Token (_, TRbracket) }
+  '!'       { Token (_, TOp (Identifier "!")) }
   int       { Token (_, TInteger $$) }
   string    { Token (_, TString $$) }
   op        { Token (_, TOp $$) }
@@ -308,6 +309,7 @@ exprElse                              --> Expr
 exprApp                               --> Expr
   : exprApp exprAtom                    { Apply $1 $2 }
   | '@@' exprAtom                       { Last $2 }
+  | '!' exprAtom                        { Apply (Id $ fromString "!") $2 }
   | exprAtom                            { $1 }
 
 -- | Atomic expressions.
