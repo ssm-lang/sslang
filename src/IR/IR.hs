@@ -230,6 +230,8 @@ data Primitive
     Break
   | -- | @Now@ obtains the value of the current instant
     Now
+  | -- | @Last@ obtains the time a value was last assigned
+    Last
   | -- | Inlined C expression code.
     PrimOp PrimOp
   | -- | Primitive operator.

@@ -158,6 +158,7 @@ tokens :-
     -- Keywords that just do as they be.
     extern              { keyword TExtern }
     after               { keyword TAfter }
+    now                 { keyword TNow }
     \:                  { keyword TColon }
     \|\|                { keyword TDBar }
     \-\>                { keyword TRarrow }
@@ -166,6 +167,7 @@ tokens :-
     \:                  { keyword TColon }
     \,                  { keyword TComma }
     \_                  { keyword TUnderscore }
+    \@\@                { keyword TAtAt }
     \@                  { keyword TAt }
     \&                  { keyword TAmpersand }
 

@@ -213,6 +213,11 @@ read_time :: C.Exp -> C.Exp
 read_time to = [cexp|ssm_time_read($exp:to)|]
 
 
+-- | Read the @last_updated@ field of an 'ssm_value_t' pointing to a scheduled variable.
+sv_last_updated :: C.Exp -> C.Exp
+sv_last_updated sv = [cexp|$exp:(to_sv sv)->last_updated|]
+
+
 -- | @ssm_priority_t@, thread priority.
 priority_t :: C.Type
 priority_t = [cty|typename ssm_priority_t|]
@@ -401,8 +406,8 @@ closure_apply f a act prio depth ret =
 
 
 -- | @ssm_closure_apply@, apply a closure to an argument, consuming the closure.
-closure_apply_final
-  :: C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
+closure_apply_final ::
+  C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp -> C.Exp
 closure_apply_final f a act prio depth ret =
   [cexp|ssm_closure_apply_final($exp:f, $exp:a, $exp:act, $exp:prio, $exp:depth, $exp:ret)|]
 

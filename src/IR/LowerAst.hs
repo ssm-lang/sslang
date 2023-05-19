@@ -249,6 +249,10 @@ lowerExpr (A.Tuple es) =
  where
   apply_recurse e [] = e
   apply_recurse e (x : xs) = apply_recurse (I.App e x untyped) xs
+lowerExpr (A.Last e) = do
+  e' <- lowerExpr e
+  return $ I.Prim I.Last [e'] untyped
+lowerExpr A.Now = return $ I.Prim I.Now [] untyped
 lowerExpr (A.ListExpr _) =
   Compiler.unexpected "lowerExpr: ListExprs should have already been desugared"
 

@@ -190,7 +190,8 @@ lookupPrim len prim = do
     I.Assign -> return $ Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
     I.After ->
       return $ Can.I32 --> Can.Ref (Can.TVar "a") --> Can.TVar "a" --> Can.Unit
-    I.Now -> return $ Can.Unit --> Can.I32
+    I.Now -> return Can.I64
+    I.Last -> return $ Can.Ref (Can.TVar "a") --> Can.I64
     I.CQuote _ -> return $ Can.TVar "a"
     I.Loop -> return $ Can.TVar "a" --> Can.Unit
     I.Break -> return Can.Unit
