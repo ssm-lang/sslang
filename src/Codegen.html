@@ -22,14 +22,14 @@ how it is represented.
 </span><span id="line-22"></span><span>
 </span><span id="line-23"></span><span class="hs-comment">-- | Operation modes for the codegen compiler stage.</span><span>
 </span><span id="line-24"></span><span class="hs-keyword">data</span><span> </span><span id="Mode"><span class="annot"><a href="Codegen.html#Mode"><span class="hs-identifier hs-var">Mode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Continue"><span class="annot"><a href="Codegen.html#Continue"><span class="hs-identifier hs-var">Continue</span></a></span></span><span>
-</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518145"><span id="local-6989586621679518147"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518818"><span id="local-6989586621679518820"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
 (Mode -&gt; Mode -&gt; Bool) -&gt; (Mode -&gt; Mode -&gt; Bool) -&gt; Eq Mode
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Mode -&gt; Mode -&gt; Bool
 $c/= :: Mode -&gt; Mode -&gt; Bool
 == :: Mode -&gt; Mode -&gt; Bool
 $c== :: Mode -&gt; Mode -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679518138"><span id="local-6989586621679518140"><span id="local-6989586621679518142"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679518811"><span id="local-6989586621679518813"><span id="local-6989586621679518815"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
 [Mode] -&gt; ShowS
 Mode -&gt; String
 (Int -&gt; Mode -&gt; ShowS)
@@ -52,7 +52,7 @@ $cshowsPrec :: Int -&gt; Mode -&gt; ShowS
 </span><span id="line-31"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="textWidth"><span class="annot"><span class="annottext">Options -&gt; Int
 </span><a href="Codegen.html#textWidth"><span class="hs-identifier hs-var hs-var">textWidth</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518130"><span id="local-6989586621679518132"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518803"><span id="local-6989586621679518805"><span class="annot"><span class="annottext">Options -&gt; Options -&gt; Bool
 (Options -&gt; Options -&gt; Bool)
 -&gt; (Options -&gt; Options -&gt; Bool) -&gt; Eq Options
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -60,7 +60,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: Options -&gt; Options -&gt; Bool
 == :: Options -&gt; Options -&gt; Bool
 $c== :: Options -&gt; Options -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679518124"><span id="local-6989586621679518126"><span id="local-6989586621679518128"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679518797"><span id="local-6989586621679518799"><span id="local-6989586621679518801"><span class="annot"><span class="annottext">Int -&gt; Options -&gt; ShowS
 [Options] -&gt; ShowS
 Options -&gt; String
 (Int -&gt; Options -&gt; ShowS)
@@ -77,7 +77,7 @@ $cshowsPrec :: Int -&gt; Options -&gt; ShowS
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span>
 </span><span id="line-36"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Common.Default.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Codegen.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-37"></span><span>  </span><span id="local-6989586621679518121"><span class="annot"><span class="annottext">def :: Options
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679518794"><span class="annot"><span class="annottext">def :: Options
 </span><a href="Common.Default.html#def"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options :: Mode -&gt; Int -&gt; Options
 </span><a href="Codegen.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">mode :: Mode
 </span><a href="Codegen.html#mode"><span class="hs-identifier hs-var">mode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mode
@@ -104,14 +104,14 @@ forall a. String -&gt; [String] -&gt; ArgDescr a -&gt; String -&gt; OptDescr a
 </span><span id="line-46"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; Options -&gt; Options)
 -&gt; String -&gt; ArgDescr (Options -&gt; Options)
 forall a. (String -&gt; a) -&gt; String -&gt; ArgDescr a
-</span><span class="hs-identifier hs-var">ReqArg</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679518116"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679518116"><span class="hs-identifier hs-var">tw</span></a></span></span><span> </span><span id="local-6989586621679518115"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679518115"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679518115"><span class="hs-identifier hs-var">o</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">textWidth :: Int
+</span><span class="hs-identifier hs-var">ReqArg</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679518789"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679518789"><span class="hs-identifier hs-var">tw</span></a></span></span><span> </span><span id="local-6989586621679518788"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679518788"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679518788"><span class="hs-identifier hs-var">o</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">textWidth :: Int
 </span><a href="Codegen.html#textWidth"><span class="hs-identifier hs-var">textWidth</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int
 forall a. Read a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">read</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679518116"><span class="hs-identifier hs-var">tw</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679518789"><span class="hs-identifier hs-var">tw</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&lt;textwidth&gt;&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-47"></span><span>      </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Line width for pretty-printing the generated C code.&quot;</span></span><span>
@@ -121,13 +121,13 @@ forall a. Read a =&gt; String -&gt; a
 </span><span id="line-51"></span><span class="hs-comment">-- | Codegen compiler stage.</span><span>
 </span><span id="line-52"></span><span class="annot"><a href="Codegen.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Codegen.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">I.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Common.Compiler.html#Pass"><span class="hs-identifier hs-type">Compiler.Pass</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-53"></span><span id="run"><span class="annot"><span class="annottext">run :: Options -&gt; Program Type -&gt; Pass String
-</span><a href="Codegen.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679518112"><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679518112"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679518111"><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679518111"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-54"></span><span>  </span><span id="local-6989586621679518110"><span class="annot"><span class="annottext">[Definition]
-</span><a href="#local-6989586621679518110"><span class="hs-identifier hs-var">cdefs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass [Definition]
+</span><a href="Codegen.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679518785"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679518785"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span id="local-6989586621679518784"><span class="annot"><span class="annottext">Program Type
+</span><a href="#local-6989586621679518784"><span class="hs-identifier hs-var">ir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679518783"><span class="annot"><span class="annottext">[Definition]
+</span><a href="#local-6989586621679518783"><span class="hs-identifier hs-var">cdefs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program Type -&gt; Pass [Definition]
 </span><a href="Codegen.Codegen.html#genProgram"><span class="hs-identifier hs-var">genProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program Type
-</span><a href="#local-6989586621679518111"><span class="hs-identifier hs-var">ir</span></a></span><span>
+</span><a href="#local-6989586621679518784"><span class="hs-identifier hs-var">ir</span></a></span><span>
 </span><span id="line-55"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Pass String
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Pass String) -&gt; String -&gt; Pass String
@@ -135,10 +135,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc -&gt; String
 </span><span class="hs-identifier hs-var">C.pretty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options -&gt; Int
 </span><a href="Codegen.html#textWidth"><span class="hs-identifier hs-var hs-var">textWidth</span></a></span><span> </span><span class="annot"><span class="annottext">Options
-</span><a href="#local-6989586621679518112"><span class="hs-identifier hs-var">opt</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Doc -&gt; String) -&gt; Doc -&gt; String
+</span><a href="#local-6989586621679518785"><span class="hs-identifier hs-var">opt</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Doc -&gt; String) -&gt; Doc -&gt; String
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Definition] -&gt; Doc
 forall a. Pretty a =&gt; [a] -&gt; Doc
 </span><span class="hs-identifier hs-var">C.pprList</span></span><span> </span><span class="annot"><span class="annottext">[Definition]
-</span><a href="#local-6989586621679518110"><span class="hs-identifier hs-var">cdefs</span></a></span><span>
+</span><a href="#local-6989586621679518783"><span class="hs-identifier hs-var">cdefs</span></a></span><span>
 </span><span id="line-56"></span></pre></body></html>

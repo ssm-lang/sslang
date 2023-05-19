@@ -16,27 +16,27 @@
 </span><span id="line-16"></span><span>
 </span><span id="line-17"></span><span class="annot"><a href="IR.Constraint.Unify.html#unify"><span class="hs-identifier hs-type">unify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Answer"><span class="hs-identifier hs-type">Answer</span></a></span><span>
 </span><span id="line-18"></span><span id="unify"><span class="annot"><span class="annottext">unify :: Variable -&gt; Variable -&gt; TC Answer
-</span><a href="IR.Constraint.Unify.html#unify"><span class="hs-identifier hs-var hs-var">unify</span></a></span></span><span> </span><span id="local-6989586621679518754"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518754"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621679518753"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518753"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Variable -&gt; Unify ()
+</span><a href="IR.Constraint.Unify.html#unify"><span class="hs-identifier hs-var hs-var">unify</span></a></span></span><span> </span><span id="local-6989586621679519427"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519427"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621679519426"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519426"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Variable -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#guardedUnify"><span class="hs-identifier hs-var">guardedUnify</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518754"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518753"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-19"></span><span>  </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679518750"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518750"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC Answer) -&gt; (() -&gt; TC Answer) -&gt; TC Answer
+</span><a href="#local-6989586621679519427"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519426"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-19"></span><span>  </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679519423"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519423"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC Answer) -&gt; (() -&gt; TC Answer) -&gt; TC Answer
 forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518750"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC Answer
+</span><a href="#local-6989586621679519423"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC Answer
 </span><a href="IR.Constraint.Unify.html#onSuccess"><span class="hs-identifier hs-var">onSuccess</span></a></span><span> </span><span class="annot"><span class="annottext">((() -&gt; TC Answer) -&gt; TC Answer) -&gt; (() -&gt; TC Answer) -&gt; TC Answer
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-20"></span><span>    </span><span id="local-6989586621679518748"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679518748"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
+</span><span id="line-20"></span><span>    </span><span id="local-6989586621679519421"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679519421"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-var">Type.toErrorType</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518754"><span class="hs-identifier hs-var">v1</span></a></span><span>
-</span><span id="line-21"></span><span>    </span><span id="local-6989586621679518746"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679518746"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
+</span><a href="#local-6989586621679519427"><span class="hs-identifier hs-var">v1</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621679519419"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679519419"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; TC Type
 </span><a href="IR.Constraint.Type.html#toErrorType"><span class="hs-identifier hs-var">Type.toErrorType</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518753"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><a href="#local-6989586621679519426"><span class="hs-identifier hs-var">v2</span></a></span><span>
 </span><span id="line-22"></span><span>    </span><span class="annot"><span class="annottext">Variable
 -&gt; Variable
 -&gt; Descriptor
@@ -45,8 +45,8 @@ forall (m :: * -&gt; *) a.
 (MonadIO m, MonadFail m) =&gt;
 Point a -&gt; Point a -&gt; a -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-var">UF.union</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518754"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518753"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679519427"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519426"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
 </span><a href="IR.Constraint.Unify.html#errorDescriptor"><span class="hs-identifier hs-var">errorDescriptor</span></a></span><span>
 </span><span id="line-23"></span><span>    </span><span class="annot"><span class="annottext">Answer -&gt; TC Answer
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -54,8 +54,8 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Answer
 </span><a href="IR.Constraint.Unify.html#Err"><span class="hs-identifier hs-var">Err</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679518748"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679518746"><span class="hs-identifier hs-var">t2</span></a></span><span>
+</span><a href="#local-6989586621679519421"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679519419"><span class="hs-identifier hs-var">t2</span></a></span><span>
 </span><span id="line-24"></span><span>
 </span><span id="line-25"></span><span>
 </span><span id="line-26"></span><span class="annot"><a href="IR.Constraint.Unify.html#onSuccess"><span class="hs-identifier hs-type">onSuccess</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Answer"><span class="hs-identifier hs-type">Answer</span></a></span><span>
@@ -78,16 +78,16 @@ forall a. Maybe a
 </span><span id="line-32"></span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="hs-comment">-- | CPS style UNIFIER</span><span>
-</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="Unify"><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span></span><span> </span><span id="local-6989586621679518778"><span class="annot"><a href="#local-6989586621679518778"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="Unify"><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span></span><span> </span><span id="local-6989586621679519451"><span class="annot"><a href="#local-6989586621679519451"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Unify"><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span></span><span>
-</span><span id="line-37"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679518801"><span class="annot"><a href="#local-6989586621679518801"><span class="hs-identifier hs-type">r</span></a></span></span><span>
-</span><span id="line-38"></span><span>         </span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679518778"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518801"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-39"></span><span>        </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518801"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>        </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518801"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-37"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679519474"><span class="annot"><a href="#local-6989586621679519474"><span class="hs-identifier hs-type">r</span></a></span></span><span>
+</span><span id="line-38"></span><span>         </span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679519451"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519474"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>        </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519474"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>        </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519474"><span class="hs-identifier hs-type">r</span></a></span><span>
 </span><span id="line-41"></span><span>      </span><span class="hs-special">)</span><span>
 </span><span id="line-42"></span><span>
 </span><span id="line-43"></span><span>
-</span><span id="line-44"></span><span id="local-6989586621679518763"><span class="annot"><a href="IR.Constraint.Unify.html#mismatch"><span class="hs-identifier hs-type">mismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518763"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679519436"><span class="annot"><a href="IR.Constraint.Unify.html#mismatch"><span class="hs-identifier hs-type">mismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519436"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-45"></span><span id="mismatch"><span class="annot"><span class="annottext">mismatch :: Unify a
 </span><a href="IR.Constraint.Unify.html#mismatch"><span class="hs-identifier hs-var hs-var">mismatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall r. (a -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify a
 forall a.
@@ -96,9 +96,9 @@ forall a.
 -&gt; (forall r. (a -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">a -&gt; TC r
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518738"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518738"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518738"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519411"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519411"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519411"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-46"></span><span>
 </span><span id="line-47"></span><span>
 </span><span id="line-48"></span><span class="hs-comment">-- | UNIFICATION HELPERS</span><span>
@@ -117,29 +117,29 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span id="line-57"></span><span class="hs-comment">-- | MERGE</span><span>
 </span><span id="line-58"></span><span class="annot"><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-type">merge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-59"></span><span id="merge"><span class="annot"><span class="annottext">merge :: Context -&gt; Content -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span id="local-6989586621679518731"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518731"><span class="hs-identifier hs-var">var1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518730"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679518730"><span class="hs-identifier hs-var">rank1</span></a></span></span><span> </span><span class="annot"><span class="annottext">Mark
+</span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span id="local-6989586621679519404"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519404"><span class="hs-identifier hs-var">var1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519403"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679519403"><span class="hs-identifier hs-var">rank1</span></a></span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679518729"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518729"><span class="hs-identifier hs-var">var2</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518728"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679518728"><span class="hs-identifier hs-var">rank2</span></a></span></span><span> </span><span class="annot"><span class="annottext">Mark
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679519402"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519402"><span class="hs-identifier hs-var">var2</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519401"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679519401"><span class="hs-identifier hs-var">rank2</span></a></span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679518727"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518727"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679519400"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519400"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">(forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a.
 (forall r. (a -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify a
 </span><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span><span> </span><span class="annot"><span class="annottext">((forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ())
 -&gt; (forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679518726"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518726"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679519399"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519399"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518726"><span class="hs-identifier hs-var">ok</span></a></span><span>
+</span><a href="#local-6989586621679519399"><span class="hs-identifier hs-var">ok</span></a></span><span>
 </span><span id="line-62"></span><span>      </span><span class="annot"><span class="annottext">(() -&gt; TC r)
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) ()
 -&gt; TC r
@@ -153,16 +153,16 @@ forall (m :: * -&gt; *) a.
 Point a -&gt; Point a -&gt; a -&gt; m ()
 </span><a href="IR.Constraint.UnionFind.html#union"><span class="hs-identifier hs-var">UF.union</span></a></span><span>
 </span><span id="line-63"></span><span>        </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518731"><span class="hs-identifier hs-var">var1</span></a></span><span>
+</span><a href="#local-6989586621679519404"><span class="hs-identifier hs-var">var1</span></a></span><span>
 </span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518729"><span class="hs-identifier hs-var">var2</span></a></span><span>
+</span><a href="#local-6989586621679519402"><span class="hs-identifier hs-var">var2</span></a></span><span>
 </span><span id="line-65"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Content -&gt; Int -&gt; Mark -&gt; Maybe Variable -&gt; Descriptor
 </span><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-var">Descriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518727"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679519400"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Ord a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679518730"><span class="hs-identifier hs-var">rank1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679518728"><span class="hs-identifier hs-var">rank2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Mark
+</span><a href="#local-6989586621679519403"><span class="hs-identifier hs-var">rank1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679519401"><span class="hs-identifier hs-var">rank2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Mark
 </span><a href="IR.Constraint.Type.html#noMark"><span class="hs-identifier hs-var">noMark</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span>
@@ -171,112 +171,112 @@ forall a. Maybe a
 </span><span id="line-68"></span><span class="hs-comment">-- | ACTUALLY UNIFY</span><span>
 </span><span id="line-69"></span><span class="annot"><a href="IR.Constraint.Unify.html#guardedUnify"><span class="hs-identifier hs-type">guardedUnify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-70"></span><span id="guardedUnify"><span class="annot"><span class="annottext">guardedUnify :: Variable -&gt; Variable -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#guardedUnify"><span class="hs-identifier hs-var hs-var">guardedUnify</span></a></span></span><span> </span><span id="local-6989586621679518723"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518723"><span class="hs-identifier hs-var">left</span></a></span></span><span> </span><span id="local-6989586621679518722"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518722"><span class="hs-identifier hs-var">right</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
+</span><a href="IR.Constraint.Unify.html#guardedUnify"><span class="hs-identifier hs-var hs-var">guardedUnify</span></a></span></span><span> </span><span id="local-6989586621679519396"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519396"><span class="hs-identifier hs-var">left</span></a></span></span><span> </span><span id="local-6989586621679519395"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519395"><span class="hs-identifier hs-var">right</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a.
 (forall r. (a -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify a
 </span><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span><span> </span><span class="annot"><span class="annottext">((forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ())
 -&gt; (forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679518721"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518721"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679518720"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518720"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-71"></span><span>  </span><span id="local-6989586621679518719"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518719"><span class="hs-identifier hs-var">equivalent</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679519394"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519394"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679519393"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519393"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>  </span><span id="local-6989586621679519392"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519392"><span class="hs-identifier hs-var">equivalent</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
 -&gt; Variable
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) Bool
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; Point a -&gt; m Bool
 </span><a href="IR.Constraint.UnionFind.html#equivalent"><span class="hs-identifier hs-var">UF.equivalent</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518723"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518722"><span class="hs-identifier hs-var">right</span></a></span><span>
+</span><a href="#local-6989586621679519396"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519395"><span class="hs-identifier hs-var">right</span></a></span><span>
 </span><span id="line-72"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518719"><span class="hs-identifier hs-var">equivalent</span></a></span><span>
+</span><a href="#local-6989586621679519392"><span class="hs-identifier hs-var">equivalent</span></a></span><span>
 </span><span id="line-73"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518721"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679519394"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-74"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-75"></span><span>      </span><span id="local-6989586621679518717"><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679518717"><span class="hs-identifier hs-var">leftDesc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><span id="line-75"></span><span>      </span><span id="local-6989586621679519390"><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679519390"><span class="hs-identifier hs-var">leftDesc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
 -&gt; StateT
      TCState (ExceptT Error (WriterT (Doc String) IO)) Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m a
 </span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var">UF.get</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518723"><span class="hs-identifier hs-var">left</span></a></span><span>
-</span><span id="line-76"></span><span>      </span><span id="local-6989586621679518715"><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679518715"><span class="hs-identifier hs-var">rightDesc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519396"><span class="hs-identifier hs-var">left</span></a></span><span>
+</span><span id="line-76"></span><span>      </span><span id="local-6989586621679519388"><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679519388"><span class="hs-identifier hs-var">rightDesc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
 -&gt; StateT
      TCState (ExceptT Error (WriterT (Doc String) IO)) Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m a
 </span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var">UF.get</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518722"><span class="hs-identifier hs-var">right</span></a></span><span>
+</span><a href="#local-6989586621679519395"><span class="hs-identifier hs-var">right</span></a></span><span>
 </span><span id="line-77"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#actuallyUnify"><span class="hs-identifier hs-var">actuallyUnify</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Variable -&gt; Descriptor -&gt; Variable -&gt; Descriptor -&gt; Context
 </span><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-var">Context</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518723"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679518717"><span class="hs-identifier hs-var">leftDesc</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518722"><span class="hs-identifier hs-var">right</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
-</span><a href="#local-6989586621679518715"><span class="hs-identifier hs-var">rightDesc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-78"></span><span>        </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679518713"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518713"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519396"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679519390"><span class="hs-identifier hs-var">leftDesc</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519395"><span class="hs-identifier hs-var">right</span></a></span><span> </span><span class="annot"><span class="annottext">Descriptor
+</span><a href="#local-6989586621679519388"><span class="hs-identifier hs-var">rightDesc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-78"></span><span>        </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679519386"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519386"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518713"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518721"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518720"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><a href="#local-6989586621679519386"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519394"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519393"><span class="hs-identifier hs-var">err</span></a></span><span>
 </span><span id="line-79"></span><span>
 </span><span id="line-80"></span><span>
 </span><span id="line-81"></span><span class="annot"><a href="IR.Constraint.Unify.html#subUnify"><span class="hs-identifier hs-type">subUnify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-82"></span><span id="subUnify"><span class="annot"><span class="annottext">subUnify :: Variable -&gt; Variable -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#subUnify"><span class="hs-identifier hs-var hs-var">subUnify</span></a></span></span><span> </span><span id="local-6989586621679518711"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518711"><span class="hs-identifier hs-var">var1</span></a></span></span><span> </span><span id="local-6989586621679518710"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518710"><span class="hs-identifier hs-var">var2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Variable -&gt; Unify ()
+</span><a href="IR.Constraint.Unify.html#subUnify"><span class="hs-identifier hs-var hs-var">subUnify</span></a></span></span><span> </span><span id="local-6989586621679519384"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519384"><span class="hs-identifier hs-var">var1</span></a></span></span><span> </span><span id="local-6989586621679519383"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519383"><span class="hs-identifier hs-var">var2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Variable -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#guardedUnify"><span class="hs-identifier hs-var">guardedUnify</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518711"><span class="hs-identifier hs-var">var1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518710"><span class="hs-identifier hs-var">var2</span></a></span><span>
+</span><a href="#local-6989586621679519384"><span class="hs-identifier hs-var">var1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519383"><span class="hs-identifier hs-var">var2</span></a></span><span>
 </span><span id="line-83"></span><span>
 </span><span id="line-84"></span><span>
 </span><span id="line-85"></span><span class="annot"><a href="IR.Constraint.Unify.html#actuallyUnify"><span class="hs-identifier hs-type">actuallyUnify</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-86"></span><span id="actuallyUnify"><span class="annot"><span class="annottext">actuallyUnify :: Context -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#actuallyUnify"><span class="hs-identifier hs-var hs-var">actuallyUnify</span></a></span></span><span> </span><span id="local-6989586621679518709"><span class="annot"><span class="annottext">context :: Context
-</span><a href="#local-6989586621679518709"><span class="hs-identifier hs-var">context</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679518708"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518708"><span class="hs-identifier hs-var">firstContent</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="IR.Constraint.Unify.html#actuallyUnify"><span class="hs-identifier hs-var hs-var">actuallyUnify</span></a></span></span><span> </span><span id="local-6989586621679519382"><span class="annot"><span class="annottext">context :: Context
+</span><a href="#local-6989586621679519382"><span class="hs-identifier hs-var">context</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679519381"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519381"><span class="hs-identifier hs-var">firstContent</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679518707"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518707"><span class="hs-identifier hs-var">secondContent</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679519380"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519380"><span class="hs-identifier hs-var">secondContent</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-87"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518708"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679519381"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-88"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#unifyFlex"><span class="hs-identifier hs-var">unifyFlex</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518709"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518708"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518707"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
+</span><a href="#local-6989586621679519382"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519381"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519380"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
 </span><span id="line-89"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#unifyRigid"><span class="hs-identifier hs-var">unifyRigid</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518709"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518708"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518707"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
-</span><span id="line-90"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679518701"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518701"><span class="hs-identifier hs-var">flatType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679519382"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519381"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519380"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
+</span><span id="line-90"></span><span>    </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679519374"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519374"><span class="hs-identifier hs-var">flatType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-91"></span><span>      </span><span class="annot"><span class="annottext">Context -&gt; FlatType -&gt; Content -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#unifyStructure"><span class="hs-identifier hs-var">unifyStructure</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518709"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518701"><span class="hs-identifier hs-var">flatType</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518708"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518707"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
+</span><a href="#local-6989586621679519382"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519374"><span class="hs-identifier hs-var">flatType</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519381"><span class="hs-identifier hs-var">firstContent</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519380"><span class="hs-identifier hs-var">secondContent</span></a></span><span>
 </span><span id="line-92"></span><span>    </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-93"></span><span>      </span><span class="hs-comment">-- If there was an error, just pretend it is okay. This lets us avoid</span><span>
 </span><span id="line-94"></span><span>      </span><span class="hs-comment">-- &quot;cascading&quot; errors where one problem manifests as multiple message.</span><span>
 </span><span id="line-95"></span><span>      </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518709"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519382"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span>
 </span><span id="line-96"></span><span>
 </span><span id="line-97"></span><span>
@@ -284,47 +284,47 @@ forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 </span><span id="line-99"></span><span>
 </span><span id="line-100"></span><span class="annot"><a href="IR.Constraint.Unify.html#unifyFlex"><span class="hs-identifier hs-type">unifyFlex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-101"></span><span id="unifyFlex"><span class="annot"><span class="annottext">unifyFlex :: Context -&gt; Content -&gt; Content -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#unifyFlex"><span class="hs-identifier hs-var hs-var">unifyFlex</span></a></span></span><span> </span><span id="local-6989586621679518699"><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518699"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="annot"><span class="annottext">Content
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518698"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518698"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518698"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="IR.Constraint.Unify.html#unifyFlex"><span class="hs-identifier hs-var hs-var">unifyFlex</span></a></span></span><span> </span><span id="local-6989586621679519372"><span class="annot"><span class="annottext">Context
+</span><a href="#local-6989586621679519372"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="annot"><span class="annottext">Content
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519371"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519371"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519371"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-102"></span><span>  </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518699"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519372"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span>
 </span><span id="line-103"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518699"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518698"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
+</span><a href="#local-6989586621679519372"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519371"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
 </span><span id="line-104"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518699"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518698"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
+</span><a href="#local-6989586621679519372"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519371"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
 </span><span id="line-105"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span class="annot"><span class="annottext">FlatType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518699"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518698"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
+</span><a href="#local-6989586621679519372"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519371"><span class="hs-identifier hs-var">otherContent</span></a></span><span>
 </span><span id="line-106"></span><span>
 </span><span id="line-107"></span><span>
 </span><span id="line-108"></span><span class="hs-comment">-- UNIFY RIGID VARIABLES</span><span>
 </span><span id="line-109"></span><span>
 </span><span id="line-110"></span><span class="annot"><a href="IR.Constraint.Unify.html#unifyRigid"><span class="hs-identifier hs-type">unifyRigid</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-111"></span><span id="unifyRigid"><span class="annot"><span class="annottext">unifyRigid :: Context -&gt; Content -&gt; Content -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#unifyRigid"><span class="hs-identifier hs-var hs-var">unifyRigid</span></a></span></span><span> </span><span id="local-6989586621679518697"><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518697"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span id="local-6989586621679518696"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518696"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span id="local-6989586621679518695"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518695"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518695"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="IR.Constraint.Unify.html#unifyRigid"><span class="hs-identifier hs-var hs-var">unifyRigid</span></a></span></span><span> </span><span id="local-6989586621679519370"><span class="annot"><span class="annottext">Context
+</span><a href="#local-6989586621679519370"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span id="local-6989586621679519369"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519369"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span id="local-6989586621679519368"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519368"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519368"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-112"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518697"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518696"><span class="hs-identifier hs-var">content</span></a></span><span>
+</span><a href="#local-6989586621679519370"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519369"><span class="hs-identifier hs-var">content</span></a></span><span>
 </span><span id="line-113"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Unify ()
 forall a. Unify a
@@ -336,7 +336,7 @@ forall a. Unify a
 </span><span id="line-115"></span><span>  </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518697"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519370"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span>
 </span><span id="line-116"></span><span>
 </span><span id="line-117"></span><span>
@@ -344,65 +344,65 @@ forall a. Unify a
 </span><span id="line-119"></span><span>
 </span><span id="line-120"></span><span class="annot"><a href="IR.Constraint.Unify.html#unifyStructure"><span class="hs-identifier hs-type">unifyStructure</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#FlatType"><span class="hs-identifier hs-type">FlatType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Content"><span class="hs-identifier hs-type">Content</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-121"></span><span id="unifyStructure"><span class="annot"><span class="annottext">unifyStructure :: Context -&gt; FlatType -&gt; Content -&gt; Content -&gt; Unify ()
-</span><a href="IR.Constraint.Unify.html#unifyStructure"><span class="hs-identifier hs-var hs-var">unifyStructure</span></a></span></span><span> </span><span id="local-6989586621679518694"><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518694"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span id="local-6989586621679518693"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518693"><span class="hs-identifier hs-var">flatType</span></a></span></span><span> </span><span id="local-6989586621679518692"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518692"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span id="local-6989586621679518691"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518691"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518691"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="IR.Constraint.Unify.html#unifyStructure"><span class="hs-identifier hs-var hs-var">unifyStructure</span></a></span></span><span> </span><span id="local-6989586621679519367"><span class="annot"><span class="annottext">Context
+</span><a href="#local-6989586621679519367"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span id="local-6989586621679519366"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519366"><span class="hs-identifier hs-var">flatType</span></a></span></span><span> </span><span id="local-6989586621679519365"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519365"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span id="local-6989586621679519364"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519364"><span class="hs-identifier hs-var">otherContent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519364"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-122"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518694"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518692"><span class="hs-identifier hs-var">content</span></a></span><span>
+</span><a href="#local-6989586621679519367"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519365"><span class="hs-identifier hs-var">content</span></a></span><span>
 </span><span id="line-123"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Unify ()
 forall a. Unify a
 </span><a href="IR.Constraint.Unify.html#mismatch"><span class="hs-identifier hs-var">mismatch</span></a></span><span>
-</span><span id="line-124"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679518690"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518690"><span class="hs-identifier hs-var">otherFlatType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518693"><span class="hs-identifier hs-var">flatType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518690"><span class="hs-identifier hs-var">otherFlatType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-125"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679518688"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679518688"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679518687"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518687"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679518686"><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679518686"><span class="hs-identifier hs-var">otherName</span></a></span></span><span> </span><span id="local-6989586621679518685"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518685"><span class="hs-identifier hs-var">otherArgs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679518688"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">TConId -&gt; TConId -&gt; Bool
+</span><span id="line-124"></span><span>  </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679519363"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519363"><span class="hs-identifier hs-var">otherFlatType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519366"><span class="hs-identifier hs-var">flatType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519363"><span class="hs-identifier hs-var">otherFlatType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679519361"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679519361"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679519360"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519360"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span id="local-6989586621679519359"><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679519359"><span class="hs-identifier hs-var">otherName</span></a></span></span><span> </span><span id="local-6989586621679519358"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519358"><span class="hs-identifier hs-var">otherArgs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TConId
+</span><a href="#local-6989586621679519361"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">TConId -&gt; TConId -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><a href="#local-6989586621679518686"><span class="hs-identifier hs-var">otherName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679519359"><span class="hs-identifier hs-var">otherName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-126"></span><span>      </span><span class="annot"><span class="annottext">(forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a.
 (forall r. (a -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify a
 </span><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-var">Unify</span></a></span><span> </span><span class="annot"><span class="annottext">((forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ())
 -&gt; (forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r) -&gt; Unify ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679518684"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518684"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679518683"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518683"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-127"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679518682"><span class="annot"><span class="annottext">ok1 :: () -&gt; TC r
-</span><a href="#local-6989586621679518682"><span class="hs-identifier hs-var hs-var">ok1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679519357"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519357"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679519356"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519356"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-127"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519355"><span class="annot"><span class="annottext">ok1 :: () -&gt; TC r
+</span><a href="#local-6989586621679519355"><span class="hs-identifier hs-var hs-var">ok1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518694"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518691"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-128"></span><span>              </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679518681"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518681"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519367"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519364"><span class="hs-identifier hs-var">otherContent</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-128"></span><span>              </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679519354"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519354"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518681"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518684"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518683"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><a href="#local-6989586621679519354"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519357"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519356"><span class="hs-identifier hs-var">err</span></a></span><span>
 </span><span id="line-129"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r.
 Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 </span><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var">unifyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518694"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518687"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518685"><span class="hs-identifier hs-var">otherArgs</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518682"><span class="hs-identifier hs-var">ok1</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518683"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><a href="#local-6989586621679519367"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519360"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519358"><span class="hs-identifier hs-var">otherArgs</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519355"><span class="hs-identifier hs-var">ok1</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519356"><span class="hs-identifier hs-var">err</span></a></span><span>
 </span><span id="line-130"></span><span>    </span><span class="annot"><span class="annottext">(FlatType, FlatType)
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Unify ()
 forall a. Unify a
@@ -410,65 +410,65 @@ forall a. Unify a
 </span><span id="line-131"></span><span>  </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context -&gt; Content -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518694"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519367"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span>
 </span><span id="line-132"></span><span>
 </span><span id="line-133"></span><span>
 </span><span id="line-134"></span><span class="hs-comment">-- UNIFY ARGS</span><span>
 </span><span id="line-135"></span><span>
-</span><span id="line-136"></span><span id="local-6989586621679518759"><span class="annot"><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-type">unifyArgs</span></a></span><span>
-</span><span id="line-137"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518759"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518759"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679518759"><span class="hs-identifier hs-type">r</span></a></span></span><span>
+</span><span id="line-136"></span><span id="local-6989586621679519432"><span class="annot"><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-type">unifyArgs</span></a></span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Unify.html#Context"><span class="hs-identifier hs-type">Context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519432"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519432"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679519432"><span class="hs-identifier hs-type">r</span></a></span></span><span>
 </span><span id="line-138"></span><span id="unifyArgs"><span class="annot"><span class="annottext">unifyArgs :: Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var hs-var">unifyArgs</span></a></span></span><span> </span><span id="local-6989586621679518679"><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518679"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518678"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518678"><span class="hs-identifier hs-var">arg1</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679518677"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518677"><span class="hs-identifier hs-var">others1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679518676"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518676"><span class="hs-identifier hs-var">arg2</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679518675"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518675"><span class="hs-identifier hs-var">others2</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679518674"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518674"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679518673"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518673"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var hs-var">unifyArgs</span></a></span></span><span> </span><span id="local-6989586621679519352"><span class="annot"><span class="annottext">Context
+</span><a href="#local-6989586621679519352"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679519351"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519351"><span class="hs-identifier hs-var">arg1</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679519350"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519350"><span class="hs-identifier hs-var">others1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679519349"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519349"><span class="hs-identifier hs-var">arg2</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679519348"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519348"><span class="hs-identifier hs-var">others2</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679519347"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519347"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span id="local-6989586621679519346"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519346"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-139"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Variable -&gt; Variable -&gt; Unify ()
 </span><a href="IR.Constraint.Unify.html#subUnify"><span class="hs-identifier hs-var">subUnify</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518678"><span class="hs-identifier hs-var">arg1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518676"><span class="hs-identifier hs-var">arg2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-140"></span><span>    </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679518672"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518672"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679519351"><span class="hs-identifier hs-var">arg1</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519349"><span class="hs-identifier hs-var">arg2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-140"></span><span>    </span><span class="annot"><a href="IR.Constraint.Unify.html#Unify"><span class="hs-identifier hs-type">Unify</span></a></span><span> </span><span id="local-6989586621679519345"><span class="annot"><span class="annottext">forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
+</span><a href="#local-6989586621679519345"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-141"></span><span>      </span><span class="annot"><span class="annottext">(() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r. (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
-</span><a href="#local-6989586621679518672"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><a href="#local-6989586621679519345"><span class="hs-identifier hs-var">k</span></a></span><span>
 </span><span id="line-142"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r.
 Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 </span><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var">unifyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518679"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518677"><span class="hs-identifier hs-var">others1</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518675"><span class="hs-identifier hs-var">others2</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518674"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518673"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679519352"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519350"><span class="hs-identifier hs-var">others1</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519348"><span class="hs-identifier hs-var">others2</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519347"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519346"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-143"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 forall r.
 Context
 -&gt; [Variable] -&gt; [Variable] -&gt; (() -&gt; TC r) -&gt; (() -&gt; TC r) -&gt; TC r
 </span><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var">unifyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><a href="#local-6989586621679518679"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518677"><span class="hs-identifier hs-var">others1</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518675"><span class="hs-identifier hs-var">others2</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518673"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518673"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679519352"><span class="hs-identifier hs-var">context</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519350"><span class="hs-identifier hs-var">others1</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519348"><span class="hs-identifier hs-var">others2</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519346"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519346"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-144"></span><span class="annot"><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var">unifyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Context
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679518671"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518671"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679519344"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519344"><span class="hs-identifier hs-var">ok</span></a></span></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518671"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679519344"><span class="hs-identifier hs-var">ok</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-145"></span><span class="annot"><a href="IR.Constraint.Unify.html#unifyArgs"><span class="hs-identifier hs-var">unifyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Context
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Variable]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Variable]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518670"><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518670"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
-</span><a href="#local-6989586621679518670"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519343"><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519343"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; TC r
+</span><a href="#local-6989586621679519343"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-146"></span></pre></body></html>

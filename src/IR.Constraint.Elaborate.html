@@ -8,11 +8,11 @@
 </span><span id="line-8"></span><span>
 </span><span id="line-9"></span><span class="annot"><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#Program"><span class="hs-identifier hs-type">I.Program</span></a></span><span> </span><span class="annot"><a href="IR.Types.Type.html#Type"><span class="hs-identifier hs-type">Can.Type</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-10"></span><span id="run"><span class="annot"><span class="annottext">run :: Program Variable -&gt; TC (Program Type)
-</span><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679519486"><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519486"><span class="hs-identifier hs-var">pVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-11"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679519485"><span class="annot"><span class="annottext">[Binder Variable]
-</span><a href="#local-6989586621679519485"><span class="hs-identifier hs-var">names</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679519484"><span class="annot"><span class="annottext">[Expr Variable]
-</span><a href="#local-6989586621679519484"><span class="hs-identifier hs-var">exprs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Binder Variable, Expr Variable)]
+</span><a href="IR.Constraint.Elaborate.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679520159"><span class="annot"><span class="annottext">Program Variable
+</span><a href="#local-6989586621679520159"><span class="hs-identifier hs-var">pVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520158"><span class="annot"><span class="annottext">[Binder Variable]
+</span><a href="#local-6989586621679520158"><span class="hs-identifier hs-var">names</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520157"><span class="annot"><span class="annottext">[Expr Variable]
+</span><a href="#local-6989586621679520157"><span class="hs-identifier hs-var">exprs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Binder Variable, Expr Variable)]
 -&gt; ([Binder Variable], [Expr Variable])
 forall a b. [(a, b)] -&gt; ([a], [b])
 </span><span class="hs-identifier hs-var">unzip</span></span><span> </span><span class="annot"><span class="annottext">([(Binder Variable, Expr Variable)]
@@ -23,9 +23,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Variable -&gt; [(Binder Variable, Expr Variable)]
 forall t. Program t -&gt; [(Binder t, Expr t)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var hs-var">I.programDefs</span></a></span><span> </span><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519486"><span class="hs-identifier hs-var">pVar</span></a></span><span>
-</span><span id="line-12"></span><span>  </span><span id="local-6989586621679519481"><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679519481"><span class="hs-identifier hs-var">exprs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr Variable
+</span><a href="#local-6989586621679520159"><span class="hs-identifier hs-var">pVar</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span id="local-6989586621679520154"><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679520154"><span class="hs-identifier hs-var">exprs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr Variable
  -&gt; StateT
       TCState (ExceptT Error (WriterT (Doc String) IO)) (Expr Type))
 -&gt; [Expr Variable]
@@ -45,39 +45,39 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Variable
 -&gt; StateT TCState (ExceptT Error (WriterT (Doc String) IO)) Type
 </span><a href="IR.Constraint.Type.html#toCanType"><span class="hs-identifier hs-var">Type.toCanType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr Variable]
-</span><a href="#local-6989586621679519484"><span class="hs-identifier hs-var">exprs</span></a></span><span>
-</span><span id="line-13"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519478"><span class="annot"><span class="annottext">reattachBinders :: Binder t -&gt; c t -&gt; (Binder t, c t)
-</span><a href="#local-6989586621679519478"><span class="hs-identifier hs-var hs-var">reattachBinders</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679519476"><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679519476"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="annot"><span class="annottext">t
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679519475"><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519475"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Binder t
+</span><a href="#local-6989586621679520157"><span class="hs-identifier hs-var">exprs</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679520151"><span class="annot"><span class="annottext">reattachBinders :: Binder t -&gt; c t -&gt; (Binder t, c t)
+</span><a href="#local-6989586621679520151"><span class="hs-identifier hs-var hs-var">reattachBinders</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-type">I.BindVar</span></a></span><span> </span><span id="local-6989586621679520149"><span class="annot"><span class="annottext">VarId
+</span><a href="#local-6989586621679520149"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679520148"><span class="annot"><span class="annottext">c t
+</span><a href="#local-6989586621679520148"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarId -&gt; t -&gt; Binder t
 forall t. VarId -&gt; t -&gt; Binder t
 </span><a href="IR.IR.html#BindVar"><span class="hs-identifier hs-var">I.BindVar</span></a></span><span> </span><span class="annot"><span class="annottext">VarId
-</span><a href="#local-6989586621679519476"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">(t -&gt; Binder t) -&gt; t -&gt; Binder t
+</span><a href="#local-6989586621679520149"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">(t -&gt; Binder t) -&gt; t -&gt; Binder t
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">c t -&gt; t
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519475"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519475"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span>      </span><span class="annot"><a href="#local-6989586621679519478"><span class="hs-identifier hs-var">reattachBinders</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679519472"><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519472"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t -&gt; Binder t
+</span><a href="#local-6989586621679520148"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c t
+</span><a href="#local-6989586621679520148"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>      </span><span class="annot"><a href="#local-6989586621679520151"><span class="hs-identifier hs-var">reattachBinders</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-type">I.BindAnon</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679520145"><span class="annot"><span class="annottext">c t
+</span><a href="#local-6989586621679520145"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t -&gt; Binder t
 forall t. t -&gt; Binder t
 </span><a href="IR.IR.html#BindAnon"><span class="hs-identifier hs-var">I.BindAnon</span></a></span><span> </span><span class="annot"><span class="annottext">(t -&gt; Binder t) -&gt; t -&gt; Binder t
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">c t -&gt; t
 forall (c :: * -&gt; *) a. Carrier c =&gt; c a -&gt; a
 </span><a href="IR.IR.html#extract"><span class="hs-identifier hs-var">I.extract</span></a></span><span> </span><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519472"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c t
-</span><a href="#local-6989586621679519472"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679520145"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">c t
+</span><a href="#local-6989586621679520145"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-15"></span><span>  </span><span class="annot"><span class="annottext">Program Type -&gt; TC (Program Type)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program Type -&gt; TC (Program Type))
 -&gt; Program Type -&gt; TC (Program Type)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program Variable
-</span><a href="#local-6989586621679519486"><span class="hs-identifier hs-var">pVar</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: [(Binder Type, Expr Type)]
+</span><a href="#local-6989586621679520159"><span class="hs-identifier hs-var">pVar</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">programDefs :: [(Binder Type, Expr Type)]
 </span><a href="IR.IR.html#programDefs"><span class="hs-identifier hs-var">I.programDefs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binder Variable -&gt; Expr Type -&gt; (Binder Type, Expr Type))
 -&gt; [Binder Variable] -&gt; [Expr Type] -&gt; [(Binder Type, Expr Type)]
 forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
@@ -85,9 +85,9 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
 forall (c :: * -&gt; *) t t.
 Carrier c =&gt;
 Binder t -&gt; c t -&gt; (Binder t, c t)
-</span><a href="#local-6989586621679519478"><span class="hs-identifier hs-var">reattachBinders</span></a></span><span> </span><span class="annot"><span class="annottext">[Binder Variable]
-</span><a href="#local-6989586621679519485"><span class="hs-identifier hs-var">names</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
-</span><a href="#local-6989586621679519481"><span class="hs-identifier hs-var">exprs'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">symTable :: Map VarId (SymInfo Type)
+</span><a href="#local-6989586621679520151"><span class="hs-identifier hs-var">reattachBinders</span></a></span><span> </span><span class="annot"><span class="annottext">[Binder Variable]
+</span><a href="#local-6989586621679520158"><span class="hs-identifier hs-var">names</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr Type]
+</span><a href="#local-6989586621679520154"><span class="hs-identifier hs-var">exprs'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">symTable :: Map VarId (SymInfo Type)
 </span><a href="IR.IR.html#symTable"><span class="hs-identifier hs-var">I.symTable</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map VarId (SymInfo Type)
 forall t. Map VarId (SymInfo t)
 </span><a href="IR.IR.html#uninitializedSymTable"><span class="hs-identifier hs-var">I.uninitializedSymTable</span></a></span><span> </span><span class="hs-special">}</span><span>

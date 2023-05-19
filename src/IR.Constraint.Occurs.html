@@ -17,31 +17,31 @@
 </span><span id="line-17"></span><span>
 </span><span id="line-18"></span><span class="annot"><a href="IR.Constraint.Occurs.html#occurs"><span class="hs-identifier hs-type">occurs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-19"></span><span id="occurs"><span class="annot"><span class="annottext">occurs :: Variable -&gt; TC Bool
-</span><a href="IR.Constraint.Occurs.html#occurs"><span class="hs-identifier hs-var hs-var">occurs</span></a></span></span><span> </span><span id="local-6989586621679518985"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518985"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Variable] -&gt; Variable -&gt; Bool -&gt; TC Bool
+</span><a href="IR.Constraint.Occurs.html#occurs"><span class="hs-identifier hs-var hs-var">occurs</span></a></span></span><span> </span><span id="local-6989586621679519658"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519658"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Variable] -&gt; Variable -&gt; Bool -&gt; TC Bool
 </span><a href="IR.Constraint.Occurs.html#occursHelp"><span class="hs-identifier hs-var">occursHelp</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518985"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519658"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-20"></span><span>
 </span><span id="line-21"></span><span>
 </span><span id="line-22"></span><span class="annot"><a href="IR.Constraint.Occurs.html#occursHelp"><span class="hs-identifier hs-type">occursHelp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Type.html#Variable"><span class="hs-identifier hs-type">Variable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="IR.Constraint.Monad.html#TC"><span class="hs-identifier hs-type">TC</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-23"></span><span id="occursHelp"><span class="annot"><span class="annottext">occursHelp :: [Variable] -&gt; Variable -&gt; Bool -&gt; TC Bool
-</span><a href="IR.Constraint.Occurs.html#occursHelp"><span class="hs-identifier hs-var hs-var">occursHelp</span></a></span></span><span> </span><span id="local-6989586621679518983"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518983"><span class="hs-identifier hs-var">seen</span></a></span></span><span> </span><span id="local-6989586621679518982"><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518982"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679518981"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518981"><span class="hs-identifier hs-var">foundCycle</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="IR.Constraint.Occurs.html#occursHelp"><span class="hs-identifier hs-var hs-var">occursHelp</span></a></span></span><span> </span><span id="local-6989586621679519656"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519656"><span class="hs-identifier hs-var">seen</span></a></span></span><span> </span><span id="local-6989586621679519655"><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519655"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679519654"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519654"><span class="hs-identifier hs-var">foundCycle</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-24"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518982"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; [Variable] -&gt; Bool
+</span><a href="#local-6989586621679519655"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; [Variable] -&gt; Bool
 forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
 </span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518983"><span class="hs-identifier hs-var">seen</span></a></span><span>
+</span><a href="#local-6989586621679519656"><span class="hs-identifier hs-var">seen</span></a></span><span>
 </span><span id="line-25"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TC Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
 </span><span id="line-26"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-27"></span><span>      </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679518978"><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518978"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span id="line-27"></span><span>      </span><span class="hs-special">(</span><span class="annot"><a href="IR.Constraint.Type.html#Descriptor"><span class="hs-identifier hs-type">Descriptor</span></a></span><span> </span><span id="local-6989586621679519651"><span class="annot"><span class="annottext">Content
+</span><a href="#local-6989586621679519651"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Mark
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Variable
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Variable
@@ -49,43 +49,43 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
      TCState (ExceptT Error (WriterT (Doc String) IO)) Descriptor
 forall (m :: * -&gt; *) a. MonadIO m =&gt; Point a -&gt; m a
 </span><a href="IR.Constraint.UnionFind.html#get"><span class="hs-identifier hs-var">UF.get</span></a></span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518982"><span class="hs-identifier hs-var">var</span></a></span><span>
+</span><a href="#local-6989586621679519655"><span class="hs-identifier hs-var">var</span></a></span><span>
 </span><span id="line-28"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Content
-</span><a href="#local-6989586621679518978"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679519651"><span class="hs-identifier hs-var">content</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-29"></span><span>        </span><span class="annot"><a href="IR.Constraint.Type.html#FlexVar"><span class="hs-identifier hs-type">FlexVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TC Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518981"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
+</span><a href="#local-6989586621679519654"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
 </span><span id="line-30"></span><span>        </span><span class="annot"><a href="IR.Constraint.Type.html#RigidVar"><span class="hs-identifier hs-type">RigidVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVarId
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TC Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518981"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
-</span><span id="line-31"></span><span>        </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679518973"><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518973"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-32"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679518972"><span class="annot"><span class="annottext">newSeen :: [Variable]
-</span><a href="#local-6989586621679518972"><span class="hs-identifier hs-var hs-var">newSeen</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Variable
-</span><a href="#local-6989586621679518982"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; [Variable] -&gt; [Variable]
+</span><a href="#local-6989586621679519654"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
+</span><span id="line-31"></span><span>        </span><span class="annot"><a href="IR.Constraint.Type.html#Structure"><span class="hs-identifier hs-type">Structure</span></a></span><span> </span><span id="local-6989586621679519646"><span class="annot"><span class="annottext">FlatType
+</span><a href="#local-6989586621679519646"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-32"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679519645"><span class="annot"><span class="annottext">newSeen :: [Variable]
+</span><a href="#local-6989586621679519645"><span class="hs-identifier hs-var hs-var">newSeen</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Variable
+</span><a href="#local-6989586621679519655"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Variable -&gt; [Variable] -&gt; [Variable]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518983"><span class="hs-identifier hs-var">seen</span></a></span><span>
+</span><a href="#local-6989586621679519656"><span class="hs-identifier hs-var">seen</span></a></span><span>
 </span><span id="line-33"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FlatType
-</span><a href="#local-6989586621679518973"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679519646"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-34"></span><span>                </span><span class="annot"><a href="IR.Constraint.Type.html#TCon1"><span class="hs-identifier hs-type">TCon1</span></a></span><span> </span><span class="annot"><span class="annottext">TConId
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679518970"><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518970"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; Bool -&gt; TC Bool) -&gt; Bool -&gt; [Variable] -&gt; TC Bool
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679519643"><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519643"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Variable -&gt; Bool -&gt; TC Bool) -&gt; Bool -&gt; [Variable] -&gt; TC Bool
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 (a -&gt; b -&gt; m b) -&gt; b -&gt; t a -&gt; m b
 </span><span class="hs-identifier hs-var">foldrM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Variable] -&gt; Variable -&gt; Bool -&gt; TC Bool
 </span><a href="IR.Constraint.Occurs.html#occursHelp"><span class="hs-identifier hs-var">occursHelp</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518972"><span class="hs-identifier hs-var">newSeen</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518981"><span class="hs-identifier hs-var">foundCycle</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
-</span><a href="#local-6989586621679518970"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><a href="#local-6989586621679519645"><span class="hs-identifier hs-var">newSeen</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679519654"><span class="hs-identifier hs-var">foundCycle</span></a></span><span> </span><span class="annot"><span class="annottext">[Variable]
+</span><a href="#local-6989586621679519643"><span class="hs-identifier hs-var">args</span></a></span><span>
 </span><span id="line-35"></span><span>        </span><span class="annot"><span class="annottext">Content
 </span><a href="IR.Constraint.Type.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TC Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679518981"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
+</span><a href="#local-6989586621679519654"><span class="hs-identifier hs-var">foundCycle</span></a></span><span>
 </span><span id="line-36"></span></pre></body></html>
