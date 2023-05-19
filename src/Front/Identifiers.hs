@@ -38,7 +38,7 @@ instance Default TypInfo where
 
 -- | Map of builtin types.
 builtinTypes :: M.Map Identifier TypInfo
-builtinTypes = M.fromList $ map mkBuiltin ["Int", "[]", "&", "()"]
+builtinTypes = M.fromList $ map mkBuiltin ["Int", "Time", "[]", "&", "()"]
  where
   mkBuiltin i = (i, TypInfo{typKind = Builtin})
 

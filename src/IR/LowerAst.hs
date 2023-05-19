@@ -312,6 +312,7 @@ lowerPrim _ = Nothing
 -- | Lowers the AST's representation of types into that of the IR.
 lowerType :: A.Typ -> Compiler.Pass I.Type
 lowerType (A.TCon "Int") = return I.I32
+lowerType (A.TCon "Time") = return I.U64
 lowerType (A.TCon "()") = return I.Unit
 lowerType (A.TCon i)
   | isCons i = return $ I.TCon (fromId i) []

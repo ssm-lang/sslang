@@ -159,6 +159,7 @@ tokens :-
     extern              { keyword TExtern }
     after               { keyword TAfter }
     now                 { keyword TNow }
+    break               { keyword TBreak }
     \:                  { keyword TColon }
     \|\|                { keyword TDBar }
     \-\>                { keyword TRarrow }

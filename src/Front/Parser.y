@@ -35,6 +35,7 @@ import Data.Bifunctor (first)
   'do'      { Token (_, TDo) }
   'par'     { Token (_, TPar) }
   'loop'    { Token (_, TLoop) }
+  'break'   { Token (_, TBreak) }
   'let'     { Token (_, TLet) }
   'after'   { Token (_, TAfter) }
   'wait'    { Token (_, TWait) }
@@ -316,6 +317,7 @@ exprAtom
   | cquote                              { CQuote $1 }
   | id                                  { Id $1 }
   | 'now'                               { Now }
+  | 'break'                             { Break }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }
   | '[' exprList ']'                    { ListExpr $2 }
