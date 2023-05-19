@@ -62,7 +62,6 @@ builtinData =
       , ">"
       , "deref"
       , "new"
-      , "now"
       ]
  where
   mkBuiltin i = (i, DataInfo{dataKind = Builtin})

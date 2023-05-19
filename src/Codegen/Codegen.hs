@@ -829,9 +829,13 @@ genPrim I.Loop [b] _ = do
   (_, bodyStms) <- genExpr b
   return (unit, [citems|for (;;) { $items:bodyStms }|])
 genPrim I.Break [] _ = return (undef, [citems|break;|])
-genPrim I.Now [_] t = do
+genPrim I.Now [] t = do
   tmp <- genTmp t
-  return (tmp, [citems|$exp:tmp = $exp:(marshal $ ccall now []);|])
+  return (tmp, [citems|$exp:tmp = $exp:(new_time $ ccall now []);|])
+genPrim I.Last [r] t = do
+  (r', stms) <- genExpr r
+  tmp <- genTmp t
+  return (tmp, stms ++ [citems|$exp:tmp = $exp:(new_time $ sv_last_updated r');|])
 genPrim (I.CQuote e) [] _ = return ([cexp|$exp:(EscExp e)|], [])
 genPrim (I.CCall s) es _ = do
   (argExps, argStms) <- second concat . unzip <$> mapM genExpr es

@@ -367,6 +367,8 @@ scopeExpr (A.OpRegion e o) =
         <> fromString (show o)
 scopeExpr (A.CQuote _) = return ()
 scopeExpr (A.CCall _ es) = mapM_ scopeExpr es
+scopeExpr (A.Last e) = scopeExpr e
+scopeExpr A.Now = return ()
 scopeExpr A.NoExpr = return ()
 
 

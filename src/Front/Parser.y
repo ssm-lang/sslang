@@ -41,6 +41,7 @@ import Data.Bifunctor (first)
   'fun'     { Token (_, TFun) }
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
+  'now'     { Token (_, TNow) }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
   '->'      { Token (_, TRarrow) }
@@ -51,6 +52,7 @@ import Data.Bifunctor (first)
   ';'       { Token (_, TSemicolon) }
   ','       { Token (_, TComma) }
   '_'       { Token (_, TUnderscore) }
+  '@@'      { Token (_, TAtAt) }
   '@'       { Token (_, TAt) }
   '&'       { Token (_, TAmpersand) }
   '('       { Token (_, TLparen) }
@@ -304,6 +306,7 @@ exprElse                              --> Expr
 -- | Expressions with application by juxtaposition.
 exprApp                               --> Expr
   : exprApp exprAtom                    { Apply $1 $2 }
+  | '@@' exprAtom                       { Last $2 }
   | exprAtom                            { $1 }
 
 -- | Atomic expressions.
@@ -312,6 +315,7 @@ exprAtom
   | string                              { Lit (LitString $1) }
   | cquote                              { CQuote $1 }
   | id                                  { Id $1 }
+  | 'now'                               { Now }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }
   | '[' exprList ']'                    { ListExpr $2 }
