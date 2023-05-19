@@ -520,8 +520,7 @@ genStep = do
           }
         if ($id:acts->$id:ret_val)
           *$id:acts->$id:ret_val = $exp:ret_expr;
-        $id:leave_label:
-          $exp:do_leave;
+        $exp:do_leave;
         }
       |]
     )
