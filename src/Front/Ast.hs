@@ -99,6 +99,8 @@ data Expr
   | CCall Identifier [Expr]
   | Tuple [Expr]
   | ListExpr [Expr]
+  | Last Expr
+  | Now
   deriving (Eq, Show, Typeable, Data)
 
 {- | An operator region: a flat list of alternating expressions and operators
@@ -294,6 +296,8 @@ instance Pretty Expr where
    where
     prettyPatExprTup (p, e) = pretty p <+> pretty "=" <+> braces (pretty e)
   pretty (ListExpr es) = brackets $ hsep $ punctuate comma $ map pretty es
+  pretty Now           = pretty "now"
+  pretty (Last e)      = pretty "@@" <+> pretty e
   pretty NoExpr        = error "Unexpected NoExpr"
 
 instance Pretty Literal where

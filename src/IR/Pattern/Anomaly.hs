@@ -69,23 +69,23 @@ runAnomalyFn :: AnomalyFn a -> AnomalyCtx -> Pass a
 runAnomalyFn (AnomalyFn m) = runReaderT m
 
 
-checkProgram :: I.Program t -> Pass ()
-checkProgram topdefs = runAnomalyFn (checkDefs ds) ctx
+checkProgram :: Show t => I.Program t -> Pass ()
+checkProgram topdefs = mapM_ (checkExpr . snd) ds `runAnomalyFn` ctx
  where
   tds = I.typeDefs topdefs
   ds = I.programDefs topdefs
   ctx = buildCtx tds
 
 
-checkDefs :: [(I.VarId, I.Expr t)] -> AnomalyFn ()
+checkDefs :: Show t => [(I.VarId, I.Expr t)] -> AnomalyFn ()
 checkDefs = mapM_ (\(_, e) -> checkExpr e)
 
 
-checkExprs :: [I.Expr t] -> AnomalyFn ()
+checkExprs :: Show t => [I.Expr t] -> AnomalyFn ()
 checkExprs = mapM_ checkExpr
 
 
-checkExpr :: I.Expr t -> AnomalyFn ()
+checkExpr :: Show t => I.Expr t -> AnomalyFn ()
 checkExpr (I.Var _ _) = return ()
 checkExpr (I.Data _ _) = return ()
 checkExpr (I.Lit _ _) = return ()
@@ -99,14 +99,14 @@ checkExpr (I.Prim _ es _) = checkExprs es
 checkExpr (I.Exception _ _) = return ()
 
 
-checkPats :: [I.Alt] -> AnomalyFn ()
+checkPats :: Show t => [I.Alt t] -> AnomalyFn ()
 checkPats ps = do
   checkUseless ps
   checkExhaustive ps
 
 
-checkUseless :: [I.Alt] -> AnomalyFn ()
-checkUseless ps = mapM_ (\(pm, p) -> checkUselessEach pm p) cases
+checkUseless :: Show t => [I.Alt t] -> AnomalyFn ()
+checkUseless ps = mapM_ (uncurry checkUselessEach) cases
  where
   checkUselessEach pm p = do
     u <- useful pm p
@@ -119,7 +119,7 @@ checkUseless ps = mapM_ (\(pm, p) -> checkUselessEach pm p) cases
       )
   cases =
     let vecs = map (\pat -> PV.fromList [pat]) ps
-        pats = map (\vec -> PM.fromPatVec vec) vecs
+        pats = map PM.fromPatVec vecs
         emptyMat = let p : _ = pats in PM.emptyWithCols $ PM.ncol p
         patsBeforeIdx =
           let accumRows = (\(ms, m) p -> (m : ms, PM.extend m p))
@@ -128,10 +128,11 @@ checkUseless ps = mapM_ (\(pm, p) -> checkUselessEach pm p) cases
      in zip patsBeforeIdx vecs
 
 
-checkExhaustive :: [I.Alt] -> AnomalyFn ()
+checkExhaustive :: Show t => [I.Alt t] -> AnomalyFn ()
 checkExhaustive ps = do
   let pm = PM.singleCol ps
-  u <- useful pm (PV.singleton $ I.AltBinder Nothing)
+      ty = I.extract $ head ps
+  u <- useful pm (PV.singleton $ I.AltBinder (I.BindAnon ty))
   when
     u
     ( throwError $
@@ -141,7 +142,7 @@ checkExhaustive ps = do
     )
 
 
-useful :: PM.PatMat -> PV.PatVec -> AnomalyFn Bool
+useful :: PM.PatMat t -> PV.PatVec t -> AnomalyFn Bool
 useful pm pv = do
   case compare (PM.ncol pm) 0 of
     LT -> throwMalformedError
@@ -151,7 +152,7 @@ useful pm pv = do
   baseCase = return $ PM.nrow pm == 0
 
 
-usefulInductive :: PM.PatMat -> PV.PatVec -> AnomalyFn Bool
+usefulInductive :: PM.PatMat t -> PV.PatVec t -> AnomalyFn Bool
 usefulInductive pm pv =
   let wildCase = case samplePat pm of
         Nothing -> useful (PM.defaultize pm) (PV.tl pv)
@@ -170,18 +171,18 @@ usefulInductive pm pv =
                      in fmap or . mapM f $ S.toList (tCSet t)
                   else useful (PM.defaultize pm) (PV.tl pv)
            in case sample of
-                I.AltLit _ -> useful (PM.defaultize pm) (PV.tl pv)
-                I.AltData (I.DConId i) _ -> wildCaseCons i
+                I.AltLit{} -> useful (PM.defaultize pm) (PV.tl pv)
+                I.AltData (I.DConId i) _ _ -> wildCaseCons i
                 I.AltBinder _ -> error "can't happen"
    in case PV.hd pv of
         I.AltBinder _ -> wildCase
-        I.AltData (I.DConId i) _ -> do
+        I.AltData (I.DConId i) _ _ -> do
           c <- askCInfo i
           useful (PM.specializeCons (cArity c) i pm) (PV.specialize pv)
-        I.AltLit lit -> useful (PM.specializeLit lit pm) (PV.specialize pv)
+        I.AltLit lit _ -> useful (PM.specializeLit lit pm) (PV.specialize pv)
 
 
-samplePat :: PM.PatMat -> Maybe I.Alt
+samplePat :: PM.PatMat t -> Maybe (I.Alt t)
 samplePat pm = case firstConsPatVec of
   Nothing -> Nothing
   Just pv -> stripPat (PV.hd pv)
@@ -189,13 +190,13 @@ samplePat pm = case firstConsPatVec of
   firstConsPatVec = find (isConstructor . PV.hd) (PM.toList pm)
    where
     isConstructor p = case p of
-      I.AltLit _ -> True
-      I.AltData _ _ -> True
+      I.AltLit{} -> True
+      I.AltData{} -> True
       I.AltBinder _ -> False
   stripPat p = case p of
-    I.AltLit _ -> Just p
-    I.AltData _ _ -> Just p
-    I.AltBinder Nothing -> error "can't happen"
+    I.AltLit{} -> Just p
+    I.AltData{} -> Just p
+    I.AltBinder (I.BindAnon _) -> error "can't happen"
     I.AltBinder _ -> Just p
 
 
@@ -223,13 +224,13 @@ askTInfo i = do
     Just ts' -> return ts'
 
 
-hasCompleteCons :: S.Set Identifier -> PM.PatMat -> Bool
+hasCompleteCons :: S.Set Identifier -> PM.PatMat t -> Bool
 hasCompleteCons cset pm = S.empty == foldr removeC cset (PM.toList pm)
  where
   removeC pv cset' = removeC' (PV.hd pv) cset'
   removeC' p cset' = case p of
-    I.AltData (I.DConId i) _ -> S.delete i cset'
-    I.AltBinder (Just (I.VarId i)) -> S.delete i cset'
+    I.AltData (I.DConId i) _ _ -> S.delete i cset'
+    I.AltBinder (I.BindVar (I.VarId i) _) -> S.delete i cset'
     _ -> cset'
 
 

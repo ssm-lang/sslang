@@ -1,0 +1,21 @@
+type Tree
+  TwoChildren Tree Tree  
+  Leaf                   
+  OneChild Int Tree                
+
+//main cin cout -> () =
+//  let d = Leaf 
+//  let zzz = match d 
+//                   Leaf = 65
+//                   _ = 66
+
+main cin cout -> () =
+  let d = Leaf 
+  let zzz = 
+    match d 
+        Leaf = 65
+        _ = 66
+
+// correct output should be 65 'A'
+  after 10 , (cout : & Int) <- zzz
+  wait (cout : & Int)

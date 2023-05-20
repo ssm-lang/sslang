@@ -17,7 +17,7 @@ import Front.Ast
 import Front.Token
 import Prettyprinter (pretty)
 import Common.Compiler (Pass, Error(..), liftEither)
-import Common.Identifiers (fromString)
+import Common.Identifiers (fromString, Identifier(..))
 import Data.Bifunctor (first)
 }
 
@@ -35,12 +35,14 @@ import Data.Bifunctor (first)
   'do'      { Token (_, TDo) }
   'par'     { Token (_, TPar) }
   'loop'    { Token (_, TLoop) }
+  'break'   { Token (_, TBreak) }
   'let'     { Token (_, TLet) }
   'after'   { Token (_, TAfter) }
   'wait'    { Token (_, TWait) }
   'fun'     { Token (_, TFun) }
   'match'   { Token (_, TMatch) }
   'extern'  { Token (_, TExtern) }
+  'now'     { Token (_, TNow) }
   '='       { Token (_, TEq) }
   '<-'      { Token (_, TLarrow) }
   '->'      { Token (_, TRarrow) }
@@ -51,6 +53,7 @@ import Data.Bifunctor (first)
   ';'       { Token (_, TSemicolon) }
   ','       { Token (_, TComma) }
   '_'       { Token (_, TUnderscore) }
+  '@@'      { Token (_, TAtAt) }
   '@'       { Token (_, TAt) }
   '&'       { Token (_, TAmpersand) }
   '('       { Token (_, TLparen) }
@@ -59,6 +62,7 @@ import Data.Bifunctor (first)
   '}'       { Token (_, TRbrace) }
   '['       { Token (_, TLbracket) }
   ']'       { Token (_, TRbracket) }
+  '!'       { Token (_, TOp (Identifier "!")) }
   int       { Token (_, TInteger $$) }
   string    { Token (_, TString $$) }
   op        { Token (_, TOp $$) }
@@ -304,6 +308,8 @@ exprElse                              --> Expr
 -- | Expressions with application by juxtaposition.
 exprApp                               --> Expr
   : exprApp exprAtom                    { Apply $1 $2 }
+  | '@@' exprAtom                       { Last $2 }
+  | '!' exprAtom                        { Apply (Id $ fromString "!") $2 }
   | exprAtom                            { $1 }
 
 -- | Atomic expressions.
@@ -312,6 +318,8 @@ exprAtom
   | string                              { Lit (LitString $1) }
   | cquote                              { CQuote $1 }
   | id                                  { Id $1 }
+  | 'now'                               { Now }
+  | 'break'                             { Break }
   | '(' expr ')'                        { $2 }
   | '(' ')'                             { Lit LitEvent }
   | '[' exprList ']'                    { ListExpr $2 }

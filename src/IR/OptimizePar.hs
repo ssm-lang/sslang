@@ -24,10 +24,10 @@ import qualified IR.IR as I
 
 -- | Optimization Environment
 data OptParCtx = OptParCtx
-  { -- | 'numPars' the number of par nodes in the input program's IR.
-    numPars :: Int
-  , -- | 'numLitInts' the number of "bad" par node in the input program's IR.
-    numBadPars :: Int
+  { numPars :: Int
+  -- ^ 'numPars' the number of par nodes in the input program's IR.
+  , numBadPars :: Int
+  -- ^ 'numLitInts' the number of "bad" par node in the input program's IR.
   }
 
 
@@ -74,7 +74,7 @@ optimizePar p = runLiftFn $ do
 
 
 -- | Given a top-level definition, detect + replace unnecessary par expressions
-optimizeParTop :: (I.VarId, I.Expr I.Type) -> OptParFn (I.VarId, I.Expr I.Type)
+optimizeParTop :: (I.Binder I.Type, I.Expr I.Type) -> OptParFn (I.Binder I.Type, I.Expr I.Type)
 optimizeParTop (nm, rhs) = do
   rhs' <- detectReplaceBadPar rhs
   (rhs'', _) <- countPars rhs' -- calling this so we don't get an "unused" warning

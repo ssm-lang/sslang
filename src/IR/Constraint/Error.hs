@@ -2,7 +2,8 @@
 
 module IR.Constraint.Error where
 
-import qualified Common.Identifiers            as Ident
+import qualified Common.Identifiers as Ident
+
 
 data Type
   = Infinite
@@ -10,7 +11,8 @@ data Type
   | FlexVar Ident.TVarId
   | RigidVar Ident.TVarId
   | Type Ident.TConId [Type]
- deriving (Show)
+  deriving (Show)
+
 
 -- data Problem
 --   = ArityMismatch Int Int
@@ -21,6 +23,7 @@ data Error
   | BadPattern Type Type
   | InfiniteType Ident.Identifier Type
 
+
 toErrorString :: Error -> String
 toErrorString err = case err of
   BadExpr actualType expectedType ->
@@ -28,13 +31,11 @@ toErrorString err = case err of
       ++ show expectedType
       ++ ", but got "
       ++ show actualType
-
   BadPattern actualType expectedType ->
     "Ill-typed pattern. Expected "
       ++ show expectedType
       ++ ", but got "
       ++ show actualType
-
   InfiniteType name overallType ->
     "Infinite type for variable "
       ++ show name

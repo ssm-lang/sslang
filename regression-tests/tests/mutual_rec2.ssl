@@ -1,0 +1,21 @@
+putc (cout : &Int) c =
+  after 1, cout <- c
+  wait cout
+
+main cin (cout : &Int) =
+   let f a b =  if a > b
+                    g (b - 1) (a - b)
+                else
+                    h (b - a)
+       g a b =  if a > b
+                    h (a - b)
+                else
+                    f (b - 2) (a - 1)
+       h a   =  if a > 1
+                    g (a - 2) (f (a - 1) 0)
+                else
+                    a
+   putc cout (f 2 1 + 48)
+   putc cout 10
+   putc cout (g 2 1 + 48)
+   putc cout 10

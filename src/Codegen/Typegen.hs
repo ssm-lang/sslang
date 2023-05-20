@@ -28,36 +28,36 @@ import qualified Data.Map as M
 
 -- | Type-related information, abstracted behind partial lookup functions.
 data TypegenInfo = TypegenInfo
-  { -- | for each data constructor.
-    dconInfo :: DConId -> Maybe DConInfo
-  , -- | for each type constructor.
-    tconInfo :: TConId -> Maybe TConInfo
+  { dconInfo :: DConId -> Maybe DConInfo
+  -- ^ for each data constructor.
+  , tconInfo :: TConId -> Maybe TConInfo
+  -- ^ for each type constructor.
   }
 
 
 -- | Information and codegen handlers associated with each data constructor.
 data DConInfo = DConInfo
-  { -- | the type that the data constructor inhabits
-    dconType :: TConId
-  , -- | number of fields
-    dconSize :: Int
-  , -- | whether the data constructor is heap-allocated
-    dconOnHeap :: Bool
-  , -- | the dcon tag to match on, i.e., in @case tag@
-    dconCase :: C.Exp
-  , -- | constructs a dcon instance
-    dconConstruct :: C.Exp
-  , -- | retrieve the ith field
-    dconDestruct :: Int -> C.Exp -> C.Exp
+  { dconType :: TConId
+  -- ^ the type that the data constructor inhabits
+  , dconSize :: Int
+  -- ^ number of fields
+  , dconOnHeap :: Bool
+  -- ^ whether the data constructor is heap-allocated
+  , dconCase :: C.Exp
+  -- ^ the dcon tag to match on, i.e., in @case tag@
+  , dconConstruct :: C.Exp
+  -- ^ constructs a dcon instance
+  , dconDestruct :: Int -> C.Exp -> C.Exp
+  -- ^ retrieve the ith field
   }
 
 
 -- | Information and codegen handlers associated with each type constructor.
 data TConInfo = TConInfo
-  { -- | how the data type is encoded
-    typeEncoding :: TypeEncoding
-  , -- | how to retrieve the tag of an instance
-    typeScrut :: C.Exp -> C.Exp
+  { typeEncoding :: TypeEncoding
+  -- ^ how the data type is encoded
+  , typeScrut :: C.Exp -> C.Exp
+  -- ^ how to retrieve the tag of an instance
   }
 
 
@@ -66,8 +66,8 @@ data TypeEncoding = TypePacked | TypeMixed -- TODO: | TypeHeap
 
 
 -- | Create codegen definitions and helpers for sslang type definitions.
-genTypes ::
-  [(TConId, I.TypeDef)] -> Compiler.Pass ([C.Definition], TypegenInfo)
+genTypes
+  :: [(TConId, I.TypeDef)] -> Compiler.Pass ([C.Definition], TypegenInfo)
 genTypes tdefs = do
   cdefs <- mapM genTypeDef tdefs
   typeInfo <- genTypeInfo tdefs

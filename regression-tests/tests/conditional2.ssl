@@ -1,0 +1,27 @@
+bad cout =
+    after 10 , (cout : & Int) <- 66
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 65
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 68
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 10
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 0
+    wait (cout : & Int)
+
+ok cout =
+    after 10 , (cout : & Int) <- 79
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 75
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 10
+    wait (cout : & Int)
+    after 10 , (cout : & Int) <- 0
+    wait (cout : & Int)
+
+main (cint : &Int) (cout : & Int) -> () =
+    if 42 == 42
+        ok cout
+    else
+        bad cout

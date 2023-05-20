@@ -16,11 +16,11 @@ desugarSubst = desugarExpr . desugarDef
 
 
 desugarDef :: (Data a) => a -> a
-desugarDef = (everywhere $ mkT $ substDef)
+desugarDef = everywhere $ mkT substDef
 
 
 desugarExpr :: (Data a) => a -> a
-desugarExpr = (everywhere $ mkT $ substExpr)
+desugarExpr = everywhere $ mkT substExpr
 
 
 substDef :: A.Definition -> A.Definition
@@ -38,14 +38,14 @@ substDef e = e
 
 
 substExpr :: A.Expr -> A.Expr
-substExpr (A.Let defs e) = A.Let ndefs $ rese
+substExpr (A.Let defs e) = A.Let ndefs rese
  where
   desugarPat [] ex _ = ([], ex)
   desugarPat (def : rdefs) ex n =
     case def of
       (A.DefPat p@(A.PatTup _) defe) ->
         let (d, nexpr) = desugarPat rdefs (A.Match (A.Id (fromString ("_temp_id_" ++ show n))) [(p, ex)]) (n + 1)
-         in ((A.DefPat (A.PatId (fromString ("_temp_id_" ++ show n))) defe) : d, nexpr)
+         in (A.DefPat (A.PatId (fromString ("_temp_id_" ++ show n))) defe : d, nexpr)
       _ -> first (def :) $ desugarPat rdefs e (n + 1)
   (ndefs, rese) = desugarPat defs e (0 :: Int)
 substExpr e = e
