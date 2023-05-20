@@ -412,7 +412,7 @@ foldLambda args body = foldr chain body args
 
 -- | Create a let chain given a list of argument-type pairs and a body.
 foldLet :: [(Binder Type, Expr Type)] -> Expr Type -> Expr Type
-foldLet (h:t) body = Let [h] (foldLet t body) (extract body)
+foldLet (h : t) body = Let [h] (foldLet t body) (extract body)
 foldLet [] body = body
 
 

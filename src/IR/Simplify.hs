@@ -230,8 +230,6 @@ In all other cases, the RHS of the binder is simplified.
 If the simplified RHS is a variable or literal, the binder is inlined.
 -}
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
-
-
 {- \| Simplify Primitive Expression
 
   Simplify each of the arguments to prim

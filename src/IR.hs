@@ -22,10 +22,11 @@ import IR.InsertRefCounting (insertRefCounting)
 import IR.LambdaLift (liftProgramLambdas)
 import IR.LowerAst (lowerProgram)
 import IR.MangleNames (mangleProgram)
-import IR.Simplify ( simplifyProgram )
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
+import IR.Simplify (simplifyProgram)
+
 -- import IR.Simplify (simplifyProgram)
 import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
@@ -152,7 +153,7 @@ transform opt p = do
   p <- instProgram p
   p <- segmentLets p
   p <- externToCall p
-  p <- simplifyProgram p 
+  p <- simplifyProgram p
   when (mode opt == DumpIRInlined) $ dump p
   p <- dConToFunc p
   p <- optimizePar p
