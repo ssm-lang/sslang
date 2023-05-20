@@ -1,18 +1,10 @@
 /* 
-Example: n is oncesafe; TODO: case elimination!
+Example: n is oncesafe;
 Input:
 main = 
   let n = 5
   IN
   match n
-    5 = 
-      putd cout 3
-    _ = 
-      putd cout 5
-
-Expected Output (for now):
-main = 
-  match 5
     5 = 
       putd cout 3
     _ = 
@@ -24,10 +16,35 @@ main =
   
 */
 
+/* another example of case elimination
+main = 
+  let a = 3
+  let b = RGB a 3
+  match b
+    RGB z c = 
+      putd cout (c+d)
+    RGB 4 _ = 
+      putd cout 4
+    _ = 
+      putd cout 5
+
+Expected Output (with case elimination):
+
+main = 
+  let a = 3
+      c = 2
+  putd cout (c+d)
+
+*/
+
+// testing match arm elimination on literal scruts and arms with lits
+
 // print single digit number; account for ascii offset
 putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
+
+foo x = x
 
 main cin cout = 
   let n = 5

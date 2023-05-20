@@ -1,0 +1,22 @@
+// match arm elimination test
+type Color
+  RGB Int Int
+  Red
+  Black
+
+putd cout_ c =
+  after 1, cout_ <- c 
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+main cin cout = 
+  let a = 70
+  let b = RGB a 67 // (App (App RGB a) 67) -- unfold app --> RGB, [a, 67]
+  match b
+    RGB 65 _ = 
+      putd cout 65
+    RGB z 68 = 
+      putd cout (z+2)
+    _ = 
+      putd cout 66

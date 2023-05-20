@@ -3,26 +3,33 @@
 {- | Simple Inlining Optimization Pass
 
 Performs preinline and postinline unconditionally.
+TODO: Mutual recursion in let bindings
 TODO: Callsite Inline
 -}
 module IR.Simplify (
   simplifyProgram,
+  CheckPure,
+  isPure,
 ) where
 
 import qualified Common.Compiler as Compiler
+import Control.Monad (when)
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy (
-  MonadState,
+  MonadState (put),
+  State,
   StateT (..),
   evalStateT,
+  execState,
   gets,
   modify,
  )
 import Data.Bifunctor (second)
-import Data.Generics (Typeable)
+import Data.Generics (Typeable, everywhere, everywhereM, mkM, mkT)
 import qualified Data.Map as M
+import Data.Maybe (mapMaybe)
 import qualified Data.Maybe as Ma
-import IR.IR (unfoldLambda)
+import IR.IR (extract, foldLet, unfoldApp, unfoldLambda)
 import qualified IR.IR as I
 
 
@@ -55,32 +62,34 @@ MultiUnsafe: Binder may occur many times, including inside lambdas.
            Variables exported from the module are also makred MultiUnsafe.
 LoopBreaker: Chosen to break dependency between mutually recursive defintions.
 Never: Never inline; we use this to develop our inliner incrementally.
+ConstructorFuncArg: We encountered a duplicate binder, which means it must be
+          from an auto-generated constructor function argument.
 -}
 data OccInfo
   = Dead
-  | LoopBreaker -- TBD
+  | LoopBreaker -- TODO: mutual recursion
   | OnceSafe
   | MultiSafe
   | OnceUnsafe
   | MultiUnsafe
   | Never
-  | ConstructorFunc
+  | ConstructorFuncArg
   deriving (Show)
   deriving (Typeable)
 
 
 -- | Simplifier Environment
 data SimplEnv = SimplEnv
-  { occInfo :: M.Map I.VarId OccInfo
-  -- ^ 'occInfo' maps an identifier to its occurence category
-  , subst :: M.Map InVar SubstRng
-  -- ^ 'subst' maps an identifier to its substitution
-  , runs :: Int
-  -- ^ 'runs' stores how many times the simplifier has run so far
-  , countLambda :: Int
-  -- ^ 'countLambda' how many lambdas the occurence analyzer is inside
-  , countMatch :: Int
-  -- ^ 'countLambda' how many matches the occurence analyzer is inside
+  { -- | 'occInfo' maps an identifier to its occurence category
+    occInfo :: M.Map I.VarId OccInfo
+  , -- | 'subst' maps an identifier to its substitution
+    subst :: M.Map InVar SubstRng
+  , -- | 'runs' stores how many times the simplifier has run so far
+    runs :: Int
+  , -- | 'countLambda' how many lambdas the occurence analyzer is inside
+    countLambda :: Int
+  , -- | 'mutualRecursion' whether the occurence analyzer encountered mutual recursion
+    mutualRecursion :: Bool
   }
   deriving (Show)
   deriving (Typeable)
@@ -106,8 +115,8 @@ runSimplFn (SimplFn m) =
       { occInfo = M.empty
       , runs = 0
       , countLambda = 0
-      , countMatch = 0
       , subst = M.empty
+      , mutualRecursion = False
       }
 
 
@@ -117,7 +126,10 @@ addOccVar binder = do
   m <- gets occInfo
   let m' = case M.lookup binder m of
         Nothing -> M.insert binder Dead m
-        _ -> M.insert binder ConstructorFunc m
+        {- since we have name mangling, the only time we will add
+           a binder that is already present in occInfo is when we
+           encounter a constructor function argument. -}
+        Just _ -> M.insert binder ConstructorFuncArg m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -126,7 +138,6 @@ updateOccVar :: I.VarId -> SimplFn ()
 updateOccVar binder = do
   m <- gets occInfo
   insidel <- insideLambda
-  insidem <- insideMatch
   let m' = case M.lookup binder m of
         Nothing ->
           error
@@ -137,12 +148,10 @@ updateOccVar binder = do
                 ++ "!"
             )
         Just Dead ->
-          -- we only handle OnceSafe currently
-          -- if we're inside a lambda, binder is NOT OnceSafe (in fact, it's OnceUnsafe...)
-          if insidel || insidem
+          if insidel -- for now, we never inline a binder if it appears inside a lambda (avoid work duplication)
             then M.insert binder Never m
             else M.insert binder OnceSafe m
-        _ -> M.insert binder Never m
+        Just _ -> M.insert binder ConstructorFuncArg m
   modify $ \st -> st{occInfo = m'}
 
 
@@ -156,6 +165,16 @@ insertSubst binder rng = do
   m <- gets subst
   let m' = M.insert binder rng m
   modify $ \st -> st{subst = m'}
+
+
+-- | Record that mutual recursion was encountered
+recordMutualRecursion :: SimplFn ()
+recordMutualRecursion = modify $ \st -> st{mutualRecursion = True}
+
+
+-- | Returns whether ocurrence analyzer detected mutualRecursion
+foundMutualRecursion :: SimplFn Bool
+foundMutualRecursion = gets mutualRecursion
 
 
 -- | Record that the ocurrence analyzer is looking inside a lambda
@@ -179,27 +198,6 @@ insideLambda = do
   return (curCount /= 0)
 
 
--- | Record that the ocurrence analyzer is looking inside a match
-recordEnteringMatch :: SimplFn ()
-recordEnteringMatch = do
-  curCount <- gets countMatch
-  modify $ \st -> st{countMatch = curCount + 1}
-
-
--- | Record that the ocurrence analyzer is no longer looking inside a match
-recordExitingMatch :: SimplFn ()
-recordExitingMatch = do
-  curCount <- gets countMatch
-  modify $ \st -> st{countMatch = curCount - 1}
-
-
--- | Returns whether ocurrence analyzer is currently looking inside a match
-insideMatch :: SimplFn Bool
-insideMatch = do
-  curCount <- gets countMatch
-  return (curCount /= 0)
-
-
 {- | Entry-point to Simplifer.
 
 Maps over top level definitions to create a new simplified Program
@@ -210,8 +208,13 @@ simplifyProgram p = runSimplFn $ do
   -- fail and print out the results of the occurence analyzer
   -- info <- runOccAnal p
   -- _ <- Compiler.unexpected $ show info
-  simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
-  return $ p{I.programDefs = simplifiedProgramDefs} -- this whole do expression returns a Compiler.Pass
+  invalidResults <- foundMutualRecursion -- TODO: handle mutual recursion
+  if invalidResults
+    then pure p
+    else do
+      simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
+      let fewerMatches = everywhere (mkT elimMatchArms) simplifiedProgramDefs
+      return $ p{I.programDefs = fewerMatches} -- this whole do expression returns a Compiler.Pass
 
 
 -- | Simplify a top-level definition
@@ -222,23 +225,12 @@ simplTop (v, e) = do
 
 {- | Simplify an IR expression.
 
-Probably want more documentation here eventually.
-For now we ignore the in scope set and context args.
-
-How do we handle each node?
-- Var VarId t                           DONE (except callsite inline)
-- Data DConId t                         Default case
-- Lit Literal t                         Default case
-- App (Expr t) (Expr t) t               DONE
-- Let [(Binder, Expr t)] (Expr t) t     DONE (except callsite inline)
-- Lambda Binder (Expr t) t              DONE
-- Match (Expr t) [(Alt, Expr t)] t      DONE (TODO: match arm elimination)
-- Prim Primitive [Expr t] t             DONE
+Binders marked Oncesafe are inlined provided their RHS is pure.
+In all other cases, the RHS of the binder is simplified.
+If the simplified RHS is a variable or literal, the binder is inlined.
 -}
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
-
-
-{- | Simplify Primitive Expression
+{- \| Simplify Primitive Expression
 
   Simplify each of the arguments to prim
   For ex. 5 + g + h + (6 + v)
@@ -286,20 +278,29 @@ simplExpr sub ins (I.Let binders body t) cont = do
   body' <- simplExpr subs' ins body cont
   if null binders' then pure body' else pure (I.Let binders' body' t)
  where
-  simplBinder
-    :: (I.Binder t, I.Expr I.Type)
-    -> SimplFn (Maybe (I.Binder t, I.Expr I.Type), Subst)
+  simplBinder ::
+    (I.Binder t, I.Expr I.Type) ->
+    SimplFn (Maybe (I.Binder t, I.Expr I.Type), Subst)
   simplBinder (binder, rhs) = do
     m <- gets occInfo
     case binder of
       (I.BindVar v _) -> case M.lookup v m of
+        (Just Never) -> do
+          e' <- simplExpr sub ins rhs cont
+          pure (Just (binder, e'), sub) -- never inline something marked never, but still possible to simplify RHS
+        (Just ConstructorFuncArg) -> do
+          e' <- simplExpr sub ins rhs cont
+          pure (Just (binder, e'), sub) -- never inline something marked ConstructorFuncArg, but still possible to simplify RHS
         (Just Dead) -> pure (Nothing, sub) -- get rid of this dead binding
         (Just OnceSafe) -> do
-          -- preinline test PASSES
-          -- bind x to E singleton :: k -> a -> Map k a
-          insertSubst v $ SuspEx rhs M.empty
-          let sub' = M.singleton v (SuspEx rhs sub)
-          pure (Nothing, sub')
+          if checkPure rhs
+            then do
+              insertSubst v $ SuspEx rhs M.empty
+              let sub' = M.singleton v (SuspEx rhs sub)
+              pure (Nothing, sub')
+            else do
+              e' <- simplExpr sub ins rhs cont
+              pure (Just (binder, e'), sub)
         _ -> do
           -- preinline test FAILS, so do post inline unconditionally
           e' <- simplExpr sub ins rhs cont -- process the RHS
@@ -312,8 +313,7 @@ simplExpr sub ins (I.Let binders body t) cont = do
               insertSubst v $ DoneEx e'
               pure (Nothing, M.empty) -- PASSES postinline
             _ -> do
-              rhs' <- simplExpr sub ins rhs cont -- we won't inline x, but still possible to simplify e (RHS)
-              pure (Just (binder, rhs'), sub) -- FAILS postinline; someday callsite inline
+              pure (Just (binder, e'), sub) -- FAILS postinline; someday callsite inline
       _ -> do
         e' <- simplExpr sub ins rhs cont
         pure (Just (binder, e'), sub) -- can't inline wildcards
@@ -337,6 +337,9 @@ runOccAnal I.Program{I.programDefs = defs} = do
   "Swallow" means to add the argument to our occurrence info state.
   It returns a top level function without curried arguments; just the body.
   -}
+  -- swallowArgs :: (I.VarId, I.Expr t) -> SimplFn (I.VarId, I.Expr t)
+  -- swallowArgs (funcName, l@I.Lambda{}) = do
+  --   addOccs (Just funcName) -- HACKY
   swallowArgs :: (I.Binder t, I.Expr t) -> SimplFn (I.Binder t, I.Expr t)
   swallowArgs (funcName, l@I.Lambda{}) = do
     addOccs $ I.binderToVar funcName
@@ -360,32 +363,22 @@ runOccAnal I.Program{I.programDefs = defs} = do
         ++ " END"
 
 
-{- | Run the Ocurrence Analyzer over an IR expression node
-
-How do we handle each node?
-- Var VarId t                           DONE
-- Data DConId t                         Default case (TODO: trivial constructor argument invariant)
-- Lit Literal t                         Default case
-- App (Expr t) (Expr t) t               DONE
-- Let [(Binder, Expr t)] (Expr t) t     DONE
-- Lambda Binder (Expr t) t              DONE
-- Match (Expr t) [(Alt, Expr t)] t      DONE (TODO: analyze patterns / LHS of arms?)
-- Prim Primitive [Expr t] t             DONE
--}
+-- | Run the Ocurrence Analyzer over an IR expression node
 occAnalExpr :: I.Expr I.Type -> SimplFn (I.Expr I.Type, String)
-
-
--- | Occurrence Analysis over Let Expression
+-- \| Occurrence Analysis over Let Expression
 occAnalExpr l@(I.Let nameValPairs body _) = do
   mapM_
     ( \(binder, rhs) -> do
-        _ <- occAnalExpr rhs
         case I.binderToVar binder of
-          (Just nm) -> addOccVar nm
-          _ -> pure ()
+          (Just nm) -> do
+            addOccVar nm -- add name before processing RHS; allows for local recursive funcs
+            occAnalExpr rhs
+          _ -> occAnalExpr rhs
     )
     nameValPairs
   _ <- occAnalExpr body
+  -- if the let has more than one binder, record we've encountered mutual recursion
+  when (length nameValPairs > 1) recordMutualRecursion
   m <- gets occInfo
   pure (l, show m)
 
@@ -425,12 +418,9 @@ occAnalExpr p@(I.Prim _ args _) = do
 
 -- \| Occurrence Analysis over Match Expression
 occAnalExpr p@(I.Match scrutinee arms _) = do
-  recordEnteringMatch
   _ <- occAnalExpr scrutinee
-  -- let (alts, rhss) = unzip arms
   mapM_ (occAnalAlt . fst) arms
   mapM_ (occAnalExpr . snd) arms
-  recordExitingMatch
   m <- gets occInfo
   pure (p, show m)
 
@@ -455,3 +445,136 @@ occAnalAlt alt@(I.AltData _ alts _) = do
 occAnalAlt lit = do
   m <- gets occInfo
   pure (lit, show m)
+
+
+type IsPure = Bool
+type CheckPure = State IsPure
+
+
+{- | checkPure predicate to account for side effects when inlining
+
+Return true when IR node is pure, false otherwise.
+- Any operation on a reference type is considered impure
+- Function Application is considered impure (for now)
+- Variables are pure
+- Literals are pure
+- PrimOps with only pure arguments are pure
+- Data Constructors with only pure arguments are pure
+-}
+checkPure :: I.Expr I.Type -> IsPure
+checkPure e = runComp $ do
+  everywhereM (mkM isPure) e
+ where
+  runComp :: CheckPure a -> IsPure
+  runComp a = execState a True
+
+
+-- | recursively determines if an IR node is pure
+isPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
+isPure e@I.App{} =
+  case unfoldApp e of
+    (I.Data _ _, _) -> pure e
+    (I.Lambda{}, _) -> pure e
+    _ -> setNotPure e -- functions
+isPure e@(I.Prim I.New _ _) = setNotPure e
+isPure e@(I.Prim I.Dup _ _) = setNotPure e
+isPure e@(I.Prim I.Drop _ _) = setNotPure e
+isPure e@(I.Prim I.Deref _ _) = setNotPure e
+isPure e@(I.Prim I.Assign _ _) = setNotPure e
+isPure e@(I.Prim I.After _ _) = setNotPure e
+isPure e@(I.Prim I.Par _ _) = setNotPure e
+isPure e@(I.Prim I.Wait _ _) = setNotPure e
+isPure e@(I.Prim I.Loop _ _) = setNotPure e
+isPure e@(I.Prim I.Break _ _) = setNotPure e
+isPure e@(I.Prim I.Now _ _) = setNotPure e
+isPure e@(I.Prim (I.CQuote _) _ _) = setNotPure e
+isPure e@(I.Prim (I.CCall _) _ _) = setNotPure e
+isPure e@(I.Prim (I.FfiCall _) _ _) = setNotPure e
+isPure e = pure e
+
+
+-- | helper function for isPure
+setNotPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
+setNotPure e = do put False; return e
+
+
+-- | Reduce a match expression to a let expression (or just the RHS of an arm) if possible
+elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
+elimMatchArms e@(I.Match scrut@I.App{} arms _) =
+  let unfoldedScrut = unfoldApp scrut
+      filtered = filter (checkForDConMatch unfoldedScrut . fst) arms
+   in if null filtered
+        then e -- we hit this case when scrut is a function application
+        else case head filtered of -- otherwise, scrut is a data constructor application
+          (I.AltData _ patargs _, rhs) ->
+            let letBinders = mapMaybe isMaybeLetBinder $ zip patargs dconargs
+                dconargs = fst <$> snd unfoldedScrut
+                isMaybeLetBinder :: (I.Alt I.Type, I.Expr I.Type) -> Maybe (I.Binder I.Type, I.Expr I.Type)
+                isMaybeLetBinder (I.AltBinder b@(I.BindVar _ _), rhs') = Just (b, rhs')
+                isMaybeLetBinder _ = Nothing
+             in if null letBinders
+                  then rhs
+                  else foldLet letBinders rhs -- turn match arm pattern into nested let expression
+          (_, rhs) -> rhs -- match arm pattern is a single variable or wild card
+elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
+  -- wildcard always matches, so the filtered list is always non-empty
+  case head $ filter (checkForLitMatch scrut) arms of
+    -- if variable, then turn into let
+    (I.AltBinder b@(I.BindVar _ _), rhs) -> I.Let [(b, scrut)] rhs (extract rhs)
+    -- if literal or catchall, just return the right hand side of the arm
+    (_, rhs) -> rhs
+elimMatchArms e = e
+
+
+-- | Check if Literal scrutinee matches given arm
+checkForLitMatch :: I.Expr I.Type -> (I.Alt I.Type, I.Expr I.Type) -> Bool
+checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
+  case arm of
+    (I.AltLit (I.LitIntegral d) _) -> d == v
+    (I.AltBinder _) -> True
+    _ -> False
+checkForLitMatch _ _ = False -- we should never hit this case
+
+
+-- | Check if Data Constructor scrutinee matches given arm
+checkForDConMatch :: (I.Expr I.Type, [(I.Expr I.Type, I.Type)]) -> I.Alt I.Type -> Bool
+checkForDConMatch (I.Data dcon _, args) arm =
+  case arm of
+    (I.AltData dconPat argPats _) ->
+      {-
+       // first check if arm has a matching DCon
+        match RGB 1 2 3
+          Black = ...
+          CMYK 1 2 3 4 = ...
+          _ = ... // picks this arm since no matching DCon
+       -}
+      dcon == dconPat
+        {-
+         // once we have an arm with a matching Dcon, make sure the DCon args match the rest of the arm
+           match RGB 1 2 3
+            Black = ...
+            CMYK 1 2 3 4 = ...
+            RGB 3 3 3 = ... // this arm has matching DCon, but does NOT have matching DCon args
+            RGB 1 2 x = ... // pick this arm because both its DCon and DCon arguments match
+            _ = ...         // wildcard not picked because earlier arm matched
+         -}
+        && compareArm argPats (fst <$> args)
+    {-
+    // a variable or wildward always matches a scrutinee!
+     match RGB 1 2 3
+       RGB 8 8 8 = ...
+       x = ... // picks this arm
+    -}
+    (I.AltBinder _) -> True
+    _ -> False
+ where
+  -- \| compare a match arm's argument patterns to the arguments of the scrutinee
+  compareArm :: [I.Alt I.Type] -> [I.Expr I.Type] -> Bool
+  compareArm [] [] = True
+  compareArm (pat@I.AltData{} : tl) (app@I.App{} : tl2) =
+    -- nested patterns
+    checkForDConMatch (unfoldApp app) pat && compareArm tl tl2
+  compareArm ((I.AltLit v _) : tl) (I.Lit v2 _ : tl2) = v == v2 && compareArm tl tl2
+  compareArm ((I.AltBinder _) : tl) (_ : tl2) = compareArm tl tl2
+  compareArm _ _ = False
+checkForDConMatch _ _ = False

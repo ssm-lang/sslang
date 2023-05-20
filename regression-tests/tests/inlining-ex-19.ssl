@@ -1,0 +1,25 @@
+// isPure test
+
+// print single digit number; account for ascii offset
+putd cout_ c =
+  after 1, cout_ <- (c + 48)
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+f r =
+    r <- deref r + 1
+    deref r
+
+main cin cout = 
+    let r = new 0
+    let x = f r  // 1
+    let y = f r  // 2
+    putd cout (x + y + y) // 1 + 2 + 2
+
+/* PROBLEM: without isPure test, r will get inlined and program semantics change!
+main (cin : _t46) (cout : (& Int32)) -> () = 
+  let r = new 0
+  let y = f r 
+  putd cout (f r + y + y) // 2 + 1 + 1
+*/

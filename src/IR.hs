@@ -25,6 +25,8 @@ import IR.MangleNames (mangleProgram)
 import IR.OptimizePar (optimizePar)
 import IR.Pattern (checkAnomaly)
 import IR.SegmentLets (segmentLets)
+import IR.Simplify (simplifyProgram)
+
 -- import IR.Simplify (simplifyProgram)
 import IR.Types (fromAnnotations)
 import System.Console.GetOpt (
@@ -150,8 +152,10 @@ transform opt p = do
   p <- desugarPattern p
   p <- instProgram p
   p <- segmentLets p
-  p <- dConToFunc p
   p <- externToCall p
+  p <- simplifyProgram p
+  when (mode opt == DumpIRInlined) $ dump p
+  p <- dConToFunc p
   p <- optimizePar p
   p <- liftProgramLambdas p
   p <- segmentLets p

@@ -1,0 +1,19 @@
+// testing that match arm is not eliminated
+// because n is not inlined
+
+// print single digit number followed by newline; accounts for ascii offset
+putd cout_ c =
+  after 1, cout_ <- c + 48
+  wait cout_
+  after 1, cout_ <- 10
+  wait cout_
+
+main cin cout = 
+  let n = 5
+  match n
+    6 = 
+      putd cout 3
+    5 = 
+      putd cout (n + 2)
+    _ = 
+      putd cout 6
