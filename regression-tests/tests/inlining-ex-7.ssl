@@ -1,5 +1,8 @@
+// x should NOT be inlined 
 main cin cout = 
     let x = after 1, cout <- 97
+            wait cout
+            after 1, cout <- 10
             wait cout
     x // ()
     x // ()

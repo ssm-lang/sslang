@@ -1,9 +1,11 @@
 // testing that match arm is not eliminated
 // because n is not inlined
 
-// print single digit number; account for ascii offset
+// print single digit number followed by newline; accounts for ascii offset
 putd cout_ c =
-  after 1, cout_ <- (c + 48)
+  after 1, cout_ <- c + 48
+  wait cout_
+  after 1, cout_ <- 10
   wait cout_
 
 main cin cout = 

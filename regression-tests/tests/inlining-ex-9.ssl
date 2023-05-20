@@ -7,6 +7,8 @@ type Color
 putd cout_ c =
   after 1, cout_ <- c 
   wait cout_
+  after 1, cout_ <- 10
+  wait cout_
 
 main cin cout = 
   let a = 70

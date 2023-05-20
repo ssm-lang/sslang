@@ -3,6 +3,7 @@
 {- | Simple Inlining Optimization Pass
 
 Performs preinline and postinline unconditionally.
+TODO: Mutual recursion in let bindings
 TODO: Callsite Inline
 -}
 module IR.Simplify (
@@ -28,7 +29,7 @@ import Data.Generics (Typeable, everywhere, everywhereM, mkM, mkT)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import qualified Data.Maybe as Ma
-import IR.IR (extract, unfoldApp, unfoldLambda)
+import IR.IR (extract, unfoldApp, unfoldLambda, foldLet)
 import qualified IR.IR as I
 
 
@@ -212,8 +213,8 @@ simplifyProgram p = runSimplFn $ do
     then pure p
     else do
       simplifiedProgramDefs <- mapM simplTop (I.programDefs p)
-      -- let fewerMatches = everywhere (mkT elimMatchArms) simplifiedProgramDefs
-      return $ p{I.programDefs = simplifiedProgramDefs} -- this whole do expression returns a Compiler.Pass
+      let fewerMatches = everywhere (mkT elimMatchArms) simplifiedProgramDefs
+      return $ p{I.programDefs = fewerMatches} -- this whole do expression returns a Compiler.Pass
 
 
 -- | Simplify a top-level definition
@@ -499,55 +500,80 @@ setNotPure :: I.Expr I.Type -> CheckPure (I.Expr I.Type)
 setNotPure e = do put False; return e
 
 
-{- | Reduce a match expression to a let expression (or just the RHS of an arm) if possible
- elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
- elimMatchArms e@(I.Match scrut@I.App{} arms _) =
-   let unfoldedScrut = unfoldApp scrut
-       filtered = filter (checkForDConMatch unfoldedScrut . fst) arms
-    in if null filtered
-         then e -- we hit this case when scrut is a function application
-         else case head filtered of -- otherwise, scrut is a data constructor application
-           (I.AltData _ patargs, rhs) ->
-             let letBinders = mapMaybe isMaybeLetBinder $ zip patargs dconargs
-                 dconargs = fst <$> snd unfoldedScrut
-                 isMaybeLetBinder :: (I.Alt, I.Expr I.Type) -> Maybe (I.Binder, I.Expr I.Type)
-                 isMaybeLetBinder (I.AltBinder b@(Just _), rhs') = Just (b, rhs')
-                 isMaybeLetBinder _ = Nothing
-              in if null letBinders
-                   then rhs
-                   else foldLet letBinders rhs -- turn match arm pattern into nested let expression
-           (_, rhs) -> rhs -- match arm pattern is a single variable or wild card
- elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
-   -- wildcard always matches, so the filtered list is always non-empty
-   case head $ filter (checkForLitMatch scrut) arms of
-     -- if variable, then turn into let
-     (I.AltBinder b@(Just _), rhs) -> I.Let [(b, scrut)] rhs (extract rhs)
-     -- if literal or catchall, just return the right hand side of the arm
-     (_, rhs) -> rhs
- elimMatchArms e = e
--}
+-- | Reduce a match expression to a let expression (or just the RHS of an arm) if possible
+elimMatchArms :: I.Expr I.Type -> I.Expr I.Type
+elimMatchArms e@(I.Match scrut@I.App{} arms _) =
+  let unfoldedScrut = unfoldApp scrut
+      filtered = filter (checkForDConMatch unfoldedScrut . fst) arms
+   in if null filtered
+        then e -- we hit this case when scrut is a function application
+        else case head filtered of -- otherwise, scrut is a data constructor application
+          (I.AltData _ patargs _, rhs) ->
+            let letBinders = mapMaybe isMaybeLetBinder $ zip patargs dconargs
+                dconargs = fst <$> snd unfoldedScrut
+                isMaybeLetBinder :: (I.Alt I.Type, I.Expr I.Type) -> Maybe (I.Binder I.Type, I.Expr I.Type)
+                isMaybeLetBinder (I.AltBinder b@(I.BindVar _ _) , rhs') = Just (b, rhs')
+                isMaybeLetBinder _ = Nothing
+             in if null letBinders
+                  then rhs
+                  else foldLet letBinders rhs -- turn match arm pattern into nested let expression
+          (_, rhs) -> rhs -- match arm pattern is a single variable or wild card
+elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
+  -- wildcard always matches, so the filtered list is always non-empty
+  case head $ filter (checkForLitMatch scrut) arms of
+    -- if variable, then turn into let
+    (I.AltBinder b@(I.BindVar _ _), rhs) -> I.Let [(b, scrut)] rhs (extract rhs)
+    -- if literal or catchall, just return the right hand side of the arm
+    (_, rhs) -> rhs
+elimMatchArms e = e
 
--- -- | Check if Literal scrutinee matches given arm
--- checkForLitMatch :: I.Expr I.Type -> (I.Alt, I.Expr I.Type) -> Bool
--- checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
---   case arm of
---     (I.AltLit (I.LitIntegral d)) -> d == v
---     (I.AltBinder _) -> True
---     _ -> False
--- checkForLitMatch _ _ = False -- we should never hit this case
+-- | Check if Literal scrutinee matches given arm
+checkForLitMatch :: I.Expr I.Type -> (I.Alt I.Type, I.Expr I.Type) -> Bool
+checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
+  case arm of
+    (I.AltLit (I.LitIntegral d) _) -> d == v
+    (I.AltBinder _) -> True
+    _ -> False
+checkForLitMatch _ _ = False -- we should never hit this case
 
--- -- | Check if Data Constructor scrutinee matches given arm
--- checkForDConMatch :: (I.Expr I.Type, [(I.Expr I.Type, I.Type)]) -> I.Alt -> Bool
--- checkForDConMatch (I.Data dcon _, args) arm =
---   case arm of
---     (I.AltData dconPat argPats) -> dcon == dconPat && compareArm argPats (fst <$> args)
---     (I.AltBinder _) -> True
---     _ -> False
---  where
---   compareArm [] [] = True
---   compareArm (pat@(I.AltData _ _) : t) (app@I.App{} : t2) =
---     checkForDConMatch (unfoldApp app) pat && compareArm t t2
---   compareArm ((I.AltLit v) : t) (I.Lit v2 _ : t2) = v == v2 && compareArm t t2
---   compareArm ((I.AltBinder _) : t) (_ : t2) = compareArm t t2
---   compareArm _ _ = False
--- checkForDConMatch _ _ = False
+-- | Check if Data Constructor scrutinee matches given arm
+checkForDConMatch :: (I.Expr I.Type, [(I.Expr I.Type, I.Type)]) -> I.Alt I.Type -> Bool
+checkForDConMatch (I.Data dcon _, args) arm =
+  case arm of
+    (I.AltData dconPat argPats _) -> 
+   {-
+    // first check if arm has a matching DCon
+     match RGB 1 2 3
+       Black = ... 
+       CMYK 1 2 3 4 = ...
+       _ = ... // picks this arm since no matching DCon
+    -}
+      dcon == dconPat 
+   {-
+    // once we have an arm with a matching Dcon, make sure the DCon args match the rest of the arm
+      match RGB 1 2 3
+       Black = ... 
+       CMYK 1 2 3 4 = ...
+       RGB 3 3 3 = ... // this arm has matching DCon, but does NOT have matching DCon args
+       RGB 1 2 x = ... // pick this arm because both its DCon and DCon arguments match
+       _ = ...         // wildcard not picked because earlier arm matched
+    -}
+      && compareArm argPats (fst <$> args)
+    {-
+    // a variable or wildward always matches a scrutinee!
+     match RGB 1 2 3
+       RGB 8 8 8 = ... 
+       x = ... // picks this arm
+    -}
+    (I.AltBinder _) -> True
+    _ -> False
+ where
+  -- \| compare a match arm's argument patterns to the arguments of the scrutinee
+  compareArm :: [I.Alt I.Type] -> [I.Expr I.Type] -> Bool
+  compareArm [] [] = True
+  compareArm (pat@I.AltData{} : tl) (app@I.App{} : tl2) = -- nested patterns
+    checkForDConMatch (unfoldApp app) pat && compareArm tl tl2
+  compareArm ((I.AltLit v _) : tl) (I.Lit v2 _ : tl2) = v == v2 && compareArm tl tl2
+  compareArm ((I.AltBinder _) : tl) (_ : tl2) = compareArm tl tl2
+  compareArm _ _ = False
+checkForDConMatch _ _ = False

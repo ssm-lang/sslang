@@ -21,4 +21,4 @@ main cin cout =
    Cons _ g = putd cout 7
    _ = putd cout 6
 
-// should reduce to putd cout 4 
+// should reduce to putd cout 4

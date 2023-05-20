@@ -5,6 +5,8 @@
 putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
+  after 1, cout_ <- 10
+  wait cout_
 
 // (fun a b { a + b }) 1 2
 
@@ -14,7 +16,3 @@ main cin cout =
     let q = (fun a b { a + b }) 1 2
     putd cout z
     putd cout q
-/*
-  let putc = fun c after 1, cout <- c
-             wait cout
-  putc 49*/

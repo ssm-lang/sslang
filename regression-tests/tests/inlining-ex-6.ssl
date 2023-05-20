@@ -1,20 +1,4 @@
-// weird things are happening
-
-/*
-main (cin : _t58) (cout : (& Int32)) -> () = 
-  let a = makeColor 4
-  let x = __RGB (fib 45) 5 5
-  match x
-    Black  = 5
-    RGB __pat_anon0 __pat_anon1 __pat_anon2 = __pat_anon0
-  match a
-    Black  = 4
-    RGB __pat_anon3 __pat_anon4 __pat_anon5 = __pat_anon3 + __pat_anon3
-  after 1, cout <- match 5
-    5 = 65
-    _ = 5
-  ()
-*/
+// testing inlining of scrutinees
 
 fib n = n
 
@@ -29,26 +13,36 @@ type RGB
     Black
 
 main cin cout = 
-    let a = makeColor 4
-    let x = RGB (fib 45) 5 5
-    let v = 5
+    let a = makeColor 4       // this scrutinee WILL NOT be inlined (it fails checkPure)
+    let x = RGB (fib 45) 5 5  // this scrutinee will NOT be inlined (it fails checkPure)
+    let v = 5                 // this scrutinee will be inlined, 
+                              // and then the entire match expression will be eliminated!
 
   
     let z = match x
-              RGB r g b =  r 
-              _ = 5
+              RGB r g b =  g + 48
+              _ = 68
     
     let q = match a 
-              RGB r1 g1 b1 = r1 + r1
-              _ = 4
+              RGB r1 g1 b1 = r1 + r1 + 48
+              _ = 67
               
     let w = match v
               5 = 65
-              _ = 5
-    z
-    q
+              _ = 66
+    after 1, cout <- z
+    wait cout
+    after 1, cout <- 10
+    wait cout 
+    after 1, cout <- q
+    wait cout
+    after 1, cout <- 10
+    wait cout 
     after 1, cout <- w
-    () 
+    wait cout
+    after 1, cout <- 10
+    wait cout 
+
 
 /* Expected Output:
 type RGB2 
@@ -61,33 +55,94 @@ type RGB
   Black 
 
 
-__RGB2 (__arg0 : Int32) (__arg1 : Int32) (__arg2 : Int32) -> RGB2 = 
-  RGB2 __arg0 __arg1 __arg2
+__RGB2
+    (__arg0: Int32)
+    (__arg1: Int32)
+    (__arg2: Int32): (Int32 -> (Int32 -> (Int32 -> RGB2))) =
+  %do
+    %do
+      %do
+        RGB2 (%dup __arg0) (%dup __arg1) (%dup __arg2)
+      %dropping __arg2
+    %dropping __arg1
+  %dropping __arg0
 
-__RGB (__arg0 : Int32) (__arg1 : Int32) (__arg2 : Int32) -> RGB = 
-  RGB __arg0 __arg1 __arg2
+__RGB
+    (__arg0: Int32)
+    (__arg1: Int32)
+    (__arg2: Int32): (Int32 -> (Int32 -> (Int32 -> RGB))) =
+  %do
+    %do
+      %do
+        RGB (%dup __arg0) (%dup __arg1) (%dup __arg2)
+      %dropping __arg2
+    %dropping __arg1
+  %dropping __arg0
 
-fib (n : _t86) -> _t86 = 
-  n
+fib (n: 't122): ('t122 -> 't122) = %do { %dup n } %dropping n
 
-makeColor (c : Int32) -> RGB = 
-  __RGB c c c
+makeColor (c: Int32): (Int32 -> RGB) =
+  %do
+    (%dup __RGB) (%dup c) (%dup c) (%dup c)
+  %dropping c
 
-main (cin : _t55) (cout : _t54) -> () = 
-  let a = makeColor 4
-  let x = __RGB (fib 45) 5 5
-  let v = 5
-  match x
-    Black  = 5
-    RGB __pat_anon0 __pat_anon1 __pat_anon2 = let r = __pat_anon0
-                                              r
-  match a
-    Black  = 4
-    RGB __pat_anon3 __pat_anon4 __pat_anon5 = let r1 = __pat_anon3
-                                              r1 + r1
-  match v
-    5 = 6
-    _ = 5
-  ()
+main (cin: 'ir_t15) (cout: (& Int32)): ('ir_t15 -> ((& Int32) -> ())) =
+  %do
+    %do
+      let a: RGB = (%dup makeColor) 4
+      %do
+        let x: RGB = (%dup __RGB) ((%dup fib) 45) 5 5
+        %do
+          let __dupdrop_anon_underscore: Int32 =
+            match x
+              Black = { 5 }
 
+              (RGB __anonymous_pattern __anonymous_pattern__1 __anonymous_pattern__2) =
+                %do
+                  %dup __anonymous_pattern
+                  %do
+                    %dup __anonymous_pattern__1
+                    %do
+                      %dup __anonymous_pattern__2
+                      %dup __anonymous_pattern
+                    %dropping __anonymous_pattern__2
+                  %dropping __anonymous_pattern__1
+                %dropping __anonymous_pattern
+          %do
+            let __dupdrop_anon_underscore__1: Int32 =
+              match a
+                Black = { 4 }
+
+                (RGB __anonymous_pattern__3 __anonymous_pattern__4 __anonymous_pattern__5) =
+                  %do
+                    %dup __anonymous_pattern__3
+                    %do
+                      %dup __anonymous_pattern__4
+                      %do
+                        %dup __anonymous_pattern__5
+                        let r1: Int32 = %dup __anonymous_pattern__3
+                        %do
+                          %dup r1 + %dup r1
+                        %dropping r1
+                      %dropping __anonymous_pattern__5
+                    %dropping __anonymous_pattern__4
+                  %dropping __anonymous_pattern__3
+            %do
+              let __dupdrop_anon_underscore__2: () = after 1, %dup cout <-  65
+              %do
+                let __dupdrop_anon_underscore__3: () = wait %dup cout
+                %do
+                  let __dupdrop_anon_underscore__4: () =
+                    after 1, %dup cout <-  10
+                  %do
+                    wait %dup cout
+                  %dropping __dupdrop_anon_underscore__4
+                %dropping __dupdrop_anon_underscore__3
+              %dropping __dupdrop_anon_underscore__2
+            %dropping __dupdrop_anon_underscore__1
+          %dropping __dupdrop_anon_underscore
+        %dropping x
+      %dropping a
+    %dropping cout
+  %dropping cin
 */

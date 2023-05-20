@@ -1,5 +1,5 @@
 /* 
-x gets should not get inlined because is is multiunsafe.
+x gets should not get inlined because it is multiunsafe.
 */
 
 main (cin : &Int) ( cout : & Int ) -> () =
@@ -7,4 +7,6 @@ main (cin : &Int) ( cout : & Int ) -> () =
   after 1, cout <- (x+1)
   wait cout
   after 1, cout <- (x+1)
+  wait cout
+  after 1, cout <- 10
   wait cout

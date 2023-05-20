@@ -13,6 +13,8 @@ type Color
 putd cout_ c =
   after 1, cout_ <- (c + 48)
   wait cout_
+  after 1, cout_ <- 10
+  wait cout_
 
 main cin cout = 
    let test = Cons 4 (Cons 3 (Cons 9 Nil))
@@ -21,38 +23,4 @@ main cin cout =
        Cons _ g = putd cout 7
        _ = putd cout 6
 
-// should reduce to putd cout 4 
-
-/*
-main (cin : _t47) (cout : (& Int32)) -> () = 
-  let __pat_anon0 = 4
-  let __pat_anon1 = Cons 3 (Cons 9 (Nil))
-  match __pat_anon0
-    4 = match __pat_anon1
-          Cons __pat_anon2 __pat_anon3 = match __pat_anon2
-                                           3 = match __pat_anon3
-                                                 Cons __pat_anon4 __pat_anon5 = putd cout 4
-                                                 Nil  = let g = __pat_anon1
-                                                        putd cout 7
-                                           _ = let g = __pat_anon1
-                                               putd cout 7
-          Nil  = let g = __pat_anon1
-                 putd cout 7
-    _ = let g = __pat_anon1
-        putd cout 7
-*/
-
-/*
-main (cin : _t47) (cout : (& Int32)) -> () = 
-  let __pat_anon1 = Cons 3 (Cons 9 (Nil))
-  match __pat_anon1
-    Cons __pat_anon2 __pat_anon3 = match __pat_anon2
-                                     3 = match __pat_anon3
-                                           Cons __pat_anon4 __pat_anon5 = putd cout 4
-                                           Nil  = let g = __pat_anon1
-                                                  putd cout 7
-                                     _ = let g = __pat_anon1
-                                         putd cout 7
-    Nil  = let g = __pat_anon1
-           putd cout 7
-*/
+// should reduce to putd cout 4
