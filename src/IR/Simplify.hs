@@ -8,11 +8,11 @@ TODO: Callsite Inline
 -}
 module IR.Simplify (
   simplifyProgram,
+  CheckPure,
+  isPure,
 ) where
 
 import qualified Common.Compiler as Compiler
-{-foldLet,-}
-
 import Control.Monad (when)
 import Control.Monad.Except (MonadError (..))
 import Control.Monad.State.Lazy (
@@ -29,7 +29,7 @@ import Data.Generics (Typeable, everywhere, everywhereM, mkM, mkT)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import qualified Data.Maybe as Ma
-import IR.IR (extract, unfoldApp, unfoldLambda, foldLet)
+import IR.IR (extract, foldLet, unfoldApp, unfoldLambda)
 import qualified IR.IR as I
 
 
@@ -148,7 +148,7 @@ updateOccVar binder = do
                 ++ "!"
             )
         Just Dead ->
-          if insidel
+          if insidel -- for now, we never inline a binder if it appears inside a lambda (avoid work duplication)
             then M.insert binder Never m
             else M.insert binder OnceSafe m
         Just _ -> M.insert binder ConstructorFuncArg m
@@ -232,7 +232,7 @@ If the simplified RHS is a variable or literal, the binder is inlined.
 simplExpr :: Subst -> InScopeSet -> InExpr -> Context -> SimplFn OutExpr
 
 
-{- | Simplify Primitive Expression
+{- \| Simplify Primitive Expression
 
   Simplify each of the arguments to prim
   For ex. 5 + g + h + (6 + v)
@@ -512,7 +512,7 @@ elimMatchArms e@(I.Match scrut@I.App{} arms _) =
             let letBinders = mapMaybe isMaybeLetBinder $ zip patargs dconargs
                 dconargs = fst <$> snd unfoldedScrut
                 isMaybeLetBinder :: (I.Alt I.Type, I.Expr I.Type) -> Maybe (I.Binder I.Type, I.Expr I.Type)
-                isMaybeLetBinder (I.AltBinder b@(I.BindVar _ _) , rhs') = Just (b, rhs')
+                isMaybeLetBinder (I.AltBinder b@(I.BindVar _ _), rhs') = Just (b, rhs')
                 isMaybeLetBinder _ = Nothing
              in if null letBinders
                   then rhs
@@ -527,6 +527,7 @@ elimMatchArms (I.Match scrut@(I.Lit (I.LitIntegral _) _) arms _) =
     (_, rhs) -> rhs
 elimMatchArms e = e
 
+
 -- | Check if Literal scrutinee matches given arm
 checkForLitMatch :: I.Expr I.Type -> (I.Alt I.Type, I.Expr I.Type) -> Bool
 checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
@@ -536,33 +537,34 @@ checkForLitMatch (I.Lit (I.LitIntegral v) _) (arm, _) =
     _ -> False
 checkForLitMatch _ _ = False -- we should never hit this case
 
+
 -- | Check if Data Constructor scrutinee matches given arm
 checkForDConMatch :: (I.Expr I.Type, [(I.Expr I.Type, I.Type)]) -> I.Alt I.Type -> Bool
 checkForDConMatch (I.Data dcon _, args) arm =
   case arm of
-    (I.AltData dconPat argPats _) -> 
-   {-
-    // first check if arm has a matching DCon
-     match RGB 1 2 3
-       Black = ... 
-       CMYK 1 2 3 4 = ...
-       _ = ... // picks this arm since no matching DCon
-    -}
-      dcon == dconPat 
-   {-
-    // once we have an arm with a matching Dcon, make sure the DCon args match the rest of the arm
-      match RGB 1 2 3
-       Black = ... 
-       CMYK 1 2 3 4 = ...
-       RGB 3 3 3 = ... // this arm has matching DCon, but does NOT have matching DCon args
-       RGB 1 2 x = ... // pick this arm because both its DCon and DCon arguments match
-       _ = ...         // wildcard not picked because earlier arm matched
-    -}
-      && compareArm argPats (fst <$> args)
+    (I.AltData dconPat argPats _) ->
+      {-
+       // first check if arm has a matching DCon
+        match RGB 1 2 3
+          Black = ...
+          CMYK 1 2 3 4 = ...
+          _ = ... // picks this arm since no matching DCon
+       -}
+      dcon == dconPat
+        {-
+         // once we have an arm with a matching Dcon, make sure the DCon args match the rest of the arm
+           match RGB 1 2 3
+            Black = ...
+            CMYK 1 2 3 4 = ...
+            RGB 3 3 3 = ... // this arm has matching DCon, but does NOT have matching DCon args
+            RGB 1 2 x = ... // pick this arm because both its DCon and DCon arguments match
+            _ = ...         // wildcard not picked because earlier arm matched
+         -}
+        && compareArm argPats (fst <$> args)
     {-
     // a variable or wildward always matches a scrutinee!
      match RGB 1 2 3
-       RGB 8 8 8 = ... 
+       RGB 8 8 8 = ...
        x = ... // picks this arm
     -}
     (I.AltBinder _) -> True
@@ -571,7 +573,8 @@ checkForDConMatch (I.Data dcon _, args) arm =
   -- \| compare a match arm's argument patterns to the arguments of the scrutinee
   compareArm :: [I.Alt I.Type] -> [I.Expr I.Type] -> Bool
   compareArm [] [] = True
-  compareArm (pat@I.AltData{} : tl) (app@I.App{} : tl2) = -- nested patterns
+  compareArm (pat@I.AltData{} : tl) (app@I.App{} : tl2) =
+    -- nested patterns
     checkForDConMatch (unfoldApp app) pat && compareArm tl tl2
   compareArm ((I.AltLit v _) : tl) (I.Lit v2 _ : tl2) = v == v2 && compareArm tl tl2
   compareArm ((I.AltBinder _) : tl) (_ : tl2) = compareArm tl tl2

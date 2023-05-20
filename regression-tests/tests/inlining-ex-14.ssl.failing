@@ -1,5 +1,6 @@
-// testing that match arm is eliminated??
 // we assume partial application of data constructors cannot be scrutinees to matches!
+// therefore we rely on the following type error getting thrown:
+// TypeError (ErrorMsg "Pattern: wrong number of argument - DConId RGB")
 
 type Color
   RGB Int Int
