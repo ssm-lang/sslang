@@ -17,13 +17,11 @@ import qualified Common.Compiler as Compiler
 import Control.Monad.State.Lazy (
   MonadState,
   StateT (..),
-  evalStateT,
-  gets,
-  modify,
+  evalStateT
  )
-import IR.IR (Literal (LitIntegral))
+-- import IR.IR (Literal (LitIntegral))
 import qualified IR.IR as I
-import Data.Bifunctor
+-- import Data.Bifunctor
 import Common.Identifiers(Identifier (Identifier), TVarId (..))
 import IR.Types.Type
 import           Data.Generics.Aliases          ( mkM )
@@ -49,14 +47,14 @@ newtype OptParFn a = OptParFn (StateT OptParCtx Compiler.Pass a)
 
 
 -- | Example func to delete later! Demonstrates how to extract a value from the OptParFn Monad
-getNumberOfPars :: OptParFn Int
-getNumberOfPars = gets numPars
+-- getNumberOfPars :: OptParFn Int
+-- getNumberOfPars = gets numPars
 
 
 -- | Example func to delete later! Demonstrates how to modify a value in the OptParFn Monad
-updateNumberOfPars :: Int -> OptParFn ()
-updateNumberOfPars num = do
-  modify $ \st -> st{numPars = num}
+-- updateNumberOfPars :: Int -> OptParFn ()
+-- updateNumberOfPars num = do
+--   modify $ \st -> st{numPars = num}
 
 
 -- | Run a OptParFn computation.
@@ -82,7 +80,7 @@ runOptParFn (OptParFn m) =
 
 --can only take ut the instantenous expression if they occur before 
 
-  
+
 
 -- prepare for case 2 and casse 3
 
@@ -97,7 +95,7 @@ optimizePar p = runOptParFn $ do
  -- optimizedDefs <- mapM optimizeParTop $ I.programDefs p
  -- fail ("Number of Bad Par Exprs in " ++ show (map fst (map tupleMatch1 optimizedDefs)) ++ ": " ++ (show (map tupleMatch optimizedDefs)))
  -- return $ p{I.programDefs = map tupleMatch1 optimizedDefs}
-  
+
   --return $ p{I.programDefs = p}
   --return $ p{I.programDefs = I.programDefs p}
   return $ p{I.programDefs = defs'}
@@ -116,21 +114,21 @@ par 5 + 1
 --import foldApp from IR.IR
 -- import tempTupleId from IR.Types.Type
 findFixBadPar :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
-findFixBadPar e@__ = if isBad e then rewrite e else pure e 
+findFixBadPar e@__ = if isBad e then rewrite e else pure e
  where rewrite :: I.Expr I.Type -> OptParFn (I.Expr I.Type)
        -- structure of IR
-       rewrite p@(I.Prim I.Par exprlist _) = pure x
+       rewrite (I.Prim I.Par exprlist _) = pure x
         where dataConstructorName = "Pair2"
-              t = (TVar $ TVarId (Identifier "PINEAPPLE"))
+              t = TVar $ TVarId (Identifier "PINEAPPLE") --TODO: put in actual type here!!!
               --construct type that is tuple of arguments
-              x = (I.foldApp dConNode argsToTuple)
+              x = I.foldApp dConNode argsToTuple
               dConNode = I.Data (I.DConId (Identifier dataConstructorName)) t
-              argsToTuple = (zip exprlist (repeat t))
-        
+              argsToTuple = zip exprlist (repeat t)
+
       -- pure dummy --TODO: rewrite the bad par as good one
 
        rewrite _ = fail "rewrite should only be called on a Par IR node!"
-       dummy = I.Var (I.VarId (Identifier "PINEAPPLE")) (TVar $ TVarId (Identifier "dummy"))
+      -- dummy = I.Var (I.VarId (Identifier "PINEAPPLE")) (TVar $ TVarId (Identifier "dummy"))
 {-
 case 1:
 par 5 + 1
@@ -207,17 +205,21 @@ Useful for exercise 2.
 
 isNotWait :: I.Expr I.Type -> Bool
 isNotWait (I.Prim I.Wait _ _) = False
-isNotWait (_) = True 
+isNotWait _ = True
 
 isNotFunction :: I.Expr I.Type -> Bool
-isNotFunction (I.App expr1 expr2 t) = False
-isNotFunction ( _ ) = True 
+isNotFunction I.App {} = False
+isNotFunction _ = True
+-- isNotFunction (I.App expr1 expr2 t) = False
+-- isNotFunction ( _ ) = True
 
 
 isBad :: I.Expr I.Type -> Bool
 --isBad theExpr = False -- currently a stub
 isBad (I.Prim I.Par exprlist _) = do
-  (and (map isNotWait exprlist)) && (and (map isNotFunction exprlist))
+  let left = all isNotWait exprlist
+  let right = all isNotFunction exprlist
+  left && right
 isBad _ = False
 
 
@@ -239,8 +241,8 @@ Return the body unchanged, as well as the count numBadPars.
 
 --not using this 
 
-countBadPars :: I.Expr I.Type -> OptParFn (I.Expr I.Type, Int)
-countBadPars e = do
-  -- currently a stub
-  let y = isBad (I.Lit (LitIntegral 5) (I.extract e)) -- calling this so we don't get an "unused" warning
-  return (e, fromEnum y)
+-- countBadPars :: I.Expr I.Type -> OptParFn (I.Expr I.Type, Int)
+-- countBadPars e = do
+--   -- currently a stub
+--   let y = isBad (I.Lit (LitIntegral 5) (I.extract e)) -- calling this so we don't get an "unused" warning
+--   return (e, fromEnum y)
