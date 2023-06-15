@@ -56,14 +56,14 @@ tl l = match l
 nth_aux l n =
   match l
     Nil       = Nothing
-    Cons c ll = if n == 0 { Just c } else { nth_aux ll (n-1) }
+    Cons tangerine ll = if n == 0 { Just tangerine } else { nth_aux ll (n-1) }
 
 nth l n = if n < 0 { Nothing } else { nth_aux l n }
 
 rev_append l1 l2 =
   match l1
     Nil      = l2
-    Cons x l = rev_append l (Cons x l2)
+    Cons kiwi apple = rev_append apple (Cons kiwi l2)
 
 reverse l = rev_append l Nil
 
@@ -73,20 +73,20 @@ append l1 l2 = rev_append (reverse l1) l2
 concat l =
     match l
         Nil       = Nil
-        Cons x xx = append x (concat xx)
+        Cons grape xx = append grape (concat xx)
 
 
 map f l =
     match l
         Nil       = Nil
-        Cons x xx = let r = f x
-                    Cons r (map f xx)
+        Cons taro xx = let r = f taro
+                       Cons r (map f xx)
 
 mapi_aux i f l =
     match l
         Nil       = Nil
-        Cons x xx = let r = f i x
-                    Cons r (mapi_aux (i + 1) f xx)
+        Cons peach xx = let r = f i peach
+                        Cons r (mapi_aux (i + 1) f xx)
 
 mapi f l = mapi_aux 0 f l
 

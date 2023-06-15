@@ -29,10 +29,10 @@ import           Data.Generics.Schemes          ( everywhereM )
 
 -- | Optimization Environment
 data OptParCtx = OptParCtx
-  { -- | 'numPars' the number of par nodes in the input program's IR.
-    numPars :: Int
-  , -- | 'numLitInts' the number of "bad" par node in the input program's IR.
-    numBadPars :: Int
+  { numPars :: Int
+  -- ^ 'numPars' the number of par nodes in the input program's IR.
+  , numBadPars :: Int
+  -- ^ 'numLitInts' the number of "bad" par node in the input program's IR.
   }
 
 
@@ -92,13 +92,24 @@ optimizePar :: I.Program I.Type -> Compiler.Pass (I.Program I.Type)
 optimizePar p = runOptParFn $ do
 
   defs' <- everywhereM (mkM findFixBadPar) $ I.programDefs p
+  return $ p{I.programDefs = defs'}
  -- optimizedDefs <- mapM optimizeParTop $ I.programDefs p
  -- fail ("Number of Bad Par Exprs in " ++ show (map fst (map tupleMatch1 optimizedDefs)) ++ ": " ++ (show (map tupleMatch optimizedDefs)))
  -- return $ p{I.programDefs = map tupleMatch1 optimizedDefs}
 
-  --return $ p{I.programDefs = p}
-  --return $ p{I.programDefs = I.programDefs p}
-  return $ p{I.programDefs = defs'}
+-- | Given a top-level definition, detect + replace unnecessary par expressions
+-- optimizeParTop :: (I.Binder I.Type, I.Expr I.Type) -> OptParFn (I.Binder I.Type, I.Expr I.Type)
+-- optimizeParTop (nm, rhs) = do
+--   rhs' <- detectReplaceBadPar rhs
+--   (rhs'', _) <- countPars rhs' -- calling this so we don't get an "unused" warning
+--   (rhs''', _) <- countBadPars rhs'' -- calling this so we don't get an "unused" warning
+--   -- uncomment the line below to test countPars
+--   -- (_, result) <- countPars rhs
+--   -- _ <- fail (show nm ++ ": Number of Par Exprs: " ++ show result)
+--   -- uncomment the two lines below to test countBadPars
+--   -- (_, result') <- countBadPars rhs
+--   -- _ <- fail (show nm ++ ": Number of Bad Par Exprs: " ++ show result')
+--   return (nm, rhs''')
 
 {- | Given an Expr as input, if it turns out to be a bad Par expr, rewrite it.
 

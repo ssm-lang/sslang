@@ -38,6 +38,9 @@ data TokenType
   | TPar
   | TLoop
   | TLet
+  | TNow
+  | TAtAt
+  | TBreak
   | TMatch
   | TAfter
   | TWait
@@ -104,6 +107,9 @@ instance Pretty TokenType where
   pretty TPar = pretty "par"
   pretty TLoop = pretty "loop"
   pretty TLet = pretty "let"
+  pretty TNow = pretty "now"
+  pretty TAtAt = pretty "@@"
+  pretty TBreak = pretty "break"
   pretty TMatch = pretty "match"
   pretty TAfter = pretty "after"
   pretty TWait = pretty "wait"

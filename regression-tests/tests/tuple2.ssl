@@ -1,14 +1,8 @@
 // tests whether a 2-tuple(Pair) can be implemented in Ssland with ADTs
+// without builtin syntax
+
 type Pair2 a b
     Pair2 a b
-
-
-type Pair3 a b c
-  Pair3 a b c
-
-
-type Pair4 a b c d
-    Pair4 a b c d
 
 putip_ putc x =
   if x < 10
@@ -27,12 +21,12 @@ puti_ putc x =
 // tests the pattern match of pairs
 printl_ puti putc p =
   match p
-    (x,y) = puti x
-            putc 32
-            puti y
+    Pair2 x y = puti x
+                putc 32
+                puti y
 
 
-main cin cout = 
+main cin cout =
     let putc c = after 1, cout <- c
                  wait cout
     let puti = puti_ putc
@@ -40,9 +34,9 @@ main cin cout =
     let printl l = printl_ puti putc l
 
 
-    let x = Pair2 1 2
-    let y = Pair2 3 4
+    let x_ = Pair2 1 2
+    let y_ = Pair2 3 4
 
-    printl x
+    printl x_
     putnl ()
-    printl y
+    printl y_

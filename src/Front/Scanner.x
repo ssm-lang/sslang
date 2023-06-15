@@ -91,7 +91,7 @@ tokens :-
     @newline            ;
 
     -- First non-whitespace character of line.
-    ()                  { lineFirstToken }
+    ()                  { \i l -> updateMargin i >> lineFirstToken i l }
   }
 
   <blockStart> {
@@ -107,6 +107,21 @@ tokens :-
 
     -- Implicitly start a block at first non-whitespace character of block.
     ()                  { blockFirstToken }
+  }
+
+    <blockLineStart> {
+    $blank+             ;
+    "//".*              ;
+    @commentL           { commentBegin }
+
+    -- If we're about to start a block, newlines don't matter.
+    @newline            ;
+
+    -- Explicitly start a block at lBrace.
+    \{                  { \i l -> updateMargin i >> lBrace i l }
+
+    -- Implicitly start a block at first non-whitespace character of block.
+    ()                  { \i l -> updateMargin i >> blockFirstToken i l }
   }
 
   <0> {
@@ -156,6 +171,9 @@ tokens :-
 
     -- Reserved keywords.
     do                  { reserved TDo }
+    break               { reserved TBreak }
+    now                 { reserved TNow }
+    \@\@                { reserved TAtAt }
 
     -- Other stringy tokens.
     @operator           { strTok (return . TOp . fromString) }
@@ -235,6 +253,7 @@ data AlexUserState = AlexUserState
   { usContext :: [ScannerContext] -- ^ stack of contexts
   , commentLevel :: Word          -- ^ 0 means no block comment
   , lastCtxCode :: Int            -- ^ last seen scanning code before block
+  , lastLineMargin :: Int         -- ^ previous line's margin
   }
 
 -- | Initial Alex monad state.
@@ -243,6 +262,7 @@ alexInitUserState = AlexUserState
   { usContext = [ImplicitBlock 1 TDBar]
   , commentLevel = 0
   , lastCtxCode = 0
+  , lastLineMargin = 0
   }
 
 -- | Enter a new context by pushing it onto stack.
@@ -348,6 +368,18 @@ gotoStartLine _ _ = do
   alexSetStartCode lineStart
   alexMonadScan
 
+-- | Extracts the margin of the previous line from the AlexUserState 
+extractMargin :: AlexUserState -> Int
+extractMargin (AlexUserState _ _ _ m) = m
+
+-- | Update the previous line margin 
+updateMargin :: AlexInput -> Alex ()
+updateMargin i = do 
+  let c = alexColumn $ alexPosition i
+  st <- alexGetUserState
+  alexSetUserState $ st { lastLineMargin = c } 
+     
+
 -- | First token in a line.
 lineFirstToken :: AlexAction Token
 lineFirstToken i len
@@ -360,46 +392,77 @@ lineFirstToken i len
 -- | First token in a line that isn't the last line.
 lineFirstToken' :: AlexAction Token
 lineFirstToken' i _ = do
-  let tCol = alexColumn $ alexPosition i
+  st <- alexGetUserState 
+  let currMarg = alexColumn $ alexPosition i
       emptySpan = alexEmptySpan $ alexPosition i
       (_, _, _, tokenStr) = i
+      lineMargin = extractMargin st
 
   alexSetStartCode 0
 
+  -- margin is the context margin
   ctx <- alexPeekContext
   case ctx of
     ExplicitBlock _ _ -> alexMonadScan
       -- Newlines don't mean anything in explicit blocks.
 
-    ImplicitBlock margin sepToken
-      | tCol > margin -> do
-        -- Continued line; continue to scan as normal
-        alexMonadScan
+    ImplicitBlock ctxMarg sepToken
+      | currMarg == ctxMarg -> do
+          if needsSep tokenStr
+             then return $ Token (emptySpan, sepToken)
+             else alexMonadScan
 
-      | tCol == margin -> do
-        -- Next line started; insert 'sepToken' if needed
-        if needsSep tokenStr
-           then alexMonadScan
-           else return $ Token (emptySpan, sepToken)
+      -- Examples of when the currMarg == ctxMarg:
+      -- loop f
+      --      g // curr > line margin && == ctx margin
+      --      h // curr == line margin && == ctx margin
+      --        x
+      --      f // curr < line margin && == ctx margin
+      
+      -- loop f
+      -- g // curr == line margin && == ctx margin
+      --
+      -- loop loop f
+      --      g // curr > line margin && == ctx margin
+      --
+      -- f
+      --   x
+      -- g // curr < line margin && == ctx margin
 
-      | otherwise -> do
-        -- Block ended; pop context and insert 'TRbrace', but return to
-        -- 'lineStart' to check for anything else to do; if more blocks are
-        -- ending, those will need to be closed too
+      | currMarg < ctxMarg -> do
         alexSetStartCode lineStart
         alexPopContext
         return $ Token (emptySpan, TRbrace)
+      -- If currMarg < ctxMarg, pop a context to compare currMarg with the previous ctxMarg
 
-    PendingBlockNL margin sepToken
-      | tCol <= margin ->
-        lexErr i $ "cannot start block at lower indentation than before"
+    
+      | currMarg > ctxMarg && currMarg >= lineMargin -> do
+        -- Continued line; continue to scan as normal
+        alexMonadScan
+      -- Example of when the currMarg > ctxMarg with 2 diff cases of lineMarg
+      -- f
+      --   x // > line margin && > ctx margin
+      --   y // == line margin && > ctx margin
 
+      | currMarg > ctxMarg && currMarg < lineMargin -> do
+         lexErr i $ "user error, outdent better"
+
+      -- this means curr < prevline margin; we are outdenting
+      | otherwise -> do
+         internalErr $ "Unreachable; boolean comparisons should have covered all cases"
+
+  -- if pending block, check if currmarg is < prevline margin
+    PendingBlockNL _ sepToken
+      | currMarg < lineMargin ->
+        lexErr i $ "cannot start block after a new line at lower indentation than before"
+
+      -- If currmarg >= prevline
       | otherwise -> do
         -- We were about to start a block in a new line, and we encountered the
         -- first token of that new line. Transition from 'PendingNL' to
         -- 'ImplicitBlock', and emit the opening brace for the new block.
         alexPopContext
-        alexPushContext $ ImplicitBlock tCol sepToken
+        alexPushContext $ ImplicitBlock currMarg sepToken
         return $ Token (emptySpan, TLbrace)
 
     _ -> internalErr $ "unexpected ctx during lineFirstToken: " ++ show ctx
@@ -422,7 +485,7 @@ lineFirstToken' i _ = do
 -- The correct scanner output should be @if cond { expr1 } else { expr2 }@, and
 -- not @if cond { expr1 } ; else { expr2 }@.
 needsSep :: String -> Bool
-needsSep = isPrefixOf "else"
+needsSep = not . isPrefixOf "else"
 
 -- | Left brace token.
 lBrace :: AlexAction Token
@@ -530,21 +593,23 @@ layout ttype sepToken i len = do
 -- | First token in a block (epsilon action).
 blockFirstToken :: AlexAction Token
 blockFirstToken i _ = do
+  st <- alexGetUserState
+  let lineMargin = extractMargin st
   alexSetStartCode 0
 
   -- Check the top of the context stack to obtain saved separator token.
   ctx <- alexPeekContext
-  (margin, sepToken) <- case ctx of
-    PendingBlock m s -> alexPopContext >> return (m, s)
+  sepToken <- case ctx of
+    PendingBlock _ s -> alexPopContext >> return s
     _ -> internalErr $ "unexpected context in blockFirstToken: " ++ show ctx
 
   -- Assert that indentation of this token is greater than that of layout token.
-  let tCol = alexColumn $ alexPosition i
-  when (tCol <= margin) $ do
+  let currMarg = alexColumn $ alexPosition i
+  when (currMarg <= lineMargin) $ do
     lexErr i $ "cannot start block at lower indentation than before"
 
   -- About to start a block; remember current indentation level and separator.
-  alexPushContext $ ImplicitBlock tCol sepToken
+  alexPushContext $ ImplicitBlock currMarg sepToken
 
   -- Emit TLbrace to start block.
   return $ Token (alexEmptySpan $ alexPosition i, TLbrace)
