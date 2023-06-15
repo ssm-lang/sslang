@@ -1,0 +1,20 @@
+// once non-application expressions are allowed inside a par,
+// this test should pass.
+
+// check that optimize par pass does NOT rewrite par expressions 
+// that have at least one non-instantaneous argument
+
+type Pair2 a b
+    Pair2 a b
+
+add a b = a + b
+
+main cin cout = 
+    let q = par 3+4     // instantaneous
+                add 3 4 // functions are not necessarily instantaneous
+
+    // ^should NOT rewrite q as a tuple
+    after 1, cout <- 5 + 48    // Should print 5
+    wait cout
+    after 1, cout <- 10
+    wait cout

@@ -1,0 +1,41 @@
+// once codegen supports return value of tuples,
+// this test should pass
+
+type Pair2 a b
+    Pair2 a b
+
+add a b = a + b
+
+printCharTuple putc p =
+  match p
+   (x,y) = putc x
+           putc 32
+           putc y
+
+main cin cout =
+    let putc c = after 1, cout <- c
+                 wait cout
+    let putnl _ = putc 10
+   
+    let x = 66
+    let y = 67
+
+    // tuple with arguments evaluated sequentially 
+    let w = (add x 0, add y 0)
+    // let's print it out
+    printCharTuple putc w // this is okay
+    putnl ()
+
+    // tuple with arguments already evaluated
+    let r = (x,y)
+    // let's print it out
+    printCharTuple putc r // this is okay
+    putnl ()
+
+    // code below causes segmentation fault
+    // par with arguments evaluated at the same time
+    let q = par add x 0
+                add y 0
+    // let's print it out
+    printCharTuple putc q // this is okay
+    putnl ()

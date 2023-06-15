@@ -40,6 +40,7 @@ import Text.Show.Pretty
 -}
 data Mode
   = Continue
+  | DumpOptPar
   | DumpIR
   | DumpIRAnnotated
   | DumpIRConstraints
@@ -70,6 +71,11 @@ options =
       ["dump-ir"]
       (NoArg $ setMode DumpIRAnnotated)
       "Print the IR immediately after lowering"
+  , Option
+      ""
+      ["dumpOptPar"]
+      (NoArg $ setMode DumpOptPar)
+      "Print the IR immediately after opt par pass"
   , Option
       ""
       ["dump-ir-annotated"]
@@ -153,6 +159,7 @@ transform opt p = do
   p <- dConToFunc p
   p <- externToCall p
   p <- optimizePar p
+  when (mode opt == DumpOptPar) $ (throwError . Dump . ppShow) p
   p <- liftProgramLambdas p
   p <- segmentLets p
   when (mode opt == DumpIRLifted) $ dump p
