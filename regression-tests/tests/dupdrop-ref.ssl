@@ -1,0 +1,9 @@
+type RGB
+    RGB Int Int Int
+
+main (cin:&Int) (cout:&Int) -> () =
+    let a = (RGB 97 255 255)
+    let red = match a
+                  RGB r g b = r
+    after 10, cout <- red
+    wait cout

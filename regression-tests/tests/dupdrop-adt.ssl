@@ -1,0 +1,11 @@
+type Color
+    Red
+    Green
+    Blue
+    Sparkly Color
+
+main (cin:&Int) (cout:&Int) -> () =
+    let a = Red
+    let b = Sparkly a
+    42
+    ()

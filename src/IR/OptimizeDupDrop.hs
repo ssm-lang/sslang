@@ -21,6 +21,8 @@ import           Data.Maybe                     ( fromJust )
 import qualified IR.IR                         as I
 import qualified IR.Types                      as I
 import           Debug.Trace                    ( traceM )
+import Data.Generics.Aliases ( mkM )
+import Data.Generics.Schemes ( everywhereM )
 
 
 -- * The external interface
@@ -35,7 +37,7 @@ optimizeDupDrop program = (`evalStateT` 0) $ do
     let programDefs = I.programDefs program
     let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef programDefs 
     traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
-    let defs = map optimizeTop programDefs
+    let defs = programDefs --map optimizeTop programDefs
     let (nDups, nDrops) = foldl (\(a,b) (a',b') -> (a + a', b + b')) (0,0) $ map countDupsAndDropsDef defs 
     traceM $ ("dups: " ++ (show nDups) ++ ", drops: " ++ (show nDrops))
     return $ program { I.programDefs  = defs
@@ -56,14 +58,16 @@ fusePair drop@(I.Prim I.Drop [v1, dup@(I.Prim I.Dup [v2] _)] _)
     | otherwise = Nothing
 
 -- | Pattern: drop (f (dup v1)) v1 -> f v1
+-- When a drop and a dup 
 eliminateConsumptionPat :: I.Expr I.Type -> Maybe (I.Expr I.Type)
-eliminateConsumptionPat (I.Prim I.Drop [v1, I.App f (I.Prim I.Dup [v2] t2) t3] t2)
+eliminateConsumptionPat (I.Prim I.Drop [v1, I.App f (I.Prim I.Dup [v2] t2) t3] t1)
     | v1 == v2  = Just $ I.App f v2 t3
     | otherwise = Nothing
 
 -- ** Transformations/Tree rotations
 
 -- | Swap a drop with a function application
+-- Pattern:
 -- case 1
 --   let _ = f x
 --   let _ = drop y r
@@ -73,11 +77,32 @@ eliminateConsumptionPat (I.Prim I.Drop [v1, I.App f (I.Prim I.Dup [v2] t2) t3] t
 -- would insert a let:
 --   let _ = drop y () in f x
 -- a compelling example
-swapAppAndDrop :: I.Expr I.Type -> I.Expr I.Type
-swapAppAndDrop all@(I.Prim I.Drop [v1, I.App f v2@I.Var{} t2] t1) =
-    if v1 /= v2
-    then I.App f v1 t2
-    else all
+swapAppAndDrop :: I.Expr I.Type -> Maybe (I.Expr I.Type)
+swapAppAndDrop all@(I.Prim I.Drop [v1, I.App f v2@I.Var{} t2] t1)
+    | v1 /= v2  = Just $ I.App f v1 t2  -- insert a new let
+    | otherwise = Nothing
+
+-- | Pattern: drop (let a = b in c) x | x not in b -> let a = b in drop c x
+-- i.e. move drop inside the body of the `let` if the variable to drop is not
+-- used in the binder
+-- Since lets are already segmented by this pass, we can safely assume bins has
+-- one element.
+moveDropInsideLet :: I.Expr I.Type -> Maybe (I.Expr I.Type)
+moveDropInsideLet drop@(I.Prim I.Drop [v, I.Let bins expr t2] t1) =
+    -- Does v appear on the RHS of the binder?
+    let bin = head bins
+    in if v `inExpr` snd bin
+       then Just $ I.Let bins (I.Prim I.Drop [v, expr] t1) t2
+       -- TODO: is t1 the right type? use extract?
+       else Just $ I.Let [(fst bin, I.Prim I.Drop [v, snd bin] t1)] expr t2
+
+-- | Utility function for traversing a subtree of the IR to check if it
+-- contains a reference to a variable `v`.
+inExpr :: I.Expr I.Type -> I.Expr I.Type -> Bool
+v `inExpr` e = undefined--foldr (\x acc -> x==v || acc) False e
+
+-- instead, use everywhereM from SYB
+
 
 -- ** Tree algorithm (WIP)
 
